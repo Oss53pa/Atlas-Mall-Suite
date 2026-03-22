@@ -1,21 +1,16 @@
 import React, { useCallback, useState } from 'react'
 import { FileText, Download, Loader2, CheckCircle, FileSpreadsheet } from 'lucide-react'
-import type { SecurityScore, Zone, Camera, Door, BlindSpot, EvacuationResult } from '../../shared/proph3t/types'
+import { useVol2Store } from '../store/vol2Store'
 
-interface RapportSectionProps {
-  projectName: string
-  score: SecurityScore | null
-  zones: Zone[]
-  cameras: Camera[]
-  doors: Door[]
-  blindSpots: BlindSpot[]
-  evacResult: EvacuationResult | null
-  coverageByFloor: Record<string, number>
-}
-
-export default function RapportSection({
-  projectName, score, zones, cameras, doors, blindSpots, evacResult, coverageByFloor,
-}: RapportSectionProps) {
+export default function RapportSection() {
+  const projectName = useVol2Store((s) => s.projectName)
+  const score = useVol2Store((s) => s.score)
+  const zones = useVol2Store((s) => s.zones)
+  const cameras = useVol2Store((s) => s.cameras)
+  const doors = useVol2Store((s) => s.doors)
+  const blindSpots = useVol2Store((s) => s.blindSpots)
+  const evacResult = useVol2Store((s) => s.evacResult)
+  const coverageByFloor = useVol2Store((s) => s.coverageByFloor)
   const [exporting, setExporting] = useState<string | null>(null)
 
   const handleExportPDF = useCallback(async (format: 'A1' | 'A3') => {

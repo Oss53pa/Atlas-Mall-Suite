@@ -1,17 +1,7 @@
 import React, { useMemo } from 'react'
 import { Shield, Camera, DoorOpen, LogOut, AlertTriangle, CheckCircle, Banknote } from 'lucide-react'
-import type { SecurityScore, Zone, Camera as CameraType, Door, BlindSpot, CapexItem } from '../../shared/proph3t/types'
 import ScoreGauge from '../../shared/components/ScoreGauge'
-
-interface AnalyseSectionProps {
-  score: SecurityScore | null
-  zones: Zone[]
-  cameras: CameraType[]
-  doors: Door[]
-  blindSpots: BlindSpot[]
-  capexItems: CapexItem[]
-  coverageByFloor: Record<string, number>
-}
+import { useVol2Store } from '../store/vol2Store'
 
 const CAPEX_PRICES: Record<string, number> = {
   'XNV-8080R': 850_000,
@@ -61,9 +51,13 @@ function ScoreBar({ label, value, max, icon: Icon }: {
   )
 }
 
-export default function AnalyseSection({
-  score, zones, cameras, doors, blindSpots, capexItems, coverageByFloor,
-}: AnalyseSectionProps) {
+export default function AnalyseSection() {
+  const score = useVol2Store((s) => s.score)
+  const zones = useVol2Store((s) => s.zones)
+  const cameras = useVol2Store((s) => s.cameras)
+  const doors = useVol2Store((s) => s.doors)
+  const blindSpots = useVol2Store((s) => s.blindSpots)
+  const coverageByFloor = useVol2Store((s) => s.coverageByFloor)
   const capexTotal = useMemo(() => {
     const camTotal = cameras.reduce((sum, c) => sum + (c.capexFcfa || CAPEX_PRICES[c.model] || 0), 0)
     const doorTotal = doors.reduce((sum, d) => sum + (d.capexFcfa || 0), 0)
