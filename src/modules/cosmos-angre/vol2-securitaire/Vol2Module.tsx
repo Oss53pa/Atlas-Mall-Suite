@@ -26,6 +26,7 @@ import {
   Layers,
   Grid3x3,
   Scissors,
+  Footprints,
 } from 'lucide-react'
 
 import { useVol2Store } from './store/vol2Store'
@@ -42,7 +43,7 @@ import DXFImportModal from './components/DXFImportModal'
 import Model3DImportModal from './components/Model3DImportModal'
 import { useCascade } from './hooks/useCascade'
 
-import type { ClippingConfig, ClippingAxis } from './components/FloorPlan3D'
+import type { ClippingConfig, ClippingAxis, NavMode } from './components/FloorPlan3D'
 
 const FloorPlan3D = lazy(() => import('./components/FloorPlan3D'))
 const AnalyseSectionLazy = lazy(() => import('./sections/AnalyseSection'))
@@ -174,6 +175,7 @@ export default function Vol2Module() {
     position: 0.5,
     showHelper: true,
   })
+  const [navMode, setNavMode] = useState<NavMode>('orbit')
 
   // ── Derived data ─────────────────────────────────────────
 
@@ -365,7 +367,7 @@ export default function Vol2Module() {
         {/* View mode toggle */}
         <div className="flex items-center gap-0.5 bg-gray-800 rounded-lg p-0.5">
           <button
-            onClick={() => setViewMode('2d')}
+            onClick={() => { setViewMode('2d'); setNavMode('orbit') }}
             className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
               viewMode === '2d'
                 ? 'bg-gray-700 text-white'
@@ -418,13 +420,28 @@ export default function Vol2Module() {
           </button>
         )}
 
-        {/* Import DXF/DWG */}
+        {/* FPS navigation (3D only) */}
+        {viewMode === '3d' && (
+          <button
+            onClick={() => setNavMode(m => m === 'orbit' ? 'fps' : 'orbit')}
+            className={`px-2 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
+              navMode === 'fps'
+                ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30'
+                : 'bg-gray-800 text-gray-500 hover:text-gray-300'
+            }`}
+          >
+            <Footprints className="w-3 h-3" />
+            Pieton
+          </button>
+        )}
+
+        {/* Import DXF/DWG/RVT */}
         <button
           onClick={() => setShowDXFImport(true)}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-600/15 border border-blue-500/30 text-blue-300 text-[10px] font-medium hover:bg-blue-600/25 transition-colors"
         >
           <Upload className="w-3 h-3" />
-          DXF/DWG
+          DXF/DWG/RVT
         </button>
 
         {/* Import 3D model */}
@@ -638,6 +655,7 @@ export default function Vol2Module() {
                   onEntityClick={(id, type) => selectEntity(id, type)}
                   showAllFloors={showAllFloors}
                   clipping={clipping}
+                  navMode={navMode}
                 />
               </Suspense>
 

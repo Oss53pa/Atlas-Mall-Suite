@@ -1,15 +1,12 @@
 import React, { useCallback, useState } from 'react'
 import { FileText, Download, Loader2, QrCode, FileSpreadsheet } from 'lucide-react'
-import type { MomentCle, POI, SignageItem } from '../../shared/proph3t/types'
+import { useVol3Store } from '../store/vol3Store'
 
-interface RapportSectionProps {
-  projectName: string
-  moments: MomentCle[]
-  pois: POI[]
-  signageItems: SignageItem[]
-}
-
-export default function RapportSection({ projectName, moments, pois, signageItems }: RapportSectionProps) {
+export default function RapportSection() {
+  const moments = useVol3Store((s) => s.moments)
+  const pois = useVol3Store((s) => s.pois)
+  const signageItems = useVol3Store((s) => s.signageItems)
+  const projectName = 'Cosmos Angr\u00e9'
   const [exporting, setExporting] = useState<string | null>(null)
 
   const handleExportPDF = useCallback(async () => {

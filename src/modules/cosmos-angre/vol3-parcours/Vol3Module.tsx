@@ -794,6 +794,19 @@ export default function Vol3Module() {
 
         {/* ── Right Panel ── */}
         <aside className="w-80 border-l border-gray-800 bg-gray-950 flex flex-col shrink-0 overflow-hidden">
+          {/* Geo-notification panel */}
+          {showNotifPanel && (
+            <div className="border-b border-gray-800 p-3 max-h-[50%] overflow-y-auto">
+              <GeoNotificationPanel
+                notifications={geoNotifications}
+                onAdd={handleAddNotification}
+                onToggle={handleToggleNotification}
+                onDelete={handleDeleteNotification}
+                zones={floorZones.map(z => ({ id: z.id, label: z.label }))}
+              />
+            </div>
+          )}
+
           {selectedMoment ? (
             <MomentDetail
               moment={selectedMoment}

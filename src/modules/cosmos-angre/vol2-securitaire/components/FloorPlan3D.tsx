@@ -6,6 +6,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { Camera, Zone, Door, BlindSpot, TransitionNode, Floor } from '../../shared/proph3t/types'
 import { getImported3DModels, subscribeImported3DModels } from '../store/imported3DModel'
 
+export type NavMode = 'orbit' | 'fps'
+
 export type ClippingAxis = 'x' | 'y' | 'z'
 
 export interface ClippingConfig {
@@ -30,6 +32,7 @@ interface FloorPlan3DProps {
   onEntityClick?: (id: string, type: 'camera' | 'door' | 'zone' | 'transition') => void
   showAllFloors?: boolean
   clipping?: ClippingConfig
+  navMode?: NavMode
 }
 
 // ─── Materials ───────────────────────────────────────────────
@@ -387,6 +390,10 @@ export default function FloorPlan3D(props: FloorPlan3DProps) {
   const rafRef = useRef(0)
   const clippingPlaneRef = useRef(new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0))
   const clipHelperRef = useRef<THREE.PlaneHelper | null>(null)
+  const fpsKeysRef = useRef<Record<string, boolean>>({})
+  const fpsLockedRef = useRef(false)
+  const fpsEulerRef = useRef(new THREE.Euler(0, 0, 0, 'YXZ'))
+  const fpsClockRef = useRef(new THREE.Clock(false))
 
   // Subscribe to imported 3D models
   const imported3DModels = useSyncExternalStore(subscribeImported3DModels, getImported3DModels)
@@ -549,6 +556,128 @@ export default function FloorPlan3D(props: FloorPlan3DProps) {
     props.floors, props.activeFloorId, props.showAllFloors,
   ])
 
+  // FPS navigation mode
+  useEffect(() => {
+    const container = containerRef.current
+    const camera = cameraRef.current
+    const controls = controlsRef.current
+    const renderer = rendererRef.current
+    if (!container || !camera || !renderer) return
+
+    const isFps = props.navMode === 'fps'
+
+    if (!isFps) {
+      // Restore orbit controls
+      if (controls) controls.enabled = true
+      fpsLockedRef.current = false
+      fpsClockRef.current.stop()
+      document.exitPointerLock?.()
+      return
+    }
+
+    // Disable orbit controls in FPS mode
+    if (controls) controls.enabled = false
+
+    // Set camera to eye level
+    const activeFloor = props.floors.find(f => f.id === props.activeFloorId)
+    const yOffset = activeFloor ? getFloorYOffset(props.floors, activeFloor.id) : 0
+    camera.position.set(
+      (activeFloor?.widthM ?? 100) / 2,
+      yOffset + 1.7, // eye height
+      (activeFloor?.heightM ?? 70) / 2
+    )
+    camera.rotation.set(0, 0, 0)
+    fpsEulerRef.current.set(0, 0, 0, 'YXZ')
+
+    const keys = fpsKeysRef.current
+
+    const onKeyDown = (e: KeyboardEvent) => { keys[e.code] = true }
+    const onKeyUp = (e: KeyboardEvent) => { keys[e.code] = false }
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!fpsLockedRef.current) return
+      const euler = fpsEulerRef.current
+      euler.y -= e.movementX * 0.002
+      euler.x -= e.movementY * 0.002
+      euler.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, euler.x))
+      camera.quaternion.setFromEuler(euler)
+    }
+
+    const onPointerLockChange = () => {
+      fpsLockedRef.current = document.pointerLockElement === renderer.domElement
+    }
+
+    const onClick = () => {
+      if (!fpsLockedRef.current) {
+        renderer.domElement.requestPointerLock()
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    document.addEventListener('keyup', onKeyUp)
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('pointerlockchange', onPointerLockChange)
+    renderer.domElement.addEventListener('click', onClick)
+
+    // FPS movement loop
+    fpsClockRef.current.start()
+    const moveSpeed = 15 // meters per second
+
+    const direction = new THREE.Vector3()
+    const right = new THREE.Vector3()
+    const forward = new THREE.Vector3()
+
+    let fpsRaf = 0
+    const fpsTick = () => {
+      fpsRaf = requestAnimationFrame(fpsTick)
+      if (!fpsLockedRef.current) {
+        renderer.render(sceneRef.current, camera)
+        return
+      }
+
+      const delta = Math.min(fpsClockRef.current.getDelta(), 0.1)
+
+      // Compute movement direction from keys
+      camera.getWorldDirection(forward)
+      forward.y = 0
+      forward.normalize()
+      right.crossVectors(forward, camera.up).normalize()
+
+      direction.set(0, 0, 0)
+      if (keys['KeyW'] || keys['ArrowUp']) direction.add(forward)
+      if (keys['KeyS'] || keys['ArrowDown']) direction.sub(forward)
+      if (keys['KeyD'] || keys['ArrowRight']) direction.add(right)
+      if (keys['KeyA'] || keys['ArrowLeft']) direction.sub(right)
+
+      if (direction.lengthSq() > 0) {
+        direction.normalize()
+        camera.position.addScaledVector(direction, moveSpeed * delta)
+      }
+
+      // Lock Y to eye height
+      camera.position.y = yOffset + 1.7
+
+      renderer.render(sceneRef.current, camera)
+    }
+    fpsRaf = requestAnimationFrame(fpsTick)
+
+    return () => {
+      cancelAnimationFrame(fpsRaf)
+      fpsClockRef.current.stop()
+      document.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('keyup', onKeyUp)
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('pointerlockchange', onPointerLockChange)
+      renderer.domElement.removeEventListener('click', onClick)
+      // Clear all keys
+      for (const key in keys) keys[key] = false
+      fpsLockedRef.current = false
+      document.exitPointerLock?.()
+      // Re-enable orbit controls
+      if (controls) controls.enabled = true
+    }
+  }, [props.navMode, props.floors, props.activeFloorId])
+
   // Click picking
   const handleClick = useCallback((e: React.MouseEvent) => {
     if (!props.onEntityClick || !containerRef.current || !cameraRef.current) return
@@ -574,9 +703,21 @@ export default function FloorPlan3D(props: FloorPlan3DProps) {
   return (
     <div
       ref={containerRef}
-      className="w-full h-full"
-      onClick={handleClick}
-      style={{ cursor: 'grab' }}
-    />
+      className="w-full h-full relative"
+      onClick={props.navMode !== 'fps' ? handleClick : undefined}
+      style={{ cursor: props.navMode === 'fps' ? 'crosshair' : 'grab' }}
+    >
+      {/* FPS mode overlay hint */}
+      {props.navMode === 'fps' && !fpsLockedRef.current && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+          <div className="bg-gray-900/80 border border-gray-600 rounded-xl px-6 py-4 text-center backdrop-blur-sm pointer-events-auto">
+            <p className="text-sm text-white font-medium mb-1">Vue pieton</p>
+            <p className="text-xs text-gray-400">
+              Cliquez pour activer · <span className="font-mono text-emerald-400">WASD</span> pour bouger · <span className="font-mono text-gray-300">Echap</span> pour quitter
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

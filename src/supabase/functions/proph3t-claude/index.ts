@@ -1,9 +1,20 @@
 // supabase/functions/proph3t-claude/index.ts
 // Deno Edge Function — Proph3t Expert Vivant via Claude API
+// Now reads/writes memory from Supabase proph3t_memory table
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-key, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-key, content-type, apikey",
+}
+
+interface MemoryRow {
+  id: string
+  session_id: string
+  event_type: string
+  entity_type: string
+  description: string
+  impact_metric?: string
+  created_at: string
 }
 
 Deno.serve(async (req: Request) => {
@@ -16,7 +27,9 @@ Deno.serve(async (req: Request) => {
     projectData,
     memoryNarrative,
     floorContext,
-    mode
+    mode,
+    projectId,
+    sessionId,
   } = await req.json()
 
   const clientKey = req.headers.get("x-client-key")
@@ -24,10 +37,48 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "Cle Claude invalide" }), { status: 401, headers: CORS })
   }
 
+  // ── Load memory context from Supabase ──────────────────────
+
+  let memoryContext = memoryNarrative ?? ""
+
+  if (projectId) {
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+
+      if (supabaseUrl && supabaseKey) {
+        const res = await fetch(
+          `${supabaseUrl}/rest/v1/proph3t_memory?projet_id=eq.${projectId}&order=created_at.desc&limit=20`,
+          {
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+            },
+          }
+        )
+
+        if (res.ok) {
+          const rows: MemoryRow[] = await res.json()
+          if (rows.length > 0) {
+            const contextLines = rows.reverse().map(
+              (r) => `[${r.event_type}/${r.entity_type}] ${r.description}${r.impact_metric ? ` (${r.impact_metric})` : ""}`
+            )
+            memoryContext = `Historique projet (${rows.length} evenements recents):\n${contextLines.join("\n")}`
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to load memory from Supabase:", err)
+      // Continue with provided memoryNarrative as fallback
+    }
+  }
+
+  // ── System prompts ─────────────────────────────────────────
+
   const systemPrompts: Record<string, string> = {
     vol2: `Tu es Proph3t, l'Expert Vivant en securite des centres commerciaux africains.
 Tu connais ce projet en profondeur. Voici ton historique de ce projet :
-${memoryNarrative}
+${memoryContext}
 
 Etage actuel analyse : ${floorContext?.level} (${floorContext?.widthM}m x ${floorContext?.heightM}m)
 Donnees completes du projet : ${JSON.stringify(projectData)}
@@ -45,7 +96,7 @@ Sois concis (max 4 paragraphes). Reponds en francais.`,
 
     vol3: `Tu es Proph3t, l'Expert Vivant en experience client retail africain.
 Tu connais ce projet en profondeur. Voici ton historique :
-${memoryNarrative}
+${memoryContext}
 
 Etage actuel : ${floorContext?.level}
 Donnees projet : ${JSON.stringify(projectData)}
@@ -64,14 +115,16 @@ Max 4 paragraphes, en francais.`,
 
     simulation: `Tu es Proph3t, analyste de simulations securitaires.
 Resultats de simulation a interpreter : ${JSON.stringify(projectData)}
-Contexte projet : ${memoryNarrative}
+Contexte projet : ${memoryContext}
 Interprete les resultats, identifie les zones de risque, propose des actions correctives prioritaires.
 Cite les normes (NF S 61-938, APSAD R82). Max 3 paragraphes, en francais.`,
   }
 
   const systemPrompt = systemPrompts[mode ?? volume] ?? systemPrompts.vol2
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  // ── Call Claude API ────────────────────────────────────────
+
+  const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -85,9 +138,63 @@ Cite les normes (NF S 61-938, APSAD R82). Max 3 paragraphes, en francais.`,
     })
   })
 
-  const data = await res.json()
+  const data = await claudeRes.json()
+  const answer = data.content?.[0]?.text || "Erreur Claude API."
+
+  // ── Save exchange to memory ────────────────────────────────
+
+  if (projectId && sessionId) {
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+
+      if (supabaseUrl && supabaseKey) {
+        // Save the question
+        await fetch(`${supabaseUrl}/rest/v1/proph3t_memory`, {
+          method: "POST",
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal",
+          },
+          body: JSON.stringify({
+            projet_id: projectId,
+            session_id: sessionId,
+            event_type: "analysis",
+            entity_type: "zone",
+            entity_id: "chat",
+            description: `[Q] ${question.slice(0, 200)}`,
+          }),
+        })
+
+        // Save the answer
+        await fetch(`${supabaseUrl}/rest/v1/proph3t_memory`, {
+          method: "POST",
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal",
+          },
+          body: JSON.stringify({
+            projet_id: projectId,
+            session_id: sessionId,
+            event_type: "analysis",
+            entity_type: "zone",
+            entity_id: "chat",
+            description: `[A] ${answer.slice(0, 200)}`,
+            impact_metric: `claude-enrichment ${mode ?? volume}`,
+          }),
+        })
+      }
+    } catch (err) {
+      console.warn("Failed to save memory:", err)
+    }
+  }
+
   return new Response(
-    JSON.stringify({ answer: data.content?.[0]?.text || "Erreur Claude API." }),
+    JSON.stringify({ answer }),
     { headers: { ...CORS, "Content-Type": "application/json" } }
   )
 })

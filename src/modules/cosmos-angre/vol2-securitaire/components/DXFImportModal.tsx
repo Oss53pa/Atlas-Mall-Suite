@@ -1,26 +1,30 @@
-// ═══ FLOOR PLAN IMPORT MODAL — Upload & Parse DXF / DWG Files ═══
+// ═══ FLOOR PLAN IMPORT MODAL — Upload & Parse DXF / DWG / RVT Files ═══
 
-import { useState, useCallback, useRef } from 'react'
-import { Upload, X, FileText, Loader2, CheckCircle, AlertTriangle, Layers, Info } from 'lucide-react'
+import { useState, useCallback, useRef, useEffect } from 'react'
+import { Upload, X, FileText, Loader2, CheckCircle, AlertTriangle, Layers, Info, Server, Wifi, WifiOff } from 'lucide-react'
 import { useWorker } from '../../shared/hooks/useWorker'
 import { useVol2Store } from '../store/vol2Store'
 import type { Zone } from '../../shared/proph3t/types'
+import {
+  checkConversionServer,
+  convertDwgToDxf,
+  convertRvtToIfc,
+  downloadIfcFromUrl,
+  type ConversionStatus,
+} from '../../../../services/cadConversionService'
 
-type FileFormat = 'dxf' | 'dwg'
-
-const ACCEPTED_EXTENSIONS: Record<FileFormat, string> = {
-  dxf: '.dxf',
-  dwg: '.dwg',
-}
+type FileFormat = 'dxf' | 'dwg' | 'rvt'
 
 const FORMAT_LABELS: Record<FileFormat, string> = {
   dxf: 'DXF',
   dwg: 'DWG',
+  rvt: 'RVT',
 }
 
 const FORMAT_COLORS: Record<FileFormat, string> = {
   dxf: 'bg-blue-600/20 text-blue-300 border-blue-500/40',
   dwg: 'bg-amber-600/20 text-amber-300 border-amber-500/40',
+  rvt: 'bg-red-600/20 text-red-300 border-red-500/40',
 }
 
 interface DxfParserInput {
@@ -45,7 +49,7 @@ interface ParseOutput {
   doorCandidates?: unknown[]
   svgContent: string
   dwgVersion?: string
-  parseMethod?: 'binary' | 'partial'
+  parseMethod?: 'binary' | 'partial' | 'oda' | 'libredwg' | 'aps'
 }
 
 interface DXFImportModalProps {
@@ -57,6 +61,7 @@ function detectFormat(fileName: string): FileFormat | null {
   const lower = fileName.toLowerCase()
   if (lower.endsWith('.dxf')) return 'dxf'
   if (lower.endsWith('.dwg')) return 'dwg'
+  if (lower.endsWith('.rvt')) return 'rvt'
   return null
 }
 
@@ -67,9 +72,14 @@ export default function DXFImportModal({ open, onClose }: DXFImportModalProps) {
   const [fileFormat, setFileFormat] = useState<FileFormat | null>(null)
   const [fileContent, setFileContent] = useState<string | null>(null)
   const [fileBuffer, setFileBuffer] = useState<ArrayBuffer | null>(null)
+  const [rawFile, setRawFile] = useState<File | null>(null)
   const [selectedFloorId, setSelectedFloorId] = useState(s.activeFloorId)
   const [parseResult, setParseResult] = useState<ParseOutput | null>(null)
   const [imported, setImported] = useState(false)
+  const [serverStatus, setServerStatus] = useState<ConversionStatus | null>(null)
+  const [serverConverting, setServerConverting] = useState(false)
+  const [serverProgress, setServerProgress] = useState(0)
+  const [serverError, setServerError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // DXF worker (text-based)
@@ -77,13 +87,24 @@ export default function DXFImportModal({ open, onClose }: DXFImportModalProps) {
     () => new Worker(new URL('../../../../workers/dxfParser.worker.ts', import.meta.url), { type: 'module' })
   )
 
-  // DWG worker (binary)
+  // DWG worker (binary fallback)
   const dwgWorker = useWorker<DwgParserInput, ParseOutput>(
     () => new Worker(new URL('../../../../workers/dwgParser.worker.ts', import.meta.url), { type: 'module' })
   )
 
-  const activeWorker = fileFormat === 'dwg' ? dwgWorker : dxfWorker
-  const { progress, isRunning, error } = activeWorker
+  const isRunning = dxfWorker.isRunning || dwgWorker.isRunning || serverConverting
+  const progress = serverConverting ? serverProgress : (fileFormat === 'dwg' ? dwgWorker.progress : dxfWorker.progress)
+  const error = serverError || dxfWorker.error || dwgWorker.error
+
+  // Check server status on mount
+  useEffect(() => {
+    if (open) {
+      checkConversionServer().then(setServerStatus)
+    }
+  }, [open])
+
+  const dwgServerAvailable = serverStatus?.converters.dwg_to_dxf.available ?? false
+  const rvtServerAvailable = serverStatus?.converters.rvt_to_ifc.available ?? false
 
   const handleFile = useCallback((file: File) => {
     const format = detectFormat(file.name)
@@ -95,20 +116,19 @@ export default function DXFImportModal({ open, onClose }: DXFImportModalProps) {
     setImported(false)
     setFileContent(null)
     setFileBuffer(null)
+    setRawFile(file)
+    setServerError(null)
 
     if (format === 'dxf') {
       const reader = new FileReader()
-      reader.onload = (e) => {
-        setFileContent(e.target?.result as string)
-      }
+      reader.onload = (e) => setFileContent(e.target?.result as string)
       reader.readAsText(file)
-    } else {
+    } else if (format === 'dwg') {
       const reader = new FileReader()
-      reader.onload = (e) => {
-        setFileBuffer(e.target?.result as ArrayBuffer)
-      }
+      reader.onload = (e) => setFileBuffer(e.target?.result as ArrayBuffer)
       reader.readAsArrayBuffer(file)
     }
+    // RVT: we keep rawFile and send it to the server directly
   }, [])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -122,32 +142,108 @@ export default function DXFImportModal({ open, onClose }: DXFImportModalProps) {
     const floor = s.floors.find(f => f.id === selectedFloorId)
     if (!floor) return
 
-    try {
-      let result: ParseOutput
+    setServerError(null)
 
-      if (fileFormat === 'dwg' && fileBuffer) {
-        result = await dwgWorker.run({
-          fileBuffer,
-          floorId: selectedFloorId,
-          widthM: floor.widthM,
-          heightM: floor.heightM,
-        })
-      } else if (fileFormat === 'dxf' && fileContent) {
-        result = await dxfWorker.run({
+    try {
+      // ── RVT: server conversion RVT → IFC → load via IFC loader ──
+      if (fileFormat === 'rvt' && rawFile) {
+        if (!rvtServerAvailable) {
+          setServerError(
+            'Conversion RVT non disponible. Configurez Autodesk APS (APS_CLIENT_ID + APS_CLIENT_SECRET) ' +
+            'sur le serveur, ou exportez le fichier en .ifc depuis Revit.'
+          )
+          return
+        }
+        setServerConverting(true)
+        setServerProgress(5)
+
+        try {
+          const rvtResult = await convertRvtToIfc(rawFile, (p) => setServerProgress(p))
+
+          // Download the IFC and load it as 3D model
+          setServerProgress(92)
+          const ifcFile = await downloadIfcFromUrl(rvtResult.ifcUrl)
+
+          // Load via IFC loader
+          const { loadIFC } = await import('../../../../loaders/ifc-loader')
+          const ifcResult = await loadIFC(ifcFile)
+
+          s.setImported3DModel(ifcResult.scene, 'rvt→ifc', selectedFloorId)
+
+          setParseResult({
+            entities: [],
+            layers: [`RVT (${rvtResult.fileName})`],
+            bounds: { minX: 0, minY: 0, maxX: 1, maxY: 1 },
+            zones: [],
+            svgContent: '',
+            parseMethod: 'aps',
+            dwgVersion: `Revit → IFC (${ifcResult.meshCount} meshes, ${ifcResult.ifcSpaces.length} espaces)`,
+          })
+        } finally {
+          setServerConverting(false)
+        }
+        return
+      }
+
+      // ── DWG: try server conversion first, fallback to local binary parsing ──
+      if (fileFormat === 'dwg' && rawFile) {
+        if (dwgServerAvailable) {
+          // Server-side ODA conversion
+          setServerConverting(true)
+          setServerProgress(5)
+
+          try {
+            const dwgResult = await convertDwgToDxf(rawFile, (p) => setServerProgress(p))
+
+            // Parse the converted DXF using the existing DXF worker
+            setServerConverting(false)
+            const result = await dxfWorker.run({
+              fileContent: dwgResult.dxfContent,
+              floorId: selectedFloorId,
+              widthM: floor.widthM,
+              heightM: floor.heightM,
+            })
+
+            setParseResult({
+              ...result,
+              parseMethod: 'oda',
+              dwgVersion: `${dwgResult.version} (conversion serveur ODA)`,
+            })
+            return
+          } catch (err) {
+            // Server conversion failed, fall through to local parsing
+            setServerConverting(false)
+            console.warn('Server DWG conversion failed, falling back to local parsing:', err)
+          }
+        }
+
+        // Local binary parsing fallback
+        if (fileBuffer) {
+          const result = await dwgWorker.run({
+            fileBuffer,
+            floorId: selectedFloorId,
+            widthM: floor.widthM,
+            heightM: floor.heightM,
+          })
+          setParseResult(result)
+          return
+        }
+      }
+
+      // ── DXF: local parsing ──
+      if (fileFormat === 'dxf' && fileContent) {
+        const result = await dxfWorker.run({
           fileContent,
           floorId: selectedFloorId,
           widthM: floor.widthM,
           heightM: floor.heightM,
         })
-      } else {
-        return
+        setParseResult(result)
       }
-
-      setParseResult(result)
     } catch {
-      // error is tracked by useWorker
+      // errors tracked by workers / serverError
     }
-  }, [fileFormat, fileContent, fileBuffer, selectedFloorId, s.floors, dxfWorker, dwgWorker])
+  }, [fileFormat, fileContent, fileBuffer, rawFile, selectedFloorId, s, dxfWorker, dwgWorker, dwgServerAvailable, rvtServerAvailable])
 
   const handleImport = useCallback(() => {
     if (!parseResult) return
@@ -175,11 +271,15 @@ export default function DXFImportModal({ open, onClose }: DXFImportModalProps) {
     setFileFormat(null)
     setFileContent(null)
     setFileBuffer(null)
+    setRawFile(null)
     setParseResult(null)
     setImported(false)
+    setServerError(null)
+    setServerConverting(false)
+    setServerProgress(0)
   }
 
-  const hasFileData = fileFormat === 'dwg' ? !!fileBuffer : !!fileContent
+  const hasFileData = fileFormat === 'rvt' ? !!rawFile : fileFormat === 'dwg' ? (!!fileBuffer || !!rawFile) : !!fileContent
 
   if (!open) return null
 
@@ -193,13 +293,30 @@ export default function DXFImportModal({ open, onClose }: DXFImportModalProps) {
               <Upload className="w-4 h-4 text-blue-400" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white">Import Plan AutoCAD</h2>
-              <p className="text-[10px] text-gray-500">Importer un plan depuis un fichier .dxf ou .dwg</p>
+              <h2 className="text-sm font-bold text-white">Import Plan AutoCAD / Revit</h2>
+              <p className="text-[10px] text-gray-500">Importer depuis un fichier .dxf, .dwg ou .rvt</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-300">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Server status indicator */}
+            {serverStatus && (
+              <div className="flex items-center gap-1 text-[9px]" title="Statut serveur de conversion">
+                {serverStatus.converters.dwg_to_dxf.available || serverStatus.converters.rvt_to_ifc.available
+                  ? <Wifi className="w-3 h-3 text-emerald-400" />
+                  : <WifiOff className="w-3 h-3 text-gray-600" />
+                }
+                <span className={serverStatus.converters.dwg_to_dxf.available ? 'text-emerald-400' : 'text-gray-600'}>
+                  {serverStatus.converters.dwg_to_dxf.available ? 'ODA' : ''}
+                </span>
+                {serverStatus.converters.rvt_to_ifc.available && (
+                  <span className="text-red-400">APS</span>
+                )}
+              </div>
+            )}
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-300">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Body */}
@@ -242,19 +359,20 @@ export default function DXFImportModal({ open, onClose }: DXFImportModalProps) {
             >
               <Upload className={`w-10 h-10 mx-auto mb-3 ${dragOver ? 'text-blue-400' : 'text-gray-600'}`} />
               <p className="text-sm text-gray-300 mb-1">
-                Glissez votre fichier .dxf ou .dwg ici
+                Glissez votre fichier ici
               </p>
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-gray-600 mb-3">
                 ou cliquez pour parcourir
               </p>
-              <div className="flex items-center justify-center gap-3 mt-3">
+              <div className="flex items-center justify-center gap-3">
                 <span className="text-[10px] px-2 py-0.5 rounded border bg-blue-600/10 text-blue-400 border-blue-500/30">DXF</span>
                 <span className="text-[10px] px-2 py-0.5 rounded border bg-amber-600/10 text-amber-400 border-amber-500/30">DWG</span>
+                <span className="text-[10px] px-2 py-0.5 rounded border bg-red-600/10 text-red-400 border-red-500/30">RVT</span>
               </div>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".dxf,.dwg"
+                accept=".dxf,.dwg,.rvt"
                 className="hidden"
                 onChange={e => {
                   const file = e.target.files?.[0]
@@ -287,24 +405,72 @@ export default function DXFImportModal({ open, onClose }: DXFImportModalProps) {
 
           {/* DWG info banner */}
           {fileFormat === 'dwg' && !parseResult && !isRunning && hasFileData && (
-            <div className="bg-amber-900/20 border border-amber-700/40 rounded-lg p-3 flex items-start gap-2">
-              <Info className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-amber-300">Parsing binaire DWG</p>
-                <p className="text-[10px] text-amber-400/70 mt-0.5">
-                  Le format DWG est proprietaire. L'extraction sera partielle (calques et coordonnees).
-                  Pour de meilleurs resultats, exportez en .dxf depuis AutoCAD.
-                </p>
-              </div>
+            <div className={`${dwgServerAvailable ? 'bg-emerald-900/20 border-emerald-700/40' : 'bg-amber-900/20 border-amber-700/40'} border rounded-lg p-3 flex items-start gap-2`}>
+              {dwgServerAvailable ? (
+                <>
+                  <Server className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs text-emerald-300">Conversion serveur ODA disponible</p>
+                    <p className="text-[10px] text-emerald-400/70 mt-0.5">
+                      Le fichier DWG sera converti en DXF via {serverStatus?.converters.dwg_to_dxf.method} pour une extraction complete des calques, blocs et entites.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Info className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs text-amber-300">Parsing binaire local (partiel)</p>
+                    <p className="text-[10px] text-amber-400/70 mt-0.5">
+                      Le serveur ODA n'est pas disponible. L'extraction sera partielle.
+                      Pour de meilleurs resultats, configurez ODA File Converter ou exportez en .dxf depuis AutoCAD.
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
-          {/* Parsing progress */}
+          {/* RVT info banner */}
+          {fileFormat === 'rvt' && !parseResult && !isRunning && hasFileData && (
+            <div className={`${rvtServerAvailable ? 'bg-emerald-900/20 border-emerald-700/40' : 'bg-red-900/20 border-red-700/40'} border rounded-lg p-3 flex items-start gap-2`}>
+              {rvtServerAvailable ? (
+                <>
+                  <Server className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs text-emerald-300">Conversion Autodesk APS disponible</p>
+                    <p className="text-[10px] text-emerald-400/70 mt-0.5">
+                      Le fichier Revit sera converti en IFC via Autodesk Platform Services.
+                      La conversion peut prendre 2-5 minutes pour les fichiers volumineux.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs text-red-300">Conversion RVT non disponible</p>
+                    <p className="text-[10px] text-red-400/70 mt-0.5">
+                      Configurez Autodesk APS (APS_CLIENT_ID + APS_CLIENT_SECRET) sur le serveur.
+                      Alternative : exportez le fichier en .ifc depuis Revit et utilisez l'import IFC/3D.
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Parsing/conversion progress */}
           {isRunning && (
             <div className="bg-gray-800 rounded-lg p-4 space-y-3">
               <div className="flex items-center gap-2 text-sm text-blue-300">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Analyse du fichier {fileFormat === 'dwg' ? 'DWG' : 'DXF'}...
+                {serverConverting
+                  ? fileFormat === 'rvt'
+                    ? 'Conversion Revit → IFC via Autodesk APS...'
+                    : 'Conversion DWG → DXF via ODA...'
+                  : `Analyse du fichier ${FORMAT_LABELS[fileFormat!]}...`
+                }
               </div>
               <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
                 <div
@@ -313,7 +479,12 @@ export default function DXFImportModal({ open, onClose }: DXFImportModalProps) {
                 />
               </div>
               <p className="text-[10px] text-gray-500">
-                {progress}% — {fileFormat === 'dwg' ? 'Extraction binaire des calques et coordonnees' : 'Extraction des calques et entites'}
+                {progress}% — {serverConverting
+                  ? fileFormat === 'rvt'
+                    ? 'Upload et traduction du modele Revit (2-5 min)'
+                    : 'Conversion serveur en cours'
+                  : 'Extraction des calques et entites'
+                }
               </p>
             </div>
           )}
@@ -323,7 +494,7 @@ export default function DXFImportModal({ open, onClose }: DXFImportModalProps) {
             <div className="bg-red-900/20 border border-red-700/40 rounded-lg p-4 flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
               <div>
-                <p className="text-sm text-red-300">Erreur de parsing</p>
+                <p className="text-sm text-red-300">Erreur</p>
                 <p className="text-xs text-red-400/70 mt-1">{error}</p>
               </div>
             </div>
@@ -342,45 +513,48 @@ export default function DXFImportModal({ open, onClose }: DXFImportModalProps) {
                         {FORMAT_LABELS[fileFormat]}
                       </span>
                     )}
+                    {(parseResult.parseMethod === 'oda' || parseResult.parseMethod === 'aps') && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded border bg-emerald-600/20 text-emerald-300 border-emerald-500/40">
+                        {parseResult.parseMethod === 'oda' ? 'ODA' : 'Autodesk APS'}
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-green-400/70 mt-1">
-                    {parseResult.entities.length} entites &middot; {parseResult.layers.length} calques &middot; {parseResult.zones.length} zones detectees
-                    {parseResult.dwgVersion && (
-                      <> &middot; Version: {parseResult.dwgVersion}</>
-                    )}
-                    {parseResult.parseMethod && (
-                      <> &middot; Methode: {parseResult.parseMethod}</>
-                    )}
+                    {parseResult.entities.length > 0 && <>{parseResult.entities.length} entites &middot; </>}
+                    {parseResult.layers.length} calques
+                    {parseResult.zones.length > 0 && <> &middot; {parseResult.zones.length} zones detectees</>}
+                    {parseResult.dwgVersion && <> &middot; {parseResult.dwgVersion}</>}
                   </p>
                 </div>
               </div>
 
-              {/* DWG partial parse warning */}
               {parseResult.parseMethod === 'partial' && (
                 <div className="bg-amber-900/20 border border-amber-700/40 rounded-lg p-3 flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
                   <p className="text-xs text-amber-300">
                     Parsing partiel : les calques n'ont pas pu etre identifies avec certitude.
-                    Pour de meilleurs resultats, exportez ce fichier en .dxf depuis AutoCAD.
+                    Configurez ODA File Converter sur le serveur ou exportez en .dxf depuis AutoCAD.
                   </p>
                 </div>
               )}
 
-              {/* Layers found */}
-              <div>
-                <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
-                  <Layers className="w-3 h-3" /> Calques detectes
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {parseResult.layers.map(layer => (
-                    <span key={layer} className="text-[10px] px-2 py-1 rounded bg-gray-800 border border-gray-700 text-gray-300">
-                      {layer}
-                    </span>
-                  ))}
+              {/* Layers */}
+              {parseResult.layers.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                    <Layers className="w-3 h-3" /> Calques detectes
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {parseResult.layers.map(layer => (
+                      <span key={layer} className="text-[10px] px-2 py-1 rounded bg-gray-800 border border-gray-700 text-gray-300">
+                        {layer}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Zones preview */}
+              {/* Zones */}
               {parseResult.zones.length > 0 && (
                 <div>
                   <p className="text-xs text-gray-400 mb-2">Zones a importer ({parseResult.zones.length})</p>
@@ -408,6 +582,17 @@ export default function DXFImportModal({ open, onClose }: DXFImportModalProps) {
                   />
                 </div>
               )}
+
+              {/* RVT: no zones to import, it's a 3D model */}
+              {fileFormat === 'rvt' && parseResult.parseMethod === 'aps' && (
+                <div className="bg-blue-900/20 border border-blue-700/40 rounded-lg p-3 flex items-start gap-2">
+                  <Info className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
+                  <p className="text-xs text-blue-300">
+                    Le modele Revit a ete converti en IFC et charge dans la vue 3D.
+                    Basculez en vue 3D pour visualiser la maquette.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -417,7 +602,7 @@ export default function DXFImportModal({ open, onClose }: DXFImportModalProps) {
               <CheckCircle className="w-10 h-10 text-green-400 mx-auto mb-3" />
               <p className="text-sm text-green-300 font-medium">Import termine !</p>
               <p className="text-xs text-green-400/70 mt-1">
-                {parseResult?.zones.length} zones ajoutees a l'etage {s.floors.find(f => f.id === selectedFloorId)?.level}
+                {parseResult?.zones.length ?? 0} zones ajoutees a l'etage {s.floors.find(f => f.id === selectedFloorId)?.level}
               </p>
             </div>
           )}
@@ -435,18 +620,26 @@ export default function DXFImportModal({ open, onClose }: DXFImportModalProps) {
             {fileName && hasFileData && !parseResult && !isRunning && (
               <button
                 onClick={handleParse}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-medium transition-colors"
+                disabled={fileFormat === 'rvt' && !rvtServerAvailable}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 rounded-lg text-xs font-medium transition-colors"
               >
-                Analyser le fichier
+                {fileFormat === 'rvt' ? 'Convertir et charger' : 'Analyser le fichier'}
               </button>
             )}
-            {parseResult && !imported && (
+            {parseResult && !imported && parseResult.zones.length > 0 && (
               <button
                 onClick={handleImport}
-                disabled={parseResult.zones.length === 0}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-40 rounded-lg text-xs font-medium transition-colors"
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-xs font-medium transition-colors"
               >
                 Importer {parseResult.zones.length} zones
+              </button>
+            )}
+            {parseResult && !imported && parseResult.zones.length === 0 && fileFormat === 'rvt' && (
+              <button
+                onClick={() => { setImported(true) }}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-xs font-medium transition-colors"
+              >
+                Confirmer
               </button>
             )}
             {imported && (
