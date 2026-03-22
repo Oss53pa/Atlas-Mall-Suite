@@ -1,10 +1,13 @@
 import React, { useMemo } from 'react'
 import type { Floor, Zone } from '../proph3t/types'
 
+export const CANVAS_SCALE = 4
+
 interface FloorPlanCanvasProps {
   floor: Floor
   zones: Zone[]
   showHeatmap?: boolean
+  heatmapContent?: React.ReactNode
   onEntityClick?: (id: string, type: 'camera' | 'door' | 'zone' | 'transition') => void
   selectedId?: string | null
   children?: React.ReactNode
@@ -14,10 +17,11 @@ interface FloorPlanCanvasProps {
 const SCALE = 4
 
 export default function FloorPlanCanvas({
-  floor, zones, showHeatmap, onEntityClick, selectedId, children, className = ''
+  floor, zones, showHeatmap, heatmapContent, onEntityClick, selectedId, children, className = ''
 }: FloorPlanCanvasProps) {
   const floorZones = useMemo(() => zones.filter(z => z.floorId === floor.id), [zones, floor.id])
 
+  const SCALE = CANVAS_SCALE
   const width = floor.widthM * SCALE
   const height = floor.heightM * SCALE
 
@@ -108,6 +112,9 @@ export default function FloorPlanCanvas({
             </g>
           )
         })}
+
+        {/* Heatmap overlay (rendered between zones and other overlays) */}
+        {showHeatmap && heatmapContent}
 
         {/* Overlays (cameras, blind spots, transitions) rendered by parent */}
         {children}

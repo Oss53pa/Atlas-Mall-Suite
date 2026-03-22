@@ -1,6 +1,6 @@
 // ═══ VOL.3 PARCOURS CLIENT — Main Module ═══
 
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -18,14 +18,29 @@ import {
   Lightbulb,
   Crown,
   X,
+  Loader2,
+  Bell,
+  PlayCircle,
 } from 'lucide-react'
 import { useVol3Store } from './store/vol3Store'
-import FloorPlanCanvas from '../shared/components/FloorPlanCanvas'
+import FloorPlanCanvas, { CANVAS_SCALE } from '../shared/components/FloorPlanCanvas'
 import Proph3tChat from '../shared/components/Proph3tChat'
 import EntityPanel from '../shared/components/EntityPanel'
 import ToolbarButton from '../shared/components/ToolbarButton'
 import ScoreGauge from '../shared/components/ScoreGauge'
+import HeatmapOverlay, { type ZoneHeatData } from './components/HeatmapOverlay'
+import GeoNotificationPanel, { type GeoNotification } from './components/GeoNotificationPanel'
+import VisitReplay, { type VisitPath } from './components/VisitReplay'
 import type { ChatMessage, MomentCle, POI, SignageItem } from '../shared/proph3t/types'
+
+const ParcoursSectionLazy = lazy(() => import('./sections/ParcoursSection'))
+const WayfindingSectionLazy = lazy(() => import('./sections/WayfindingSection'))
+const SignaleticsSectionLazy = lazy(() => import('./sections/SignaleticsSection'))
+const HeatmapSectionLazy = lazy(() => import('./sections/HeatmapSection'))
+const RapportSectionLazy = lazy(() => import('./sections/RapportSection'))
+const ChatSectionLazy = lazy(() => import('./sections/ChatSection'))
+
+type Vol3Tab = 'plan' | 'parcours' | 'wayfinding' | 'signaletique' | 'heatmap' | 'rapport' | 'chat'
 
 // ─── Helpers ──────────────────────────────────────────────────
 
@@ -165,6 +180,31 @@ export default function Vol3Module() {
   } = store
 
   const [chatInput, setChatInput] = useState('')
+  const [activeTab, setActiveTab] = useState<Vol3Tab>('plan')
+  const [heatmapHour, setHeatmapHour] = useState(14) // default 2pm
+  const [showReplay, setShowReplay] = useState(false)
+  const [showNotifPanel, setShowNotifPanel] = useState(false)
+  const [geoNotifications, setGeoNotifications] = useState<GeoNotification[]>([
+    {
+      id: 'gn-1',
+      zoneId: 'zone-rdc-commerce-01',
+      zoneName: 'Galerie Marchande',
+      triggerRadius: 15,
+      message: 'Bienvenue ! -15% sur votre prochain achat avec Cosmos Club',
+      type: 'cosmos_club',
+      cosmosClubPoints: 50,
+      active: true,
+    },
+    {
+      id: 'gn-2',
+      zoneId: 'zone-rdc-restau-01',
+      zoneName: 'Food Court',
+      triggerRadius: 10,
+      message: 'Decouvrez notre menu du jour a la carte !',
+      type: 'promo',
+      active: true,
+    },
+  ])
 
   // ── Derived data ──────────────────────────────────────────
 
@@ -227,6 +267,86 @@ export default function Vol3Module() {
     const withSignage = moments.filter((m) => m.signageItems.length > 0).length
     return { total: moments.length, addressed: withSignage }
   }, [moments])
+
+  // ── Heatmap zone data ─────────────────────────────────────
+
+  const heatZoneData = useMemo<ZoneHeatData[]>(() => {
+    if (!showHeatmap) return []
+    const baseScores: Record<string, number> = {
+      commerce: 0.65, restauration: 0.75, circulation: 0.50, parking: 0.30,
+      loisirs: 0.70, services: 0.45, sortie_secours: 0.10, technique: 0.05,
+      backoffice: 0.08, financier: 0.15, hotel: 0.40, bureaux: 0.25, exterieur: 0.35,
+    }
+    const peakHours: Record<string, number> = {
+      commerce: 15, restauration: 12, circulation: 14, parking: 10,
+      loisirs: 16, services: 11, sortie_secours: 18, technique: 9,
+      backoffice: 10, financier: 10, hotel: 20, bureaux: 9, exterieur: 17,
+    }
+    return floorZones.map(z => ({
+      zoneId: z.id,
+      x: z.x,
+      y: z.y,
+      w: z.w,
+      h: z.h,
+      label: z.label,
+      dwellTime: Math.round((baseScores[z.type] ?? 0.3) * 600 + Math.random() * 120),
+      visitFrequency: Math.round((baseScores[z.type] ?? 0.3) * 80 + Math.random() * 20),
+      peakHour: peakHours[z.type] ?? 14,
+      congestionScore: Math.min(1, (baseScores[z.type] ?? 0.3) + (Math.random() - 0.5) * 0.15),
+    }))
+  }, [floorZones, showHeatmap])
+
+  // ── Visit replay mock data ────────────────────────────────
+
+  const replayPaths = useMemo<VisitPath[]>(() => {
+    if (!showReplay || floorZones.length < 3) return []
+    const shuffled = [...floorZones].sort(() => Math.random() - 0.5)
+    const makeSteps = (zones: typeof floorZones) => {
+      let t = 0
+      return zones.map(z => {
+        const dur = 60 + Math.random() * 240
+        const step = {
+          zoneId: z.id, zoneName: z.label, zoneColor: z.color,
+          x: z.x + z.w / 2, y: z.y + z.h / 2,
+          enteredAt: t, exitedAt: t + dur,
+        }
+        t += dur + 15 // 15s transit
+        return { step, endTime: t }
+      })
+    }
+    const familySteps = makeSteps(shuffled.slice(0, Math.min(6, shuffled.length)))
+    const vipSteps = makeSteps([...floorZones].sort(() => Math.random() - 0.5).slice(0, Math.min(4, floorZones.length)))
+    return [
+      {
+        id: 'replay-famille',
+        profileName: 'Famille',
+        profileColor: '#34D399',
+        steps: familySteps.map(s => s.step),
+        totalDuration: familySteps[familySteps.length - 1]?.endTime ?? 300,
+      },
+      {
+        id: 'replay-vip',
+        profileName: 'VIP',
+        profileColor: '#A855F7',
+        steps: vipSteps.map(s => s.step),
+        totalDuration: vipSteps[vipSteps.length - 1]?.endTime ?? 300,
+      },
+    ]
+  }, [showReplay, floorZones])
+
+  // ── Geo-notification handlers ─────────────────────────────
+
+  const handleAddNotification = useCallback((notif: Omit<GeoNotification, 'id'>) => {
+    setGeoNotifications(prev => [...prev, { ...notif, id: `gn-${Date.now()}` }])
+  }, [])
+
+  const handleToggleNotification = useCallback((id: string) => {
+    setGeoNotifications(prev => prev.map(n => n.id === id ? { ...n, active: !n.active } : n))
+  }, [])
+
+  const handleDeleteNotification = useCallback((id: string) => {
+    setGeoNotifications(prev => prev.filter(n => n.id !== id))
+  }, [])
 
   // ── Handlers ──────────────────────────────────────────────
 
@@ -343,11 +463,48 @@ export default function Vol3Module() {
           <span className="px-2 py-1 rounded bg-purple-900/40 text-purple-400 text-[10px] font-mono border border-purple-700/30">
             Proph3t
           </span>
+
+          {/* Section tabs */}
+          <div className="flex items-center gap-0.5 ml-2 bg-gray-800/60 rounded-lg p-0.5">
+            {([
+              ['plan', 'Plan'],
+              ['parcours', 'Parcours'],
+              ['wayfinding', 'Wayfinding'],
+              ['signaletique', 'Signal.'],
+              ['heatmap', 'Heatmap'],
+              ['rapport', 'Rapport'],
+              ['chat', 'Proph3t IA'],
+            ] as [Vol3Tab, string][]).map(([tab, label]) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-2 py-1 rounded text-[10px] font-medium transition-colors ${
+                  activeTab === tab
+                    ? 'bg-emerald-600/20 text-emerald-400'
+                    : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
       {/* ═══ Main Area ═══ */}
       <div className="flex flex-1 overflow-hidden">
+        {activeTab !== 'plan' ? (
+          <main className="flex-1 min-w-0 bg-gray-950">
+            <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="w-5 h-5 animate-spin text-gray-500" /></div>}>
+              {activeTab === 'parcours' && <ParcoursSectionLazy />}
+              {activeTab === 'wayfinding' && <WayfindingSectionLazy />}
+              {activeTab === 'signaletique' && <SignaleticsSectionLazy />}
+              {activeTab === 'heatmap' && <HeatmapSectionLazy />}
+              {activeTab === 'rapport' && <RapportSectionLazy />}
+              {activeTab === 'chat' && <ChatSectionLazy />}
+            </Suspense>
+          </main>
+        ) : (<>
         {/* ── Left Sidebar: Toggle Buttons ── */}
         <aside className="w-12 border-r border-gray-800 bg-gray-950 flex flex-col items-center py-3 gap-2 shrink-0">
           <ToolbarButton
@@ -386,6 +543,23 @@ export default function Vol3Module() {
             activeColor="text-cyan-400"
           />
 
+          <div className="w-8 border-t border-gray-800 my-1" />
+
+          <ToolbarButton
+            icon={PlayCircle}
+            label="Replay"
+            active={showReplay}
+            onClick={() => setShowReplay(!showReplay)}
+            activeColor="text-emerald-400"
+          />
+          <ToolbarButton
+            icon={Bell}
+            label="Notifs"
+            active={showNotifPanel}
+            onClick={() => setShowNotifPanel(!showNotifPanel)}
+            activeColor="text-amber-400"
+          />
+
           <div className="flex-1" />
 
           <ToolbarButton
@@ -402,8 +576,17 @@ export default function Vol3Module() {
           <FloorPlanCanvas
             floor={activeFloor}
             zones={floorZones}
-            widthM={activeFloor.widthM}
-            heightM={activeFloor.heightM}
+            showHeatmap={showHeatmap}
+            heatmapContent={
+              showHeatmap && heatZoneData.length > 0 ? (
+                <HeatmapOverlay
+                  data={heatZoneData}
+                  scale={CANVAS_SCALE}
+                  hour={heatmapHour}
+                  onZoneClick={(id) => handleSelectEntity(id, 'zone' as any)}
+                />
+              ) : undefined
+            }
           >
             {/* Zones are rendered by FloorPlanCanvas; we add overlays here */}
 
@@ -564,7 +747,38 @@ export default function Vol3Module() {
                 />
               </g>
             )}
+
+            {/* Visit Replay overlay */}
+            {showReplay && replayPaths.length > 0 && (
+              <VisitReplay
+                paths={replayPaths}
+                scale={CANVAS_SCALE}
+              />
+            )}
           </FloorPlanCanvas>
+
+          {/* Heatmap hour slider overlay */}
+          {showHeatmap && (
+            <div className="absolute bottom-4 left-4 bg-gray-900/90 border border-gray-700 rounded-xl px-4 py-3 backdrop-blur-sm w-56">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] text-gray-400">Heure</span>
+                <span className="text-xs font-mono text-orange-300">{heatmapHour}h00</span>
+              </div>
+              <input
+                type="range"
+                min={6}
+                max={22}
+                value={heatmapHour}
+                onChange={e => setHeatmapHour(Number(e.target.value))}
+                className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
+              />
+              <div className="flex justify-between text-[9px] text-gray-600 mt-1">
+                <span>6h</span>
+                <span>14h</span>
+                <span>22h</span>
+              </div>
+            </div>
+          )}
 
           {/* Active profile info overlay */}
           {activeProfile && (
@@ -662,6 +876,7 @@ export default function Vol3Module() {
             </div>
           )}
         </aside>
+        </>)}
       </div>
 
       {/* ═══ Bottom Bar ═══ */}

@@ -6,6 +6,15 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { Camera, Zone, Door, BlindSpot, TransitionNode, Floor } from '../../shared/proph3t/types'
 import { getImported3DModels, subscribeImported3DModels } from '../store/imported3DModel'
 
+export type ClippingAxis = 'x' | 'y' | 'z'
+
+export interface ClippingConfig {
+  enabled: boolean
+  axis: ClippingAxis
+  position: number // 0.0 → 1.0 relative to building bounds
+  showHelper: boolean
+}
+
 interface FloorPlan3DProps {
   floors: Floor[]
   activeFloorId: string
@@ -20,6 +29,7 @@ interface FloorPlan3DProps {
   selectedEntityId: string | null
   onEntityClick?: (id: string, type: 'camera' | 'door' | 'zone' | 'transition') => void
   showAllFloors?: boolean
+  clipping?: ClippingConfig
 }
 
 // ─── Materials ───────────────────────────────────────────────
@@ -375,6 +385,8 @@ export default function FloorPlan3D(props: FloorPlan3DProps) {
   const controlsRef = useRef<OrbitControls | null>(null)
   const entityMapRef = useRef(new Map<THREE.Object3D, { id: string; type: 'camera' | 'door' | 'zone' | 'transition' }>())
   const rafRef = useRef(0)
+  const clippingPlaneRef = useRef(new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0))
+  const clipHelperRef = useRef<THREE.PlaneHelper | null>(null)
 
   // Subscribe to imported 3D models
   const imported3DModels = useSyncExternalStore(subscribeImported3DModels, getImported3DModels)
@@ -394,6 +406,7 @@ export default function FloorPlan3D(props: FloorPlan3DProps) {
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
     renderer.setClearColor(0x0a0a0f, 1)
+    renderer.localClippingEnabled = true
     container.appendChild(renderer.domElement)
     rendererRef.current = renderer
 
@@ -447,12 +460,93 @@ export default function FloorPlan3D(props: FloorPlan3DProps) {
 
   // Rebuild scene on data change
   useEffect(() => {
-    buildScene(sceneRef.current, props, entityMapRef.current)
+    buildScene(sceneRef.current, props, entityMapRef.current, imported3DModels)
   }, [
     props.floors, props.activeFloorId, props.zones, props.cameras,
     props.doors, props.blindSpots, props.transitions,
     props.showFov, props.showBlindSpots, props.showTransitions,
-    props.selectedEntityId, props.showAllFloors,
+    props.selectedEntityId, props.showAllFloors, imported3DModels,
+  ])
+
+  // Clipping plane management
+  useEffect(() => {
+    const renderer = rendererRef.current
+    const scene = sceneRef.current
+    if (!renderer) return
+
+    // Remove old helper if present
+    if (clipHelperRef.current) {
+      scene.remove(clipHelperRef.current)
+      clipHelperRef.current = null
+    }
+
+    if (!props.clipping?.enabled) {
+      // Disable clipping
+      renderer.clippingPlanes = []
+      return
+    }
+
+    const { axis, position } = props.clipping
+
+    // Compute building bounds from floors
+    const floorsToRender = props.showAllFloors
+      ? props.floors
+      : props.floors.filter(f => f.id === props.activeFloorId)
+
+    let minX = 0, maxX = 0, minY = -1, maxY = 0, minZ = 0, maxZ = 0
+    for (const floor of floorsToRender) {
+      const yOff = getFloorYOffset(props.floors, floor.id)
+      maxX = Math.max(maxX, floor.widthM)
+      maxZ = Math.max(maxZ, floor.heightM)
+      maxY = Math.max(maxY, yOff + WALL_HEIGHT + 2)
+      minY = Math.min(minY, yOff - FLOOR_THICKNESS)
+    }
+
+    // Set clipping plane normal and constant based on axis
+    const plane = clippingPlaneRef.current
+    const range = { x: maxX - minX, y: maxY - minY, z: maxZ - minZ }
+    const absPos = { x: minX, y: minY, z: minZ }
+
+    switch (axis) {
+      case 'x':
+        plane.normal.set(-1, 0, 0)
+        plane.constant = absPos.x + position * range.x
+        break
+      case 'y':
+        plane.normal.set(0, -1, 0)
+        plane.constant = absPos.y + position * range.y
+        break
+      case 'z':
+        plane.normal.set(0, 0, -1)
+        plane.constant = absPos.z + position * range.z
+        break
+    }
+
+    renderer.clippingPlanes = [plane]
+
+    // Apply clipping to all materials in scene
+    scene.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+        for (const mat of mats) {
+          mat.clippingPlanes = [plane]
+          mat.clipShadows = true
+        }
+      }
+    })
+
+    // Add visual helper for the clipping plane
+    if (props.clipping.showHelper) {
+      const helperSize = Math.max(range.x, range.y, range.z) * 1.2
+      const helper = new THREE.PlaneHelper(plane, helperSize, 0xa855f7)
+      scene.add(helper)
+      clipHelperRef.current = helper
+    }
+  }, [
+    props.clipping?.enabled, props.clipping?.axis,
+    props.clipping?.position, props.clipping?.showHelper,
+    props.floors, props.activeFloorId, props.showAllFloors,
   ])
 
   // Click picking
