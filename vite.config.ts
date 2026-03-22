@@ -8,11 +8,21 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
-  },
-  optimizeDeps: {
-    exclude: ['lucide-react'],
+    dedupe: ['react', 'react-dom'],
   },
   worker: {
     format: 'es',
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          three: ['three'],
+          supabase: ['@supabase/supabase-js'],
+          docx: ['docx'],
+          jspdf: ['jspdf'],
+        },
+      },
+    },
   },
 });
