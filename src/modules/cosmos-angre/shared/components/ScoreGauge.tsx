@@ -15,21 +15,30 @@ export default function ScoreGauge({ value, max = 100, label, color = '#818cf8',
   const dash = circumference * pct
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#1f2937" strokeWidth={6} />
-        <circle
-          cx={size / 2} cy={size / 2} r={r}
-          fill="none" stroke={color} strokeWidth={6}
-          strokeDasharray={`${dash} ${circumference}`}
-          strokeLinecap="round"
-          className="transition-all duration-500"
-        />
-      </svg>
-      <div className="absolute flex flex-col items-center justify-center" style={{ width: size, height: size }}>
-        <span className="text-lg font-bold text-white">{Math.round(value)}</span>
+    <div className="relative flex flex-col items-center gap-1.5">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="-rotate-90">
+          {/* Background track */}
+          <circle
+            cx={size / 2} cy={size / 2} r={r}
+            fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={5}
+          />
+          {/* Progress arc */}
+          <circle
+            cx={size / 2} cy={size / 2} r={r}
+            fill="none" stroke={color} strokeWidth={5}
+            strokeDasharray={`${dash} ${circumference}`}
+            strokeLinecap="round"
+            className="transition-all duration-700 ease-out"
+            style={{ filter: `drop-shadow(0 0 6px ${color}40)` }}
+          />
+        </svg>
+        {/* Center value */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-lg font-bold text-white tracking-tight">{Math.round(value)}</span>
+        </div>
       </div>
-      <span className="text-xs text-gray-400 text-center mt-1">{label}</span>
+      <span className="text-[10px] font-medium text-gray-500 text-center uppercase tracking-wider">{label}</span>
     </div>
   )
 }

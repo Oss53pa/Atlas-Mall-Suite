@@ -24,7 +24,7 @@ export default function ScoreCard({
   const dashOffset = circumference * (1 - pct)
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3">
+    <div className="flex items-center gap-3 glass-panel px-4 py-3">
       {/* Circular progress */}
       <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90">
