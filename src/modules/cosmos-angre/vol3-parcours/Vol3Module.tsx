@@ -69,6 +69,10 @@ const ActionTrackerLazy = lazy(() => import('./sections/ActionTracker'))
 const SignaletiquTrackerLazy = lazy(() => import('./sections/SignaletiquTracker'))
 const TouchpointTrackerLazy = lazy(() => import('./sections/TouchpointTracker'))
 const FeedbackModuleLazy = lazy(() => import('./sections/FeedbackModule'))
+const DwellTimeOptimizerLazy = lazy(() => import('./sections/DwellTimeOptimizer'))
+const RevenuePredictorLazy = lazy(() => import('./sections/RevenuePredictor'))
+const SeasonalPlanningLazy = lazy(() => import('./sections/SeasonalPlanning'))
+const TenantMixValidatorLazy = lazy(() => import('./sections/TenantMixValidator'))
 
 type Vol3Tab =
   | 'plan'
@@ -96,6 +100,10 @@ type Vol3Tab =
   | 'signa_tracker'
   | 'touch_tracker'
   | 'feedbacks'
+  | 'dwell_time'
+  | 'revenue_predictor'
+  | 'seasonal'
+  | 'tenant_mix_validator'
 
 // ─── Sidebar nav definition ─────────────────────────────────
 
@@ -213,6 +221,19 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'signa_tracker', label: 'Déploiement signalétique', icon: Signpost },
       { id: 'touch_tracker', label: 'Touchpoints', icon: Smartphone },
       { id: 'feedbacks', label: 'Réclamations visiteurs', icon: MessageSquare },
+    ],
+  },
+  {
+    key: 'advanced',
+    label: 'ANALYSE AVANCÉE',
+    icon: BarChart2,
+    color: '#ec4899',
+    separator: true,
+    items: [
+      { id: 'dwell_time', label: 'Dwell Time Optimizer', icon: Eye },
+      { id: 'revenue_predictor', label: 'Revenue Predictor', icon: BarChart2 },
+      { id: 'seasonal', label: 'Scénarios saisonniers', icon: Calendar },
+      { id: 'tenant_mix_validator', label: 'Tenant Mix Validator', icon: Grid3X3 },
     ],
   },
 ]
@@ -1212,6 +1233,10 @@ export default function Vol3Module() {
               {activeTab === 'signa_tracker' && <SignaletiquTrackerLazy />}
               {activeTab === 'touch_tracker' && <TouchpointTrackerLazy />}
               {activeTab === 'feedbacks' && <FeedbackModuleLazy />}
+              {activeTab === 'dwell_time' && <DwellTimeOptimizerLazy />}
+              {activeTab === 'revenue_predictor' && <RevenuePredictorLazy />}
+              {activeTab === 'seasonal' && <SeasonalPlanningLazy />}
+              {activeTab === 'tenant_mix_validator' && <TenantMixValidatorLazy />}
             </Suspense>
           </main>
         )}

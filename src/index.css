@@ -2,8 +2,158 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 @layer base {
+  html {
+    @apply antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
   html, body, #root {
-    @apply min-h-screen bg-gray-950 text-white;
+    @apply min-h-screen bg-surface-0 text-white font-sans;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  /* Selection */
+  ::selection {
+    background: rgba(99, 102, 241, 0.3);
+    color: white;
+  }
+}
+
+@layer components {
+  /* Glass panels */
+  .glass-panel {
+    @apply bg-surface-2/80 backdrop-blur-md border border-white/[0.06] rounded-xl;
+  }
+
+  .glass-panel-strong {
+    @apply bg-surface-3/90 backdrop-blur-lg border border-white/[0.08] rounded-xl;
+  }
+
+  /* Sidebar item */
+  .sidebar-item {
+    @apply flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium
+           text-gray-400 transition-all duration-150 cursor-pointer
+           hover:text-white hover:bg-white/[0.04];
+  }
+
+  .sidebar-item-active {
+    @apply text-white bg-white/[0.06];
+  }
+
+  /* Stat cards */
+  .stat-card {
+    @apply glass-panel p-4 space-y-1;
+  }
+
+  .stat-value {
+    @apply text-2xl font-bold tracking-tight;
+  }
+
+  .stat-label {
+    @apply text-[11px] font-medium uppercase tracking-wider text-gray-500;
+  }
+
+  /* Badge styles */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider;
+  }
+
+  .badge-blue {
+    @apply badge bg-blue-500/10 text-blue-400 border border-blue-500/20;
+  }
+
+  .badge-emerald {
+    @apply badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20;
+  }
+
+  .badge-amber {
+    @apply badge bg-amber-500/10 text-amber-400 border border-amber-500/20;
+  }
+
+  .badge-red {
+    @apply badge bg-red-500/10 text-red-400 border border-red-500/20;
+  }
+
+  .badge-purple {
+    @apply badge bg-purple-500/10 text-purple-400 border border-purple-500/20;
+  }
+
+  /* Section headers */
+  .section-header {
+    @apply text-xs font-bold uppercase tracking-[0.15em] text-gray-500 px-3 py-2;
+  }
+
+  /* Input styles */
+  .input-dark {
+    @apply w-full rounded-lg bg-surface-1 border border-white/[0.06] px-3 py-2
+           text-sm text-white placeholder-gray-600
+           focus:outline-none focus:border-atlas-600/50 focus:ring-1 focus:ring-atlas-600/30
+           transition-colors;
+  }
+
+  /* Button styles */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg
+           bg-atlas-700 text-white text-sm font-medium
+           hover:bg-atlas-600 active:bg-atlas-800
+           transition-colors duration-150;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg
+           text-gray-400 text-sm font-medium
+           hover:text-white hover:bg-white/[0.04]
+           transition-colors duration-150;
+  }
+
+  /* Tooltip */
+  .tooltip {
+    @apply absolute z-50 px-2.5 py-1.5 rounded-lg bg-gray-800 border border-gray-700
+           text-xs text-gray-200 shadow-lg pointer-events-none
+           animate-fade-in;
+  }
+
+  /* Divider */
+  .divider {
+    @apply border-t border-white/[0.06] my-2;
+  }
+
+  /* Glow dot */
+  .glow-dot {
+    @apply w-2 h-2 rounded-full animate-pulse-glow;
+  }
+}
+
+@layer utilities {
+  .text-gradient-blue {
+    @apply bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent;
+  }
+
+  .text-gradient-purple {
+    @apply bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent;
+  }
+
+  .text-gradient-emerald {
+    @apply bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent;
   }
 }

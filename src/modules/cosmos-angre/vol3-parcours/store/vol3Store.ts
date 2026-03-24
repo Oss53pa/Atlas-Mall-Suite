@@ -8,6 +8,8 @@ import type {
   NavigationEdge, InterFloorEdge, FloorLevel
 } from '../../shared/proph3t/types'
 import { generateParcours } from '../../shared/proph3t/engine'
+import { importPlan as importPlanOrchestrator } from '../../shared/planReader'
+import type { PlanImportState, CalibrationResult, DimEntity } from '../../shared/planReader/planReaderTypes'
 import { calculateSignaleticsSpec, optimizeSignaleticsPlacement } from '../../shared/proph3t/signaleticsEngine'
 import { exportSignaletiquePDF } from '../../../export/exportSignaletique'
 import { exportQRCodesPDF } from '../../../export/exportQRCodes'
@@ -707,6 +709,10 @@ interface Vol3State {
   exportQRCodes: () => Promise<void>
   exportWayfindingPDF: () => Promise<void>
 
+  // Actions - Plan reader
+  importPlan: (file: File, floorId: string) => Promise<void>
+  setPlanImportState: (state: PlanImportState | null) => void
+
   // Actions - Reset
   resetProject: () => void
 }
@@ -749,6 +755,8 @@ const initialState = {
 
   libraryOpen: false,
   libraryTab: 'signage' as const,
+
+  planImportState: null as PlanImportState | null,
 } satisfies Record<string, unknown>
 
 // ─── Store ───────────────────────────────────────────────────
@@ -989,6 +997,40 @@ export const useVol3Store = create<Vol3State>()((set) => ({
     const a = document.createElement('a'); a.href = url; a.download = 'Wayfinding_Report.pdf'; a.click()
     URL.revokeObjectURL(url)
   },
+
+  // ── Plan reader ─────────────────────────────────────────
+  importPlan: async (file, floorId) => {
+    const result = await importPlanOrchestrator(file, floorId, {
+      onProgress: (s) => set({ planImportState: s }),
+    })
+    set({ planImportState: result })
+    if (result.calibration && result.calibration.realWidthM > 0 && result.calibration.realHeightM > 0) {
+      set(s => ({
+        floors: s.floors.map(f =>
+          f.id === floorId
+            ? { ...f, widthM: result.calibration!.realWidthM, heightM: result.calibration!.realHeightM }
+            : f
+        ),
+      }))
+    }
+    if (result.detectedZones.length > 0) {
+      const newZones = result.detectedZones.map((rz, idx) => ({
+        id: rz.id ?? `import-zone-${idx}`,
+        floorId,
+        label: rz.label,
+        type: rz.estimatedType,
+        x: rz.boundingBox.x,
+        y: rz.boundingBox.y,
+        w: rz.boundingBox.w,
+        h: rz.boundingBox.h,
+        niveau: 2 as const,
+        color: rz.color ?? '#E0E0E0',
+      }))
+      set(s => ({ zones: [...s.zones, ...newZones] }))
+    }
+  },
+
+  setPlanImportState: (state) => set({ planImportState: state }),
 
   // ── Reset ───────────────────────────────────────────────
   resetProject: () => set(initialState),

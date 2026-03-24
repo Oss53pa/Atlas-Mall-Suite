@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShieldCheck, Route, Sparkles, Link2, ArrowRight, Building2 } from 'lucide-react'
+import { ShieldCheck, Route, Sparkles, Link2, ArrowRight, Building2, Zap, Globe } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface VolumeStat {
@@ -17,12 +17,7 @@ interface VolumeConfig {
   description: string
   icon: typeof ShieldCheck
   accent: string
-  gradientFrom: string
-  gradientTo: string
-  borderColor: string
-  borderHover: string
-  badgeBg: string
-  badgeBorder: string
+  accentRgb: string
   stats: VolumeStat[]
   route: string
 }
@@ -35,20 +30,15 @@ const volumes: VolumeConfig[] = [
     title: 'Plan Commercial',
     subtitle: 'Mix enseigne \u00b7 Occupancy \u00b7 Preneurs \u00b7 Leasing',
     description:
-      'Pilotage du mix enseigne du centre commercial. Chaque cellule est identifiee, qualifiee, ' +
-      'reliee a un preneur, et analysable en un clic. Dashboard occupancy, alertes bail et recommandations IA.',
+      'Pilotage du mix enseigne du centre commercial. Chaque cellule est identifi\u00e9e, qualifi\u00e9e, ' +
+      'reli\u00e9e \u00e0 un preneur, et analysable en un clic.',
     icon: Building2,
     accent: '#f59e0b',
-    gradientFrom: '#1a1400',
-    gradientTo: '#0f0d04',
-    borderColor: '#3d2f0a',
-    borderHover: 'rgba(245, 158, 11, 0.376)',
-    badgeBg: 'rgba(245, 158, 11, 0.125)',
-    badgeBorder: 'rgba(245, 158, 11, 0.25)',
+    accentRgb: '245, 158, 11',
     stats: [
-      { value: '16', label: 'CELLULES' },
-      { value: '12', label: 'PRENEURS' },
-      { value: '92%', label: 'OCCUPATION' },
+      { value: '16', label: 'Cellules' },
+      { value: '12', label: 'Preneurs' },
+      { value: '92%', label: 'Occupation' },
     ],
     route: '/cosmos-angre/vol1',
   },
@@ -56,23 +46,18 @@ const volumes: VolumeConfig[] = [
     id: 'vol2',
     number: 2,
     badge: 'VOL. 2',
-    title: 'Plan Securitaire',
-    subtitle: 'Surete \u00b7 Acces \u00b7 Videosurveillance \u00b7 Procedures',
+    title: 'Plan S\u00e9curitaire',
+    subtitle: 'S\u00fbret\u00e9 \u00b7 Acc\u00e8s \u00b7 Vid\u00e9osurveillance \u00b7 Proc\u00e9dures',
     description:
-      'Audit complet de la strategie securitaire du centre commercial. Placement intelligent des cameras, ' +
-      'controle d\u2019acces, couverture des zones critiques, detection des angles morts et conformite APSAD R82.',
+      'Audit complet de la strat\u00e9gie s\u00e9curitaire. Placement intelligent des cam\u00e9ras, ' +
+      'contr\u00f4le d\u2019acc\u00e8s et conformit\u00e9 APSAD R82.',
     icon: ShieldCheck,
     accent: '#38bdf8',
-    gradientFrom: '#0f1e3d',
-    gradientTo: '#0a1628',
-    borderColor: '#1e3a5f',
-    borderHover: 'rgba(56, 189, 248, 0.376)',
-    badgeBg: 'rgba(56, 189, 248, 0.125)',
-    badgeBorder: 'rgba(56, 189, 248, 0.25)',
+    accentRgb: '56, 189, 248',
     stats: [
-      { value: '5', label: 'ZONES' },
-      { value: '120+', label: 'CAMERAS' },
-      { value: '24/7', label: 'COUVERTURE' },
+      { value: '5', label: 'Zones' },
+      { value: '120+', label: 'Cam\u00e9ras' },
+      { value: '24/7', label: 'Couverture' },
     ],
     route: '/cosmos-angre/vol2',
   },
@@ -81,22 +66,17 @@ const volumes: VolumeConfig[] = [
     number: 3,
     badge: 'VOL. 3',
     title: 'Parcours Client',
-    subtitle: 'Experience \u00b7 Signaletique \u00b7 Flux \u00b7 Fidelisation',
+    subtitle: 'Exp\u00e9rience \u00b7 Signal\u00e9tique \u00b7 Flux \u00b7 Fid\u00e9lisation',
     description:
-      'Conception du parcours visiteur optimal. Signaletique normee ISO 7010, moments cles, ' +
-      'wayfinding multi-niveaux, programme Cosmos Club et optimisation des flux pietons.',
+      'Conception du parcours visiteur optimal. Signal\u00e9tique norm\u00e9e ISO 7010, ' +
+      'wayfinding multi-niveaux et programme Cosmos Club.',
     icon: Route,
     accent: '#34d399',
-    gradientFrom: '#0a2318',
-    gradientTo: '#061a10',
-    borderColor: '#0f3d1e',
-    borderHover: 'rgba(52, 211, 153, 0.376)',
-    badgeBg: 'rgba(52, 211, 153, 0.125)',
-    badgeBorder: 'rgba(52, 211, 153, 0.25)',
+    accentRgb: '52, 211, 153',
     stats: [
-      { value: '7', label: 'MOMENTS CLES' },
-      { value: '3', label: 'NIVEAUX' },
-      { value: '\u221e', label: 'EXPERIENCES' },
+      { value: '7', label: 'Moments cl\u00e9s' },
+      { value: '3', label: 'Niveaux' },
+      { value: '\u221e', label: 'Exp\u00e9riences' },
     ],
     route: '/cosmos-angre/vol3',
   },
@@ -111,13 +91,14 @@ function VolumeCard({ vol }: { vol: VolumeConfig }) {
       e.stopPropagation()
       const url = `${window.location.origin}${vol.route}`
       navigator.clipboard.writeText(url).then(() => {
-        toast.success('Lien copie !', {
+        toast.success('Lien copi\u00e9 !', {
           style: {
-            background: '#1e293b',
+            background: '#131d35',
             color: '#e2e8f0',
-            border: '1px solid #334155',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '12px',
           },
-          iconTheme: { primary: vol.accent, secondary: '#1e293b' },
+          iconTheme: { primary: vol.accent, secondary: '#131d35' },
         })
       })
     },
@@ -132,97 +113,117 @@ function VolumeCard({ vol }: { vol: VolumeConfig }) {
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') navigate(vol.route)
       }}
-      className="group relative cursor-pointer rounded-2xl p-7 transition-all duration-200"
+      className="group relative cursor-pointer rounded-2xl p-[1px] transition-all duration-300 hover:-translate-y-1"
       style={{
-        background: `linear-gradient(135deg, ${vol.gradientFrom}, ${vol.gradientTo})`,
-        border: `1px solid ${vol.borderColor}`,
-      }}
-      onMouseEnter={(e) => {
-        const el = e.currentTarget
-        el.style.transform = 'translateY(-3px)'
-        el.style.borderColor = vol.borderHover
-      }}
-      onMouseLeave={(e) => {
-        const el = e.currentTarget
-        el.style.transform = 'translateY(0)'
-        el.style.borderColor = vol.borderColor
+        background: `linear-gradient(135deg, rgba(${vol.accentRgb}, 0.15), rgba(${vol.accentRgb}, 0.03))`,
       }}
     >
-      {/* Badge + Icon row */}
-      <div className="flex items-start justify-between mb-5">
-        <span
-          className="inline-block rounded-[20px] px-3 py-1 text-xs font-semibold tracking-wider"
-          style={{
-            background: vol.badgeBg,
-            color: vol.accent,
-            border: `1px solid ${vol.badgeBorder}`,
-          }}
-        >
-          {vol.badge}
-        </span>
-        <Icon size={28} style={{ color: vol.accent }} />
-      </div>
+      {/* Glow effect on hover */}
+      <div
+        className="absolute -inset-[1px] rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"
+        style={{ background: `radial-gradient(ellipse at center, rgba(${vol.accentRgb}, 0.12), transparent 70%)` }}
+      />
 
-      {/* Title */}
-      <h3 className="text-[32px] font-light text-white leading-tight mb-1">
-        {vol.title}
-      </h3>
+      {/* Card inner */}
+      <div
+        className="relative rounded-2xl p-7 h-full overflow-hidden"
+        style={{ background: 'linear-gradient(145deg, #0e1629, #0a1021)' }}
+      >
+        {/* Decorative gradient orb */}
+        <div
+          className="absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-[0.07] blur-3xl"
+          style={{ background: vol.accent }}
+        />
 
-      {/* Subtitle */}
-      <p className="text-xs tracking-wide" style={{ color: vol.accent }}>
-        {vol.subtitle}
-      </p>
-
-      {/* Separator */}
-      <div className="my-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }} />
-
-      {/* Description */}
-      <p className="text-[13px] leading-[1.7] text-slate-400 mb-6">
-        {vol.description}
-      </p>
-
-      {/* Stats */}
-      <div className="flex items-end gap-6 mb-6">
-        {vol.stats.map((stat) => (
-          <div key={stat.label} className="flex flex-col">
-            <span
-              className="text-2xl font-semibold leading-none"
-              style={{ color: vol.accent }}
-            >
-              {stat.value}
-            </span>
-            <span className="text-[9px] font-medium tracking-wider mt-1" style={{ color: '#4a5568' }}>
-              {stat.label}
-            </span>
+        {/* Badge + Icon row */}
+        <div className="relative flex items-start justify-between mb-6">
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold tracking-widest"
+            style={{
+              background: `rgba(${vol.accentRgb}, 0.1)`,
+              color: vol.accent,
+              border: `1px solid rgba(${vol.accentRgb}, 0.2)`,
+            }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse-glow" style={{ background: vol.accent }} />
+            {vol.badge}
+          </span>
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+            style={{
+              background: `linear-gradient(135deg, rgba(${vol.accentRgb}, 0.15), rgba(${vol.accentRgb}, 0.05))`,
+              border: `1px solid rgba(${vol.accentRgb}, 0.15)`,
+            }}
+          >
+            <Icon size={22} style={{ color: vol.accent }} />
           </div>
-        ))}
-      </div>
+        </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            navigate(vol.route)
-          }}
-          className="flex items-center gap-1.5 bg-transparent px-0 py-1 text-sm font-medium transition-colors hover:opacity-80"
-          style={{ color: vol.accent }}
-        >
-          Ouvrir ce volume <ArrowRight size={14} />
-        </button>
+        {/* Title */}
+        <h3 className="relative text-[28px] font-light text-white leading-tight mb-1.5 tracking-tight">
+          {vol.title}
+        </h3>
 
-        <button
-          onClick={handleCopyLink}
-          className="ml-auto flex items-center gap-1.5 rounded-[20px] px-3 py-1.5 text-xs transition-colors hover:opacity-80"
-          style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            color: '#94a3b8',
-          }}
-        >
-          <Link2 size={12} />
-          Copier le lien
-        </button>
+        {/* Subtitle */}
+        <p className="relative text-[11px] font-medium tracking-wide mb-5" style={{ color: vol.accent, opacity: 0.8 }}>
+          {vol.subtitle}
+        </p>
+
+        {/* Description */}
+        <p className="relative text-[13px] leading-[1.75] text-gray-400/80 mb-7">
+          {vol.description}
+        </p>
+
+        {/* Stats */}
+        <div className="relative flex items-end gap-8 mb-7">
+          {vol.stats.map((stat, i) => (
+            <div key={stat.label} className="flex flex-col">
+              <span
+                className="text-[26px] font-semibold leading-none tracking-tight"
+                style={{ color: vol.accent }}
+              >
+                {stat.value}
+              </span>
+              <span className="text-[9px] font-medium tracking-wider mt-1.5 text-gray-500 uppercase">
+                {stat.label}
+              </span>
+              {i < vol.stats.length - 1 && (
+                <div className="absolute" />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Separator */}
+        <div className="relative border-t border-white/[0.04] mb-5" />
+
+        {/* Actions */}
+        <div className="relative flex items-center gap-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              navigate(vol.route)
+            }}
+            className="flex items-center gap-2 text-sm font-medium transition-all duration-200 group-hover:gap-3"
+            style={{ color: vol.accent }}
+          >
+            Ouvrir ce volume
+            <ArrowRight size={14} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+          </button>
+
+          <button
+            onClick={handleCopyLink}
+            className="ml-auto flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all duration-200 hover:bg-white/[0.06]"
+            style={{
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              color: '#64748b',
+            }}
+          >
+            <Link2 size={11} />
+            Copier
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -230,40 +231,80 @@ function VolumeCard({ vol }: { vol: VolumeConfig }) {
 
 export default function VolumesNav() {
   return (
-    <div className="min-h-screen text-white" style={{ background: '#080c14' }}>
+    <div className="min-h-screen text-white relative overflow-hidden" style={{ background: '#060a13' }}>
+      {/* Background gradient mesh */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full opacity-[0.03] blur-[120px]"
+          style={{ background: 'radial-gradient(circle, #38bdf8, transparent)' }} />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full opacity-[0.03] blur-[100px]"
+          style={{ background: 'radial-gradient(circle, #a855f7, transparent)' }} />
+        <div className="absolute top-1/2 left-0 w-[400px] h-[400px] rounded-full opacity-[0.02] blur-[80px]"
+          style={{ background: 'radial-gradient(circle, #34d399, transparent)' }} />
+        {/* Grid overlay */}
+        <div className="absolute inset-0 opacity-[0.015]"
+          style={{
+            backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
+            backgroundSize: '64px 64px',
+          }} />
+      </div>
+
       {/* Header */}
-      <header className="border-b border-white/5 backdrop-blur-sm" style={{ background: 'rgba(8,12,20,0.85)' }}>
+      <header className="relative border-b border-white/[0.04] backdrop-blur-md" style={{ background: 'rgba(6,10,19,0.8)' }}>
         <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600">
-              <Sparkles className="h-5 w-5 text-white" />
+          <div className="flex items-center gap-3.5">
+            <div className="relative">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-glow-purple">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+              <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 opacity-20 blur-md" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight">Atlas Mall Suite</h1>
-              <p className="text-xs text-gray-500">Atlas Studio</p>
+              <h1 className="text-[15px] font-bold tracking-tight text-white">Atlas Mall Suite</h1>
+              <p className="text-[11px] text-gray-500 font-medium">Praedium Tech &middot; Atlas Studio</p>
             </div>
           </div>
-          <span className="rounded-md bg-white/5 px-2.5 py-1 text-xs font-mono text-gray-500">
-            Proph3t Engine
-          </span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-glow" />
+              <span className="text-[10px] font-semibold text-emerald-400 tracking-wide">EN LIGNE</span>
+            </div>
+            <span className="rounded-lg bg-white/[0.03] border border-white/[0.06] px-3 py-1.5 text-[11px] font-mono text-gray-500 flex items-center gap-1.5">
+              <Zap size={11} className="text-purple-400" />
+              Proph3t Engine
+            </span>
+          </div>
         </div>
       </header>
 
       {/* Project info */}
-      <div className="mx-auto max-w-6xl px-6 pt-10 pb-4">
-        <h2 className="text-2xl font-bold mb-1">Cosmos Angre Shopping Center</h2>
-        <p className="text-gray-500 text-sm">Abidjan, Cote d&apos;Ivoire &mdash; Ouverture Octobre 2026</p>
-        <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-gray-600">
-          <span>DG: Cheick Sanankoua</span>
-          <span className="h-1 w-1 rounded-full bg-gray-700" />
-          <span>3 etages (B1, RDC, R+1)</span>
-          <span className="h-1 w-1 rounded-full bg-gray-700" />
-          <span>~30 000 m&sup2;</span>
+      <div className="relative mx-auto max-w-6xl px-6 pt-12 pb-2">
+        <div className="flex items-center gap-2 mb-3">
+          <Globe size={14} className="text-gray-600" />
+          <span className="text-[11px] font-medium text-gray-600 tracking-wide uppercase">Projet actif</span>
+        </div>
+        <h2 className="text-3xl font-bold tracking-tight mb-2">
+          <span className="text-white">Cosmos Angr\u00e9</span>{' '}
+          <span className="text-gray-600 font-light">Shopping Center</span>
+        </h2>
+        <p className="text-gray-500 text-sm font-medium">Abidjan, C\u00f4te d&apos;Ivoire &mdash; Ouverture Octobre 2026</p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          {[
+            'DG: Cheick Sanankoua',
+            '3 \u00e9tages (B1, RDC, R+1)',
+            '~30 000 m\u00b2',
+          ].map((item) => (
+            <span
+              key={item}
+              className="text-[11px] text-gray-500 font-medium bg-white/[0.02] border border-white/[0.04] rounded-full px-3 py-1"
+            >
+              {item}
+            </span>
+          ))}
         </div>
       </div>
 
       {/* Volume cards */}
-      <div className="mx-auto max-w-6xl px-6 py-6">
+      <div className="relative mx-auto max-w-6xl px-6 py-8">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {volumes.map((vol) => (
             <VolumeCard key={vol.id} vol={vol} />
@@ -272,43 +313,51 @@ export default function VolumesNav() {
       </div>
 
       {/* Proph3t section */}
-      <div className="mx-auto max-w-6xl px-6 pb-12 pt-4">
-        <div
-          className="rounded-xl p-6"
-          style={{
-            background: 'rgba(126,34,206,0.06)',
-            border: '1px solid rgba(168,85,247,0.15)',
-          }}
+      <div className="relative mx-auto max-w-6xl px-6 pb-16 pt-4">
+        <div className="relative rounded-2xl p-[1px] overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(168,85,247,0.02))' }}
         >
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-600/20">
-              <Sparkles className="h-4 w-4 text-purple-400" />
+          <div className="rounded-2xl p-7 relative" style={{ background: 'linear-gradient(145deg, #0e1629, #0a1021)' }}>
+            {/* Decorative */}
+            <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-purple-500/[0.05] blur-3xl" />
+
+            <div className="relative flex items-center gap-3.5 mb-4">
+              <div className="relative">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20">
+                  <Sparkles className="h-5 w-5 text-purple-400" />
+                </div>
+                <div className="absolute -inset-1 rounded-xl bg-purple-500/20 blur-md opacity-50" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-sm tracking-tight">
+                  Proph3t &mdash; Expert Vivant
+                </h3>
+                <p className="text-[11px] text-purple-400/70 font-medium">Moteur IA conversationnel \u00e0 m\u00e9moire longue</p>
+              </div>
             </div>
-            <h3 className="font-semibold text-purple-300">
-              Proph3t &mdash; Expert Vivant
-            </h3>
-          </div>
-          <p className="text-sm leading-relaxed text-gray-400">
-            Proph3t est un expert qui vit dans le projet. Il connait chaque decision depuis le premier
-            import DXF, se souvient de chaque modification, anticipe les problemes avant qu&apos;ils
-            surviennent, et produit des rapports certifies aux normes internationales (APSAD R82,
-            NF S 61-938, ISO 7010, NF X 08-003).
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {['APSAD R82', 'NF S 61-938', 'ISO 7010', 'NF X 08-003', 'EN 62676', 'ISO 22341'].map(
-              (norm) => (
-                <span
-                  key={norm}
-                  className="rounded px-2 py-1 text-xs text-purple-300"
-                  style={{
-                    background: 'rgba(126,34,206,0.12)',
-                    border: '1px solid rgba(126,34,206,0.2)',
-                  }}
-                >
-                  {norm}
-                </span>
-              ),
-            )}
+
+            <p className="relative text-[13px] leading-[1.8] text-gray-400/80 mb-5 max-w-3xl">
+              Proph3t est un expert qui vit dans le projet. Il conna\u00eet chaque d\u00e9cision depuis le premier
+              import DXF, se souvient de chaque modification, anticipe les probl\u00e8mes avant qu&apos;ils
+              surviennent, et produit des rapports certifi\u00e9s aux normes internationales.
+            </p>
+
+            <div className="relative flex flex-wrap gap-2">
+              {['APSAD R82', 'NF S 61-938', 'ISO 7010', 'NF X 08-003', 'EN 62676', 'ISO 22341'].map(
+                (norm) => (
+                  <span
+                    key={norm}
+                    className="rounded-lg px-2.5 py-1 text-[10px] font-semibold tracking-wide text-purple-300/80 transition-colors duration-200 hover:text-purple-200"
+                    style={{
+                      background: 'rgba(126,34,206,0.08)',
+                      border: '1px solid rgba(126,34,206,0.15)',
+                    }}
+                  >
+                    {norm}
+                  </span>
+                ),
+              )}
+            </div>
           </div>
         </div>
       </div>

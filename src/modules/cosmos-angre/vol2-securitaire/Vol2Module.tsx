@@ -84,8 +84,10 @@ const WhatIfSecuriteLazy = lazy(() => import('./sections/WhatIfSecurite'))
 const StaffingPlannerLazy = lazy(() => import('./sections/StaffingPlanner'))
 const RondePlannerLazy = lazy(() => import('./sections/RondePlanner'))
 const ComplianceTrackerLazy = lazy(() => import('./sections/ComplianceTracker'))
+const AuditExistantLazy = lazy(() => import('./sections/AuditExistant'))
+const VmsIntegrationLazy = lazy(() => import('./sections/VmsIntegration'))
 
-type Vol2Tab = 'plan' | 'analyse' | 'rapport' | 'simulation' | 'budget' | 'chat' | 'introduction' | 'kpis' | 'perimetre' | 'acces' | 'video' | 'incendie' | 'procedures' | 'organigramme' | 'control_room' | 'incidents' | 'risk_matrix' | 'whatif' | 'staffing' | 'rondes' | 'compliance'
+type Vol2Tab = 'plan' | 'analyse' | 'rapport' | 'simulation' | 'budget' | 'chat' | 'introduction' | 'kpis' | 'perimetre' | 'acces' | 'video' | 'incendie' | 'procedures' | 'organigramme' | 'control_room' | 'incidents' | 'risk_matrix' | 'whatif' | 'staffing' | 'rondes' | 'compliance' | 'audit_existant' | 'vms'
 
 // ─── Sidebar nav definition ─────────────────────────────────
 
@@ -167,6 +169,8 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'staffing', label: 'Planning effectifs', icon: Users },
       { id: 'rondes', label: 'Planning rondes', icon: Footprints },
       { id: 'compliance', label: 'Conformité APSAD', icon: CheckSquare },
+      { id: 'audit_existant', label: 'Audit existant', icon: ClipboardList },
+      { id: 'vms', label: 'Intégration VMS', icon: Monitor },
     ],
   },
 ]
@@ -474,28 +478,44 @@ export default function Vol2Module() {
   // ═══ RENDER ═══════════════════════════════════════════════
 
   return (
-    <div className="h-screen flex flex-col bg-gray-950 text-white overflow-hidden">
+    <div className="h-screen flex flex-col bg-surface-0 text-white overflow-hidden">
       {/* ── Header ──────────────────────────────────────────── */}
-      <header className="flex-none h-14 border-b border-gray-800 bg-gray-950/90 backdrop-blur-sm flex items-center px-4 gap-4">
+      <header className="flex-none h-14 border-b border-white/[0.04] bg-surface-1/80 backdrop-blur-md flex items-center px-4 gap-4">
         {/* Back button */}
         <button
           onClick={() => navigate('/cosmos-angre')}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors"
+          className="flex items-center gap-1.5 text-[13px] text-gray-500 hover:text-white transition-colors duration-200"
         >
           <ArrowLeft className="w-4 h-4" />
           <span className="hidden sm:inline">Retour</span>
         </button>
 
+        <div className="w-px h-6 bg-white/[0.06]" />
+
         {/* Title */}
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center">
-            <Shield className="w-4 h-4 text-white" />
+        <div className="flex items-center gap-2.5">
+          <div className="relative">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-glow-blue">
+              <Shield className="w-4 h-4 text-white" />
+            </div>
           </div>
           <div>
-            <h1 className="text-sm font-bold leading-tight">Vol.2 Securitaire</h1>
-            <p className="text-[10px] text-gray-500">Cosmos Angre</p>
+            <h1 className="text-sm font-bold leading-tight tracking-tight">Vol.2 <span className="text-gradient-blue">S\u00e9curitaire</span></h1>
+            <p className="text-[10px] text-gray-500 font-medium">Cosmos Angr\u00e9</p>
           </div>
         </div>
+
+        {/* Score badge */}
+        {score && (
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${
+            scoreTotal >= 70 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+            : scoreTotal >= 40 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+            : 'bg-red-500/10 text-red-400 border border-red-500/20'
+          }`}>
+            <ShieldAlert className="w-3 h-3" />
+            {scoreTotal}/100
+          </div>
+        )}
 
         {/* Floor tabs — only shown when plan is active */}
         {activeTab === 'plan' && (
@@ -618,91 +638,67 @@ export default function Vol2Module() {
         )}
 
         {/* Proph3t badge */}
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-purple-900/30 border border-purple-700/30">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/8 border border-purple-500/15">
           <Sparkles className="w-3 h-3 text-purple-400" />
-          <span className="text-[10px] font-mono text-purple-300">Proph3t</span>
+          <span className="text-[10px] font-semibold text-purple-300/80">Proph3t</span>
         </div>
       </header>
 
       {/* ── Main body ───────────────────────────────────────── */}
       <div className="flex-1 flex min-h-0">
         {/* ── Sidebar navigation — always visible ──────────── */}
-        <aside
-          className="flex-none w-56 border-r border-gray-800 bg-[#0f1623] overflow-y-auto"
-          style={{ scrollbarWidth: 'thin', scrollbarColor: '#1e293b transparent' }}
-        >
+        <aside className="flex-none w-60 border-r border-white/[0.04] bg-surface-1 overflow-y-auto">
           {/* Sidebar header */}
-          <div className="px-4 pt-4 pb-3 border-b border-gray-800/60">
-            <div className="text-[11px] font-bold text-white tracking-wide">Cosmos Angr{'\u00e9'}</div>
-            <div className="text-[9px] text-gray-500 font-mono mt-0.5">VOL. 2 — PLAN S{'\u00c9'}CURITAIRE</div>
+          <div className="px-4 pt-4 pb-3 border-b border-white/[0.04]">
+            <div className="text-[12px] font-bold text-white tracking-tight">Cosmos Angr{'\u00e9'}</div>
+            <div className="text-[9px] text-gray-500 font-mono mt-0.5 tracking-wider">VOL. 2 — PLAN S{'\u00c9'}CURITAIRE</div>
           </div>
 
           {/* Navigation groups */}
-          <nav className="py-2">
+          <nav className="py-2 px-2">
             {NAV_GROUPS.map((group) => (
               <div key={group.key}>
-                {/* Separator before studio group */}
-                {group.separator && (
-                  <div className="mx-3 my-2 border-t border-gray-800/60" />
-                )}
+                {group.separator && <div className="divider mx-1" />}
 
                 {/* Group header */}
                 <button
                   onClick={() => toggleGroup(group.key)}
-                  className="w-full flex items-center gap-2 px-4 py-2 cursor-pointer group hover:bg-white/[0.02] transition-colors"
+                  className="w-full flex items-center gap-2 px-2 py-2 cursor-pointer rounded-lg hover:bg-white/[0.02] transition-colors duration-150"
                 >
-                  <group.icon className="w-3 h-3 flex-none" style={{ color: group.color }} />
-                  <span className="text-[10px] font-semibold tracking-wider flex-1 text-left" style={{ color: '#4a5568' }}>
+                  <div className="w-0.5 h-3.5 rounded-full flex-none" style={{ background: group.color, opacity: 0.5 }} />
+                  <group.icon className="w-3 h-3 flex-none" style={{ color: group.color, opacity: 0.7 }} />
+                  <span className="text-[10px] font-semibold tracking-[0.1em] flex-1 text-left text-gray-500">
                     {group.label}
                   </span>
-                  {openGroups[group.key] ? (
-                    <ChevronDown className="w-3 h-3 text-gray-600" />
-                  ) : (
-                    <ChevronRight className="w-3 h-3 text-gray-600" />
-                  )}
+                  <ChevronDown className={`w-3 h-3 text-gray-600 transition-transform duration-200 ${openGroups[group.key] ? '' : '-rotate-90'}`} />
                 </button>
 
-                {/* Group items */}
-                {openGroups[group.key] && (
-                  <div className="pb-1">
+                {/* Group items with smooth transition */}
+                <div className={`overflow-hidden transition-all duration-200 ${openGroups[group.key] ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                  <div className="pb-1 pl-1">
                     {group.items.map((item) => {
                       const isActive = activeTab === item.id
                       return (
                         <button
                           key={item.id}
                           onClick={() => setActiveTab(item.id)}
-                          className="w-full flex items-center gap-2.5 pl-5 pr-3 py-1.5 text-left transition-colors"
-                          style={{
-                            background: isActive ? 'rgba(56,189,248,0.12)' : undefined,
-                            borderLeft: isActive ? '2px solid #38bdf8' : '2px solid transparent',
-                            color: isActive ? '#38bdf8' : '#4a5568',
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isActive) {
-                              e.currentTarget.style.color = '#94a3b8'
-                              e.currentTarget.style.background = 'rgba(255,255,255,0.02)'
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isActive) {
-                              e.currentTarget.style.color = '#4a5568'
-                              e.currentTarget.style.background = 'transparent'
-                            }
-                          }}
+                          className={`w-full flex items-center gap-2.5 pl-4 pr-3 py-[7px] rounded-lg text-left transition-all duration-150 ${
+                            isActive
+                              ? 'bg-white/[0.06] text-white'
+                              : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.02]'
+                          }`}
+                          style={isActive ? { boxShadow: `inset 2px 0 0 ${group.color}` } : undefined}
                         >
-                          <item.icon className="w-3.5 h-3.5 flex-none" />
+                          <item.icon className="w-3.5 h-3.5 flex-none" style={isActive ? { color: group.color } : undefined} />
                           <span className="text-[11px] font-medium truncate">{item.label}</span>
                           {item.dot && (
-                            <span
-                              className="w-1.5 h-1.5 rounded-full flex-none ml-auto"
-                              style={{ background: '#f59e0b' }}
-                            />
+                            <span className="glow-dot flex-none ml-auto" style={{ background: '#f59e0b' }} />
                           )}
                         </button>
                       )
                     })}
                   </div>
-                )}
+                </div>
               </div>
             ))}
           </nav>
@@ -1016,6 +1012,8 @@ export default function Vol2Module() {
               {activeTab === 'staffing' && <StaffingPlannerLazy />}
               {activeTab === 'rondes' && <RondePlannerLazy />}
               {activeTab === 'compliance' && <ComplianceTrackerLazy />}
+              {activeTab === 'audit_existant' && <AuditExistantLazy />}
+              {activeTab === 'vms' && <VmsIntegrationLazy />}
             </Suspense>
           </main>
         )}

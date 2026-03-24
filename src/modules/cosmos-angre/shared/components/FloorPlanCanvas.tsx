@@ -1,5 +1,8 @@
 import React, { useCallback, useMemo, useRef } from 'react'
 import type { Floor, Zone } from '../proph3t/types'
+import type { DimEntity, CalibrationResult, CotationSpec } from '../planReader/planReaderTypes'
+import DimOverlay from './DimOverlay'
+import CotationLayer from './CotationLayer'
 
 export const CANVAS_SCALE = 4
 
@@ -14,11 +17,20 @@ interface FloorPlanCanvasProps {
   children?: React.ReactNode
   className?: string
   cursorMode?: 'select' | 'place'
+  // Plan reader props
+  dims?: DimEntity[]
+  calibration?: CalibrationResult | null
+  showDims?: boolean
+  onDimClick?: (dim: DimEntity) => void
+  cotationSpecs?: CotationSpec[]
+  showCotations?: boolean
+  planBounds?: { minX: number; minY: number; maxX: number; maxY: number }
 }
 
 export default function FloorPlanCanvas({
   floor, zones, showHeatmap, heatmapContent, onEntityClick, onCanvasClick, selectedId, children, className = '',
   cursorMode = 'select',
+  dims, calibration, showDims = false, onDimClick, cotationSpecs, showCotations = false, planBounds,
 }: FloorPlanCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const floorZones = useMemo(() => zones.filter(z => z.floorId === floor.id), [zones, floor.id])
@@ -133,9 +145,55 @@ export default function FloorPlanCanvas({
         {/* Heatmap overlay (rendered between zones and other overlays) */}
         {showHeatmap && heatmapContent}
 
+        {/* Dim overlay (cotes DXF) */}
+        {showDims && dims && dims.length > 0 && (
+          <DimOverlay
+            dims={dims}
+            calibration={calibration ?? null}
+            canvasWidth={width}
+            canvasHeight={height}
+            planBounds={planBounds ?? { minX: 0, minY: 0, maxX: floor.widthM, maxY: floor.heightM }}
+            visible={showDims}
+            onDimClick={onDimClick}
+          />
+        )}
+
+        {/* Cotation layer (cotes sur exports) */}
+        {showCotations && cotationSpecs && cotationSpecs.length > 0 && (
+          <CotationLayer
+            specs={cotationSpecs}
+            canvasWidth={width}
+            canvasHeight={height}
+            visible={showCotations}
+          />
+        )}
+
         {/* Overlays (cameras, blind spots, transitions) rendered by parent */}
         {children}
       </svg>
+
+      {/* Calibration status bar */}
+      {calibration && (
+        <div className="absolute bottom-0 left-0 right-0 bg-gray-950/80 px-3 py-1.5 flex items-center gap-4 text-[10px]">
+          <span className="text-gray-400">
+            Calibration : {calibration.realWidthM.toFixed(1)}m x {calibration.realHeightM.toFixed(1)}m
+          </span>
+          <span className="text-gray-400">
+            Methode : {calibration.method}
+          </span>
+          <span className={`font-medium ${
+            calibration.confidence >= 0.8 ? 'text-emerald-400' :
+            calibration.confidence >= 0.5 ? 'text-amber-400' : 'text-red-400'
+          }`}>
+            Confiance : {Math.round(calibration.confidence * 100)}%
+          </span>
+          {dims && dims.length > 0 && (
+            <span className="text-gray-400">
+              {dims.length} cote(s)
+            </span>
+          )}
+        </div>
+      )}
     </div>
   )
 }

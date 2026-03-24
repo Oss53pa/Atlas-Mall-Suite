@@ -15,6 +15,12 @@ import {
   scoreSecurite, findBlindSpots, computeFloorCoverage,
   solveCameraPlacement, recommendDoors, computeCapex
 } from '../../shared/proph3t/engine'
+import {
+  importPlan as importPlanOrchestrator,
+  generateCotationSpecs,
+  renderCotationsOnPDF,
+} from '../../shared/planReader'
+import type { DimEntity, CalibrationResult, CotationSpec, PlanImportState } from '../../shared/planReader/planReaderTypes'
 import { runCascade as cascadeRun, type CascadeState } from '../../shared/proph3t/cascadeEngine'
 import { runMonteCarlo as monteCarloRun, simulateEvacuation } from '../../shared/proph3t/simulationEngine'
 import { optimizeSignaleticsPlacement } from '../../shared/proph3t/signaleticsEngine'
@@ -370,6 +376,13 @@ interface Vol2State {
   // Signalétique
   signageItems: SignageItem[]
 
+  // Plan reader
+  planImportState: PlanImportState | null
+  detectedDims: DimEntity[]
+  calibration: CalibrationResult | null
+  showDims: boolean
+  cotationSpecs: CotationSpec[]
+
   // UI
   selectedEntityId: string | null
   selectedEntityType: EntityType | null
@@ -455,6 +468,14 @@ interface Vol2State {
   calibrateFloor: (floorId: string, widthM: number, heightM: number) => void
   importDXF: (file: File, floorId: string) => Promise<void>
 
+  // Actions - Plan reader
+  importPlan: (file: File, floorId: string) => Promise<void>
+  setPlanImportState: (state: PlanImportState | null) => void
+  setDetectedDims: (dims: DimEntity[]) => void
+  setCalibration: (cal: CalibrationResult | null) => void
+  toggleDims: () => void
+  generateCotations: () => void
+
   // Actions - Export (PRD)
   exportASPADPDF: () => Promise<void>
   exportBudgetXLSX: () => void
@@ -510,6 +531,12 @@ const initialState = {
   capexItems: [] as CapexItem[],
 
   signageItems: [] as SignageItem[],
+
+  planImportState: null as PlanImportState | null,
+  detectedDims: [] as DimEntity[],
+  calibration: null as CalibrationResult | null,
+  showDims: false,
+  cotationSpecs: [] as CotationSpec[],
 
   selectedEntityId: null as string | null,
   selectedEntityType: null as EntityType | null,
@@ -859,6 +886,60 @@ export const useVol2Store = create<Vol2State>()((set) => ({
   // ── 3D Model Import ────────────────────────────────────
   setImported3DModel: (scene, format, floorId) => {
     addImported3DModel({ scene, format, floorId, addedAt: Date.now() })
+  },
+
+  // ── Plan reader ─────────────────────────────────────────
+  importPlan: async (file, floorId) => {
+    const result = await importPlanOrchestrator(file, floorId, {
+      onProgress: (s) => set({ planImportState: s }),
+    })
+    set({ planImportState: result })
+    if (result.detectedDims.length > 0) {
+      set({ detectedDims: result.detectedDims })
+    }
+    if (result.calibration) {
+      set({ calibration: result.calibration })
+      if (result.calibration.realWidthM > 0 && result.calibration.realHeightM > 0) {
+        set(s => ({
+          floors: s.floors.map(f =>
+            f.id === floorId
+              ? { ...f, widthM: result.calibration!.realWidthM, heightM: result.calibration!.realHeightM }
+              : f
+          ),
+        }))
+      }
+    }
+    if (result.detectedZones.length > 0) {
+      const newZones: Zone[] = result.detectedZones.map((rz, idx) => ({
+        id: rz.id ?? `import-zone-${idx}`,
+        floorId,
+        label: rz.label,
+        type: rz.estimatedType,
+        x: rz.boundingBox.x,
+        y: rz.boundingBox.y,
+        w: rz.boundingBox.w,
+        h: rz.boundingBox.h,
+        niveau: 2 as const,
+        color: rz.color ?? '#E0E0E0',
+      }))
+      set(s => ({ zones: [...s.zones, ...newZones] }))
+    }
+  },
+
+  setPlanImportState: (state) => set({ planImportState: state }),
+  setDetectedDims: (dims) => set({ detectedDims: dims }),
+  setCalibration: (cal) => set({ calibration: cal }),
+  toggleDims: () => set(s => ({ showDims: !s.showDims })),
+
+  generateCotations: () => {
+    const s = useVol2Store.getState()
+    const activeFloor = s.floors.find(f => f.id === s.activeFloorId)
+    if (!activeFloor) return
+    const floorZones = s.zones.filter(z => z.floorId === s.activeFloorId)
+    const floorCameras = s.cameras.filter(c => c.floorId === s.activeFloorId)
+    const floorDoors = s.doors.filter(d => d.floorId === s.activeFloorId)
+    const specs = generateCotationSpecs(activeFloor, floorZones, floorCameras, floorDoors, s.signageItems)
+    set({ cotationSpecs: specs })
   },
 
   // ── Reset ───────────────────────────────────────────────

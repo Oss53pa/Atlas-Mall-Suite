@@ -1,30 +1,15 @@
 import type {
   Camera, Zone, Door, Floor, TransitionNode, BlindSpot,
   SecurityScore, POI, SignageItem, MomentCle,
-  ChatAnswer, ProjectMemorySummary
+  ChatAnswer, ProjectMemorySummary, FullProjectContext
 } from './types'
 import { CAMERA_SPECS, ZONE_CAMERA_RULES, computeCapex, scoreSecurite, calcDistance, calcArea, computeFloorCoverage } from './engine'
 import { SIGNAGE_CATALOG, detectVisualBreaks } from './signaleticsEngine'
 import { generateMemoryNarrative } from './memoryEngine'
 import { MALL_BENCHMARKS } from './benchmarkData'
 
-// ═══ CONTEXTE PROJET COMPLET ═══
-
-export interface FullProjectContext {
-  zones: Zone[]
-  cameras: Camera[]
-  doors: Door[]
-  pois: POI[]
-  signageItems: SignageItem[]
-  transitions: TransitionNode[]
-  floors: Floor[]
-  score: SecurityScore | null
-  blindSpots: BlindSpot[]
-  parcours: MomentCle[]
-  memory: ProjectMemorySummary | null
-  volume: 'vol2' | 'vol3'
-  activeFloorId: string
-}
+// Re-export for backward compatibility
+export type { FullProjectContext } from './types'
 
 // ═══ NORMALISATION ═══
 
@@ -175,6 +160,21 @@ export function proph3tAnswer(question: string, ctx: FullProjectContext): ChatAn
   // 22. Benchmark
   if (matches(q, ['benchmark', 'comparatif', 'moyenne', 'malls africains'])) {
     return answerBenchmark(ctx)
+  }
+
+  // 23. Cotes / calibration / echelle
+  if (matches(q, ['cote', 'dimension', 'calibration', 'echelle', 'scale', 'cotes'])) {
+    return answerCalibration(ctx)
+  }
+
+  // 24. Reconnaissance image / scan / vision
+  if (matches(q, ['scan', 'image', 'photo', 'reconnaissance', 'vision', 'raster'])) {
+    return answerVision(ctx)
+  }
+
+  // 25. PDF plan
+  if (matches(q, ['pdf', 'plan pdf', 'vectoriel'])) {
+    return answerPDFPlan(ctx)
   }
 
   // Default : help message
