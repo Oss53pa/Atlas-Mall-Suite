@@ -77,9 +77,11 @@ const RevenuePredictorLazy = lazy(() => import('./sections/RevenuePredictor'))
 const SeasonalPlanningLazy = lazy(() => import('./sections/SeasonalPlanning'))
 const TenantMixValidatorLazy = lazy(() => import('./sections/TenantMixValidator'))
 const PlanImportsSectionLazy = lazy(() => import('../shared/components/PlanImportsSection'))
+const View3DSectionLazy = lazy(() => import('../shared/view3d/View3DSection'))
 
 type Vol3Tab =
   | 'plan'
+  | '3d'
   | 'plan_imports'
   | 'parcours'
   | 'wayfinding'
@@ -207,6 +209,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'plan_imports', label: 'Plans importés', icon: Upload },
       { id: 'plan', label: 'Plan interactif', icon: Map },
+      { id: '3d', label: 'Vue 3D', icon: Box },
       { id: 'parcours', label: 'Parcours client', icon: Route },
       { id: 'wayfinding', label: 'Wayfinding', icon: Navigation },
       { id: 'signaletique', label: 'Signalétique (plan)', icon: Signpost },
@@ -1241,6 +1244,12 @@ export default function Vol3Module() {
           <main className="flex-1 min-w-0 overflow-y-auto" style={{ background: '#080c14' }}>
             <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="w-5 h-5 animate-spin text-gray-500" /></div>}>
               {activeTab === 'intro' && <IntroSectionLazy />}
+              {activeTab === '3d' && <View3DSectionLazy data={{
+                sourceVolume: 'vol3',
+                floors: store.floors, zones: store.zones, transitions: store.transitions,
+                pois: store.pois, signageItems: store.signageItems,
+                moments: store.moments.map(m => ({ id: m.id, x: m.x, y: m.y, floorId: m.floorId, number: m.number, name: m.name })),
+              }} />}
               {activeTab === 'journeymap' && <JourneyMapSectionLazy />}
               {activeTab === 'parcoursvisuel' && <SwimlaneSectionLazy />}
               {activeTab === 'swimlane' && <SwimlaneSectionLazy />}
