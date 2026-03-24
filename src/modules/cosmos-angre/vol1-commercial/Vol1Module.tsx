@@ -10,6 +10,7 @@ import {
   Map,
   Brain,
   Download,
+  Upload,
   ChevronDown,
   ChevronRight,
   Loader2,
@@ -21,8 +22,9 @@ const PlanCommercialSectionLazy = lazy(() => import('./sections/PlanCommercialSe
 const TenantsSectionLazy = lazy(() => import('./sections/TenantsSection'))
 const Proph3tCommercialSectionLazy = lazy(() => import('./sections/Proph3tCommercialSection'))
 const ExportCommercialSectionLazy = lazy(() => import('./sections/ExportCommercialSection'))
+const PlanImportsSectionLazy = lazy(() => import('../shared/components/PlanImportsSection'))
 
-type Vol1Tab = 'dashboard' | 'plan' | 'tenants' | 'proph3t' | 'exports'
+type Vol1Tab = 'dashboard' | 'plan' | 'plan_imports' | 'tenants' | 'proph3t' | 'exports'
 
 interface NavItem {
   id: Vol1Tab
@@ -33,6 +35,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard Occupancy', icon: BarChart2, color: '#f59e0b' },
+  { id: 'plan_imports', label: 'Plans importés', icon: Upload, color: '#8b5cf6' },
   { id: 'plan', label: 'Plan Commercial', icon: Map, color: '#22c55e' },
   { id: 'tenants', label: 'Preneurs', icon: Users, color: '#38bdf8' },
   { id: 'proph3t', label: 'Proph3t IA', icon: Brain, color: '#a855f7' },
@@ -110,6 +113,19 @@ export default function Vol1Module() {
       <main className="flex-1 overflow-y-auto">
         <Suspense fallback={<Loading />}>
           {activeTab === 'dashboard' && <DashboardSectionLazy />}
+          {activeTab === 'plan_imports' && (
+            <PlanImportsSectionLazy
+              volumeColor="#f59e0b"
+              volumeLabel="VOL. 1 — PLAN COMMERCIAL"
+              floors={[
+                { id: 'floor-b1', level: 'B1' as any, order: 0, widthM: 180, heightM: 120, zones: [], transitions: [] },
+                { id: 'floor-rdc', level: 'RDC' as any, order: 1, widthM: 200, heightM: 140, zones: [], transitions: [] },
+                { id: 'floor-r1', level: 'R+1' as any, order: 2, widthM: 200, heightM: 140, zones: [], transitions: [] },
+              ]}
+              activeFloorId="floor-rdc"
+              onImportComplete={() => {}}
+            />
+          )}
           {activeTab === 'plan' && <PlanCommercialSectionLazy />}
           {activeTab === 'tenants' && <TenantsSectionLazy />}
           {activeTab === 'proph3t' && <Proph3tCommercialSectionLazy />}
