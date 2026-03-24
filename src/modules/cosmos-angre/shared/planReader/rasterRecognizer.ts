@@ -37,7 +37,7 @@ export async function recognizeRasterPlan(imageFile: File): Promise<RasterRecogn
   const { regions, labels } = findConnectedRegions(closed, W, H)
 
   // ── 6. Filtrage des régions par taille → zones candidates ──
-  const minArea = W * H * 0.002  // min 0.2% de l'image
+  const minArea = W * H * 0.0005 // min 0.05% de l'image (~200px sur 4Mpx)
   const maxArea = W * H * 0.4    // max 40%
   const validRegions = regions.filter(r => r.area >= minArea && r.area <= maxArea)
 
@@ -471,28 +471,36 @@ function estimateScaleFromGeometry(
 }
 
 // ═══ ZONE CLASSIFICATION HEURISTICS ═══
+// Contexte : plan commercial de centre commercial africain
+// La majorite des zones sont des cellules commerciales (60-80%)
+// Les circulations sont longues et etroites (aspect ratio > 3)
+// Les locaux techniques sont tres petits (< 0.1% du plan)
+// Les food courts / grandes surfaces sont grands (> 8% du plan)
 
 function guessZoneType(bb: BoundingBox, aspectRatio: number, relativeSize: number): SpaceType {
-  // Large zone (> 10% of plan) → likely parking or hypermarket
-  if (relativeSize > 0.10) return 'parking'
-  // Medium-large (5-10%) → food court or anchor
-  if (relativeSize > 0.05) return 'restauration'
-  // Long corridor-like (aspect ratio > 4) → circulation
-  if (aspectRatio > 4 || aspectRatio < 0.25) return 'circulation'
-  // Small (< 0.5%) → technical or backoffice
-  if (relativeSize < 0.005) return 'technique'
-  // Default → commerce
+  // Tres grand (> 15%) → parking ou hypermarche
+  if (relativeSize > 0.15) return 'parking'
+  // Grand (8-15%) → food court ou ancre
+  if (relativeSize > 0.08) return 'restauration'
+  // Tres long/etroit (aspect ratio > 5 ou < 0.2) → circulation
+  if (aspectRatio > 5 || aspectRatio < 0.2) return 'circulation'
+  // Tres petit (< 0.05% du plan = ~200px sur 4Mpx) → technique
+  if (relativeSize < 0.0005) return 'technique'
+  // Tout le reste = cellule commerciale (c'est un plan commercial)
   return 'commerce'
 }
 
 function guessZoneLabel(bb: BoundingBox, aspectRatio: number, relativeSize: number, idx: number): string {
   const type = guessZoneType(bb, aspectRatio, relativeSize)
   const labels: Record<string, string> = {
-    parking: 'Parking', restauration: 'Food Court / Grande surface',
-    circulation: 'Circulation', technique: 'Local technique',
+    parking: 'Parking / Hypermarche',
+    restauration: 'Food Court / Grande surface',
+    circulation: 'Circulation',
+    technique: 'Local technique',
     commerce: `Cellule commerciale ${idx + 1}`,
+    services: 'Services',
   }
-  return labels[type] ?? `Zone ${idx + 1}`
+  return labels[type] ?? `Cellule ${idx + 1}`
 }
 
 function computeConfidence(region: Region, W: number, H: number): number {
@@ -502,14 +510,13 @@ function computeConfidence(region: Region, W: number, H: number): number {
   const bbArea = (region.maxX - region.minX) * (region.maxY - region.minY)
   const fillRatio = bbArea > 0 ? area / bbArea : 0
 
-  // Higher confidence if:
-  // - Region fills its bounding box well (not too fragmented)
-  // - Size is in expected range (0.5% - 15% of total)
   let conf = 0.5
-  if (fillRatio > 0.6) conf += 0.15
-  if (fillRatio > 0.8) conf += 0.1
-  if (relSize > 0.005 && relSize < 0.15) conf += 0.1
-  if (relSize > 0.01 && relSize < 0.08) conf += 0.05
+  // Region bien remplie (pas trop fragmentee)
+  if (fillRatio > 0.5) conf += 0.1
+  if (fillRatio > 0.7) conf += 0.1
+  // Taille dans la plage attendue pour une cellule commerciale (0.05% - 15%)
+  if (relSize > 0.0005 && relSize < 0.15) conf += 0.15
+  if (relSize > 0.002 && relSize < 0.08) conf += 0.05
 
   return Math.min(0.9, conf)
 }
