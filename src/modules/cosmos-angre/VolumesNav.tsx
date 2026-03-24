@@ -80,24 +80,6 @@ const volumes: VolumeConfig[] = [
     ],
     route: '/cosmos-angre/vol3',
   },
-  {
-    id: 'vol3d',
-    number: 4,
-    badge: 'VUE 3D',
-    title: 'Vue 3D',
-    subtitle: 'Isometrique \u00b7 Perspective \u00b7 Semi-realiste',
-    description:
-      'Transformez le plan 2D en vue 3D interactive. Export SVG vectoriel, PNG 4K et GLB pour Blender.',
-    icon: Box,
-    accent: '#a78bfa',
-    accentRgb: '167, 139, 250',
-    stats: [
-      { value: '3', label: 'Modes' },
-      { value: 'GLB', label: 'Export' },
-      { value: 'PDF', label: 'Vectoriel' },
-    ],
-    route: '/cosmos-angre/3d',
-  },
 ]
 
 function VolumeCard({ vol }: { vol: VolumeConfig }) {
@@ -323,7 +305,7 @@ export default function VolumesNav() {
 
       {/* Volume cards */}
       <div className="relative mx-auto max-w-6xl px-6 py-8">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {volumes.map((vol) => (
             <VolumeCard key={vol.id} vol={vol} />
           ))}
