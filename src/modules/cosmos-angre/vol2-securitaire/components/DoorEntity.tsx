@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import type { Door } from '../../shared/proph3t/types'
 
 interface DoorEntityProps {
@@ -8,7 +8,7 @@ interface DoorEntityProps {
   onClick: () => void
 }
 
-export default function DoorEntity({ door, scale, isSelected, onClick }: DoorEntityProps) {
+const DoorEntity = memo(function DoorEntity({ door, scale, isSelected, onClick }: DoorEntityProps) {
   const x = door.x * scale
   const y = door.y * scale
   const fill = door.isExit ? '#22c55e' : door.hasBadge ? '#3b82f6' : '#94a3b8'
@@ -34,4 +34,6 @@ export default function DoorEntity({ door, scale, isSelected, onClick }: DoorEnt
       </text>
     </g>
   )
-}
+})
+
+export default DoorEntity

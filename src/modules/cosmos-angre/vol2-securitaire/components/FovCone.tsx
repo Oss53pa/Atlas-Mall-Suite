@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import type { Camera } from '../../shared/proph3t/types'
 
 interface FovConeProps {
@@ -37,7 +37,7 @@ function buildArcPath(cam: Camera, scale: number): string {
   return `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`
 }
 
-export default function FovCone({ camera, scale, onClick }: FovConeProps) {
+const FovCone = memo(function FovCone({ camera, scale, onClick }: FovConeProps) {
   const color = priorityColor(camera.priority)
   return (
     <path
@@ -51,4 +51,6 @@ export default function FovCone({ camera, scale, onClick }: FovConeProps) {
       onClick={onClick}
     />
   )
-}
+})
+
+export default FovCone

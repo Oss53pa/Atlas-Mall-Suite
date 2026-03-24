@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import type { Camera } from '../../shared/proph3t/types'
 
 interface CameraEntityProps {
@@ -16,7 +16,7 @@ function priorityColor(priority: Camera['priority']): string {
   }
 }
 
-export default function CameraEntity({ camera, scale, isSelected, onClick }: CameraEntityProps) {
+const CameraEntity = memo(function CameraEntity({ camera, scale, isSelected, onClick }: CameraEntityProps) {
   const cx = camera.x * scale
   const cy = camera.y * scale
 
@@ -35,4 +35,6 @@ export default function CameraEntity({ camera, scale, isSelected, onClick }: Cam
       )}
     </g>
   )
-}
+})
+
+export default CameraEntity

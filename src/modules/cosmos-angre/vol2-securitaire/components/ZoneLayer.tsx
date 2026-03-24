@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import type { Zone } from '../../shared/proph3t/types'
 
 interface ZoneLayerProps {
@@ -9,7 +9,7 @@ interface ZoneLayerProps {
   onSelect: (id: string) => void
 }
 
-export default function ZoneLayer({ zones, scale, showHeatmap, selectedId, onSelect }: ZoneLayerProps) {
+const ZoneLayer = memo(function ZoneLayer({ zones, scale, showHeatmap, selectedId, onSelect }: ZoneLayerProps) {
   return (
     <g>
       {zones.map((zone) => {
@@ -76,4 +76,6 @@ export default function ZoneLayer({ zones, scale, showHeatmap, selectedId, onSel
       })}
     </g>
   )
-}
+})
+
+export default ZoneLayer

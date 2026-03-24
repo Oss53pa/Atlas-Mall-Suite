@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import type { POI } from '../../shared/proph3t/types'
 
 interface PoiEntityProps {
@@ -16,7 +16,7 @@ function iconAbbrev(icon: string): string {
   return map[icon] ?? icon.slice(0, 2).toUpperCase()
 }
 
-export default function PoiEntity({ poi, isSelected, onClick }: PoiEntityProps) {
+const PoiEntity = memo(function PoiEntity({ poi, isSelected, onClick }: PoiEntityProps) {
   return (
     <g transform={`translate(${poi.x}, ${poi.y})`} onClick={onClick} className="cursor-pointer">
       <circle
@@ -34,4 +34,6 @@ export default function PoiEntity({ poi, isSelected, onClick }: PoiEntityProps) 
       <title>{poi.label}{poi.pmr ? ' (PMR)' : ''}</title>
     </g>
   )
-}
+})
+
+export default PoiEntity

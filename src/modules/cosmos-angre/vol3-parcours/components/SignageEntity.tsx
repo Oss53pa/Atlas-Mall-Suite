@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { memo, useState } from 'react'
 import type { SignageItem } from '../../shared/proph3t/types'
 
 interface SignageEntityProps {
@@ -18,7 +18,7 @@ function typeColor(type: string): string {
   return '#94a3b8'
 }
 
-export default function SignageEntity({ signage, selected, scale, onClick }: SignageEntityProps) {
+const SignageEntity = memo(function SignageEntity({ signage, selected, scale, onClick }: SignageEntityProps) {
   const [hovered, setHovered] = useState(false)
   const cx = signage.x * scale
   const cy = signage.y * scale
@@ -80,4 +80,6 @@ export default function SignageEntity({ signage, selected, scale, onClick }: Sig
       )}
     </g>
   )
-}
+})
+
+export default SignageEntity
