@@ -34,8 +34,6 @@ export async function importPlan(
   file: File,
   floorId: string,
   options: {
-    supabaseUrl?: string
-    supabaseAnonKey?: string
     onProgress?: (state: PlanImportState) => void
   } = {}
 ): Promise<PlanImportState> {
@@ -182,7 +180,7 @@ export async function importPlan(
         }
 
         if (isRasterPDF) {
-          // Fallback : convertir la 1re page PDF en image et envoyer vers Vision
+          // Fallback : convertir la 1re page PDF en image → Proph3t Vision local
           state.currentOperation = 'Conversion PDF en image...'
           state.progress = 30
           emit()
@@ -191,31 +189,27 @@ export async function importPlan(
             const imageBlob = await pdfPageToImage(file)
             const imageFile = new File([imageBlob], file.name.replace(/\.pdf$/i, '.png'), { type: 'image/png' })
 
-            if (options.supabaseUrl && options.supabaseAnonKey) {
-              state.currentOperation = 'Envoi vers Proph3t Vision...'
-              state.progress = 50
-              emit()
+            state.currentOperation = 'Proph3t Vision — analyse locale (contours, murs, zones)...'
+            state.progress = 50
+            emit()
 
-              const rasterResult = await recognizeRasterPlan(imageFile, options.supabaseUrl, options.supabaseAnonKey)
-              state.rasterResult = rasterResult
-              state.detectedZones = rasterResult.zones
-              state.warnings.push(...rasterResult.proph3tNotes)
+            const rasterResult = await recognizeRasterPlan(imageFile)
+            state.rasterResult = rasterResult
+            state.detectedZones = rasterResult.zones
+            state.warnings.push(...rasterResult.proph3tNotes)
 
-              if (rasterResult.scale) {
-                state.calibration = {
-                  scaleFactorX: 1 / rasterResult.scale.value,
-                  scaleFactorY: 1 / rasterResult.scale.value,
-                  realWidthM: 0, realHeightM: 0,
-                  confidence: rasterResult.scale.confidence,
-                  method: 'dim_manual', samplesUsed: 1, outlierCount: 0,
-                  issues: [`Echelle detectee par Vision: ${rasterResult.scale.ratio}`],
-                }
+            if (rasterResult.scale) {
+              state.calibration = {
+                scaleFactorX: 1 / rasterResult.scale.value,
+                scaleFactorY: 1 / rasterResult.scale.value,
+                realWidthM: 0, realHeightM: 0,
+                confidence: rasterResult.scale.confidence,
+                method: 'dim_manual', samplesUsed: 1, outlierCount: 0,
+                issues: [`Echelle estimee par Proph3t: ${rasterResult.scale.ratio}`],
               }
-            } else {
-              state.warnings.push('Configuration Supabase manquante pour Proph3t Vision — saisie manuelle des zones requise.')
             }
           } catch (pdfImgErr) {
-            state.warnings.push(`Conversion PDF→image echouee: ${pdfImgErr instanceof Error ? pdfImgErr.message : 'erreur inconnue'}. Utilisez un export image (JPG/PNG) du plan.`)
+            state.warnings.push(`Conversion PDF→image echouee: ${pdfImgErr instanceof Error ? pdfImgErr.message : 'erreur inconnue'}. Reessayez avec un export JPG/PNG du plan.`)
           }
 
           state.step = 'reviewing'
@@ -271,25 +265,14 @@ export async function importPlan(
       }
 
       case 'image_raster': {
-        state.currentOperation = 'Envoi vers Proph3t Vision...'
+        state.currentOperation = 'Proph3t Vision — analyse locale (contours, murs, zones)...'
         state.progress = 10
         emit()
-
-        if (!options.supabaseUrl || !options.supabaseAnonKey) {
-          state.step = 'error'
-          state.errors.push('Configuration Supabase manquante pour la reconnaissance Vision')
-          emit()
-          return state
-        }
 
         state.progress = 30
         emit()
 
-        const rasterResult = await recognizeRasterPlan(
-          file,
-          options.supabaseUrl,
-          options.supabaseAnonKey
-        )
+        const rasterResult = await recognizeRasterPlan(file)
 
         state.rasterResult = rasterResult
         state.detectedZones = rasterResult.zones
@@ -305,13 +288,13 @@ export async function importPlan(
             method: 'dim_manual',
             samplesUsed: 1,
             outlierCount: 0,
-            issues: [`Echelle detectee par Vision: ${rasterResult.scale.ratio}`],
+            issues: [`Echelle estimee par Proph3t: ${rasterResult.scale.ratio}`],
           }
         }
 
         state.step = 'reviewing'
         state.progress = 100
-        state.currentOperation = 'Reconnaissance terminee'
+        state.currentOperation = 'Analyse terminee'
         emit()
         break
       }

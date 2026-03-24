@@ -10,8 +10,6 @@ interface PlanImportWizardProps {
   activeFloorId: string
   onImportComplete: (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string) => void
   onClose: () => void
-  supabaseUrl?: string
-  supabaseAnonKey?: string
 }
 
 const ACCEPTED_FORMATS = '.dxf,.dwg,.ifc,.pdf,.jpg,.jpeg,.png,.webp'
@@ -46,12 +44,7 @@ type PlanSourceType = import('../planReader/planReaderTypes').PlanSourceType
 
 export default function PlanImportWizard({
   floors, activeFloorId, onImportComplete, onClose,
-  supabaseUrl: supabaseUrlProp,
-  supabaseAnonKey: supabaseAnonKeyProp,
 }: PlanImportWizardProps) {
-  // Auto-resolve Supabase env vars if not provided
-  const supabaseUrl = supabaseUrlProp || (typeof import.meta !== 'undefined' ? (import.meta as any).env?.VITE_SUPABASE_URL : undefined) || ''
-  const supabaseAnonKey = supabaseAnonKeyProp || (typeof import.meta !== 'undefined' ? (import.meta as any).env?.VITE_SUPABASE_ANON_KEY : undefined) || ''
   const [state, setState] = useState<PlanImportState>({
     step: 'upload',
     sourceType: null,
@@ -92,13 +85,11 @@ export default function PlanImportWizard({
     }
 
     const result = await importPlan(file, selectedFloorId, {
-      supabaseUrl,
-      supabaseAnonKey,
       onProgress: (s) => setState(s),
     })
 
     setState(result)
-  }, [selectedFloorId, supabaseUrl, supabaseAnonKey])
+  }, [selectedFloorId])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()

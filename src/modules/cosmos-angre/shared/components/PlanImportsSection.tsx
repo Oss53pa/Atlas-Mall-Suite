@@ -20,8 +20,6 @@ interface PlanImportsSectionProps {
   activeFloorId: string
   /** Callback quand un import est terminé → le parent peut injecter les zones dans son store */
   onImportComplete: (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string) => void
-  supabaseUrl?: string
-  supabaseAnonKey?: string
 }
 
 // ─── Helpers ──────────────────────────────────────────
@@ -60,13 +58,7 @@ const statusConfig: Record<ImportStatus, { icon: React.ElementType; label: strin
 export default function PlanImportsSection({
   volumeColor, volumeLabel, floors, activeFloorId,
   onImportComplete,
-  supabaseUrl: supabaseUrlProp,
-  supabaseAnonKey: supabaseAnonKeyProp,
 }: PlanImportsSectionProps) {
-  // Auto-resolve Supabase env vars if not passed as props
-  const supabaseUrl = supabaseUrlProp || (typeof import.meta !== 'undefined' ? (import.meta as any).env?.VITE_SUPABASE_URL : undefined) || ''
-  const supabaseAnonKey = supabaseAnonKeyProp || (typeof import.meta !== 'undefined' ? (import.meta as any).env?.VITE_SUPABASE_ANON_KEY : undefined) || ''
-
   const imports = usePlanImportStore((s) => s.imports)
   const addImport = usePlanImportStore((s) => s.addImport)
   const updateImport = usePlanImportStore((s) => s.updateImport)
@@ -270,8 +262,6 @@ export default function PlanImportsSection({
           activeFloorId={activeFloorId}
           onImportComplete={handleImportComplete}
           onClose={() => setShowWizard(false)}
-          supabaseUrl={supabaseUrl}
-          supabaseAnonKey={supabaseAnonKey}
         />
       )}
     </div>

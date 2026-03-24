@@ -1,6 +1,6 @@
 // ═══ VOL.2 SECURITAIRE — Main Module Component ═══
 
-import React, { useCallback, useMemo, useRef, useState, lazy, Suspense } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -64,6 +64,7 @@ import { useCascade } from './hooks/useCascade'
 import type { ClippingConfig, ClippingAxis, NavMode } from './components/FloorPlan3D'
 
 const FloorPlan3D = lazy(() => import('./components/FloorPlan3D'))
+const Vol3DModuleEmbed = lazy(() => import('../vol-3d/Vol3DModule'))
 const AnalyseSectionLazy = lazy(() => import('./sections/AnalyseSection'))
 const RapportSectionLazy = lazy(() => import('./sections/RapportSection'))
 const ChatSectionLazy = lazy(() => import('./sections/ChatSection'))
@@ -251,6 +252,14 @@ function transitionIcon(type: TransitionNode['type']): string {
 export default function Vol2Module() {
   const navigate = useNavigate()
 
+  // ── Hydrate from Supabase on mount ───────────────────────
+  const hydrateFromSupabase = useVol2Store((s) => s.hydrateFromSupabase)
+  const isHydrating = useVol2Store((s) => s.isHydrating)
+
+  useEffect(() => {
+    void hydrateFromSupabase('cosmos-angre')
+  }, [hydrateFromSupabase])
+
   // ── Store selectors ──────────────────────────────────────
   const floors = useVol2Store((s) => s.floors)
   const activeFloorId = useVol2Store((s) => s.activeFloorId)
@@ -338,7 +347,7 @@ export default function Vol2Module() {
   }, [selectedEntityType, deleteCamera, deleteDoor, deleteZone, selectEntity])
 
   // ── View mode state ─────────────────────────────────────
-  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d')
+  const [viewMode, setViewMode] = useState<'2d' | '3d' | '3d-advanced'>('2d')
   const [showAllFloors, setShowAllFloors] = useState(false)
   const [showDXFImport, setShowDXFImport] = useState(false)
   const [activeTab, setActiveTab] = useState<Vol2Tab>('introduction')
@@ -569,6 +578,18 @@ export default function Vol2Module() {
               <Box className="w-3 h-3" />
               3D
             </button>
+            <button
+              onClick={() => setViewMode('3d-advanced')}
+              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
+                viewMode === '3d-advanced'
+                  ? 'bg-purple-700 text-white'
+                  : 'text-gray-500 hover:text-gray-300'
+              }`}
+              title="Vue 3D avancée : Isométrique, Perspective, Semi-réaliste"
+            >
+              <Sparkles className="w-3 h-3" />
+              3D+
+            </button>
           </div>
         )}
 
@@ -768,7 +789,18 @@ export default function Vol2Module() {
 
         {/* ── Center — 2D/3D View ─────────────────────────── */}
         <main className="flex-1 relative min-w-0">
-          {viewMode === '2d' ? (
+          {viewMode === '3d-advanced' ? (
+            <Suspense fallback={
+              <div className="w-full h-full flex items-center justify-center bg-gray-950">
+                <div className="flex items-center gap-2 text-gray-500 text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Chargement Vue 3D avancée...
+                </div>
+              </div>
+            }>
+              <Vol3DModuleEmbed />
+            </Suspense>
+          ) : viewMode === '2d' ? (
             <FloorPlanCanvas
               floor={activeFloor}
               zones={floorZones}

@@ -13,11 +13,12 @@ import type { PlanImportState, CalibrationResult, DimEntity } from '../../shared
 import { calculateSignaleticsSpec, optimizeSignaleticsPlacement } from '../../shared/proph3t/signaleticsEngine'
 import { exportSignaletiquePDF } from '../../../export/exportSignaletique'
 import { exportQRCodesPDF } from '../../../export/exportQRCodes'
+import {
+  loadProjectFromSupabase, persistEntity, deleteEntity,
+  mapZoneToDB, mapPoiToDB, mapSignageToDB, mapTransitionToDB,
+} from '../../shared/supabaseSync'
 
-// ─── Environment check ──────────────────────────────────────
-const IS_PRODUCTION = import.meta.env.PROD
-
-// ─── Mock Data (development only — production loads from Supabase) ───
+// ─── Mock Data (fallback when Supabase has no data) ───
 
 const MOCK_FLOORS: Floor[] = [
   {
@@ -716,6 +717,11 @@ interface Vol3State {
   importPlan: (file: File, floorId: string) => Promise<void>
   setPlanImportState: (state: PlanImportState | null) => void
 
+  // Actions - Supabase hydration
+  hydrateFromSupabase: (projetId: string) => Promise<void>
+  isHydrating: boolean
+  hydrationError: string | null
+
   // Actions - Reset
   resetProject: () => void
 }
@@ -726,14 +732,14 @@ const initialState = {
   projectId: 'cosmos-angre-vol3',
   projectName: 'Cosmos Angre — Vol.3 Parcours Client',
 
-  floors: IS_PRODUCTION ? [] as Floor[] : MOCK_FLOORS,
-  activeFloorId: IS_PRODUCTION ? '' : 'floor-rdc',
-  transitions: IS_PRODUCTION ? [] as TransitionNode[] : MOCK_TRANSITIONS,
+  floors: [] as Floor[],
+  activeFloorId: '',
+  transitions: [] as TransitionNode[],
 
-  zones: IS_PRODUCTION ? [] as Zone[] : MOCK_ZONES,
-  pois: IS_PRODUCTION ? [] as POI[] : MOCK_POIS,
-  signageItems: IS_PRODUCTION ? [] as SignageItem[] : MOCK_SIGNAGE,
-  moments: IS_PRODUCTION ? [] as MomentCle[] : MOCK_MOMENTS,
+  zones: [] as Zone[],
+  pois: [] as POI[],
+  signageItems: [] as SignageItem[],
+  moments: [] as MomentCle[],
 
   navGraph: null as NavigationGraph | null,
   currentPath: null as PathResult | null,
@@ -760,6 +766,9 @@ const initialState = {
   libraryTab: 'signage' as const,
 
   planImportState: null as PlanImportState | null,
+
+  isHydrating: false,
+  hydrationError: null as string | null,
 } satisfies Record<string, unknown>
 
 // ─── Store ───────────────────────────────────────────────────
@@ -771,26 +780,40 @@ export const useVol3Store = create<Vol3State>()((set) => ({
   setActiveFloor: (floorId) => set({ activeFloorId: floorId }),
   addFloor: (floor) => set((s) => ({ floors: [...s.floors, floor] })),
 
-  // ── POIs ────────────────────────────────────────────────
-  addPoi: (poi) => set((s) => ({ pois: [...s.pois, poi] })),
-  updatePoi: (id, updates) =>
-    set((s) => ({
-      pois: s.pois.map((p) => (p.id === id ? { ...p, ...updates } : p)),
-    })),
-  deletePoi: (id) => set((s) => ({ pois: s.pois.filter((p) => p.id !== id) })),
+  // ── POIs (with Supabase persist) ────────────────────────
+  addPoi: (poi) => {
+    set((s) => ({ pois: [...s.pois, poi] }))
+    const pid = useVol3Store.getState().projectId
+    void persistEntity('pois', mapPoiToDB(poi, pid))
+  },
+  updatePoi: (id, updates) => {
+    set((s) => ({ pois: s.pois.map((p) => (p.id === id ? { ...p, ...updates } : p)) }))
+    const s = useVol3Store.getState()
+    const poi = s.pois.find(p => p.id === id)
+    if (poi) void persistEntity('pois', mapPoiToDB(poi, s.projectId))
+  },
+  deletePoi: (id) => {
+    set((s) => ({ pois: s.pois.filter((p) => p.id !== id) }))
+    void deleteEntity('pois', id)
+  },
   setPois: (pois) => set({ pois }),
 
-  // ── Signage ─────────────────────────────────────────────
-  addSignageItem: (item) =>
-    set((s) => ({ signageItems: [...s.signageItems, item] })),
-  updateSignageItem: (id, updates) =>
-    set((s) => ({
-      signageItems: s.signageItems.map((si) =>
-        si.id === id ? { ...si, ...updates } : si
-      ),
-    })),
-  deleteSignageItem: (id) =>
-    set((s) => ({ signageItems: s.signageItems.filter((si) => si.id !== id) })),
+  // ── Signage (with Supabase persist) ─────────────────────
+  addSignageItem: (item) => {
+    set((s) => ({ signageItems: [...s.signageItems, item] }))
+    const pid = useVol3Store.getState().projectId
+    void persistEntity('signage_items', mapSignageToDB(item, pid))
+  },
+  updateSignageItem: (id, updates) => {
+    set((s) => ({ signageItems: s.signageItems.map((si) => si.id === id ? { ...si, ...updates } : si) }))
+    const s = useVol3Store.getState()
+    const item = s.signageItems.find(si => si.id === id)
+    if (item) void persistEntity('signage_items', mapSignageToDB(item, s.projectId))
+  },
+  deleteSignageItem: (id) => {
+    set((s) => ({ signageItems: s.signageItems.filter((si) => si.id !== id) }))
+    void deleteEntity('signage_items', id)
+  },
   setSignageItems: (items) => set({ signageItems: items }),
 
   // ── Moments ─────────────────────────────────────────────
@@ -1034,6 +1057,53 @@ export const useVol3Store = create<Vol3State>()((set) => ({
   },
 
   setPlanImportState: (state) => set({ planImportState: state }),
+
+  // ── Supabase hydration ─────────────────────────────────
+  hydrateFromSupabase: async (projetId) => {
+    set({ isHydrating: true, hydrationError: null })
+    try {
+      const data = await loadProjectFromSupabase(projetId)
+      if (data && (data.floors.length > 0 || data.pois.length > 0)) {
+        set({
+          projectId: projetId,
+          floors: data.floors,
+          activeFloorId: data.floors[0]?.id ?? '',
+          zones: data.zones,
+          pois: data.pois,
+          signageItems: data.signageItems,
+          transitions: data.transitions,
+          moments: generateParcours(data.zones, data.pois),
+          isHydrating: false,
+        })
+      } else {
+        // No data in Supabase — fall back to mock data for demo
+        set({
+          projectId: projetId,
+          floors: MOCK_FLOORS,
+          activeFloorId: 'floor-rdc',
+          transitions: MOCK_TRANSITIONS,
+          zones: MOCK_ZONES,
+          pois: MOCK_POIS,
+          signageItems: MOCK_SIGNAGE,
+          moments: MOCK_MOMENTS,
+          isHydrating: false,
+        })
+      }
+    } catch (err) {
+      console.warn('[Vol3Store] Hydration failed, using mock data:', err)
+      set({
+        floors: MOCK_FLOORS,
+        activeFloorId: 'floor-rdc',
+        transitions: MOCK_TRANSITIONS,
+        zones: MOCK_ZONES,
+        pois: MOCK_POIS,
+        signageItems: MOCK_SIGNAGE,
+        moments: MOCK_MOMENTS,
+        isHydrating: false,
+        hydrationError: err instanceof Error ? err.message : 'Erreur de chargement',
+      })
+    }
+  },
 
   // ── Reset ───────────────────────────────────────────────
   resetProject: () => set(initialState),

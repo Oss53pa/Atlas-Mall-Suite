@@ -27,11 +27,13 @@ import { optimizeSignaleticsPlacement } from '../../shared/proph3t/signaleticsEn
 import { exportASPADPDF } from '../../../export/exportPDFApsad'
 import { exportCAPEXExcel } from '../../../export/exportCAPEX'
 import { exportAnnotatedDXF } from '../../../export/exportDXF'
+import {
+  loadProjectFromSupabase, persistEntity, deleteEntity, persistBatch,
+  mapCameraToDB, mapZoneToDB, mapDoorToDB, mapFloorToDB, mapTransitionToDB,
+  mapSignageToDB,
+} from '../../shared/supabaseSync'
 
-// ─── Environment check ──────────────────────────────────────
-const IS_PRODUCTION = import.meta.env.PROD
-
-// ─── Mock Data (development only — production loads from Supabase) ───
+// ─── Mock Data (fallback when Supabase has no data) ───
 
 const MOCK_FLOORS: Floor[] = [
   {
@@ -491,6 +493,11 @@ interface Vol2State {
   // Actions - 3D model import
   setImported3DModel: (scene: THREE.Group, format: string, floorId: string) => void
 
+  // Actions - Supabase hydration
+  hydrateFromSupabase: (projetId: string) => Promise<void>
+  isHydrating: boolean
+  hydrationError: string | null
+
   // Actions - Reset
   resetProject: () => void
 }
@@ -501,12 +508,12 @@ const initialState = {
   projectId: 'cosmos-angre-vol2',
   projectName: 'Cosmos Angre — Vol.2 Securitaire',
 
-  floors: IS_PRODUCTION ? [] as Floor[] : MOCK_FLOORS,
-  activeFloorId: IS_PRODUCTION ? '' : 'floor-rdc',
-  transitions: IS_PRODUCTION ? [] as TransitionNode[] : MOCK_TRANSITIONS,
+  floors: [] as Floor[],
+  activeFloorId: '',
+  transitions: [] as TransitionNode[],
 
-  zones: IS_PRODUCTION ? [] as Zone[] : MOCK_ZONES,
-  cameras: IS_PRODUCTION ? [] as Camera[] : MOCK_CAMERAS,
+  zones: [] as Zone[],
+  cameras: [] as Camera[],
   doors: [] as Door[],
   blindSpots: [] as BlindSpot[],
 
@@ -551,6 +558,9 @@ const initialState = {
 
   libraryOpen: false,
   libraryTab: 'camera' as const,
+
+  isHydrating: false,
+  hydrationError: null as string | null,
 } satisfies Record<string, unknown>
 
 // ─── Store ───────────────────────────────────────────────────
@@ -562,37 +572,70 @@ export const useVol2Store = create<Vol2State>()((set) => ({
   setActiveFloor: (floorId) => set({ activeFloorId: floorId }),
   addFloor: (floor) => set((s) => ({ floors: [...s.floors, floor] })),
 
-  // ── Zones ───────────────────────────────────────────────
-  addZone: (zone) => set((s) => ({ zones: [...s.zones, zone] })),
-  updateZone: (id, updates) =>
-    set((s) => ({
-      zones: s.zones.map((z) => (z.id === id ? { ...z, ...updates } : z)),
-    })),
-  deleteZone: (id) => set((s) => ({ zones: s.zones.filter((z) => z.id !== id) })),
+  // ── Zones (with Supabase persist) ──────────────────────
+  addZone: (zone) => {
+    set((s) => ({ zones: [...s.zones, zone] }))
+    const pid = useVol2Store.getState().projectId
+    void persistEntity('zones', mapZoneToDB(zone, pid))
+  },
+  updateZone: (id, updates) => {
+    set((s) => ({ zones: s.zones.map((z) => (z.id === id ? { ...z, ...updates } : z)) }))
+    const s = useVol2Store.getState()
+    const zone = s.zones.find(z => z.id === id)
+    if (zone) void persistEntity('zones', mapZoneToDB(zone, s.projectId))
+  },
+  deleteZone: (id) => {
+    set((s) => ({ zones: s.zones.filter((z) => z.id !== id) }))
+    void deleteEntity('zones', id)
+  },
   setZones: (zones) => set({ zones }),
 
-  // ── Cameras ─────────────────────────────────────────────
-  addCamera: (camera) => set((s) => ({ cameras: [...s.cameras, camera] })),
-  updateCamera: (id, updates) =>
-    set((s) => ({
-      cameras: s.cameras.map((c) => (c.id === id ? { ...c, ...updates } : c)),
-    })),
-  deleteCamera: (id) => set((s) => ({ cameras: s.cameras.filter((c) => c.id !== id) })),
+  // ── Cameras (with Supabase persist) ───────────────────
+  addCamera: (camera) => {
+    set((s) => ({ cameras: [...s.cameras, camera] }))
+    const pid = useVol2Store.getState().projectId
+    void persistEntity('cameras', mapCameraToDB(camera, pid))
+  },
+  updateCamera: (id, updates) => {
+    set((s) => ({ cameras: s.cameras.map((c) => (c.id === id ? { ...c, ...updates } : c)) }))
+    const s = useVol2Store.getState()
+    const cam = s.cameras.find(c => c.id === id)
+    if (cam) void persistEntity('cameras', mapCameraToDB(cam, s.projectId))
+  },
+  deleteCamera: (id) => {
+    set((s) => ({ cameras: s.cameras.filter((c) => c.id !== id) }))
+    void deleteEntity('cameras', id)
+  },
   setCameras: (cameras) => set({ cameras }),
 
-  // ── Doors ───────────────────────────────────────────────
-  addDoor: (door) => set((s) => ({ doors: [...s.doors, door] })),
-  updateDoor: (id, updates) =>
-    set((s) => ({
-      doors: s.doors.map((d) => (d.id === id ? { ...d, ...updates } : d)),
-    })),
-  deleteDoor: (id) => set((s) => ({ doors: s.doors.filter((d) => d.id !== id) })),
+  // ── Doors (with Supabase persist) ─────────────────────
+  addDoor: (door) => {
+    set((s) => ({ doors: [...s.doors, door] }))
+    const pid = useVol2Store.getState().projectId
+    void persistEntity('doors', mapDoorToDB(door, pid))
+  },
+  updateDoor: (id, updates) => {
+    set((s) => ({ doors: s.doors.map((d) => (d.id === id ? { ...d, ...updates } : d)) }))
+    const s = useVol2Store.getState()
+    const door = s.doors.find(d => d.id === id)
+    if (door) void persistEntity('doors', mapDoorToDB(door, s.projectId))
+  },
+  deleteDoor: (id) => {
+    set((s) => ({ doors: s.doors.filter((d) => d.id !== id) }))
+    void deleteEntity('doors', id)
+  },
   setDoors: (doors) => set({ doors }),
 
-  // ── Transitions ─────────────────────────────────────────
-  addTransition: (t) => set((s) => ({ transitions: [...s.transitions, t] })),
-  removeTransition: (id) =>
-    set((s) => ({ transitions: s.transitions.filter((t) => t.id !== id) })),
+  // ── Transitions (with Supabase persist) ───────────────
+  addTransition: (t) => {
+    set((s) => ({ transitions: [...s.transitions, t] }))
+    const pid = useVol2Store.getState().projectId
+    void persistEntity('transitions', mapTransitionToDB(t, pid))
+  },
+  removeTransition: (id) => {
+    set((s) => ({ transitions: s.transitions.filter((t) => t.id !== id) }))
+    void deleteEntity('transitions', id)
+  },
 
   // ── Score & Coverage ────────────────────────────────────
   setScore: (score) => set({ score }),
@@ -943,6 +986,49 @@ export const useVol2Store = create<Vol2State>()((set) => ({
     const floorDoors = s.doors.filter(d => d.floorId === s.activeFloorId)
     const specs = generateCotationSpecs(activeFloor, floorZones, floorCameras, floorDoors, s.signageItems)
     set({ cotationSpecs: specs })
+  },
+
+  // ── Supabase hydration ─────────────────────────────────
+  hydrateFromSupabase: async (projetId) => {
+    set({ isHydrating: true, hydrationError: null })
+    try {
+      const data = await loadProjectFromSupabase(projetId)
+      if (data && (data.floors.length > 0 || data.zones.length > 0)) {
+        set({
+          projectId: projetId,
+          floors: data.floors,
+          activeFloorId: data.floors[0]?.id ?? '',
+          zones: data.zones,
+          cameras: data.cameras,
+          doors: data.doors,
+          transitions: data.transitions,
+          signageItems: data.signageItems,
+          isHydrating: false,
+        })
+      } else {
+        // No data in Supabase — fall back to mock data for demo
+        set({
+          projectId: projetId,
+          floors: MOCK_FLOORS,
+          activeFloorId: 'floor-rdc',
+          transitions: MOCK_TRANSITIONS,
+          zones: MOCK_ZONES,
+          cameras: MOCK_CAMERAS,
+          isHydrating: false,
+        })
+      }
+    } catch (err) {
+      console.warn('[Vol2Store] Hydration failed, using mock data:', err)
+      set({
+        floors: MOCK_FLOORS,
+        activeFloorId: 'floor-rdc',
+        transitions: MOCK_TRANSITIONS,
+        zones: MOCK_ZONES,
+        cameras: MOCK_CAMERAS,
+        isHydrating: false,
+        hydrationError: err instanceof Error ? err.message : 'Erreur de chargement',
+      })
+    }
   },
 
   // ── Reset ───────────────────────────────────────────────

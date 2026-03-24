@@ -1,6 +1,6 @@
 // ═══ VOL.3 PARCOURS CLIENT — Main Module ═══
 
-import React, { useCallback, useMemo, useState, lazy, Suspense } from 'react'
+import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -37,9 +37,11 @@ import {
   LayoutDashboard,
   Smartphone,
   Upload,
+  Box,
 } from 'lucide-react'
 import { useVol3Store } from './store/vol3Store'
 import FloorPlanCanvas, { CANVAS_SCALE } from '../shared/components/FloorPlanCanvas'
+const Vol3DModuleEmbed = lazy(() => import('../vol-3d/Vol3DModule'))
 import Proph3tChat from '../shared/components/Proph3tChat'
 import EntityPanel from '../shared/components/EntityPanel'
 import ToolbarButton from '../shared/components/ToolbarButton'
@@ -399,6 +401,9 @@ export default function Vol3Module() {
     setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }))
   }, [])
 
+  // ── View mode ──
+  const [viewMode, setViewMode] = useState<'2d' | '3d-advanced'>('2d')
+
   // ── Placement tools ──
   type PlaceTool = null | 'poi' | 'signage'
   const [placeTool, setPlaceTool] = useState<PlaceTool>(null)
@@ -680,6 +685,35 @@ export default function Vol3Module() {
         {/* Spacer */}
         <div className="flex-1" />
 
+        {/* View mode toggle */}
+        {activeTab === 'plan' && (
+          <div className="flex items-center gap-0.5 bg-gray-800 rounded-lg p-0.5 mr-3">
+            <button
+              onClick={() => setViewMode('2d')}
+              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
+                viewMode === '2d'
+                  ? 'bg-gray-700 text-white'
+                  : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              <Grid3X3 className="w-3 h-3" />
+              2D
+            </button>
+            <button
+              onClick={() => setViewMode('3d-advanced')}
+              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
+                viewMode === '3d-advanced'
+                  ? 'bg-purple-700 text-white'
+                  : 'text-gray-500 hover:text-gray-300'
+              }`}
+              title="Vue 3D avancée : Isométrique, Perspective, Semi-réaliste"
+            >
+              <Box className="w-3 h-3" />
+              3D
+            </button>
+          </div>
+        )}
+
         {/* Profile selector — only shown when plan is active */}
         {activeTab === 'plan' && (
           <div className="relative">
@@ -852,8 +886,20 @@ export default function Vol3Module() {
           />
         </aside>
 
-        {/* ── Center: Floor Plan Canvas ── */}
+        {/* ── Center: Floor Plan Canvas / 3D ── */}
         <main className="flex-1 relative overflow-hidden bg-gray-900/50">
+          {viewMode === '3d-advanced' ? (
+            <Suspense fallback={
+              <div className="w-full h-full flex items-center justify-center bg-gray-950">
+                <div className="flex items-center gap-2 text-gray-500 text-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Chargement Vue 3D avancée...
+                </div>
+              </div>
+            }>
+              <Vol3DModuleEmbed />
+            </Suspense>
+          ) : (<>
           {/* Placement indicator */}
           {placeTool && (
             <div className="absolute top-3 left-3 z-20 bg-emerald-900/90 border border-emerald-500/40 text-emerald-200 text-xs px-3 py-2 rounded-lg flex items-center gap-2 backdrop-blur-sm">
@@ -1084,6 +1130,7 @@ export default function Vol3Module() {
               </span>
             </div>
           )}
+          </>)}
         </main>
 
         {/* ── Right Panel ── */}
