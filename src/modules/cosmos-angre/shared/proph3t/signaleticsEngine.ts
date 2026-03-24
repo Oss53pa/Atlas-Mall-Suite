@@ -127,8 +127,11 @@ export function detectVisualBreaks(
     const dy = (b.y - a.y) * heightM
     const dist = Math.sqrt(dx * dx + dy * dy)
 
-    const heightMm = SIGNAGE_CATALOG[a.type]?.defaultHeightMm ?? 300
-    const maxAllowed = (heightMm * 100) / 1000
+    // NF X 08-003 : D_inter_max = H_texte(mm) × 200 / 1000
+    // H_texte ≈ 40% de la hauteur du panneau (ratio standard)
+    const panelHeightMm = SIGNAGE_CATALOG[a.type]?.defaultHeightMm ?? 300
+    const textHeightMm = Math.round(panelHeightMm * 0.4)
+    const maxAllowed = Math.max(5, (textHeightMm * 200) / 1000)
 
     if (dist > maxAllowed) {
       breaks.push({ from: a, to: b, distanceM: Math.round(dist * 10) / 10, maxAllowedM: maxAllowed })
