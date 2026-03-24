@@ -51,12 +51,12 @@ function priorityColor(priority: Camera['priority']): string {
 
 function transitionIcon(type: TransitionNode['type']): string {
   switch (type) {
-    case 'escalator_montant': return '\u2191'
-    case 'escalator_descendant': return '\u2193'
-    case 'ascenseur': return '\u21C5'
-    case 'rampe_pmr': return '\u267F'
-    case 'escalier_secours': return '\u26A0'
-    default: return '\u2195'
+    case 'escalator_montant': return '↑'
+    case 'escalator_descendant': return '↓'
+    case 'ascenseur': return '⇅'
+    case 'rampe_pmr': return '♿'
+    case 'escalier_secours': return '⚠'
+    default: return '↕'
   }
 }
 

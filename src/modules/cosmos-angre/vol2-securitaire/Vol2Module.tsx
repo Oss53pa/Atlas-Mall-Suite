@@ -231,17 +231,17 @@ function priorityColor(priority: Camera['priority']): string {
 function transitionIcon(type: TransitionNode['type']): string {
   switch (type) {
     case 'escalator_montant':
-      return '\u2191'
+      return '↑'
     case 'escalator_descendant':
-      return '\u2193'
+      return '↓'
     case 'ascenseur':
-      return '\u21C5'
+      return '⇅'
     case 'rampe_pmr':
-      return '\u267F'
+      return '♿'
     case 'escalier_secours':
-      return '\u26A0'
+      return '⚠'
     default:
-      return '\u2195'
+      return '↕'
   }
 }
 

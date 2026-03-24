@@ -235,7 +235,7 @@ export default function ComplianceTracker() {
                   <div className="space-y-1">
                     {result.details.map((detail, idx) => (
                       <p key={idx} className="text-[11px]" style={{ color: result.status === 'conforme' ? '#22c55e' : '#94a3b8' }}>
-                        {result.status === 'conforme' ? '\u2713' : '\u26A0'} {detail}
+                        {result.status === 'conforme' ? '✓' : '⚠'} {detail}
                       </p>
                     ))}
                   </div>

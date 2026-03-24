@@ -3,11 +3,11 @@ import { Flame, TrendingUp, TrendingDown } from 'lucide-react'
 import { useVol3Store } from '../store/vol3Store'
 
 const SCENARIOS = [
-  { id: 'journee_normale', label: 'Journ\u00e9e normale', multiplier: 1.0 },
+  { id: 'journee_normale', label: 'Journée normale', multiplier: 1.0 },
   { id: 'tabaski', label: 'Tabaski', multiplier: 1.8 },
-  { id: 'noel', label: 'No\u00ebl', multiplier: 2.2 },
-  { id: 'rentree', label: 'Rentr\u00e9e scolaire', multiplier: 1.5 },
-  { id: 'evenement', label: '\u00c9v\u00e9nement', multiplier: 2.5 },
+  { id: 'noel', label: 'Noël', multiplier: 2.2 },
+  { id: 'rentree', label: 'Rentrée scolaire', multiplier: 1.5 },
+  { id: 'evenement', label: 'Événement', multiplier: 2.5 },
 ] as const
 
 function zoneHeatColor(score: number): string {
@@ -65,7 +65,7 @@ export default function HeatmapSection() {
     <div className="h-full overflow-y-auto p-6 space-y-6">
       <h2 className="text-lg font-bold text-white flex items-center gap-2">
         <Flame className="w-5 h-5 text-orange-400" />
-        Heatmap Fr\u00e9quentation
+        Heatmap Fréquentation
       </h2>
 
       {/* Scenario tabs */}
@@ -86,7 +86,7 @@ export default function HeatmapSection() {
       </div>
 
       <p className="text-xs text-gray-500">
-        Sc\u00e9nario : {scenario.label} \u2014 multiplicateur \u00d7{scenario.multiplier} \u2014 \u00c9tage {activeFloor?.level}
+        Scénario : {scenario.label} — multiplicateur ×{scenario.multiplier} — Étage {activeFloor?.level}
       </p>
 
       {/* Visual heatmap */}
@@ -140,10 +140,10 @@ export default function HeatmapSection() {
         </div>
         <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4 text-center">
           <div className="text-2xl font-bold text-white">{heatData.length}</div>
-          <div className="text-[10px] text-gray-500">Zones analys\u00e9es</div>
+          <div className="text-[10px] text-gray-500">Zones analysées</div>
         </div>
         <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4 text-center">
-          <div className="text-2xl font-bold text-cyan-400">\u00d7{scenario.multiplier}</div>
+          <div className="text-2xl font-bold text-cyan-400">×{scenario.multiplier}</div>
           <div className="text-[10px] text-gray-500">Multiplicateur</div>
         </div>
       </div>
@@ -158,7 +158,7 @@ export default function HeatmapSection() {
           {hottest.map((d) => (
             <div key={d.zone.id} className="flex justify-between text-xs py-1">
               <span className="text-red-300/80">{d.zone.label}</span>
-              <span className="text-red-400 font-mono">{d.score}% \u2014 {d.dwellMin}min</span>
+              <span className="text-red-400 font-mono">{d.score}% — {d.dwellMin}min</span>
             </div>
           ))}
         </div>
@@ -170,7 +170,7 @@ export default function HeatmapSection() {
           {coldest.map((d) => (
             <div key={d.zone.id} className="flex justify-between text-xs py-1">
               <span className="text-blue-300/80">{d.zone.label}</span>
-              <span className="text-blue-400 font-mono">{d.score}% \u2014 {d.dwellMin}min</span>
+              <span className="text-blue-400 font-mono">{d.score}% — {d.dwellMin}min</span>
             </div>
           ))}
         </div>

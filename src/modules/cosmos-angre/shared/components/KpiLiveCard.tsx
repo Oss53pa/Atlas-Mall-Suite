@@ -25,7 +25,7 @@ export default function KpiLiveCard({
     }
   }, [value, previousValue, flashOnChange])
 
-  const trendArrow = trend === 'up' ? '\u2191' : trend === 'down' ? '\u2193' : ''
+  const trendArrow = trend === 'up' ? '↑' : trend === 'down' ? '↓' : ''
   const trendColor = trend === 'up' ? '#22c55e' : trend === 'down' ? '#ef4444' : '#6b7280'
 
   return (

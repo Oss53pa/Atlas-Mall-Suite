@@ -39,7 +39,7 @@ export default function PlanReaderProgress({ state }: PlanReaderProgressProps) {
                           : 'bg-gray-800 text-gray-500'
                   }`}
                 >
-                  {isError ? '!' : isDone ? '\u2713' : idx + 1}
+                  {isError ? '!' : isDone ? '✓' : idx + 1}
                 </div>
                 <span className={`text-[10px] ${isActive ? 'text-blue-400' : 'text-gray-500'}`}>
                   {step.label}

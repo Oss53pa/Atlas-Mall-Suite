@@ -28,7 +28,7 @@ export default function BudgetSection() {
   const doorItems = useMemo(() => {
     const byRef: Record<string, { count: number; unitPrice: number; ref: string; label: string }> = {}
     for (const d of doors) {
-      const key = d.ref || 'Sans r\u00e9f.'
+      const key = d.ref || 'Sans réf.'
       if (!byRef[key]) byRef[key] = { count: 0, unitPrice: d.capexFcfa, ref: d.ref, label: d.label }
       byRef[key].count++
     }
@@ -58,16 +58,16 @@ export default function BudgetSection() {
         </div>
         <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4 text-center">
           <div className="text-xl font-bold text-cyan-400">{cameras.length + doors.length}</div>
-          <div className="text-[10px] text-gray-500 mt-1">\u00c9quipements</div>
+          <div className="text-[10px] text-gray-500 mt-1">Équipements</div>
         </div>
       </div>
 
       {/* Breakdown bars */}
       <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4 space-y-3">
-        <h3 className="text-sm font-semibold text-white">R\u00e9partition</h3>
+        <h3 className="text-sm font-semibold text-white">Répartition</h3>
         {[
-          { label: 'Vid\u00e9osurveillance', value: camTotal, color: '#3b82f6', icon: Camera },
-          { label: 'Contr\u00f4le d\'acc\u00e8s', value: doorTotal, color: '#8b5cf6', icon: DoorOpen },
+          { label: 'Vidéosurveillance', value: camTotal, color: '#3b82f6', icon: Camera },
+          { label: 'Contrôle d\'accès', value: doorTotal, color: '#8b5cf6', icon: DoorOpen },
         ].map((cat) => (
           <div key={cat.label} className="space-y-1">
             <div className="flex items-center justify-between text-xs">
@@ -94,13 +94,13 @@ export default function BudgetSection() {
       <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4">
         <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-1.5">
           <Camera className="w-4 h-4 text-blue-400" />
-          Cam\u00e9ras
+          Caméras
         </h3>
         <table className="w-full text-xs">
           <thead>
             <tr className="text-gray-500 border-b border-gray-700">
-              <th className="text-left py-2">Mod\u00e8le</th>
-              <th className="text-center py-2">Qt\u00e9</th>
+              <th className="text-left py-2">Modèle</th>
+              <th className="text-center py-2">Qté</th>
               <th className="text-right py-2">P.U. FCFA</th>
               <th className="text-right py-2">Total FCFA</th>
             </tr>
@@ -115,12 +115,12 @@ export default function BudgetSection() {
               </tr>
             ))}
             {camItems.length === 0 && (
-              <tr><td colSpan={4} className="py-4 text-center text-gray-600">Aucune cam\u00e9ra plac\u00e9e</td></tr>
+              <tr><td colSpan={4} className="py-4 text-center text-gray-600">Aucune caméra placée</td></tr>
             )}
           </tbody>
           <tfoot>
             <tr className="border-t border-gray-700">
-              <td colSpan={3} className="py-2 text-right text-gray-400 font-medium">Sous-total cam\u00e9ras</td>
+              <td colSpan={3} className="py-2 text-right text-gray-400 font-medium">Sous-total caméras</td>
               <td className="py-2 text-right text-blue-400 font-bold font-mono">{camTotal.toLocaleString('fr-FR')}</td>
             </tr>
           </tfoot>
@@ -131,13 +131,13 @@ export default function BudgetSection() {
       <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4">
         <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-1.5">
           <DoorOpen className="w-4 h-4 text-purple-400" />
-          Contr\u00f4le d'acc\u00e8s
+          Contrôle d'accès
         </h3>
         <table className="w-full text-xs">
           <thead>
             <tr className="text-gray-500 border-b border-gray-700">
-              <th className="text-left py-2">R\u00e9f\u00e9rence</th>
-              <th className="text-center py-2">Qt\u00e9</th>
+              <th className="text-left py-2">Référence</th>
+              <th className="text-center py-2">Qté</th>
               <th className="text-right py-2">P.U. FCFA</th>
               <th className="text-right py-2">Total FCFA</th>
             </tr>
@@ -152,12 +152,12 @@ export default function BudgetSection() {
               </tr>
             ))}
             {doorItems.length === 0 && (
-              <tr><td colSpan={4} className="py-4 text-center text-gray-600">Aucune porte configur\u00e9e</td></tr>
+              <tr><td colSpan={4} className="py-4 text-center text-gray-600">Aucune porte configurée</td></tr>
             )}
           </tbody>
           <tfoot>
             <tr className="border-t border-gray-700">
-              <td colSpan={3} className="py-2 text-right text-gray-400 font-medium">Sous-total acc\u00e8s</td>
+              <td colSpan={3} className="py-2 text-right text-gray-400 font-medium">Sous-total accès</td>
               <td className="py-2 text-right text-purple-400 font-bold font-mono">{doorTotal.toLocaleString('fr-FR')}</td>
             </tr>
           </tfoot>

@@ -249,7 +249,7 @@ const INIT_CARTE_TOUCHPOINTS: CarteTouchpoint[] = [
   // Approche
   { id: 'ct-p-1',  label: '12 panneaux directionnels', type: 'géré', stageId: 'stage-1', zone: 'physical', col: 0, row: 1 },
   { id: 'ct-p-2',  label: 'Totem lumineux 4m',         type: 'géré', stageId: 'stage-1', zone: 'physical', col: 1, row: 2 },
-  { id: 'ct-p-3',  label: 'Bâche façade 600m\u00B2',   type: 'géré', stageId: 'stage-1', zone: 'physical', col: 0, row: 3 },
+  { id: 'ct-p-3',  label: 'Bâche façade 600m²',   type: 'géré', stageId: 'stage-1', zone: 'physical', col: 0, row: 3 },
   { id: 'ct-p-4',  label: 'Bouche-à-oreille',          type: 'gagné', stageId: 'stage-1', zone: 'physical', col: 1, row: 4 },
   // Parking
   { id: 'ct-p-5',  label: 'Compteurs LED places',      type: 'géré', stageId: 'stage-2', zone: 'physical', col: 0, row: 1 },

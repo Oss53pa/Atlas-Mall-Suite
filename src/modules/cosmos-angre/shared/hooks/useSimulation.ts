@@ -219,8 +219,8 @@ export function useSimulation(): UseSimulationResult {
         bottlenecks,
         frames,
         recommendations: totalTimeSec > 180
-          ? ['Ajouter des sorties de secours suppl\u00e9mentaires', '\u00c9largir les couloirs d\'\u00e9vacuation']
-          : ['\u00c9vacuation conforme NF S 61-938'],
+          ? ['Ajouter des sorties de secours supplémentaires', 'Élargir les couloirs d\'évacuation']
+          : ['Évacuation conforme NF S 61-938'],
         floorResults,
       })
       setIsRunning(false)

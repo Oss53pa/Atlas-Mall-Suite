@@ -5,11 +5,11 @@ import { useSimulation } from '../../shared/hooks/useSimulation'
 import SimulationPlayer from '../../shared/components/SimulationPlayer'
 
 const SCENARIOS = [
-  { id: 'vol_etalage', name: 'Vol \u00e0 l\'\u00e9talage', icon: Target, color: '#f59e0b', desc: 'Simulation de vols dans les zones commerce' },
+  { id: 'vol_etalage', name: 'Vol à l\'étalage', icon: Target, color: '#f59e0b', desc: 'Simulation de vols dans les zones commerce' },
   { id: 'intrusion_nocturne', name: 'Intrusion nocturne', icon: Shield, color: '#ef4444', desc: 'Tentatives d\'intrusion hors horaires' },
-  { id: 'incendie', name: 'Incendie', icon: Flame, color: '#dc2626', desc: 'D\u00e9part de feu avec \u00e9vacuation' },
-  { id: 'mouvement_foule', name: 'Mouvement de foule', icon: Users, color: '#8b5cf6', desc: 'Densit\u00e9 critique aux heures de pointe' },
-  { id: 'pickpocket', name: 'Pickpocket', icon: AlertTriangle, color: '#f97316', desc: 'Analyse de vuln\u00e9rabilit\u00e9 aux zones denses' },
+  { id: 'incendie', name: 'Incendie', icon: Flame, color: '#dc2626', desc: 'Départ de feu avec évacuation' },
+  { id: 'mouvement_foule', name: 'Mouvement de foule', icon: Users, color: '#8b5cf6', desc: 'Densité critique aux heures de pointe' },
+  { id: 'pickpocket', name: 'Pickpocket', icon: AlertTriangle, color: '#f97316', desc: 'Analyse de vulnérabilité aux zones denses' },
 ] as const
 
 export default function SimulationSection() {
@@ -50,7 +50,7 @@ export default function SimulationSection() {
         )}
       </div>
 
-      <p className="text-xs text-gray-500">1 000 simulations par sc\u00e9nario \u2014 analyse probabiliste de la r\u00e9silience du dispositif</p>
+      <p className="text-xs text-gray-500">1 000 simulations par scénario — analyse probabiliste de la résilience du dispositif</p>
 
       {/* Scenario cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -80,18 +80,18 @@ export default function SimulationSection() {
       {/* Results */}
       {monteCarloResult && (
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-white">R\u00e9sultats \u2014 {SCENARIOS.find((s) => s.id === monteCarloResult.scenario)?.name}</h3>
+          <h3 className="text-sm font-semibold text-white">Résultats — {SCENARIOS.find((s) => s.id === monteCarloResult.scenario)?.name}</h3>
 
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4 text-center">
               <div className={`text-3xl font-bold ${monteCarloResult.resilienceScore >= 80 ? 'text-emerald-400' : monteCarloResult.resilienceScore >= 60 ? 'text-amber-400' : 'text-red-400'}`}>
                 {monteCarloResult.resilienceScore}%
               </div>
-              <div className="text-[10px] text-gray-500 mt-1">Score r\u00e9silience</div>
+              <div className="text-[10px] text-gray-500 mt-1">Score résilience</div>
             </div>
             <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4 text-center">
               <div className="text-3xl font-bold text-cyan-400">{monteCarloResult.avgDetectionTimeSec}s</div>
-              <div className="text-[10px] text-gray-500 mt-1">Temps d\u00e9tection moyen</div>
+              <div className="text-[10px] text-gray-500 mt-1">Temps détection moyen</div>
             </div>
             <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4 text-center">
               <div className="text-3xl font-bold text-white">{monteCarloResult.runs}</div>
@@ -102,7 +102,7 @@ export default function SimulationSection() {
           {/* Failure zones */}
           {monteCarloResult.failureZones.length > 0 && (
             <div className="bg-red-950/30 border border-red-800/30 rounded-xl p-4">
-              <h4 className="text-xs font-semibold text-red-400 mb-2">Zones de vuln\u00e9rabilit\u00e9</h4>
+              <h4 className="text-xs font-semibold text-red-400 mb-2">Zones de vulnérabilité</h4>
               <div className="space-y-1.5">
                 {monteCarloResult.failureZones.slice(0, 5).map((fz) => {
                   const zone = zones.find((z) => z.id === fz.zoneId)
@@ -126,7 +126,7 @@ export default function SimulationSection() {
 
           {/* Heatmap grid */}
           <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4">
-            <h4 className="text-xs font-semibold text-white mb-2">Heatmap \u00e9checs d\u00e9tection</h4>
+            <h4 className="text-xs font-semibold text-white mb-2">Heatmap échecs détection</h4>
             <div className="grid gap-px" style={{ gridTemplateColumns: `repeat(20, 1fr)` }}>
               {monteCarloResult.heatmapData.flat().map((val, i) => {
                 const maxVal = Math.max(1, ...monteCarloResult.heatmapData.flat())

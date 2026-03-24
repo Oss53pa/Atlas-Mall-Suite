@@ -82,7 +82,7 @@ export function generateCotationSpecs(
           point1: [zone.x + zone.w / 2, zone.y + zone.h / 2],
           point2: [zone.x + zone.w / 2, zone.y + zone.h / 2],
           valueM: surface,
-          displayText: `${surface} m\u00B2`,
+          displayText: `${surface} m²`,
           offsetPx: 0,
           textSizePt: 8,
           color: '#94a3b8',

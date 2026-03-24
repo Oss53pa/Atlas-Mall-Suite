@@ -42,10 +42,10 @@ interface MetricConfig {
 }
 
 const METRICS: MetricConfig[] = [
-  { key: 'cameraDensity', label: 'Densit\u00e9 cam\u00e9ras', unit: '/100m\u00b2', avgKey: 'cameraDensity', higherIsBetter: true, max: 3 },
-  { key: 'signageDensity', label: 'Densit\u00e9 signal\u00e9tique', unit: '/100m\u00b2', avgKey: 'signageDensity', higherIsBetter: true, max: 2 },
-  { key: 'evacuationTime', label: '\u00c9vacuation', unit: 's', avgKey: 'evacuationTime', higherIsBetter: false, max: 300 },
-  { key: 'securityScore', label: 'Score s\u00e9curit\u00e9', unit: '/100', avgKey: 'securityScore', higherIsBetter: true, max: 100 },
+  { key: 'cameraDensity', label: 'Densité caméras', unit: '/100m²', avgKey: 'cameraDensity', higherIsBetter: true, max: 3 },
+  { key: 'signageDensity', label: 'Densité signalétique', unit: '/100m²', avgKey: 'signageDensity', higherIsBetter: true, max: 2 },
+  { key: 'evacuationTime', label: 'Évacuation', unit: 's', avgKey: 'evacuationTime', higherIsBetter: false, max: 300 },
+  { key: 'securityScore', label: 'Score sécurité', unit: '/100', avgKey: 'securityScore', higherIsBetter: true, max: 100 },
   { key: 'parcoursScore', label: 'Score parcours', unit: '/100', avgKey: 'parcoursScore', higherIsBetter: true, max: 100 },
 ]
 
@@ -82,7 +82,7 @@ export default function BenchmarkPanel({ projectMetrics, isOpen, onClose }: Benc
                 <span className="text-gray-400">{m.label}</span>
                 <span className={isBetter ? 'text-emerald-400' : 'text-red-400'}>
                   {typeof val === 'number' ? val.toFixed(1) : val}{m.unit}
-                  {isBetter ? ' \u2713' : ' \u2717'}
+                  {isBetter ? ' ✓' : ' ✗'}
                 </span>
               </div>
               <div className="relative h-4 bg-gray-800 rounded-full overflow-hidden">
@@ -109,7 +109,7 @@ export default function BenchmarkPanel({ projectMetrics, isOpen, onClose }: Benc
         })}
 
         <div className="border-t border-gray-800 pt-4">
-          <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-3">Malls de r\u00e9f\u00e9rence</p>
+          <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-3">Malls de référence</p>
           <div className="space-y-2">
             {REFERENCE_MALLS.map((mall) => (
               <div
@@ -118,7 +118,7 @@ export default function BenchmarkPanel({ projectMetrics, isOpen, onClose }: Benc
               >
                 <div>
                   <div className="text-white font-medium">{mall.name}</div>
-                  <div className="text-gray-500 text-[10px]">{mall.city}, {mall.country} \u2014 {mall.surfaceM2.toLocaleString('fr-FR')}m\u00b2</div>
+                  <div className="text-gray-500 text-[10px]">{mall.city}, {mall.country} — {mall.surfaceM2.toLocaleString('fr-FR')}m²</div>
                 </div>
                 <span
                   className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${

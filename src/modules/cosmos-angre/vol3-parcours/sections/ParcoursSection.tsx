@@ -17,13 +17,13 @@ export default function ParcoursSection() {
     <div className="h-full overflow-y-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-white">Les 7 Moments Cl\u00e9s</h2>
-          <p className="text-xs text-gray-500 mt-0.5">Parcours visiteur Cosmos Angr\u00e9</p>
+          <h2 className="text-lg font-bold text-white">Les 7 Moments Clés</h2>
+          <p className="text-xs text-gray-500 mt-0.5">Parcours visiteur Cosmos Angré</p>
         </div>
         {moments.length === 0 && (
           <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 text-xs font-medium hover:bg-emerald-600/30 transition-colors">
             <Zap className="w-3.5 h-3.5" />
-            G\u00e9n\u00e9rer avec Proph3t
+            Générer avec Proph3t
           </button>
         )}
       </div>
@@ -35,9 +35,9 @@ export default function ParcoursSection() {
           <div className="text-xl font-bold text-white">
             {experienceScore}<span className="text-sm text-gray-500">/100</span>
           </div>
-          <div className="text-xs text-gray-500">Score Exp\u00e9rience</div>
+          <div className="text-xs text-gray-500">Score Expérience</div>
           <div className="text-[10px] text-emerald-400 mt-1">
-            {addressed}/{moments.length} moments adress\u00e9s
+            {addressed}/{moments.length} moments adressés
           </div>
         </div>
         <div className="flex-1" />
@@ -61,7 +61,7 @@ export default function ParcoursSection() {
       {moments.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Signpost className="w-12 h-12 text-gray-700 mb-4" />
-          <p className="text-sm text-gray-500">Aucun moment cl\u00e9 g\u00e9n\u00e9r\u00e9</p>
+          <p className="text-sm text-gray-500">Aucun moment clé généré</p>
           <p className="text-xs text-gray-600 mt-1">Lancez Proph3t pour analyser le parcours visiteur</p>
         </div>
       )}

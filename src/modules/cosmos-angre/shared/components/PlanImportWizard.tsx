@@ -189,7 +189,7 @@ export default function PlanImportWizard({
                 className="hidden"
               />
               <div className="text-4xl mb-4">
-                {'\uD83D\uDCC1'}
+                📁
               </div>
               <p className="text-gray-300 font-medium mb-2">
                 Glisser-deposer ou cliquer pour importer

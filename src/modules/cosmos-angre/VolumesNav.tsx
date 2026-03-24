@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShieldCheck, Route, Sparkles, Link2, ArrowRight, Building2, Zap, Globe } from 'lucide-react'
+import { ShieldCheck, Route, Sparkles, Link2, ArrowRight, Building2, Zap, Globe, Box } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface VolumeStat {
@@ -50,7 +50,7 @@ const volumes: VolumeConfig[] = [
     subtitle: 'Sûreté · Accès · Vidéosurveillance · Procédures',
     description:
       'Audit complet de la stratégie sécuritaire. Placement intelligent des caméras, ' +
-      'contrôle d\u2019accès et conformité APSAD R82.',
+      'controle d\u2019acces et conformite APSAD R82.',
     icon: ShieldCheck,
     accent: '#38bdf8',
     accentRgb: '56, 189, 248',
@@ -79,6 +79,25 @@ const volumes: VolumeConfig[] = [
       { value: '\u221e', label: 'Expériences' },
     ],
     route: '/cosmos-angre/vol3',
+  },
+  {
+    id: 'vol3d',
+    number: 4,
+    badge: 'VUE 3D',
+    title: 'Vue 3D',
+    subtitle: 'Isometrique \u00b7 Perspective \u00b7 Semi-realiste',
+    description:
+      'Transformez le plan 2D en vue 3D interactive. Isometrique SVG, perspective Three.js ' +
+      'et rendu PBR semi-realiste. Export SVG, PNG 4K et GLB.',
+    icon: Box,
+    accent: '#a78bfa',
+    accentRgb: '167, 139, 250',
+    stats: [
+      { value: '3', label: 'Modes' },
+      { value: 'GLB', label: 'Export' },
+      { value: 'PDF', label: 'Vectoriel' },
+    ],
+    route: '/cosmos-angre/3d',
   },
 ]
 
@@ -305,7 +324,7 @@ export default function VolumesNav() {
 
       {/* Volume cards */}
       <div className="relative mx-auto max-w-6xl px-6 py-8">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           {volumes.map((vol) => (
             <VolumeCard key={vol.id} vol={vol} />
           ))}

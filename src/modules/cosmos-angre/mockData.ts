@@ -17,8 +17,8 @@ export const MOCK_FLOORS: Floor[] = [
 
 export const MOCK_TRANSITIONS: TransitionNode[] = [
   { id: 't1', type: 'ascenseur',            fromFloor: 'B1',  toFloor: 'R+1', x: 0.49, y: 0.50, pmr: true,  capacityPerMin: 17,  label: 'Ascenseur Central' },
-  { id: 't2', type: 'escalator_montant',    fromFloor: 'B1',  toFloor: 'RDC', x: 0.40, y: 0.55, pmr: false, capacityPerMin: 90,  label: 'Escalator Parking \u2191' },
-  { id: 't3', type: 'escalator_descendant', fromFloor: 'RDC', toFloor: 'B1',  x: 0.42, y: 0.55, pmr: false, capacityPerMin: 90,  label: 'Escalator Parking \u2193' },
+  { id: 't2', type: 'escalator_montant',    fromFloor: 'B1',  toFloor: 'RDC', x: 0.40, y: 0.55, pmr: false, capacityPerMin: 90,  label: 'Escalator Parking ↑' },
+  { id: 't3', type: 'escalator_descendant', fromFloor: 'RDC', toFloor: 'B1',  x: 0.42, y: 0.55, pmr: false, capacityPerMin: 90,  label: 'Escalator Parking ↓' },
   { id: 't4', type: 'escalier_fixe',        fromFloor: 'RDC', toFloor: 'R+1', x: 0.20, y: 0.55, pmr: false, capacityPerMin: 60,  label: 'Escalier Nord' },
   { id: 't5', type: 'escalier_fixe',        fromFloor: 'RDC', toFloor: 'R+1', x: 0.78, y: 0.55, pmr: false, capacityPerMin: 60,  label: 'Escalier Sud' },
   { id: 't6', type: 'escalier_secours',     fromFloor: 'R+1', toFloor: 'RDC', x: 0.05, y: 0.30, pmr: false, capacityPerMin: 60,  label: 'Escalier Secours NW' },
@@ -50,27 +50,27 @@ export const MOCK_CAMERAS_RDC: Camera[] = [
 // ═══ POIS ═══
 
 export const MOCK_POIS_RDC: POI[] = [
-  { id: 'p1',  floorId: 'f-rdc', label: 'Entree Principale',   type: 'sortie',         x: 0.12, y: 0.04, pmr: true,  color: '#ef4444', icon: '\ud83d\udeaa', note: '' },
-  { id: 'p2',  floorId: 'f-rdc', label: 'Carrefour Market',    type: 'enseigne',       x: 0.22, y: 0.25, pmr: true,  color: '#22c55e', icon: '\ud83c\udfea', note: 'Enseigne ancre alimentaire' },
-  { id: 'p3',  floorId: 'f-rdc', label: 'ibis Styles',         type: 'hotel',          x: 0.72, y: 0.22, pmr: false, color: '#22c55e', icon: '\ud83c\udfe8', note: 'Hotel 3*' },
-  { id: 'p4',  floorId: 'f-rdc', label: 'Adagio Aparthotel',   type: 'hotel',          x: 0.80, y: 0.22, pmr: true,  color: '#22c55e', icon: '\ud83c\udfe8', note: 'Residence hoteliere' },
-  { id: 'p5',  floorId: 'f-rdc', label: 'Cosmos Club Desk',    type: 'cosmos_club',    x: 0.45, y: 0.12, pmr: true,  color: '#f59e0b', icon: '\u2b50', cosmosClubOffre: 'Inscription gratuite + 200 points bienvenue' },
-  { id: 'p6',  floorId: 'f-rdc', label: 'Toilettes RDC Nord',  type: 'toilettes',      x: 0.30, y: 0.45, pmr: true,  color: '#3b82f6', icon: '\ud83d\udebb', note: '' },
-  { id: 'p7',  floorId: 'f-rdc', label: 'Toilettes RDC Sud',   type: 'toilettes',      x: 0.70, y: 0.45, pmr: true,  color: '#3b82f6', icon: '\ud83d\udebb', note: '' },
-  { id: 'p8',  floorId: 'f-rdc', label: 'Ascenseur Central',   type: 'ascenseur',      x: 0.49, y: 0.50, pmr: true,  color: '#8b5cf6', icon: '\ud83d\uded7', note: 'Acces B1-R+1', linkedFloorId: 'f-b1' },
-  { id: 'p9',  floorId: 'f-rdc', label: 'Totem Entree',        type: 'totem',          x: 0.18, y: 0.14, pmr: false, color: '#06b6d4', icon: '\ud83d\udccd', note: 'Signaletique directionnelle principale' },
-  { id: 'p10', floorId: 'f-rdc', label: 'Totem Food Court',    type: 'totem',          x: 0.45, y: 0.28, pmr: false, color: '#06b6d4', icon: '\ud83d\udccd', note: 'Direction restauration R+1' },
-  { id: 'p11', floorId: 'f-rdc', label: 'Sortie Secours Nord', type: 'sortie_secours', x: 0.05, y: 0.50, pmr: false, color: '#ef4444', icon: '\ud83c\udd98', note: 'NF EN 1125' },
-  { id: 'p12', floorId: 'f-rdc', label: 'Sortie Secours Sud',  type: 'sortie_secours', x: 0.93, y: 0.50, pmr: false, color: '#ef4444', icon: '\ud83c\udd98', note: 'NF EN 1125' },
+  { id: 'p1',  floorId: 'f-rdc', label: 'Entree Principale',   type: 'sortie',         x: 0.12, y: 0.04, pmr: true,  color: '#ef4444', icon: '🚪', note: '' },
+  { id: 'p2',  floorId: 'f-rdc', label: 'Carrefour Market',    type: 'enseigne',       x: 0.22, y: 0.25, pmr: true,  color: '#22c55e', icon: '🏪', note: 'Enseigne ancre alimentaire' },
+  { id: 'p3',  floorId: 'f-rdc', label: 'ibis Styles',         type: 'hotel',          x: 0.72, y: 0.22, pmr: false, color: '#22c55e', icon: '🏨', note: 'Hotel 3*' },
+  { id: 'p4',  floorId: 'f-rdc', label: 'Adagio Aparthotel',   type: 'hotel',          x: 0.80, y: 0.22, pmr: true,  color: '#22c55e', icon: '🏨', note: 'Residence hoteliere' },
+  { id: 'p5',  floorId: 'f-rdc', label: 'Cosmos Club Desk',    type: 'cosmos_club',    x: 0.45, y: 0.12, pmr: true,  color: '#f59e0b', icon: '⭐', cosmosClubOffre: 'Inscription gratuite + 200 points bienvenue' },
+  { id: 'p6',  floorId: 'f-rdc', label: 'Toilettes RDC Nord',  type: 'toilettes',      x: 0.30, y: 0.45, pmr: true,  color: '#3b82f6', icon: '🚻', note: '' },
+  { id: 'p7',  floorId: 'f-rdc', label: 'Toilettes RDC Sud',   type: 'toilettes',      x: 0.70, y: 0.45, pmr: true,  color: '#3b82f6', icon: '🚻', note: '' },
+  { id: 'p8',  floorId: 'f-rdc', label: 'Ascenseur Central',   type: 'ascenseur',      x: 0.49, y: 0.50, pmr: true,  color: '#8b5cf6', icon: '🛗', note: 'Acces B1-R+1', linkedFloorId: 'f-b1' },
+  { id: 'p9',  floorId: 'f-rdc', label: 'Totem Entree',        type: 'totem',          x: 0.18, y: 0.14, pmr: false, color: '#06b6d4', icon: '📍', note: 'Signaletique directionnelle principale' },
+  { id: 'p10', floorId: 'f-rdc', label: 'Totem Food Court',    type: 'totem',          x: 0.45, y: 0.28, pmr: false, color: '#06b6d4', icon: '📍', note: 'Direction restauration R+1' },
+  { id: 'p11', floorId: 'f-rdc', label: 'Sortie Secours Nord', type: 'sortie_secours', x: 0.05, y: 0.50, pmr: false, color: '#ef4444', icon: '🆘', note: 'NF EN 1125' },
+  { id: 'p12', floorId: 'f-rdc', label: 'Sortie Secours Sud',  type: 'sortie_secours', x: 0.93, y: 0.50, pmr: false, color: '#ef4444', icon: '🆘', note: 'NF EN 1125' },
 ]
 
 // ═══ SIGNAGE ═══
 
 export const MOCK_SIGNAGE_RDC: SignageItem[] = [
   { id: 's1', floorId: 'f-rdc', type: 'totem_3m',             x: 0.18, y: 0.14, orientationDeg: 0,   poseHeightM: 0,    textHeightMm: 75,  maxReadingDistanceM: 15, visibilityScore: 88, isLuminous: false, requiresBAES: false, content: 'Plan du mall - Parking - Sorties',   ref: 'TOTEM-3M',          capexFcfa: 1_800_000, normRef: 'NF X 08-003', proph3tNote: 'Totem entree principale - flux > 500 pers/h',         autoPlaced: false },
-  { id: 's2', floorId: 'f-rdc', type: 'panneau_dir_suspendu', x: 0.44, y: 0.12, orientationDeg: 90,  poseHeightM: 2.85, textHeightMm: 45,  maxReadingDistanceM: 9,  visibilityScore: 72, isLuminous: false, requiresBAES: false, content: 'Food Court R+1 \u2191 - Parking B1 \u2193', ref: 'PANNEAU-DIR-A',     capexFcfa: 180_000,   normRef: 'ISO 7010',    proph3tNote: 'Noeud de decision axe central',                     autoPlaced: true  },
+  { id: 's2', floorId: 'f-rdc', type: 'panneau_dir_suspendu', x: 0.44, y: 0.12, orientationDeg: 90,  poseHeightM: 2.85, textHeightMm: 45,  maxReadingDistanceM: 9,  visibilityScore: 72, isLuminous: false, requiresBAES: false, content: 'Food Court R+1 ↑ - Parking B1 ↓', ref: 'PANNEAU-DIR-A',     capexFcfa: 180_000,   normRef: 'ISO 7010',    proph3tNote: 'Noeud de decision axe central',                     autoPlaced: true  },
   { id: 's3', floorId: 'f-rdc', type: 'sortie_secours_led',   x: 0.05, y: 0.50, orientationDeg: 270, poseHeightM: 2.20, textHeightMm: 0,   maxReadingDistanceM: 20, visibilityScore: 95, isLuminous: true,  requiresBAES: true,  content: 'SORTIE',                                 ref: 'SORTIE-SECOURS-LED', capexFcfa: 85_000,   normRef: 'NF EN 60598-2-22', proph3tNote: 'Lumineux obligatoire (lux < 200 couloir nord)', autoPlaced: false },
-  { id: 's4', floorId: 'f-rdc', type: 'pictogramme_pmr',      x: 0.49, y: 0.48, orientationDeg: 0,   poseHeightM: 1.40, textHeightMm: 0,   maxReadingDistanceM: 5,  visibilityScore: 80, isLuminous: false, requiresBAES: false, content: '\u267f',                                ref: 'PICTOGRAMME-PMR',    capexFcfa: 18_000,   normRef: 'ISO 7001',    proph3tNote: 'Acces PMR ascenseur central',                       autoPlaced: true  },
+  { id: 's4', floorId: 'f-rdc', type: 'pictogramme_pmr',      x: 0.49, y: 0.48, orientationDeg: 0,   poseHeightM: 1.40, textHeightMm: 0,   maxReadingDistanceM: 5,  visibilityScore: 80, isLuminous: false, requiresBAES: false, content: '♿',                                ref: 'PICTOGRAMME-PMR',    capexFcfa: 18_000,   normRef: 'ISO 7001',    proph3tNote: 'Acces PMR ascenseur central',                       autoPlaced: true  },
 ]
 
 // ═══ CAPEX PRICES ═══

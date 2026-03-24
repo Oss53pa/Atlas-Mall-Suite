@@ -30,13 +30,13 @@ export default function SignaleticsSection() {
       if (zoneSignage.length === 0 && zone.type !== 'technique' && zone.type !== 'backoffice') {
         result.push({
           zone: zone.label,
-          recommendation: `Aucune signal\u00e9tique dans "${zone.label}" \u2014 panneau directionnel recommand\u00e9.`,
+          recommendation: `Aucune signalétique dans "${zone.label}" — panneau directionnel recommandé.`,
         })
       }
       if ((zone.lux ?? 300) < 200 && !zoneSignage.some((s) => s.isLuminous)) {
         result.push({
           zone: zone.label,
-          recommendation: `"${zone.label}" : luminosit\u00e9 < 200 lux \u2014 panneau lumineux requis (NF EN 1838).`,
+          recommendation: `"${zone.label}" : luminosité < 200 lux — panneau lumineux requis (NF EN 1838).`,
         })
       }
     }
@@ -48,7 +48,7 @@ export default function SignaleticsSection() {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-white flex items-center gap-2">
           <Signpost className="w-5 h-5 text-emerald-400" />
-          Signal\u00e9tique
+          Signalétique
         </h2>
         <button
           className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 text-xs font-medium hover:bg-emerald-600/30 transition-colors"
@@ -62,7 +62,7 @@ export default function SignaleticsSection() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4 text-center">
           <div className="text-2xl font-bold text-white">{stats.total}</div>
-          <div className="text-[10px] text-gray-500">\u00c9l\u00e9ments</div>
+          <div className="text-[10px] text-gray-500">Éléments</div>
         </div>
         <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4 text-center">
           <div className="text-2xl font-bold text-amber-400">{stats.luminous}</div>
@@ -89,7 +89,7 @@ export default function SignaleticsSection() {
             </div>
           ))}
           {Object.keys(stats.byType).length === 0 && (
-            <p className="text-xs text-gray-600">Aucun \u00e9l\u00e9ment signal\u00e9tique</p>
+            <p className="text-xs text-gray-600">Aucun élément signalétique</p>
           )}
         </div>
       </div>
@@ -99,7 +99,7 @@ export default function SignaleticsSection() {
         <div className="bg-amber-950/30 border border-amber-800/30 rounded-xl p-4">
           <h3 className="text-sm font-semibold text-amber-400 mb-3 flex items-center gap-1.5">
             <AlertTriangle className="w-4 h-4" />
-            Ruptures de continuit\u00e9 visuelle ({gaps.length})
+            Ruptures de continuité visuelle ({gaps.length})
           </h3>
           <ul className="space-y-1.5">
             {gaps.map((g, i) => (
@@ -133,14 +133,14 @@ export default function SignaleticsSection() {
                   <td className="py-2 px-2 text-center text-gray-400">{s.textHeightMm}mm</td>
                   <td className="py-2 px-2 text-center text-gray-400">{s.maxReadingDistanceM}m</td>
                   <td className="py-2 px-2 text-center">
-                    {s.isLuminous ? <Lightbulb className="w-3 h-3 text-amber-400 mx-auto" /> : <span className="text-gray-600">\u2014</span>}
+                    {s.isLuminous ? <Lightbulb className="w-3 h-3 text-amber-400 mx-auto" /> : <span className="text-gray-600">—</span>}
                   </td>
                   <td className="py-2 px-2 text-gray-500">{s.normRef}</td>
                   <td className="py-2 px-2 text-right text-cyan-400 font-mono">{s.capexFcfa.toLocaleString('fr-FR')}</td>
                 </tr>
               ))}
               {signageItems.length === 0 && (
-                <tr><td colSpan={7} className="py-4 text-center text-gray-600">Aucun \u00e9l\u00e9ment</td></tr>
+                <tr><td colSpan={7} className="py-4 text-center text-gray-600">Aucun élément</td></tr>
               )}
             </tbody>
           </table>

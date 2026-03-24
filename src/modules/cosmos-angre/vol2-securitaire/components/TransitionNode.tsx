@@ -10,13 +10,13 @@ interface TransitionNodeProps {
 
 function transitionIcon(type: TransitionNodeType['type']): string {
   switch (type) {
-    case 'escalator_montant': return '\u2191'
-    case 'escalator_descendant': return '\u2193'
-    case 'ascenseur': return '\u21C5'
-    case 'rampe_pmr': return '\u267F'
-    case 'escalier_secours': return '\u26A0'
-    case 'monte_charge': return '\u2B06'
-    default: return '\u2195'
+    case 'escalator_montant': return '↑'
+    case 'escalator_descendant': return '↓'
+    case 'ascenseur': return '⇅'
+    case 'rampe_pmr': return '♿'
+    case 'escalier_secours': return '⚠'
+    case 'monte_charge': return '⬆'
+    default: return '↕'
   }
 }
 

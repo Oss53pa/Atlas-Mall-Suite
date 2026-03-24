@@ -47,10 +47,10 @@ export default function SignaleticsCalculator({ onApply }: SignaleticsCalculator
     const spacingM = panelHeightMm / 10
 
     const justification = [
-      `Distance lecture ${maxReading}m \u2192 texte ${textHeightMm}mm min (NF X 08-003).`,
-      `Pose \u00e0 ${poseHeightM}m (plafond ${ceilingHeight}m, min 2.20m).`,
-      isLuminousRequired ? `Panneau lumineux requis (${lux} lux < 200 \u2014 NF EN 1838).` : '',
-      isBAESRequired ? `BAES obligatoire (${lux} lux < 50 \u2014 NF C 71-800).` : '',
+      `Distance lecture ${maxReading}m → texte ${textHeightMm}mm min (NF X 08-003).`,
+      `Pose à ${poseHeightM}m (plafond ${ceilingHeight}m, min 2.20m).`,
+      isLuminousRequired ? `Panneau lumineux requis (${lux} lux < 200 — NF EN 1838).` : '',
+      isBAESRequired ? `BAES obligatoire (${lux} lux < 50 — NF C 71-800).` : '',
       `Espacement inter-panneaux max : ${spacingM}m.`,
     ].filter(Boolean).join(' ')
 
@@ -71,7 +71,7 @@ export default function SignaleticsCalculator({ onApply }: SignaleticsCalculator
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 space-y-4">
       <div className="flex items-center gap-2 text-sm font-semibold text-white">
         <Calculator className="w-4 h-4 text-emerald-400" />
-        Calculateur Signal\u00e9tique
+        Calculateur Signalétique
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -112,7 +112,7 @@ export default function SignaleticsCalculator({ onApply }: SignaleticsCalculator
           />
         </label>
         <label className="space-y-1">
-          <span className="text-[10px] text-gray-400 uppercase tracking-wide">Luminosit\u00e9 (lux)</span>
+          <span className="text-[10px] text-gray-400 uppercase tracking-wide">Luminosité (lux)</span>
           <input
             type="number"
             value={lux}
@@ -127,7 +127,7 @@ export default function SignaleticsCalculator({ onApply }: SignaleticsCalculator
 
       <div className="bg-gray-800/60 rounded-lg p-3 space-y-2 text-xs">
         <div className="flex justify-between">
-          <span className="text-gray-400">Type recommand\u00e9</span>
+          <span className="text-gray-400">Type recommandé</span>
           <span className="text-emerald-400 font-medium">{specs.recommendedType.replace(/_/g, ' ')}</span>
         </div>
         <div className="flex justify-between">
@@ -147,10 +147,10 @@ export default function SignaleticsCalculator({ onApply }: SignaleticsCalculator
           <span className="text-white font-mono">{specs.spacingM} m</span>
         </div>
         {specs.isLuminousRequired && (
-          <div className="text-amber-400 text-[10px]">\u26a0 Panneau lumineux requis (NF EN 1838)</div>
+          <div className="text-amber-400 text-[10px]">⚠ Panneau lumineux requis (NF EN 1838)</div>
         )}
         {specs.isBAESRequired && (
-          <div className="text-red-400 text-[10px]">\u26a0 BAES obligatoire (NF C 71-800)</div>
+          <div className="text-red-400 text-[10px]">⚠ BAES obligatoire (NF C 71-800)</div>
         )}
       </div>
 

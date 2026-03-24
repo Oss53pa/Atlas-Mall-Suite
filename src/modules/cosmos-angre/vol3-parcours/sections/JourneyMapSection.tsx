@@ -94,7 +94,7 @@ function DeleteBtn({ onClick, style }: { onClick: (e: React.MouseEvent) => void;
         ...style,
       }}
     >
-      \u00D7
+      ×
     </button>
   )
 }
@@ -166,7 +166,7 @@ function StagePanel({ stage, onClose }: { stage: JourneyStage; onClose: () => vo
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <span style={{ fontSize: 12, fontWeight: 800, color: T.muted, textTransform: 'uppercase' as const, letterSpacing: '0.1em' }}>Stage</span>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', fontSize: 18 }}>\u00D7</button>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', fontSize: 18 }}>×</button>
       </div>
 
       {/* Name */}
@@ -177,7 +177,7 @@ function StagePanel({ stage, onClose }: { stage: JourneyStage; onClose: () => vo
       />
 
       {/* Duration */}
-      <label style={{ fontSize: 10, color: T.muted, fontWeight: 600, display: 'block', marginBottom: 4 }}>Dur\u00E9e</label>
+      <label style={{ fontSize: 10, color: T.muted, fontWeight: 600, display: 'block', marginBottom: 4 }}>Durée</label>
       <input
         value={duration} onChange={(e) => setDuration(e.target.value)}
         style={{ width: '100%', boxSizing: 'border-box' as const, background: 'rgba(255,255,255,0.06)', border: `1px solid ${T.border}`, borderRadius: 6, color: T.text, padding: '8px 10px', fontSize: 13, outline: 'none', marginBottom: 12 }}
@@ -210,7 +210,7 @@ function StagePanel({ stage, onClose }: { stage: JourneyStage; onClose: () => vo
           onClick={() => setConfirmDelete(true)}
           style={{ width: '100%', padding: '8px 0', borderRadius: 6, border: `1px solid rgba(239,68,68,0.3)`, background: 'rgba(239,68,68,0.08)', color: '#ef4444', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
         >
-          Supprimer cette \u00E9tape
+          Supprimer cette étape
         </button>
       ) : (
         <div style={{ display: 'flex', gap: 8 }}>
@@ -254,7 +254,7 @@ function EmotionSlider({ stageId, level, onClose }: { stageId: string; level: nu
           style={{ width: 100, accentColor: T.accent }}
         />
         <span style={{ fontSize: 10, color: T.muted }}>5</span>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', fontSize: 12, marginLeft: 4 }}>\u00D7</button>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', fontSize: 12, marginLeft: 4 }}>×</button>
       </div>
     </div>
   )
@@ -305,7 +305,7 @@ export default function JourneyMapSection() {
   const handleAddStage = () => {
     const id = uid()
     const color = PRESET_COLORS[stages.length % PRESET_COLORS.length]
-    addStage({ id, label: 'Nouvelle \u00E9tape', color, duration: '~5 min', durationPct: 5 })
+    addStage({ id, label: 'Nouvelle étape', color, duration: '~5 min', durationPct: 5 })
     setEditingId(`stage-label-${id}`)
   }
 
@@ -333,7 +333,7 @@ export default function JourneyMapSection() {
   /* ── Add department ── */
   const handleAddDepartment = () => {
     const id = uid()
-    addDepartment({ id, name: 'Nouveau d\u00E9partement', activeStageIds: [] })
+    addDepartment({ id, name: 'Nouveau département', activeStageIds: [] })
     setEditingId(`dept-name-${id}`)
   }
 
@@ -414,7 +414,7 @@ export default function JourneyMapSection() {
           })}
           {/* Add stage button */}
           <div style={{ display: 'flex', alignItems: 'center', marginLeft: 8 }}>
-            <AddBtn label="Ajouter \u00E9tape" onClick={handleAddStage} style={{ whiteSpace: 'nowrap' as const, minHeight: 56 }} />
+            <AddBtn label="Ajouter étape" onClick={handleAddStage} style={{ whiteSpace: 'nowrap' as const, minHeight: 56 }} />
           </div>
         </div>
 
@@ -486,7 +486,7 @@ export default function JourneyMapSection() {
                   <div
                     onClick={() => cycleEmoji(s.id, emotion.emoji)}
                     style={{ fontSize: 22, cursor: 'pointer', marginBottom: 4, userSelect: 'none' as const }}
-                    title="Cliquer pour changer l\u2019emoji"
+                    title="Cliquer pour changer l'emoji"
                   >
                     {emotion.emoji}
                   </div>
@@ -622,7 +622,7 @@ export default function JourneyMapSection() {
                       key={tp.id}
                       onClick={() => toggleTouchpointStage(tp.id, s.id)}
                       style={{ flex: '0 0 36px', display: 'flex', justifyContent: 'center', alignItems: 'center', height: 20, cursor: 'pointer' }}
-                      title={`${tp.name} \u2014 ${s.label}: ${isActive ? 'actif' : 'inactif'}`}
+                      title={`${tp.name} — ${s.label}: ${isActive ? 'actif' : 'inactif'}`}
                     >
                       {isActive ? (
                         <span style={{ width: 12, height: 12, borderRadius: '50%', background: s.color, display: 'inline-block', boxShadow: `0 0 6px ${s.color}40`, transition: 'all 0.15s' }} />
@@ -717,7 +717,7 @@ export default function JourneyMapSection() {
                     key={s.id}
                     onClick={() => toggleDepartmentStage(dept.id, s.id)}
                     style={{ display: 'flex', justifyContent: 'center', cursor: 'pointer' }}
-                    title={`${dept.name} \u2014 ${s.label}: ${isActive ? 'actif' : 'inactif'}`}
+                    title={`${dept.name} — ${s.label}: ${isActive ? 'actif' : 'inactif'}`}
                   >
                     <span
                       style={{
@@ -745,7 +745,7 @@ export default function JourneyMapSection() {
 
           {/* Add department button */}
           <div style={{ marginTop: 8 }}>
-            <AddBtn label="Ajouter d\u00E9partement" onClick={handleAddDepartment} style={{ width: '100%' }} />
+            <AddBtn label="Ajouter département" onClick={handleAddDepartment} style={{ width: '100%' }} />
           </div>
 
           {/* Department count badges */}
@@ -807,7 +807,7 @@ export default function JourneyMapSection() {
                 background: `${s.color}18`, border: `1px solid ${s.color}40`,
                 fontSize: 11, fontWeight: 600, color: s.color,
               }}>
-                {s.label} \u2014 {s.duration}
+                {s.label} — {s.duration}
               </span>
             </div>
           ))}

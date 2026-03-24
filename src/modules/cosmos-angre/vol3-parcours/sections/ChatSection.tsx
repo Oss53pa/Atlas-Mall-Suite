@@ -75,7 +75,7 @@ export default function ChatSection() {
         <div className="w-6 h-6 rounded-full bg-purple-600/30 flex items-center justify-center">
           <Sparkles className="w-3 h-3 text-purple-400" />
         </div>
-        <h3 className="text-sm font-semibold text-purple-300">Proph3t \u2014 Parcours</h3>
+        <h3 className="text-sm font-semibold text-purple-300">Proph3t — Parcours</h3>
         <div className="flex-1" />
         <button onClick={clearChat} className="text-[10px] text-gray-500 hover:text-gray-300">Effacer</button>
       </div>
