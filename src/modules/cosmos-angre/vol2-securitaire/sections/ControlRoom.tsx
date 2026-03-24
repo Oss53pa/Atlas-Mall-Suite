@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Camera, AlertTriangle, Shield, Users, Wifi, WifiOff, Eye } from 'lucide-react'
-import useVol2Store from '../store/vol2Store'
+import { useVol2Store } from '../store/vol2Store'
 
 interface MockIncident {
   id: string

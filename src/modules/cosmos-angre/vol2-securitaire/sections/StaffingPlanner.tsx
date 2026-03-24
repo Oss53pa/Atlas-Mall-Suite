@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { Users, Sun, Sunset, Moon, DollarSign } from 'lucide-react'
 import { calculateStaffing } from '../../shared/proph3t/staffingCalculator'
-import useVol2Store from '../store/vol2Store'
+import { useVol2Store } from '../store/vol2Store'
 
 export default function StaffingPlanner() {
   const zones = useVol2Store(s => s.zones)

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Zap, ArrowRight, Play, RotateCcw } from 'lucide-react'
 import { useWhatIf } from '../../shared/hooks/useWhatIf'
-import useVol2Store from '../store/vol2Store'
+import { useVol2Store } from '../store/vol2Store'
 import type { WhatIfResult } from '../../shared/proph3t/whatIfEngine'
 
 export default function WhatIfSecurite() {
