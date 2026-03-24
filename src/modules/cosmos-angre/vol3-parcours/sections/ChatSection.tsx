@@ -8,10 +8,10 @@ function uid(): string {
 }
 
 const SUGGESTIONS = [
-  'Score exp\u00e9rience ?',
-  'Signal\u00e9tique ?',
-  'Itin\u00e9raire PMR ?',
-  'Moments cl\u00e9s ?',
+  'Score expérience ?',
+  'Signalétique ?',
+  'Itinéraire PMR ?',
+  'Moments clés ?',
   'Cosmos Club ?',
   'Benchmark ?',
 ]
@@ -39,7 +39,7 @@ export default function ChatSection() {
 
     if (q.includes('score') || q.includes('experience')) {
       const score = Math.min(95, 45 + pois.length * 3 + moments.length * 4)
-      reply = `Score exp\u00e9rience Proph3t : ${score}/100.\n${pois.length} POI, ${moments.length} moments cl\u00e9s, ${signageItems.length} \u00e9l\u00e9ments signal\u00e9tiques.`
+      reply = `Score expérience Proph3t : ${score}/100.\n${pois.length} POI, ${moments.length} moments clés, ${signageItems.length} éléments signalétiques.`
       refs.push('NF P96-105')
     } else if (q.includes('pmr') || q.includes('accessib')) {
       const pmrPois = pois.filter(p => p.pmr)
@@ -47,19 +47,19 @@ export default function ChatSection() {
       refs.push('NF P96-105', 'ISO 7001')
     } else if (q.includes('moment') || q.includes('parcours')) {
       const addressed = moments.filter(m => m.signageItems.length > 0).length
-      reply = `${moments.length}/7 moments cl\u00e9s g\u00e9n\u00e9r\u00e9s.\n${addressed} adress\u00e9s avec signal\u00e9tique.`
+      reply = `${moments.length}/7 moments clés générés.\n${addressed} adressés avec signalétique.`
     } else if (q.includes('signal') || q.includes('totem') || q.includes('panneau')) {
       const byType: Record<string, number> = {}
       signageItems.forEach(s => { byType[s.type] = (byType[s.type] ?? 0) + 1 })
-      reply = `${signageItems.length} \u00e9l\u00e9ments signal\u00e9tiques.\n${Object.entries(byType).map(([t, n]) => `${t}: ${n}`).join('\n')}`
+      reply = `${signageItems.length} éléments signalétiques.\n${Object.entries(byType).map(([t, n]) => `${t}: ${n}`).join('\n')}`
       refs.push('ISO 7010', 'NF X 08-003')
     } else if (q.includes('cosmos') || q.includes('club') || q.includes('fid')) {
       const cosmosClubPoi = pois.find(p => p.type === 'cosmos_club')
-      reply = cosmosClubPoi ? `Cosmos Club : ${cosmosClubPoi.label}\nOffre : ${cosmosClubPoi.cosmosClubOffre ?? 'Non d\u00e9finie'}` : 'Aucun point Cosmos Club configur\u00e9.'
+      reply = cosmosClubPoi ? `Cosmos Club : ${cosmosClubPoi.label}\nOffre : ${cosmosClubPoi.cosmosClubOffre ?? 'Non définie'}` : 'Aucun point Cosmos Club configuré.'
     } else if (q.includes('benchmark') || q.includes('comparatif')) {
-      reply = `Benchmark 50+ malls africains Classe A :\n\u2022 Score parcours moyen : 68/100\n\u2022 Densit\u00e9 signal\u00e9tique : 0.7/100m\u00b2\n\u2022 Vos m\u00e9triques : ${moments.length} moments, ${pois.length} POI, ${signageItems.length} signal\u00e9tique`
+      reply = `Benchmark 50+ malls africains Classe A :\n• Score parcours moyen : 68/100\n• Densité signalétique : 0.7/100m²\n• Vos métriques : ${moments.length} moments, ${pois.length} POI, ${signageItems.length} signalétique`
     } else {
-      reply = `Proph3t Parcours \u2014 Je peux aider avec :\n\u2022 Score exp\u00e9rience\n\u2022 PMR & accessibilit\u00e9\n\u2022 Moments cl\u00e9s\n\u2022 Signal\u00e9tique\n\u2022 Wayfinding\n\u2022 Cosmos Club\n\u2022 Benchmark`
+      reply = `Proph3t Parcours — Je peux aider avec :\n• Score expérience\n• PMR & accessibilité\n• Moments clés\n• Signalétique\n• Wayfinding\n• Cosmos Club\n• Benchmark`
     }
 
     setTimeout(() => {

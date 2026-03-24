@@ -125,11 +125,11 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Lock,
     color: '#38bdf8',
     items: [
-      { id: 'perimetre', label: 'P\u00e9rim\u00e9trique', icon: Eye },
-      { id: 'acces', label: "Contr\u00f4le d'acc\u00e8s", icon: KeyRound },
-      { id: 'video', label: 'Vid\u00e9osurveillance', icon: CameraIcon },
-      { id: 'incendie', label: 'S\u00e9curit\u00e9 incendie', icon: Flame, dot: true },
-      { id: 'procedures', label: 'Proc\u00e9dures & formation', icon: ClipboardList },
+      { id: 'perimetre', label: 'Périmétrique', icon: Eye },
+      { id: 'acces', label: "Contrôle d'accès", icon: KeyRound },
+      { id: 'video', label: 'Vidéosurveillance', icon: CameraIcon },
+      { id: 'incendie', label: 'Sécurité incendie', icon: Flame, dot: true },
+      { id: 'procedures', label: 'Procédures & formation', icon: ClipboardList },
     ],
   },
   {
@@ -502,8 +502,8 @@ export default function Vol2Module() {
             </div>
           </div>
           <div>
-            <h1 className="text-sm font-bold leading-tight tracking-tight">Vol.2 <span className="text-gradient-blue">S\u00e9curitaire</span></h1>
-            <p className="text-[10px] text-gray-500 font-medium">Cosmos Angr\u00e9</p>
+            <h1 className="text-sm font-bold leading-tight tracking-tight">Vol.2 <span className="text-gradient-blue">Sécuritaire</span></h1>
+            <p className="text-[10px] text-gray-500 font-medium">Cosmos Angré</p>
           </div>
         </div>
 
@@ -652,8 +652,8 @@ export default function Vol2Module() {
         <aside className="flex-none w-60 border-r border-white/[0.04] bg-surface-1 overflow-y-auto">
           {/* Sidebar header */}
           <div className="px-4 pt-4 pb-3 border-b border-white/[0.04]">
-            <div className="text-[12px] font-bold text-white tracking-tight">Cosmos Angr{'\u00e9'}</div>
-            <div className="text-[9px] text-gray-500 font-mono mt-0.5 tracking-wider">VOL. 2 — PLAN S{'\u00c9'}CURITAIRE</div>
+            <div className="text-[12px] font-bold text-white tracking-tight">Cosmos Angré</div>
+            <div className="text-[9px] text-gray-500 font-mono mt-0.5 tracking-wider">VOL. 2 — PLAN SÉCURITAIRE</div>
           </div>
 
           {/* Navigation groups */}

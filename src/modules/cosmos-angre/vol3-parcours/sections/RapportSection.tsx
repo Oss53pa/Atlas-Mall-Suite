@@ -6,7 +6,7 @@ export default function RapportSection() {
   const moments = useVol3Store((s) => s.moments)
   const pois = useVol3Store((s) => s.pois)
   const signageItems = useVol3Store((s) => s.signageItems)
-  const projectName = 'Cosmos Angr\u00e9'
+  const projectName = 'Cosmos Angré'
   const [exporting, setExporting] = useState<string | null>(null)
 
   const handleExportPDF = useCallback(async () => {
