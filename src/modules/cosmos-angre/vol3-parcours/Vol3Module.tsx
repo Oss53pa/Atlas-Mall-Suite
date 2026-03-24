@@ -360,6 +360,12 @@ export default function Vol3Module() {
   const navigate = useNavigate()
   const store = useVol3Store()
 
+  // ── Hydrate from Supabase on mount ───────────────────────
+  useEffect(() => {
+    void store.hydrateFromSupabase('cosmos-angre')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const {
     floors,
     activeFloorId,
@@ -1304,7 +1310,7 @@ export default function Vol3Module() {
             </span>
           )}
           <span className="text-gray-600">
-            Étage: <span className="text-gray-400">{activeFloor.level}</span>
+            Étage: <span className="text-gray-400">{activeFloor?.level ?? '—'}</span>
           </span>
         </div>
       </footer>
