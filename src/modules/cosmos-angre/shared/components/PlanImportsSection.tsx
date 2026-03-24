@@ -59,8 +59,14 @@ const statusConfig: Record<ImportStatus, { icon: React.ElementType; label: strin
 
 export default function PlanImportsSection({
   volumeColor, volumeLabel, floors, activeFloorId,
-  onImportComplete, supabaseUrl, supabaseAnonKey,
+  onImportComplete,
+  supabaseUrl: supabaseUrlProp,
+  supabaseAnonKey: supabaseAnonKeyProp,
 }: PlanImportsSectionProps) {
+  // Auto-resolve Supabase env vars if not passed as props
+  const supabaseUrl = supabaseUrlProp || (typeof import.meta !== 'undefined' ? (import.meta as any).env?.VITE_SUPABASE_URL : undefined) || ''
+  const supabaseAnonKey = supabaseAnonKeyProp || (typeof import.meta !== 'undefined' ? (import.meta as any).env?.VITE_SUPABASE_ANON_KEY : undefined) || ''
+
   const imports = usePlanImportStore((s) => s.imports)
   const addImport = usePlanImportStore((s) => s.addImport)
   const updateImport = usePlanImportStore((s) => s.updateImport)

@@ -46,8 +46,12 @@ type PlanSourceType = import('../planReader/planReaderTypes').PlanSourceType
 
 export default function PlanImportWizard({
   floors, activeFloorId, onImportComplete, onClose,
-  supabaseUrl, supabaseAnonKey,
+  supabaseUrl: supabaseUrlProp,
+  supabaseAnonKey: supabaseAnonKeyProp,
 }: PlanImportWizardProps) {
+  // Auto-resolve Supabase env vars if not provided
+  const supabaseUrl = supabaseUrlProp || (typeof import.meta !== 'undefined' ? (import.meta as any).env?.VITE_SUPABASE_URL : undefined) || ''
+  const supabaseAnonKey = supabaseAnonKeyProp || (typeof import.meta !== 'undefined' ? (import.meta as any).env?.VITE_SUPABASE_ANON_KEY : undefined) || ''
   const [state, setState] = useState<PlanImportState>({
     step: 'upload',
     sourceType: null,
@@ -209,7 +213,7 @@ export default function PlanImportWizard({
           {state.step === 'reviewing' && (
             <div className="space-y-4">
               {/* Raster preview */}
-              {state.sourceType === 'image_raster' && state.rasterResult && imageUrl && (
+              {state.rasterResult && (imageUrl || state.sourceType === 'pdf') && (
                 <RasterPreview
                   imageUrl={imageUrl}
                   result={state.rasterResult}
@@ -317,6 +321,18 @@ export default function PlanImportWizard({
                       </span>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Warnings */}
+              {state.warnings.length > 0 && (
+                <div className="bg-amber-900/20 border border-amber-700/50 rounded-lg p-4 space-y-1">
+                  {state.warnings.map((w, i) => (
+                    <p key={i} className="text-xs text-amber-300 flex items-start gap-2">
+                      <span className="text-amber-500 flex-shrink-0">⚠</span>
+                      {w}
+                    </p>
+                  ))}
                 </div>
               )}
 

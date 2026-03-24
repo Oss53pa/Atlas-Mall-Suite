@@ -162,14 +162,18 @@ export async function importPlan(
           pages = await readPDFPlan(file)
           state.pdfPages = pages
 
-          // Detecter si le PDF est un scan (peu de paths vectoriels, peu de textes)
-          const totalPaths = pages.reduce((s, p) => s + p.paths.length, 0)
-          const totalTexts = pages.reduce((s, p) => s + p.texts.length, 0)
-          const zoneBoundaries = pages.reduce((s, p) => s + p.paths.filter(pa => pa.estimatedType === 'zone_boundary').length, 0)
+          // Tenter l'extraction vectorielle
+          const pdfResult = convertPDFToZones(pages)
+          const extractedZones = pdfResult.zones.length
 
-          if (zoneBoundaries < 2 && totalPaths < 20 && totalTexts < 5) {
+          // Detecter si le PDF est un scan : le critere principal est le nombre de zones extraites
+          // Un plan architectural vectoriel produit typiquement 5+ zones
+          // Un scan produit 0-2 zones meme s'il a des paths decoratifs
+          if (extractedZones < 3) {
+            const totalPaths = pages.reduce((s, p) => s + p.paths.length, 0)
+            const totalTexts = pages.reduce((s, p) => s + p.texts.length, 0)
             isRasterPDF = true
-            state.warnings.push(`PDF detecte comme scan/image (${totalPaths} paths, ${totalTexts} textes). Basculement vers Proph3t Vision.`)
+            state.warnings.push(`PDF avec peu de contenu vectoriel exploitable (${extractedZones} zones, ${totalPaths} paths, ${totalTexts} textes). Basculement vers reconnaissance image.`)
           }
         } catch {
           // pdfjs-dist peut echouer sur certains PDFs -> fallback image
