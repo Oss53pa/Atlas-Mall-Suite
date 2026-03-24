@@ -4,6 +4,8 @@ import { jsPDF } from 'jspdf'
 import 'svg2pdf.js'
 import type { Vol2ExportData } from '../cosmos-angre/shared/proph3t/types'
 import type { ASPADCartouche } from './exportTypes'
+import type { CotationSpec, CalibrationResult } from '../cosmos-angre/shared/planReader/planReaderTypes'
+import { renderCotationsOnPDF } from '../cosmos-angre/shared/planReader/cotationEngine'
 
 function hexRgb(hex: string): [number, number, number] {
   const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
@@ -11,7 +13,11 @@ function hexRgb(hex: string): [number, number, number] {
 }
 
 export async function exportASPADPDF(
-  data: Vol2ExportData, svgElement: SVGSVGElement | null, cartouche: ASPADCartouche
+  data: Vol2ExportData,
+  svgElement: SVGSVGElement | null,
+  cartouche: ASPADCartouche,
+  cotationSpecs?: CotationSpec[],
+  calibration?: CalibrationResult | null,
 ): Promise<Blob> {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [841, 594] })
 
@@ -49,6 +55,24 @@ export async function exportASPADPDF(
   if (svgElement) {
     const cloned = svgElement.cloneNode(true) as SVGSVGElement
     await (doc as any).svg(cloned, { x: 10, y: 10, width: 620, height: 540 })
+  }
+
+  // Cotation layer on the plan
+  if (cotationSpecs && cotationSpecs.length > 0) {
+    renderCotationsOnPDF(doc, cotationSpecs, 620, 540)
+  }
+
+  // Calibration cartouche
+  if (calibration) {
+    doc.setFontSize(6); doc.setFont('helvetica', 'italic')
+    doc.setTextColor(100, 100, 100)
+    doc.text(
+      `Echelle : 1:${Math.round(1 / (calibration.scaleFactorX || 0.001))} | ` +
+      `Calibration : ${calibration.method} | ` +
+      `Confiance : ${Math.round(calibration.confidence * 100)}%`,
+      10, 555
+    )
+    doc.setTextColor(0, 0, 0)
   }
 
   // Camera table
