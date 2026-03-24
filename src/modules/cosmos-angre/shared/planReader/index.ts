@@ -188,6 +188,7 @@ export async function importPlan(
           try {
             const imageBlob = await pdfPageToImage(file)
             const imageFile = new File([imageBlob], file.name.replace(/\.pdf$/i, '.png'), { type: 'image/png' })
+            state.planImageUrl = URL.createObjectURL(imageBlob)
 
             state.currentOperation = 'Proph3t Vision — analyse locale (contours, murs, zones)...'
             state.progress = 50
@@ -269,6 +270,7 @@ export async function importPlan(
         state.progress = 10
         emit()
 
+        state.planImageUrl = URL.createObjectURL(file)
         state.progress = 30
         emit()
 

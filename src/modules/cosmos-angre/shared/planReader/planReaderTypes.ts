@@ -170,6 +170,8 @@ export interface PlanImportState {
   calibration: CalibrationResult | null
   pdfPages?: PDFPlanPage[]
   rasterResult?: RasterRecognitionResult
+  /** URL blob de l'image du plan (pour affichage background) */
+  planImageUrl?: string
   errors: string[]
   warnings: string[]
 }

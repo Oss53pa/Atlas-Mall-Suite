@@ -203,14 +203,21 @@ export default function PlanImportWizard({
           {/* STEP 3: Reviewing */}
           {state.step === 'reviewing' && (
             <div className="space-y-4">
-              {/* Raster preview */}
-              {state.rasterResult && (imageUrl || state.sourceType === 'pdf') && (
+              {/* Raster preview — plan original en fond + zones detectees en overlay */}
+              {state.rasterResult && (state.planImageUrl || imageUrl) && (
                 <RasterPreview
-                  imageUrl={imageUrl}
+                  imageUrl={state.planImageUrl || imageUrl}
                   result={state.rasterResult}
                   width={860}
-                  height={400}
+                  height={500}
                 />
+              )}
+
+              {/* Plan image sans zones detectees */}
+              {!state.rasterResult && state.planImageUrl && (
+                <div className="relative bg-gray-950 rounded-lg overflow-hidden" style={{ height: 500 }}>
+                  <img src={state.planImageUrl} alt="Plan" className="w-full h-full object-contain" />
+                </div>
               )}
 
               {/* Zones table */}

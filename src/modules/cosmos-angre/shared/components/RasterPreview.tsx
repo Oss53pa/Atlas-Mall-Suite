@@ -27,11 +27,11 @@ export default function RasterPreview({
 
   return (
     <div className="relative bg-gray-950 rounded-lg overflow-hidden" style={{ width, height }}>
-      {/* Background image */}
+      {/* Background image — plan original a pleine opacite */}
       <img
         src={imageUrl}
         alt="Plan scanne"
-        className="absolute inset-0 w-full h-full object-contain opacity-60"
+        className="absolute inset-0 w-full h-full object-contain"
       />
 
       {/* SVG overlay */}
@@ -65,9 +65,10 @@ export default function RasterPreview({
                 width={zone.boundingBox.w}
                 height={zone.boundingBox.h}
                 fill={color}
-                fillOpacity={0.2}
+                fillOpacity={0.12}
                 stroke={isSelected ? '#fff' : color}
                 strokeWidth={isSelected ? 0.004 : 0.002}
+                strokeOpacity={0.7}
                 strokeDasharray={isSelected ? '0.01 0.005' : undefined}
               />
               <text
