@@ -150,14 +150,79 @@ export async function importPlan(
       }
 
       case 'pdf': {
-        state.currentOperation = 'Lecture du PDF vectoriel...'
+        state.currentOperation = 'Lecture du PDF...'
         state.progress = 10
         emit()
 
-        const pages = await readPDFPlan(file)
-        state.pdfPages = pages
+        // Tenter d'abord l'extraction vectorielle
+        let pages: PDFPlanPage[] = []
+        let isRasterPDF = false
 
-        state.currentOperation = 'Extraction des zones...'
+        try {
+          pages = await readPDFPlan(file)
+          state.pdfPages = pages
+
+          // Detecter si le PDF est un scan (peu de paths vectoriels, peu de textes)
+          const totalPaths = pages.reduce((s, p) => s + p.paths.length, 0)
+          const totalTexts = pages.reduce((s, p) => s + p.texts.length, 0)
+          const zoneBoundaries = pages.reduce((s, p) => s + p.paths.filter(pa => pa.estimatedType === 'zone_boundary').length, 0)
+
+          if (zoneBoundaries < 2 && totalPaths < 20 && totalTexts < 5) {
+            isRasterPDF = true
+            state.warnings.push(`PDF detecte comme scan/image (${totalPaths} paths, ${totalTexts} textes). Basculement vers Proph3t Vision.`)
+          }
+        } catch {
+          // pdfjs-dist peut echouer sur certains PDFs -> fallback image
+          isRasterPDF = true
+          state.warnings.push('Lecture vectorielle impossible. Basculement vers reconnaissance image.')
+        }
+
+        if (isRasterPDF) {
+          // Fallback : convertir la 1re page PDF en image et envoyer vers Vision
+          state.currentOperation = 'Conversion PDF en image...'
+          state.progress = 30
+          emit()
+
+          try {
+            const imageBlob = await pdfPageToImage(file)
+            const imageFile = new File([imageBlob], file.name.replace(/\.pdf$/i, '.png'), { type: 'image/png' })
+
+            if (options.supabaseUrl && options.supabaseAnonKey) {
+              state.currentOperation = 'Envoi vers Proph3t Vision...'
+              state.progress = 50
+              emit()
+
+              const rasterResult = await recognizeRasterPlan(imageFile, options.supabaseUrl, options.supabaseAnonKey)
+              state.rasterResult = rasterResult
+              state.detectedZones = rasterResult.zones
+              state.warnings.push(...rasterResult.proph3tNotes)
+
+              if (rasterResult.scale) {
+                state.calibration = {
+                  scaleFactorX: 1 / rasterResult.scale.value,
+                  scaleFactorY: 1 / rasterResult.scale.value,
+                  realWidthM: 0, realHeightM: 0,
+                  confidence: rasterResult.scale.confidence,
+                  method: 'dim_manual', samplesUsed: 1, outlierCount: 0,
+                  issues: [`Echelle detectee par Vision: ${rasterResult.scale.ratio}`],
+                }
+              }
+            } else {
+              state.warnings.push('Configuration Supabase manquante pour Proph3t Vision — saisie manuelle des zones requise.')
+            }
+          } catch (pdfImgErr) {
+            state.warnings.push(`Conversion PDF→image echouee: ${pdfImgErr instanceof Error ? pdfImgErr.message : 'erreur inconnue'}. Utilisez un export image (JPG/PNG) du plan.`)
+          }
+
+          state.step = 'reviewing'
+          state.progress = 100
+          state.currentOperation = 'Analyse terminee'
+          emit()
+          break
+        }
+
+        // PDF vectoriel : extraction classique
+        state.currentOperation = 'Extraction des zones vectorielles...'
         state.progress = 50
         emit()
 
@@ -183,12 +248,15 @@ export async function importPlan(
               realWidthM: (pages[0]?.width ?? 1000) / scaleValue,
               realHeightM: (pages[0]?.height ?? 1000) / scaleValue,
               confidence: 0.75,
-              method: 'dim_manual',
-              samplesUsed: 1,
-              outlierCount: 0,
+              method: 'dim_manual', samplesUsed: 1, outlierCount: 0,
               issues: [`Echelle detectee depuis le texte PDF: 1:${scaleValue}`],
             }
           }
+        }
+
+        // Si meme en mode vectoriel on trouve 0 zones, basculer vers reviewing avec warning
+        if (state.detectedZones.length === 0) {
+          state.warnings.push('Aucune zone detectee dans le PDF vectoriel. Verifiez que le fichier contient des tracés (pas uniquement des images). Vous pouvez reessayer en important une capture JPG/PNG du plan.')
         }
 
         state.step = 'reviewing'
@@ -282,6 +350,33 @@ export async function importPlan(
   }
 
   return state
+}
+
+// ─── PDF → IMAGE (pour fallback raster sur PDF scannés) ───
+
+async function pdfPageToImage(file: File, pageNum = 1, scale = 2): Promise<Blob> {
+  const pdfjsLib = await import('pdfjs-dist')
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js'
+
+  const arrayBuffer = await file.arrayBuffer()
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+  const page = await pdf.getPage(pageNum)
+  const viewport = page.getViewport({ scale })
+
+  const canvas = document.createElement('canvas')
+  canvas.width = viewport.width
+  canvas.height = viewport.height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Canvas 2D context non disponible')
+
+  await page.render({ canvasContext: ctx, viewport }).promise
+
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (blob) resolve(blob)
+      else reject(new Error('Conversion PDF→image echouee'))
+    }, 'image/png')
+  })
 }
 
 // ─── RE-EXPORTS ───
