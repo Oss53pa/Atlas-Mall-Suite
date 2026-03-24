@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo, useRef } from 'react'
 import type { Floor, Zone } from '../proph3t/types'
 
 export const CANVAS_SCALE = 4
@@ -9,28 +9,45 @@ interface FloorPlanCanvasProps {
   showHeatmap?: boolean
   heatmapContent?: React.ReactNode
   onEntityClick?: (id: string, type: 'camera' | 'door' | 'zone' | 'transition') => void
+  onCanvasClick?: (x: number, y: number) => void
   selectedId?: string | null
   children?: React.ReactNode
   className?: string
+  cursorMode?: 'select' | 'place'
 }
 
-const SCALE = 4
-
 export default function FloorPlanCanvas({
-  floor, zones, showHeatmap, heatmapContent, onEntityClick, selectedId, children, className = ''
+  floor, zones, showHeatmap, heatmapContent, onEntityClick, onCanvasClick, selectedId, children, className = '',
+  cursorMode = 'select',
 }: FloorPlanCanvasProps) {
+  const svgRef = useRef<SVGSVGElement>(null)
   const floorZones = useMemo(() => zones.filter(z => z.floorId === floor.id), [zones, floor.id])
 
   const SCALE = CANVAS_SCALE
   const width = floor.widthM * SCALE
   const height = floor.heightM * SCALE
 
+  const handleSvgClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    if (!onCanvasClick || !svgRef.current) return
+    // Only handle clicks on the background, not on entities
+    if ((e.target as Element).tagName !== 'rect' || !(e.target as Element).classList.contains('canvas-bg')) return
+    const svg = svgRef.current
+    const pt = svg.createSVGPoint()
+    pt.x = e.clientX
+    pt.y = e.clientY
+    const svgPt = pt.matrixTransform(svg.getScreenCTM()?.inverse())
+    // Convert from SVG coords to floor coords (divide by SCALE)
+    onCanvasClick(svgPt.x / SCALE, svgPt.y / SCALE)
+  }, [onCanvasClick, SCALE])
+
   return (
     <div className={`relative overflow-auto bg-gray-950 ${className}`}>
       <svg
+        ref={svgRef}
         viewBox={`0 0 ${width} ${height}`}
-        className="w-full h-full"
+        className={`w-full h-full ${cursorMode === 'place' ? 'cursor-crosshair' : ''}`}
         style={{ minWidth: 600 }}
+        onClick={handleSvgClick}
       >
         {/* Grid */}
         <defs>
@@ -41,7 +58,7 @@ export default function FloorPlanCanvas({
             <path d={`M ${SCALE * 50} 0 L 0 0 0 ${SCALE * 50}`} fill="none" stroke="#374151" strokeWidth="0.8" />
           </pattern>
         </defs>
-        <rect width={width} height={height} fill="#0a0a0f" />
+        <rect width={width} height={height} fill="#0a0a0f" className="canvas-bg" />
         <rect width={width} height={height} fill="url(#grid-sm)" />
         <rect width={width} height={height} fill="url(#grid-lg)" />
 

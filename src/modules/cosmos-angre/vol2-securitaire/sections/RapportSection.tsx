@@ -72,7 +72,7 @@ export default function RapportSection() {
       }
 
       doc.setFontSize(8)
-      doc.text('Genere par Proph3t — Atlas Studio / Praedium Tech', 30, dims.h - 15)
+      doc.text('Genere par Proph3t — Atlas Studio', 30, dims.h - 15)
 
       doc.save(`APSAD-R82-${projectName.replace(/\s/g, '-')}-${format}.pdf`)
     } catch {
@@ -120,7 +120,7 @@ export default function RapportSection() {
               })
             ),
             new docx.Paragraph({ text: '' }),
-            new docx.Paragraph({ text: 'Genere par Proph3t — Atlas Studio / Praedium Tech' }),
+            new docx.Paragraph({ text: 'Genere par Proph3t — Atlas Studio' }),
           ],
         }],
       })

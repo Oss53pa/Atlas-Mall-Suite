@@ -8,9 +8,19 @@ import type {
   MonteCarloResult, EvacuationScenario, CascadeTrigger,
   CascadeResult, CapexItem, WiseFMLink, CockpitMilestone,
   LibraryItem, MallBenchmark, ProPh3tMemory,
-  ProjectMemorySummary, ChatMessage
+  ProjectMemorySummary, ChatMessage, SecurityScenario, SignageItem
 } from '../../shared/proph3t/types'
 import { addImported3DModel } from './imported3DModel'
+import {
+  scoreSecurite, findBlindSpots, computeFloorCoverage,
+  solveCameraPlacement, recommendDoors, computeCapex
+} from '../../shared/proph3t/engine'
+import { runCascade as cascadeRun, type CascadeState } from '../../shared/proph3t/cascadeEngine'
+import { runMonteCarlo as monteCarloRun, simulateEvacuation } from '../../shared/proph3t/simulationEngine'
+import { optimizeSignaleticsPlacement } from '../../shared/proph3t/signaleticsEngine'
+import { exportASPADPDF } from '../../../export/exportPDFApsad'
+import { exportCAPEXExcel } from '../../../export/exportCAPEX'
+import { exportAnnotatedDXF } from '../../../export/exportDXF'
 
 // ─── Mock Data ───────────────────────────────────────────────
 
@@ -357,6 +367,9 @@ interface Vol2State {
   // CAPEX
   capexItems: CapexItem[]
 
+  // Signalétique
+  signageItems: SignageItem[]
+
   // UI
   selectedEntityId: string | null
   selectedEntityType: EntityType | null
@@ -428,13 +441,27 @@ interface Vol2State {
   // Actions - Generic entity move
   moveEntity: (entityType: EntityType, id: string, x: number, y: number) => void
 
-  // Actions - Automation flags (actual computation via workers)
+  // Actions - Automation (real orchestration)
   runAutoCameras: () => void
   runAutoDoors: () => void
   runBlindSpots: () => void
   runFullAnalysis: () => void
 
-  // Actions - DXF import
+  // Actions - Orchestration (PRD)
+  runEvacuation: (scenario: EvacuationScenario) => Promise<void>
+  runMonteCarlo: (scenario: SecurityScenario) => Promise<void>
+  runCascade: (trigger: CascadeTrigger) => Promise<void>
+  runAutoSignaletics: () => Promise<void>
+  calibrateFloor: (floorId: string, widthM: number, heightM: number) => void
+  importDXF: (file: File, floorId: string) => Promise<void>
+
+  // Actions - Export (PRD)
+  exportASPADPDF: () => Promise<void>
+  exportBudgetXLSX: () => void
+  exportAnnotatedDWG: () => void
+  exportPowerPoint: () => Promise<void>
+
+  // Actions - DXF import result
   importDXFResult: (result: DXFImportResult) => void
 
   // Actions - 3D model import
@@ -481,6 +508,8 @@ const initialState = {
   chatMessages: [] as ChatMessage[],
 
   capexItems: [] as CapexItem[],
+
+  signageItems: [] as SignageItem[],
 
   selectedEntityId: null as string | null,
   selectedEntityType: null as EntityType | null,
@@ -605,13 +634,212 @@ export const useVol2Store = create<Vol2State>()((set) => ({
       }
     }),
 
-  // ── Automation flags ────────────────────────────────────
-  runAutoCameras: () => set({ isRunningAutoCameras: true }),
-  runAutoDoors: () => set({ isRunningAutoDoors: true }),
-  runBlindSpots: () => set({ isRunningBlindSpots: true }),
-  runFullAnalysis: () => set({ isRunningFullAnalysis: true }),
+  // ── Automation — real orchestration ────────────────────
+  runAutoCameras: () => {
+    set({ isRunningAutoCameras: true })
+    const s = useVol2Store.getState()
+    const activeFloor = s.floors.find(f => f.id === s.activeFloorId)
+    if (!activeFloor) { set({ isRunningAutoCameras: false }); return }
+    const floorZones = s.zones.filter(z => z.floorId === s.activeFloorId)
+    const result = solveCameraPlacement({
+      zones: floorZones,
+      existingCameras: s.cameras.filter(c => c.floorId === s.activeFloorId),
+      floorWidthM: activeFloor.widthM,
+      floorHeightM: activeFloor.heightM,
+    })
+    set(st => ({ cameras: [...st.cameras, ...result.cameras], isRunningAutoCameras: false }))
+  },
 
-  // ── DXF Import ──────────────────────────────────────────
+  runAutoDoors: () => {
+    set({ isRunningAutoDoors: true })
+    const s = useVol2Store.getState()
+    const floorZones = s.zones.filter(z => z.floorId === s.activeFloorId)
+    const newDoors = recommendDoors(floorZones, s.activeFloorId)
+    set(st => ({
+      doors: [...st.doors, ...(newDoors as Door[])],
+      isRunningAutoDoors: false,
+    }))
+  },
+
+  runBlindSpots: () => {
+    set({ isRunningBlindSpots: true })
+    const s = useVol2Store.getState()
+    const activeFloor = s.floors.find(f => f.id === s.activeFloorId)
+    if (!activeFloor) { set({ isRunningBlindSpots: false }); return }
+    const floorCameras = s.cameras.filter(c => c.floorId === s.activeFloorId)
+    const floorZones = s.zones.filter(z => z.floorId === s.activeFloorId)
+    const spots = findBlindSpots(floorZones, floorCameras, s.activeFloorId, activeFloor.widthM, activeFloor.heightM)
+    set({ blindSpots: spots, isRunningBlindSpots: false })
+  },
+
+  runFullAnalysis: () => {
+    set({ isRunningFullAnalysis: true })
+    const s = useVol2Store.getState()
+    const score = scoreSecurite(s.zones, s.cameras, s.doors)
+    const cov: Record<string, number> = {}
+    for (const floor of s.floors) {
+      const fZones = s.zones.filter(z => z.floorId === floor.id)
+      const fCams = s.cameras.filter(c => c.floorId === floor.id)
+      cov[floor.id] = computeFloorCoverage(fZones, fCams, floor.widthM, floor.heightM)
+    }
+    set({ score, coverageByFloor: cov, isRunningFullAnalysis: false })
+  },
+
+  // ── Orchestration actions (PRD) ──────────────────────
+  runEvacuation: async (scenario) => {
+    set({ isSimulating: true })
+    const s = useVol2Store.getState()
+    const exits = s.doors.filter(d => d.isExit)
+    const result = simulateEvacuation({
+      floors: s.floors, transitions: s.transitions, exits, zones: s.zones,
+      scenario, cameras: s.cameras,
+    })
+    set({ evacResult: result, isSimulating: false })
+  },
+
+  runMonteCarlo: async (scenario) => {
+    set({ isSimulating: true })
+    const s = useVol2Store.getState()
+    const result = monteCarloRun({
+      floors: s.floors, cameras: s.cameras, transitions: s.transitions,
+      zones: s.zones, scenario, runs: 1000,
+    })
+    set(st => ({
+      monteCarloResults: [...st.monteCarloResults, result],
+      isSimulating: false,
+    }))
+  },
+
+  runCascade: async (trigger) => {
+    const s = useVol2Store.getState()
+    const cascadeState: CascadeState = {
+      floors: s.floors, zones: s.zones, cameras: s.cameras,
+      doors: s.doors, transitions: s.transitions, signageItems: s.signageItems,
+    }
+    const result = await cascadeRun(cascadeState, trigger)
+    set({
+      blindSpots: result.blindSpots,
+      score: result.score,
+      coverageByFloor: result.coverageByFloor,
+    })
+  },
+
+  runAutoSignaletics: async () => {
+    const s = useVol2Store.getState()
+    const activeFloor = s.floors.find(f => f.id === s.activeFloorId)
+    if (!activeFloor) return
+    const items = optimizeSignaleticsPlacement(activeFloor, null, s.signageItems)
+    set(st => ({ signageItems: [...st.signageItems, ...items] }))
+  },
+
+  calibrateFloor: (floorId, widthM, heightM) =>
+    set(s => ({
+      floors: s.floors.map(f => f.id === floorId ? { ...f, widthM, heightM } : f),
+    })),
+
+  importDXF: async (file, floorId) => {
+    const text = await file.text()
+    const { default: DxfParser } = await import('dxf-parser')
+    const parser = new DxfParser()
+    const dxf = parser.parseSync(text)
+    if (!dxf) return
+    const newZones: Zone[] = []
+    let idx = 0
+    for (const entity of (dxf.entities ?? [])) {
+      if (entity.type === 'LWPOLYLINE' || entity.type === 'POLYLINE') {
+        const verts = (entity as { vertices?: { x: number; y: number }[] }).vertices ?? []
+        if (verts.length < 3) continue
+        const xs = verts.map(v => v.x)
+        const ys = verts.map(v => v.y)
+        const minX = Math.min(...xs), maxX = Math.max(...xs)
+        const minY = Math.min(...ys), maxY = Math.max(...ys)
+        newZones.push({
+          id: `dxf-zone-${floorId}-${idx++}`,
+          floorId,
+          label: `Zone DXF ${idx}`,
+          type: 'circulation',
+          x: minX, y: minY, w: maxX - minX, h: maxY - minY,
+          niveau: 2,
+          color: '#E0E0E0',
+          surfaceM2: (maxX - minX) * (maxY - minY),
+        })
+      }
+    }
+    set(s => ({ zones: [...s.zones, ...newZones] }))
+  },
+
+  // ── Export actions (PRD) ──────────────────────────────
+  exportASPADPDF: async () => {
+    const s = useVol2Store.getState()
+    const data = {
+      projectName: s.projectName, generatedAt: new Date().toISOString(),
+      floors: s.floors, zones: s.zones, cameras: s.cameras, doors: s.doors,
+      transitions: s.transitions, blindSpots: s.blindSpots,
+      score: s.score ?? { total: 0, camScore: 0, zoneScore: 0, doorScore: 0, exitScore: 0, coverage: 0, issues: [], norm: 'APSAD R82' as const, generatedAt: new Date().toISOString() },
+      coverageByFloor: s.coverageByFloor, capexTotal: computeCapex(s.cameras, s.doors, s.signageItems).total,
+    }
+    const cartouche = {
+      projectName: s.projectName, address: 'Angre, Abidjan, Cote d\'Ivoire',
+      date: new Date().toLocaleDateString('fr-FR'), reportNumber: `APSAD-${Date.now()}`,
+      author: 'Proph3t Engine', version: '2.0', norm: 'APSAD R82 / NF S 61-938',
+      scale: '1:200', establishmentType: 'ERP Type M', classificationICPE: 'Non concerne',
+      visaResponsable: '', surface_m2: s.zones.reduce((a, z) => a + (z.surfaceM2 ?? 0), 0),
+    }
+    const blob = await exportASPADPDF(data, null, cartouche)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'Plan_Securitaire_APSAD_R82.pdf'; a.click()
+    URL.revokeObjectURL(url)
+  },
+
+  exportBudgetXLSX: () => {
+    const s = useVol2Store.getState()
+    const capex = computeCapex(s.cameras, s.doors, s.signageItems)
+    const blob = exportCAPEXExcel(capex as Parameters<typeof exportCAPEXExcel>[0])
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'CAPEX_Budget.xlsx'; a.click()
+    URL.revokeObjectURL(url)
+  },
+
+  exportAnnotatedDWG: () => {
+    const s = useVol2Store.getState()
+    const data = {
+      projectName: s.projectName, generatedAt: new Date().toISOString(),
+      floors: s.floors, zones: s.zones, cameras: s.cameras, doors: s.doors,
+      transitions: s.transitions, blindSpots: s.blindSpots,
+      score: s.score ?? { total: 0, camScore: 0, zoneScore: 0, doorScore: 0, exitScore: 0, coverage: 0, issues: [], norm: 'APSAD R82' as const, generatedAt: new Date().toISOString() },
+      coverageByFloor: s.coverageByFloor, capexTotal: 0,
+    }
+    const blob = exportAnnotatedDXF(data)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'Plan_Annote.dxf'; a.click()
+    URL.revokeObjectURL(url)
+  },
+
+  exportPowerPoint: async () => {
+    const { Document, Packer, Paragraph, TextRun, HeadingLevel } = await import('docx')
+    const s = useVol2Store.getState()
+    const sc = s.score
+    const doc = new Document({
+      sections: [{
+        children: [
+          new Paragraph({ text: `Rapport Securitaire — ${s.projectName}`, heading: HeadingLevel.HEADING_1 }),
+          new Paragraph({ text: `Date : ${new Date().toLocaleDateString('fr-FR')}`, spacing: { after: 200 } }),
+          new Paragraph({ text: 'Score Securitaire APSAD R82', heading: HeadingLevel.HEADING_2 }),
+          new Paragraph({ children: [new TextRun({ text: `Score global : ${sc?.total ?? 'N/A'} / 100` })] }),
+          new Paragraph({ children: [new TextRun({ text: `Couverture cameras : ${sc?.coverage ?? 0}%` })] }),
+          new Paragraph({ children: [new TextRun({ text: `Cameras : ${s.cameras.length} | Portes : ${s.doors.length} | Zones : ${s.zones.length}` })] }),
+          new Paragraph({ text: 'Problemes identifies', heading: HeadingLevel.HEADING_2 }),
+          ...(sc?.issues ?? []).map(issue => new Paragraph({ children: [new TextRun({ text: `- ${issue}` })] })),
+        ],
+      }],
+    })
+    const blob = await Packer.toBlob(doc)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'Rapport_Securitaire.docx'; a.click()
+    URL.revokeObjectURL(url)
+  },
+
+  // ── DXF Import result ────────────────────────────────────
   importDXFResult: (result) =>
     set((s) => {
       const existingZoneIds = new Set(s.zones.map((z) => z.id))

@@ -313,6 +313,7 @@ export interface ProPh3tMemory {
   entityId: string
   description: string
   impactMetric?: string
+  floorLevel?: string
   userId?: string
 }
 
@@ -327,6 +328,24 @@ export interface ProjectMemorySummary {
     capexEvolution: { date: string; totalFcfa: number }[]
   }
   proph3tNarrative: string
+}
+
+// ═══ CONTEXTE PROJET COMPLET ═══
+
+export interface FullProjectContext {
+  zones: Zone[]
+  cameras: Camera[]
+  doors: Door[]
+  pois: POI[]
+  signageItems: SignageItem[]
+  transitions: TransitionNode[]
+  floors: Floor[]
+  score: SecurityScore | null
+  blindSpots: BlindSpot[]
+  parcours: MomentCle[]
+  memory: ProjectMemorySummary | null
+  volume: 'vol2' | 'vol3'
+  activeFloorId: string
 }
 
 // ═══ TYPES CHAT ═══
@@ -477,6 +496,7 @@ export interface DoorRecommendation {
   hasSas: boolean
   normRef: string
   note: string
+  capexFcfa: number
 }
 
 // ═══ TYPES CLASSIFICATION DXF ═══

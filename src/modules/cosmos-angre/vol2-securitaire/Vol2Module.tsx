@@ -26,7 +26,25 @@ import {
   Layers,
   Grid3x3,
   Scissors,
+  X,
+  Info,
+  BarChart2,
+  KeyRound,
+  Lock,
+  ClipboardList,
+  Users,
+  Map,
+  DollarSign,
+  FileText,
+  MessageSquare,
+  ChevronDown,
+  ChevronRight,
+  Monitor,
   Footprints,
+  CheckSquare,
+  FlaskConical,
+  TrendingUp,
+  Brain,
 } from 'lucide-react'
 
 import { useVol2Store } from './store/vol2Store'
@@ -51,8 +69,107 @@ const RapportSectionLazy = lazy(() => import('./sections/RapportSection'))
 const ChatSectionLazy = lazy(() => import('./sections/ChatSection'))
 const SimulationSectionLazy = lazy(() => import('./sections/SimulationSection'))
 const BudgetSectionLazy = lazy(() => import('./sections/BudgetSection'))
+const IntroSectionLazy = lazy(() => import('./sections/IntroSection'))
+const KpisSectionLazy = lazy(() => import('./sections/KpisSection'))
+const PerimetreSectionLazy = lazy(() => import('./sections/PerimetreSection'))
+const AccesSectionLazy = lazy(() => import('./sections/AccesSection'))
+const VideoSectionLazy = lazy(() => import('./sections/VideoSection'))
+const IncendieSectionLazy = lazy(() => import('./sections/IncendieSection'))
+const ProceduresSectionLazy = lazy(() => import('./sections/ProceduresSection'))
+const OrganigrammeSectionLazy = lazy(() => import('./sections/OrganigrammeSection'))
+const ControlRoomLazy = lazy(() => import('./sections/ControlRoom'))
+const IncidentWorkflowLazy = lazy(() => import('./sections/IncidentWorkflow'))
+const RiskMatrixViewLazy = lazy(() => import('./sections/RiskMatrixView'))
+const WhatIfSecuriteLazy = lazy(() => import('./sections/WhatIfSecurite'))
+const StaffingPlannerLazy = lazy(() => import('./sections/StaffingPlanner'))
+const RondePlannerLazy = lazy(() => import('./sections/RondePlanner'))
+const ComplianceTrackerLazy = lazy(() => import('./sections/ComplianceTracker'))
 
-type Vol2Tab = 'plan' | 'analyse' | 'rapport' | 'simulation' | 'budget' | 'chat'
+type Vol2Tab = 'plan' | 'analyse' | 'rapport' | 'simulation' | 'budget' | 'chat' | 'introduction' | 'kpis' | 'perimetre' | 'acces' | 'video' | 'incendie' | 'procedures' | 'organigramme' | 'control_room' | 'incidents' | 'risk_matrix' | 'whatif' | 'staffing' | 'rondes' | 'compliance'
+
+// ─── Sidebar nav definition ─────────────────────────────────
+
+interface NavItem {
+  id: Vol2Tab
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  dot?: boolean
+}
+
+interface NavGroup {
+  key: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  color: string
+  items: NavItem[]
+  separator?: boolean
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    key: 'vue',
+    label: "VUE D'ENSEMBLE",
+    icon: Shield,
+    color: '#38bdf8',
+    items: [
+      { id: 'introduction', label: 'Introduction', icon: Info },
+      { id: 'kpis', label: 'KPIs', icon: BarChart2 },
+    ],
+  },
+  {
+    key: 'dispositif',
+    label: 'DISPOSITIF PAR ZONE',
+    icon: Lock,
+    color: '#38bdf8',
+    items: [
+      { id: 'perimetre', label: 'P\u00e9rim\u00e9trique', icon: Eye },
+      { id: 'acces', label: "Contr\u00f4le d'acc\u00e8s", icon: KeyRound },
+      { id: 'video', label: 'Vid\u00e9osurveillance', icon: CameraIcon },
+      { id: 'incendie', label: 'S\u00e9curit\u00e9 incendie', icon: Flame, dot: true },
+      { id: 'procedures', label: 'Proc\u00e9dures & formation', icon: ClipboardList },
+    ],
+  },
+  {
+    key: 'organisation',
+    label: 'ORGANISATION',
+    icon: Users,
+    color: '#38bdf8',
+    items: [
+      { id: 'organigramme', label: 'Organigramme', icon: Users },
+    ],
+  },
+  {
+    key: 'studio',
+    label: 'ATLAS STUDIO',
+    icon: Sparkles,
+    color: '#a855f7',
+    separator: true,
+    items: [
+      { id: 'plan', label: 'Plan interactif', icon: Map },
+      { id: 'analyse', label: 'Analyse Proph3t', icon: BarChart2 },
+      { id: 'simulation', label: 'Simulation', icon: Play },
+      { id: 'budget', label: 'Budget CAPEX', icon: DollarSign },
+      { id: 'rapport', label: 'Rapport', icon: FileText },
+      { id: 'chat', label: 'Proph3t Chat', icon: MessageSquare },
+    ],
+  },
+  {
+    key: 'controle',
+    label: 'CONTRÔLE',
+    icon: Monitor,
+    color: '#ef4444',
+    separator: true,
+    items: [
+      { id: 'control_room', label: 'Salle de contrôle', icon: Monitor, dot: true },
+      { id: 'incidents', label: 'Incidents & workflow', icon: AlertTriangle },
+      { id: 'risk_matrix', label: 'Matrice des risques', icon: Grid3x3 },
+      { id: 'whatif', label: 'Simulation what-if', icon: FlaskConical },
+      { id: 'staffing', label: 'Planning effectifs', icon: Users },
+      { id: 'rondes', label: 'Planning rondes', icon: Footprints },
+      { id: 'compliance', label: 'Conformité APSAD', icon: CheckSquare },
+    ],
+  },
+]
 
 // ─── Helpers ────────────────────────────────────────────────
 
@@ -159,15 +276,66 @@ export default function Vol2Module() {
   const clearChat = useVol2Store((s) => s.clearChat)
   const setIsSimulating = useVol2Store((s) => s.setIsSimulating)
   const setLibraryOpen = useVol2Store((s) => s.setLibraryOpen)
+  const addCamera = useVol2Store((s) => s.addCamera)
+  const addDoor = useVol2Store((s) => s.addDoor)
+  const addZone = useVol2Store((s) => s.addZone)
+  const updateCamera = useVol2Store((s) => s.updateCamera)
+  const updateDoor = useVol2Store((s) => s.updateDoor)
+  const updateZone = useVol2Store((s) => s.updateZone)
+  const deleteCamera = useVol2Store((s) => s.deleteCamera)
+  const deleteDoor = useVol2Store((s) => s.deleteDoor)
+  const deleteZone = useVol2Store((s) => s.deleteZone)
 
   // ── Auto-cascade: recalcule score + angles morts quand les entites changent ──
   useCascade()
+
+  // ── Placement tool state ──────────────────────────────
+  type PlaceTool = null | 'camera' | 'door' | 'zone'
+  const [placeTool, setPlaceTool] = useState<PlaceTool>(null)
+
+  const handleCanvasClick = useCallback((x: number, y: number) => {
+    if (!placeTool) return
+    const id = `${placeTool}-${Date.now()}`
+    if (placeTool === 'camera') {
+      addCamera({
+        id, floorId: activeFloorId, label: `Cam ${cameras.length + 1}`,
+        model: 'XNV-8080R', x, y, angle: 180, fov: 109, range: 80, rangeM: 12,
+        color: '#3b82f6', priority: 'normale', capexFcfa: 850_000, autoPlaced: false,
+      })
+    } else if (placeTool === 'door') {
+      addDoor({
+        id, floorId: activeFloorId, label: `Porte ${doors.length + 1}`,
+        x, y, zoneType: 'commerce', isExit: false, hasBadge: false, hasBiometric: false, hasSas: false,
+        ref: 'DORMA ES200', normRef: 'NF EN 16005', note: '', widthM: 0.9, capexFcfa: 380_000,
+      })
+    } else if (placeTool === 'zone') {
+      addZone({
+        id, floorId: activeFloorId, label: `Zone ${zones.length + 1}`,
+        type: 'commerce', x, y, w: 30, h: 20, niveau: 2, color: '#FFF3E0', surfaceM2: 600,
+      })
+    }
+    selectEntity(id, placeTool === 'zone' ? 'zone' : placeTool)
+    setPlaceTool(null)
+  }, [placeTool, activeFloorId, cameras.length, doors.length, zones.length, addCamera, addDoor, addZone, selectEntity])
+
+  const handleEntityUpdate = useCallback((id: string, updates: Record<string, unknown>) => {
+    if (selectedEntityType === 'camera') updateCamera(id, updates)
+    else if (selectedEntityType === 'door') updateDoor(id, updates)
+    else if (selectedEntityType === 'zone') updateZone(id, updates)
+  }, [selectedEntityType, updateCamera, updateDoor, updateZone])
+
+  const handleEntityDelete = useCallback((id: string) => {
+    if (selectedEntityType === 'camera') deleteCamera(id)
+    else if (selectedEntityType === 'door') deleteDoor(id)
+    else if (selectedEntityType === 'zone') deleteZone(id)
+    selectEntity(null, null)
+  }, [selectedEntityType, deleteCamera, deleteDoor, deleteZone, selectEntity])
 
   // ── View mode state ─────────────────────────────────────
   const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d')
   const [showAllFloors, setShowAllFloors] = useState(false)
   const [showDXFImport, setShowDXFImport] = useState(false)
-  const [activeTab, setActiveTab] = useState<Vol2Tab>('plan')
+  const [activeTab, setActiveTab] = useState<Vol2Tab>('introduction')
   const [show3DImport, setShow3DImport] = useState(false)
   const [clipping, setClipping] = useState<ClippingConfig>({
     enabled: false,
@@ -176,6 +344,18 @@ export default function Vol2Module() {
     showHelper: true,
   })
   const [navMode, setNavMode] = useState<NavMode>('orbit')
+
+  // ── Sidebar accordion state ─────────────────────────────
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    vue: true,
+    dispositif: true,
+    organisation: true,
+    studio: false,
+  })
+
+  const toggleGroup = useCallback((key: string) => {
+    setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }))
+  }, [])
 
   // ── Derived data ─────────────────────────────────────────
 
@@ -317,81 +497,61 @@ export default function Vol2Module() {
           </div>
         </div>
 
-        {/* Floor tabs */}
-        <div className="flex items-center gap-1 ml-6">
-          {floors.map((floor) => (
-            <button
-              key={floor.id}
-              onClick={() => setActiveFloor(floor.id)}
-              className={`
-                px-3 py-1.5 rounded text-xs font-medium transition-colors
-                ${
-                  floor.id === activeFloorId
-                    ? 'bg-red-600/20 text-red-400 border border-red-500/30'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                }
-              `}
-            >
-              {floor.level}
-            </button>
-          ))}
-        </div>
-
-        {/* Section tabs */}
-        <div className="flex items-center gap-0.5 ml-4 bg-gray-800/60 rounded-lg p-0.5">
-          {([
-            ['plan', 'Plan'],
-            ['analyse', 'Analyse'],
-            ['simulation', 'Simulation'],
-            ['budget', 'Budget'],
-            ['rapport', 'Rapport'],
-            ['chat', 'Proph3t IA'],
-          ] as [Vol2Tab, string][]).map(([tab, label]) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${
-                activeTab === tab
-                  ? 'bg-red-600/20 text-red-400'
-                  : 'text-gray-500 hover:text-gray-300'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        {/* Floor tabs — only shown when plan is active */}
+        {activeTab === 'plan' && (
+          <div className="flex items-center gap-1 ml-6">
+            {floors.map((floor) => (
+              <button
+                key={floor.id}
+                onClick={() => setActiveFloor(floor.id)}
+                className={`
+                  px-3 py-1.5 rounded text-xs font-medium transition-colors
+                  ${
+                    floor.id === activeFloorId
+                      ? 'bg-red-600/20 text-red-400 border border-red-500/30'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                  }
+                `}
+              >
+                {floor.level}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* View mode toggle */}
-        <div className="flex items-center gap-0.5 bg-gray-800 rounded-lg p-0.5">
-          <button
-            onClick={() => { setViewMode('2d'); setNavMode('orbit') }}
-            className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
-              viewMode === '2d'
-                ? 'bg-gray-700 text-white'
-                : 'text-gray-500 hover:text-gray-300'
-            }`}
-          >
-            <Grid3x3 className="w-3 h-3" />
-            2D
-          </button>
-          <button
-            onClick={() => setViewMode('3d')}
-            className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
-              viewMode === '3d'
-                ? 'bg-gray-700 text-white'
-                : 'text-gray-500 hover:text-gray-300'
-            }`}
-          >
-            <Box className="w-3 h-3" />
-            3D
-          </button>
-        </div>
+        {/* View mode toggle — only shown when plan is active */}
+        {activeTab === 'plan' && (
+          <div className="flex items-center gap-0.5 bg-gray-800 rounded-lg p-0.5">
+            <button
+              onClick={() => { setViewMode('2d'); setNavMode('orbit') }}
+              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
+                viewMode === '2d'
+                  ? 'bg-gray-700 text-white'
+                  : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              <Grid3x3 className="w-3 h-3" />
+              2D
+            </button>
+            <button
+              onClick={() => setViewMode('3d')}
+              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
+                viewMode === '3d'
+                  ? 'bg-gray-700 text-white'
+                  : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              <Box className="w-3 h-3" />
+              3D
+            </button>
+          </div>
+        )}
 
-        {/* Show all floors (3D only) */}
-        {viewMode === '3d' && (
+        {/* Show all floors (3D + plan only) */}
+        {activeTab === 'plan' && viewMode === '3d' && (
           <button
             onClick={() => setShowAllFloors(!showAllFloors)}
             className={`px-2 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
@@ -405,8 +565,8 @@ export default function Vol2Module() {
           </button>
         )}
 
-        {/* Clipping / Section cut (3D only) */}
-        {viewMode === '3d' && (
+        {/* Clipping / Section cut (3D + plan only) */}
+        {activeTab === 'plan' && viewMode === '3d' && (
           <button
             onClick={() => setClipping(c => ({ ...c, enabled: !c.enabled }))}
             className={`px-2 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
@@ -420,8 +580,8 @@ export default function Vol2Module() {
           </button>
         )}
 
-        {/* FPS navigation (3D only) */}
-        {viewMode === '3d' && (
+        {/* FPS navigation (3D + plan only) */}
+        {activeTab === 'plan' && viewMode === '3d' && (
           <button
             onClick={() => setNavMode(m => m === 'orbit' ? 'fps' : 'orbit')}
             className={`px-2 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
@@ -435,23 +595,27 @@ export default function Vol2Module() {
           </button>
         )}
 
-        {/* Import DXF/DWG/RVT */}
-        <button
-          onClick={() => setShowDXFImport(true)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-600/15 border border-blue-500/30 text-blue-300 text-[10px] font-medium hover:bg-blue-600/25 transition-colors"
-        >
-          <Upload className="w-3 h-3" />
-          DXF/DWG/RVT
-        </button>
+        {/* Import DXF/DWG/RVT — plan only */}
+        {activeTab === 'plan' && (
+          <button
+            onClick={() => setShowDXFImport(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-600/15 border border-blue-500/30 text-blue-300 text-[10px] font-medium hover:bg-blue-600/25 transition-colors"
+          >
+            <Upload className="w-3 h-3" />
+            DXF/DWG/RVT
+          </button>
+        )}
 
-        {/* Import 3D model */}
-        <button
-          onClick={() => setShow3DImport(true)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-600/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-medium hover:bg-emerald-600/25 transition-colors"
-        >
-          <Box className="w-3 h-3" />
-          IFC/3D
-        </button>
+        {/* Import 3D model — plan only */}
+        {activeTab === 'plan' && (
+          <button
+            onClick={() => setShow3DImport(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-600/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-medium hover:bg-emerald-600/25 transition-colors"
+          >
+            <Box className="w-3 h-3" />
+            IFC/3D
+          </button>
+        )}
 
         {/* Proph3t badge */}
         <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-purple-900/30 border border-purple-700/30">
@@ -462,62 +626,128 @@ export default function Vol2Module() {
 
       {/* ── Main body ───────────────────────────────────────── */}
       <div className="flex-1 flex min-h-0">
-        {activeTab !== 'plan' ? (
-          <main className="flex-1 min-w-0 bg-gray-950">
-            <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="w-5 h-5 animate-spin text-gray-500" /></div>}>
-              {activeTab === 'analyse' && <AnalyseSectionLazy />}
-              {activeTab === 'rapport' && <RapportSectionLazy />}
-              {activeTab === 'chat' && <ChatSectionLazy />}
-              {activeTab === 'simulation' && <SimulationSectionLazy />}
-              {activeTab === 'budget' && <BudgetSectionLazy />}
-            </Suspense>
-          </main>
-        ) : (<>
+        {/* ── Sidebar navigation — always visible ──────────── */}
+        <aside
+          className="flex-none w-56 border-r border-gray-800 bg-[#0f1623] overflow-y-auto"
+          style={{ scrollbarWidth: 'thin', scrollbarColor: '#1e293b transparent' }}
+        >
+          {/* Sidebar header */}
+          <div className="px-4 pt-4 pb-3 border-b border-gray-800/60">
+            <div className="text-[11px] font-bold text-white tracking-wide">Cosmos Angr{'\u00e9'}</div>
+            <div className="text-[9px] text-gray-500 font-mono mt-0.5">VOL. 2 — PLAN S{'\u00c9'}CURITAIRE</div>
+          </div>
+
+          {/* Navigation groups */}
+          <nav className="py-2">
+            {NAV_GROUPS.map((group) => (
+              <div key={group.key}>
+                {/* Separator before studio group */}
+                {group.separator && (
+                  <div className="mx-3 my-2 border-t border-gray-800/60" />
+                )}
+
+                {/* Group header */}
+                <button
+                  onClick={() => toggleGroup(group.key)}
+                  className="w-full flex items-center gap-2 px-4 py-2 cursor-pointer group hover:bg-white/[0.02] transition-colors"
+                >
+                  <group.icon className="w-3 h-3 flex-none" style={{ color: group.color }} />
+                  <span className="text-[10px] font-semibold tracking-wider flex-1 text-left" style={{ color: '#4a5568' }}>
+                    {group.label}
+                  </span>
+                  {openGroups[group.key] ? (
+                    <ChevronDown className="w-3 h-3 text-gray-600" />
+                  ) : (
+                    <ChevronRight className="w-3 h-3 text-gray-600" />
+                  )}
+                </button>
+
+                {/* Group items */}
+                {openGroups[group.key] && (
+                  <div className="pb-1">
+                    {group.items.map((item) => {
+                      const isActive = activeTab === item.id
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => setActiveTab(item.id)}
+                          className="w-full flex items-center gap-2.5 pl-5 pr-3 py-1.5 text-left transition-colors"
+                          style={{
+                            background: isActive ? 'rgba(56,189,248,0.12)' : undefined,
+                            borderLeft: isActive ? '2px solid #38bdf8' : '2px solid transparent',
+                            color: isActive ? '#38bdf8' : '#4a5568',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isActive) {
+                              e.currentTarget.style.color = '#94a3b8'
+                              e.currentTarget.style.background = 'rgba(255,255,255,0.02)'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isActive) {
+                              e.currentTarget.style.color = '#4a5568'
+                              e.currentTarget.style.background = 'transparent'
+                            }
+                          }}
+                        >
+                          <item.icon className="w-3.5 h-3.5 flex-none" />
+                          <span className="text-[11px] font-medium truncate">{item.label}</span>
+                          {item.dot && (
+                            <span
+                              className="w-1.5 h-1.5 rounded-full flex-none ml-auto"
+                              style={{ background: '#f59e0b' }}
+                            />
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            ))}
+          </nav>
+        </aside>
+
+        {/* ── Content area ─────────────────────────────────── */}
+        {activeTab === 'plan' ? (<>
         {/* ── Left sidebar (toolbar) ────────────────────────── */}
         <aside className="flex-none w-12 border-r border-gray-800 bg-gray-900/50 flex flex-col items-center py-3 gap-1">
+          {/* ── PLACEMENT TOOLS ── */}
+          <div className="text-[8px] text-gray-600 font-mono mb-1">PLACER</div>
+          <ToolbarButton
+            icon={CameraIcon}
+            label="+ Camera"
+            active={placeTool === 'camera'}
+            onClick={() => setPlaceTool(placeTool === 'camera' ? null : 'camera')}
+            activeColor="text-blue-400"
+          />
+          <ToolbarButton
+            icon={Square}
+            label="+ Porte"
+            active={placeTool === 'door'}
+            onClick={() => setPlaceTool(placeTool === 'door' ? null : 'door')}
+            activeColor="text-green-400"
+          />
+          <ToolbarButton
+            icon={CircleDot}
+            label="+ Zone"
+            active={placeTool === 'zone'}
+            onClick={() => setPlaceTool(placeTool === 'zone' ? null : 'zone')}
+            activeColor="text-amber-400"
+          />
+
+          <div className="w-6 h-px bg-gray-800 my-1" />
+          <div className="text-[8px] text-gray-600 font-mono mb-1">VUE</div>
+
           {/* FOV toggle */}
-          <ToolbarButton
-            icon={showFov ? Eye : EyeOff}
-            label="FOV"
-            active={showFov}
-            onClick={toggleFov}
-          />
-
-          {/* Blind Spots toggle */}
-          <ToolbarButton
-            icon={ShieldAlert}
-            label="Angles morts"
-            active={showBlindSpots}
-            onClick={toggleBlindSpots}
-          />
-
-          {/* Heatmap toggle */}
-          <ToolbarButton
-            icon={Flame}
-            label="Heatmap"
-            active={showHeatmap}
-            onClick={toggleHeatmap}
-          />
-
-          {/* Transitions toggle */}
-          <ToolbarButton
-            icon={ArrowUpDown}
-            label="Transitions"
-            active={showTransitions}
-            onClick={toggleTransitions}
-          />
+          <ToolbarButton icon={showFov ? Eye : EyeOff} label="FOV" active={showFov} onClick={toggleFov} />
+          <ToolbarButton icon={ShieldAlert} label="Angles morts" active={showBlindSpots} onClick={toggleBlindSpots} />
+          <ToolbarButton icon={Flame} label="Heatmap" active={showHeatmap} onClick={toggleHeatmap} />
+          <ToolbarButton icon={ArrowUpDown} label="Transitions" active={showTransitions} onClick={toggleTransitions} />
 
           <div className="flex-1" />
 
-          {/* Library */}
-          <ToolbarButton
-            icon={Library}
-            label="Bibliotheque"
-            active={libraryOpen}
-            onClick={() => setLibraryOpen(!libraryOpen)}
-          />
-
-          {/* Simulate */}
+          <ToolbarButton icon={Library} label="Bibliotheque" active={libraryOpen} onClick={() => setLibraryOpen(!libraryOpen)} />
           <ToolbarButton
             icon={isSimulating ? Loader2 : Play}
             label="Simuler"
@@ -527,6 +757,17 @@ export default function Vol2Module() {
           />
         </aside>
 
+        {/* Placement indicator */}
+        {placeTool && (
+          <div className="absolute top-16 left-16 z-20 bg-blue-900/90 border border-blue-500/40 text-blue-200 text-xs px-3 py-2 rounded-lg flex items-center gap-2 backdrop-blur-sm">
+            <span className="animate-pulse w-2 h-2 rounded-full bg-blue-400" />
+            Cliquez sur le plan pour placer {placeTool === 'camera' ? 'une camera' : placeTool === 'door' ? 'une porte' : 'une zone'}
+            <button onClick={() => setPlaceTool(null)} className="ml-2 text-blue-400 hover:text-white">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* ── Center — 2D/3D View ─────────────────────────── */}
         <main className="flex-1 relative min-w-0">
           {viewMode === '2d' ? (
@@ -535,6 +776,8 @@ export default function Vol2Module() {
               zones={floorZones}
               showHeatmap={showHeatmap}
               onEntityClick={(id: string, type: 'camera' | 'door' | 'zone' | 'transition') => selectEntity(id, type)}
+              onCanvasClick={placeTool ? handleCanvasClick : undefined}
+              cursorMode={placeTool ? 'place' : 'select'}
               selectedId={selectedEntityId}
               className="w-full h-full"
             >
@@ -731,6 +974,8 @@ export default function Vol2Module() {
               entity={selectedEntity}
               entityType={selectedEntityType!}
               onClose={() => selectEntity(null, null)}
+              onUpdate={handleEntityUpdate}
+              onDelete={handleEntityDelete}
             />
           ) : (
             <Proph3tChat
@@ -740,7 +985,40 @@ export default function Vol2Module() {
             />
           )}
         </aside>
-        </>)}
+        </>) : (
+          <main className="flex-1 min-w-0 overflow-y-auto" style={{ background: '#080c14' }}>
+            <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="w-5 h-5 animate-spin text-gray-500" /></div>}>
+              {activeTab === 'introduction' && <IntroSectionLazy />}
+              {activeTab === 'kpis' && <KpisSectionLazy />}
+              {activeTab === 'perimetre' && <PerimetreSectionLazy />}
+              {activeTab === 'acces' && <AccesSectionLazy />}
+              {activeTab === 'video' && <VideoSectionLazy />}
+              {activeTab === 'incendie' && <IncendieSectionLazy />}
+              {activeTab === 'procedures' && <ProceduresSectionLazy />}
+              {activeTab === 'organigramme' && <OrganigrammeSectionLazy />}
+              {activeTab === 'analyse' && <AnalyseSectionLazy />}
+              {activeTab === 'rapport' && <RapportSectionLazy />}
+              {activeTab === 'chat' && <ChatSectionLazy />}
+              {activeTab === 'simulation' && <SimulationSectionLazy />}
+              {activeTab === 'budget' && <BudgetSectionLazy />}
+              {activeTab === 'introduction' && <IntroSectionLazy />}
+              {activeTab === 'kpis' && <KpisSectionLazy />}
+              {activeTab === 'perimetre' && <PerimetreSectionLazy />}
+              {activeTab === 'acces' && <AccesSectionLazy />}
+              {activeTab === 'video' && <VideoSectionLazy />}
+              {activeTab === 'incendie' && <IncendieSectionLazy />}
+              {activeTab === 'procedures' && <ProceduresSectionLazy />}
+              {activeTab === 'organigramme' && <OrganigrammeSectionLazy />}
+              {activeTab === 'control_room' && <ControlRoomLazy />}
+              {activeTab === 'incidents' && <IncidentWorkflowLazy />}
+              {activeTab === 'risk_matrix' && <RiskMatrixViewLazy />}
+              {activeTab === 'whatif' && <WhatIfSecuriteLazy />}
+              {activeTab === 'staffing' && <StaffingPlannerLazy />}
+              {activeTab === 'rondes' && <RondePlannerLazy />}
+              {activeTab === 'compliance' && <ComplianceTrackerLazy />}
+            </Suspense>
+          </main>
+        )}
       </div>
 
       {/* ── Bottom status bar ───────────────────────────────── */}

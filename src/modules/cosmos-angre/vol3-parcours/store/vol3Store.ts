@@ -4,8 +4,13 @@ import { create } from 'zustand'
 import type {
   Floor, Zone, TransitionNode, POI, SignageItem,
   MomentCle, VisitorProfile, NavigationGraph, PathResult,
-  ProjectMemorySummary, ChatMessage
+  ProjectMemorySummary, ChatMessage, NavigationNode,
+  NavigationEdge, InterFloorEdge, FloorLevel
 } from '../../shared/proph3t/types'
+import { generateParcours } from '../../shared/proph3t/engine'
+import { calculateSignaleticsSpec, optimizeSignaleticsPlacement } from '../../shared/proph3t/signaleticsEngine'
+import { exportSignaletiquePDF } from '../../../export/exportSignaletique'
+import { exportQRCodesPDF } from '../../../export/exportQRCodes'
 
 // ─── Mock Data ───────────────────────────────────────────────
 
@@ -687,6 +692,21 @@ interface Vol3State {
   // Actions - Profiles
   setActiveProfile: (id: string | null) => void
 
+  // Actions - Orchestration (PRD)
+  autoPlaceSignaletics: (floorId: string) => Promise<void>
+  calculateSignaleticsSpecs: (signageId: string) => void
+  generateParcours: () => void
+  buildGraph: (floorId?: string) => Promise<void>
+  calculateWayfinding: (fromId: string, toId: string, pmrOnly?: boolean) => PathResult | null
+  simulateProfile: (profileId: string) => Promise<void>
+  generateHeatmap: (scenario: string) => Promise<void>
+
+  // Actions - Export (PRD)
+  exportSignaleticsPDF: () => Promise<void>
+  exportParcoursReport: () => Promise<void>
+  exportQRCodes: () => Promise<void>
+  exportWayfindingPDF: () => Promise<void>
+
   // Actions - Reset
   resetProject: () => void
 }
@@ -794,6 +814,181 @@ export const useVol3Store = create<Vol3State>()((set) => ({
 
   // ── Profiles ────────────────────────────────────────────
   setActiveProfile: (id) => set({ activeProfileId: id }),
+
+  // ── Orchestration actions (PRD) ───────────────────────
+  autoPlaceSignaletics: async (floorId) => {
+    const s = useVol3Store.getState()
+    const floor = s.floors.find(f => f.id === floorId)
+    if (!floor) return
+    const items = optimizeSignaleticsPlacement(floor, s.navGraph, s.signageItems.filter(si => si.floorId === floorId))
+    set(st => ({ signageItems: [...st.signageItems, ...items] }))
+  },
+
+  calculateSignaleticsSpecs: (signageId) => {
+    const s = useVol3Store.getState()
+    const item = s.signageItems.find(si => si.id === signageId)
+    if (!item) return
+    const zone = s.zones.find(z => z.floorId === item.floorId) ?? s.zones[0]
+    if (!zone) return
+    const spec = calculateSignaleticsSpec(
+      { x: item.x, y: item.y }, zone, 4, 3.5, item.orientationDeg, item.maxReadingDistanceM || 10
+    )
+    set(st => ({
+      signageItems: st.signageItems.map(si =>
+        si.id === signageId
+          ? { ...si, poseHeightM: spec.poseHeightM, textHeightMm: spec.textHeightMm, maxReadingDistanceM: spec.maxReadingDistanceM, isLuminous: spec.isLuminousRequired, requiresBAES: spec.isBAESRequired, normRef: spec.normRef, capexFcfa: spec.capexFcfa }
+          : si
+      ),
+    }))
+  },
+
+  generateParcours: () => {
+    const s = useVol3Store.getState()
+    const moments = generateParcours(s.zones, s.pois)
+    set({ moments })
+  },
+
+  buildGraph: async (_floorId) => {
+    const s = useVol3Store.getState()
+    const nodes: NavigationNode[] = []
+    const edges: NavigationEdge[] = []
+    const interFloorEdges: InterFloorEdge[] = []
+    for (const poi of s.pois) {
+      nodes.push({ id: `nav-${poi.id}`, x: poi.x, y: poi.y, floorId: poi.floorId, poiId: poi.id, label: poi.label, isTransition: false })
+    }
+    for (const tr of s.transitions) {
+      const fromFloorId = s.floors.find(f => f.level === tr.fromFloor)?.id ?? ''
+      const toFloorId = s.floors.find(f => f.level === tr.toFloor)?.id ?? ''
+      nodes.push({ id: `nav-tr-${tr.id}-from`, x: tr.x, y: tr.y, floorId: fromFloorId, label: tr.label, isTransition: true })
+      nodes.push({ id: `nav-tr-${tr.id}-to`, x: tr.x, y: tr.y, floorId: toFloorId, label: tr.label, isTransition: true })
+      interFloorEdges.push({ id: `ife-${tr.id}`, fromNodeId: `nav-tr-${tr.id}-from`, toNodeId: `nav-tr-${tr.id}-to`, transitionId: tr.id, timeSec: 60 / (tr.capacityPerMin || 30), pmr: tr.pmr })
+    }
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        if (nodes[i].floorId === nodes[j].floorId) {
+          const dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y
+          const dist = Math.sqrt(dx * dx + dy * dy)
+          if (dist < 80) edges.push({ id: `edge-${i}-${j}`, from: nodes[i].id, to: nodes[j].id, distanceM: dist, pmr: true, floorId: nodes[i].floorId })
+        }
+      }
+    }
+    set({ navGraph: { nodes, edges, floorId: s.activeFloorId, interFloorEdges } })
+  },
+
+  calculateWayfinding: (fromId, toId, pmrOnly) => {
+    const s = useVol3Store.getState()
+    if (!s.navGraph) return null
+    const fromNode = s.navGraph.nodes.find(n => n.poiId === fromId || n.id === fromId)
+    const toNode = s.navGraph.nodes.find(n => n.poiId === toId || n.id === toId)
+    if (!fromNode || !toNode) return null
+    const visited = new Set<string>()
+    const queue: { node: NavigationNode; path: NavigationNode[]; dist: number }[] = [{ node: fromNode, path: [fromNode], dist: 0 }]
+    visited.add(fromNode.id)
+    while (queue.length > 0) {
+      const current = queue.shift()!
+      if (current.node.id === toNode.id) {
+        const result: PathResult = { path: current.path, totalDistanceM: current.dist, totalTimeSec: current.dist / 1.2, floorsTraversed: [...new Set(current.path.map(n => n.floorId))] as FloorLevel[], pmrCompliant: true, instructions: current.path.map((n, i) => i === 0 ? `Depart : ${n.label ?? 'Point'}` : `-> ${n.label ?? 'Point'}`) }
+        set({ currentPath: result })
+        return result
+      }
+      const neighbors = s.navGraph!.edges.filter(e => (e.from === current.node.id || e.to === current.node.id) && (!pmrOnly || e.pmr)).map(e => ({ nodeId: e.from === current.node.id ? e.to : e.from, dist: e.distanceM }))
+      const ifeN = s.navGraph!.interFloorEdges.filter(e => (e.fromNodeId === current.node.id || e.toNodeId === current.node.id) && (!pmrOnly || e.pmr)).map(e => ({ nodeId: e.fromNodeId === current.node.id ? e.toNodeId : e.fromNodeId, dist: e.timeSec * 1.2 }))
+      for (const nb of [...neighbors, ...ifeN]) {
+        if (!visited.has(nb.nodeId)) {
+          visited.add(nb.nodeId)
+          const nextNode = s.navGraph!.nodes.find(n => n.id === nb.nodeId)
+          if (nextNode) queue.push({ node: nextNode, path: [...current.path, nextNode], dist: current.dist + nb.dist })
+        }
+      }
+    }
+    return null
+  },
+
+  simulateProfile: async (profileId) => {
+    const s = useVol3Store.getState()
+    const profile = s.visitorProfiles.find(p => p.id === profileId)
+    if (!profile || !s.navGraph) return
+    const attractorPois = s.pois.filter(p => profile.attractors.includes(p.type))
+    if (attractorPois.length < 2) return
+    const path: NavigationNode[] = []
+    for (const poi of attractorPois) {
+      const node = s.navGraph.nodes.find(n => n.poiId === poi.id)
+      if (node) path.push(node)
+    }
+    const totalDist = path.reduce((acc, n, i) => i === 0 ? 0 : acc + Math.sqrt((n.x - path[i - 1].x) ** 2 + (n.y - path[i - 1].y) ** 2), 0)
+    set({ currentPath: { path, totalDistanceM: totalDist, totalTimeSec: totalDist / profile.speed, floorsTraversed: [...new Set(path.map(n => n.floorId))] as FloorLevel[], pmrCompliant: !profile.pmrRequired, instructions: path.map((n, i) => i === 0 ? `Depart : ${n.label ?? '?'}` : `-> ${n.label ?? '?'}`) }, activeProfileId: profileId })
+  },
+
+  generateHeatmap: async (_scenario) => {
+    const s = useVol3Store.getState()
+    const floor = s.floors.find(f => f.id === s.activeFloorId)
+    if (!floor) return
+    const gridW = 20, gridH = 15
+    const heatmap: number[][] = Array.from({ length: gridH }, () => Array(gridW).fill(0))
+    for (const poi of s.pois.filter(p => p.floorId === s.activeFloorId)) {
+      const gx = Math.floor((poi.x / floor.widthM) * gridW)
+      const gy = Math.floor((poi.y / floor.heightM) * gridH)
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        const nx = gx + dx, ny = gy + dy
+        if (nx >= 0 && nx < gridW && ny >= 0 && ny < gridH) heatmap[ny][nx] += Math.max(0, 1 - Math.sqrt(dx * dx + dy * dy) / 3) * 100
+      }
+    }
+    set({ heatmapData: heatmap, heatmapFloorId: s.activeFloorId })
+  },
+
+  // ── Export actions (PRD) ──────────────────────────────
+  exportSignaleticsPDF: async () => {
+    const s = useVol3Store.getState()
+    const data = { projectName: s.projectName, generatedAt: new Date().toISOString(), floors: s.floors, zones: s.zones, pois: s.pois, signageItems: s.signageItems, parcours: s.moments, navigationGraph: s.navGraph ?? { nodes: [], edges: [], floorId: s.activeFloorId, interFloorEdges: [] }, visitorProfiles: s.visitorProfiles }
+    const blob = await exportSignaletiquePDF(data, null)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'Plan_Signaletique.pdf'; a.click()
+    URL.revokeObjectURL(url)
+  },
+
+  exportParcoursReport: async () => {
+    const { Document, Packer, Paragraph, TextRun, HeadingLevel } = await import('docx')
+    const s = useVol3Store.getState()
+    const doc = new Document({ sections: [{ children: [
+      new Paragraph({ text: `Rapport Parcours Client — ${s.projectName}`, heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: `Date : ${new Date().toLocaleDateString('fr-FR')}`, spacing: { after: 200 } }),
+      ...s.moments.flatMap(m => [
+        new Paragraph({ text: `Moment ${m.number} — ${m.name}`, heading: HeadingLevel.HEADING_2 }),
+        new Paragraph({ children: [new TextRun({ text: `KPI : ${m.kpi}` })] }),
+        new Paragraph({ children: [new TextRun({ text: `Friction : ${m.friction}` })] }),
+        new Paragraph({ children: [new TextRun({ text: `Recommandation : ${m.recommendation}` })] }),
+        ...(m.cosmosClubAction ? [new Paragraph({ children: [new TextRun({ text: `Cosmos Club : ${m.cosmosClubAction}` })] })] : []),
+      ]),
+    ] }] })
+    const blob = await Packer.toBlob(doc)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'Rapport_Parcours_Client.docx'; a.click()
+    URL.revokeObjectURL(url)
+  },
+
+  exportQRCodes: async () => {
+    const s = useVol3Store.getState()
+    const blob = await exportQRCodesPDF(s.pois)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'QR_Codes_POI.pdf'; a.click()
+    URL.revokeObjectURL(url)
+  },
+
+  exportWayfindingPDF: async () => {
+    const { jsPDF } = await import('jspdf')
+    const s = useVol3Store.getState()
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    doc.setFontSize(18); doc.text(`Wayfinding — ${s.projectName}`, 20, 20)
+    doc.setFontSize(10); doc.text(`Date : ${new Date().toLocaleDateString('fr-FR')}`, 20, 30)
+    doc.text(`POIs : ${s.pois.length} | Signaletique : ${s.signageItems.length}`, 20, 38)
+    if (s.navGraph) { doc.text(`Noeuds : ${s.navGraph.nodes.length} | Aretes : ${s.navGraph.edges.length}`, 20, 46) }
+    let y = 60; doc.setFontSize(14); doc.text('Points d\'interet', 20, y); y += 10; doc.setFontSize(9)
+    for (const poi of s.pois) { if (y > 270) { doc.addPage(); y = 20 }; doc.text(`${poi.label} (${poi.type}) — PMR: ${poi.pmr ? 'Oui' : 'Non'}`, 20, y); y += 6 }
+    const blob = doc.output('blob')
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'Wayfinding_Report.pdf'; a.click()
+    URL.revokeObjectURL(url)
+  },
 
   // ── Reset ───────────────────────────────────────────────
   resetProject: () => set(initialState),

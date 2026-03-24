@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShieldCheck, Route, Sparkles, Link2, ArrowRight } from 'lucide-react'
+import { ShieldCheck, Route, Sparkles, Link2, ArrowRight, Building2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface VolumeStat {
@@ -28,6 +28,30 @@ interface VolumeConfig {
 }
 
 const volumes: VolumeConfig[] = [
+  {
+    id: 'vol1',
+    number: 1,
+    badge: 'VOL. 1',
+    title: 'Plan Commercial',
+    subtitle: 'Mix enseigne \u00b7 Occupancy \u00b7 Preneurs \u00b7 Leasing',
+    description:
+      'Pilotage du mix enseigne du centre commercial. Chaque cellule est identifiee, qualifiee, ' +
+      'reliee a un preneur, et analysable en un clic. Dashboard occupancy, alertes bail et recommandations IA.',
+    icon: Building2,
+    accent: '#f59e0b',
+    gradientFrom: '#1a1400',
+    gradientTo: '#0f0d04',
+    borderColor: '#3d2f0a',
+    borderHover: 'rgba(245, 158, 11, 0.376)',
+    badgeBg: 'rgba(245, 158, 11, 0.125)',
+    badgeBorder: 'rgba(245, 158, 11, 0.25)',
+    stats: [
+      { value: '16', label: 'CELLULES' },
+      { value: '12', label: 'PRENEURS' },
+      { value: '92%', label: 'OCCUPATION' },
+    ],
+    route: '/cosmos-angre/vol1',
+  },
   {
     id: 'vol2',
     number: 2,
@@ -216,7 +240,7 @@ export default function VolumesNav() {
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight">Atlas Mall Suite</h1>
-              <p className="text-xs text-gray-500">Praedium Tech / Atlas Studio</p>
+              <p className="text-xs text-gray-500">Atlas Studio</p>
             </div>
           </div>
           <span className="rounded-md bg-white/5 px-2.5 py-1 text-xs font-mono text-gray-500">
@@ -240,7 +264,7 @@ export default function VolumesNav() {
 
       {/* Volume cards */}
       <div className="mx-auto max-w-6xl px-6 py-6">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {volumes.map((vol) => (
             <VolumeCard key={vol.id} vol={vol} />
           ))}

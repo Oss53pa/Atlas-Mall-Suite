@@ -13,6 +13,7 @@ import {
   Send,
   Sparkles,
   ChevronDown,
+  ChevronRight,
   Star,
   AlertTriangle,
   Lightbulb,
@@ -21,6 +22,20 @@ import {
   Loader2,
   Bell,
   PlayCircle,
+  Info,
+  Map,
+  Eye,
+  Layers,
+  Users,
+  User,
+  Grid3X3,
+  BarChart2,
+  Calendar,
+  Navigation,
+  FileText,
+  MessageSquare,
+  LayoutDashboard,
+  Smartphone,
 } from 'lucide-react'
 import { useVol3Store } from './store/vol3Store'
 import FloorPlanCanvas, { CANVAS_SCALE } from '../shared/components/FloorPlanCanvas'
@@ -33,14 +48,174 @@ import GeoNotificationPanel, { type GeoNotification } from './components/GeoNoti
 import VisitReplay, { type VisitPath } from './components/VisitReplay'
 import type { ChatMessage, MomentCle, POI, SignageItem } from '../shared/proph3t/types'
 
+// ── Lazy section imports ─────────────────────────────────────
 const ParcoursSectionLazy = lazy(() => import('./sections/ParcoursSection'))
 const WayfindingSectionLazy = lazy(() => import('./sections/WayfindingSection'))
 const SignaleticsSectionLazy = lazy(() => import('./sections/SignaleticsSection'))
 const HeatmapSectionLazy = lazy(() => import('./sections/HeatmapSection'))
 const RapportSectionLazy = lazy(() => import('./sections/RapportSection'))
 const ChatSectionLazy = lazy(() => import('./sections/ChatSection'))
+const IntroSectionLazy = lazy(() => import('./sections/IntroSection'))
+const JourneyMapSectionLazy = lazy(() => import('./sections/JourneyMapSection'))
+const SwimlaneSectionLazy = lazy(() => import('./sections/SwimlaneSection'))
+const PersonasGridLazy = lazy(() => import('./sections/PersonasGrid'))
+const PersonaDetailLazy = lazy(() => import('./sections/PersonaDetail'))
+const TouchpointsMatrixLazy = lazy(() => import('./sections/TouchpointsMatrix'))
+const KpiDashboardLazy = lazy(() => import('./sections/KpiDashboard'))
+const PlanActionLazy = lazy(() => import('./sections/PlanAction'))
+const SignaletiquePageLazy = lazy(() => import('./sections/SignaletiquePage'))
+const ExperienceDashboardLazy = lazy(() => import('./sections/ExperienceDashboard'))
+const ActionTrackerLazy = lazy(() => import('./sections/ActionTracker'))
+const SignaletiquTrackerLazy = lazy(() => import('./sections/SignaletiquTracker'))
+const TouchpointTrackerLazy = lazy(() => import('./sections/TouchpointTracker'))
+const FeedbackModuleLazy = lazy(() => import('./sections/FeedbackModule'))
 
-type Vol3Tab = 'plan' | 'parcours' | 'wayfinding' | 'signaletique' | 'heatmap' | 'rapport' | 'chat'
+type Vol3Tab =
+  | 'plan'
+  | 'parcours'
+  | 'wayfinding'
+  | 'signaletique'
+  | 'heatmap'
+  | 'rapport'
+  | 'chat'
+  | 'intro'
+  | 'journeymap'
+  | 'parcoursvisuel'
+  | 'swimlane'
+  | 'personas'
+  | 'awa_moussa'
+  | 'serge'
+  | 'pamela'
+  | 'aminata'
+  | 'touchpoints'
+  | 'kpis'
+  | 'action'
+  | 'signaletique_page'
+  | 'exp_dashboard'
+  | 'action_tracker'
+  | 'signa_tracker'
+  | 'touch_tracker'
+  | 'feedbacks'
+
+// ─── Sidebar nav definition ─────────────────────────────────
+
+interface NavItem {
+  id: Vol3Tab
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  dot?: boolean
+}
+
+interface NavGroup {
+  key: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  color: string
+  items: NavItem[]
+  separator?: boolean
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    key: 'vue',
+    label: "VUE D'ENSEMBLE",
+    icon: LayoutDashboard,
+    color: '#34d399',
+    items: [
+      { id: 'intro', label: 'Introduction', icon: Info },
+    ],
+  },
+  {
+    key: 'journeymap',
+    label: 'M1 — JOURNEY MAP',
+    icon: Map,
+    color: '#34d399',
+    items: [
+      { id: 'journeymap', label: 'Journey Map', icon: Map, dot: true },
+      { id: 'parcoursvisuel', label: 'Parcours visuel', icon: Eye },
+      { id: 'swimlane', label: 'Swimlane \u00b7 10 couches', icon: Layers },
+    ],
+  },
+  {
+    key: 'personas',
+    label: 'M2 — PERSONAS',
+    icon: Users,
+    color: '#8b5cf6',
+    items: [
+      { id: 'personas', label: '4 Personas Cosmos', icon: Users },
+      { id: 'awa_moussa', label: 'Awa & Moussa', icon: Users },
+      { id: 'serge', label: 'Serge', icon: User },
+      { id: 'pamela', label: 'Pamela', icon: User },
+      { id: 'aminata', label: 'Aminata', icon: User },
+    ],
+  },
+  {
+    key: 'touchpoints',
+    label: 'M3 — TOUCHPOINTS',
+    icon: Grid3X3,
+    color: '#f59e0b',
+    items: [
+      { id: 'touchpoints', label: 'Matrice touchpoints', icon: Grid3X3 },
+    ],
+  },
+  {
+    key: 'kpis',
+    label: 'M4 — KPIS',
+    icon: BarChart2,
+    color: '#ef4444',
+    items: [
+      { id: 'kpis', label: 'Dashboard KPIs', icon: BarChart2 },
+    ],
+  },
+  {
+    key: 'action',
+    label: "M5 — PLAN D'ACTION",
+    icon: Calendar,
+    color: '#06b6d4',
+    items: [
+      { id: 'action', label: "Plan d'action", icon: Calendar },
+    ],
+  },
+  {
+    key: 'signaletique_page',
+    label: 'M6 — SIGNALÉTIQUE',
+    icon: Signpost,
+    color: '#22c55e',
+    items: [
+      { id: 'signaletique_page', label: 'Signalétique directionnelle', icon: Signpost },
+    ],
+  },
+  {
+    key: 'studio',
+    label: 'ATLAS STUDIO',
+    icon: Sparkles,
+    color: '#a855f7',
+    separator: true,
+    items: [
+      { id: 'plan', label: 'Plan interactif', icon: Map },
+      { id: 'parcours', label: 'Parcours client', icon: Route },
+      { id: 'wayfinding', label: 'Wayfinding', icon: Navigation },
+      { id: 'signaletique', label: 'Signalétique (plan)', icon: Signpost },
+      { id: 'heatmap', label: 'Heatmap', icon: Flame },
+      { id: 'rapport', label: 'Rapport', icon: FileText },
+      { id: 'chat', label: 'Proph3t Chat', icon: MessageSquare },
+    ],
+  },
+  {
+    key: 'pilotage',
+    label: 'PILOTAGE',
+    icon: BarChart2,
+    color: '#ef4444',
+    separator: true,
+    items: [
+      { id: 'exp_dashboard', label: 'Dashboard expérience', icon: BarChart2, dot: true },
+      { id: 'action_tracker', label: "Plan d'action A01-A13", icon: Calendar },
+      { id: 'signa_tracker', label: 'Déploiement signalétique', icon: Signpost },
+      { id: 'touch_tracker', label: 'Touchpoints', icon: Smartphone },
+      { id: 'feedbacks', label: 'Réclamations visiteurs', icon: MessageSquare },
+    ],
+  },
+]
 
 // ─── Helpers ──────────────────────────────────────────────────
 
@@ -180,8 +355,47 @@ export default function Vol3Module() {
   } = store
 
   const [chatInput, setChatInput] = useState('')
-  const [activeTab, setActiveTab] = useState<Vol3Tab>('plan')
+  const [activeTab, setActiveTab] = useState<Vol3Tab>('intro')
   const [heatmapHour, setHeatmapHour] = useState(14) // default 2pm
+
+  // ── Sidebar accordion state ─────────────────────────────
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    vue: true,
+    journeymap: true,
+    personas: true,
+    touchpoints: true,
+    kpis: true,
+    action: true,
+    signaletique_page: true,
+    studio: false,
+  })
+
+  const toggleGroup = useCallback((key: string) => {
+    setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }))
+  }, [])
+
+  // ── Placement tools ──
+  type PlaceTool = null | 'poi' | 'signage'
+  const [placeTool, setPlaceTool] = useState<PlaceTool>(null)
+
+  const handleCanvasClick = useCallback((x: number, y: number) => {
+    if (!placeTool) return
+    const id = `${placeTool}-${Date.now()}`
+    if (placeTool === 'poi') {
+      store.addPoi({
+        id, floorId: activeFloorId, label: `POI ${pois.length + 1}`,
+        type: 'enseigne', x, y, pmr: true, color: '#22c55e', icon: 'store',
+      })
+      store.selectEntity(id, 'poi')
+    }
+    setPlaceTool(null)
+  }, [placeTool, activeFloorId, pois.length, store])
+
+  const handleEntityDelete = useCallback((id: string) => {
+    if (selectedEntityType === 'poi') store.deletePoi(id)
+    else if (selectedEntityType === 'signage') store.deleteSignageItem(id)
+    store.selectEntity(null, null)
+  }, [selectedEntityType, store])
   const [showReplay, setShowReplay] = useState(false)
   const [showNotifPanel, setShowNotifPanel] = useState(false)
   const [geoNotifications, setGeoNotifications] = useState<GeoNotification[]>([
@@ -396,43 +610,39 @@ export default function Vol3Module() {
   // ── Render ────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col h-screen bg-gray-950 text-white overflow-hidden">
+    <div className="h-screen flex flex-col bg-gray-950 text-white overflow-hidden">
       {/* ═══ Header ═══ */}
-      <header className="flex items-center justify-between px-4 py-2 border-b border-gray-800 bg-gray-950/90 backdrop-blur-sm shrink-0">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/cosmos-angre')}
-            className="p-1.5 rounded-md hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
-            title="Retour"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center">
-              <MapPin className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h1 className="text-sm font-bold tracking-tight leading-tight">
-                Vol.3 — Parcours Client
-              </h1>
-              <p className="text-[10px] text-gray-500">
-                Cosmos Angré &middot; Signalétique &middot; Wayfinding &middot; Moments-clés
-              </p>
-            </div>
+      <header className="flex-none h-14 border-b border-gray-800 bg-gray-950/90 backdrop-blur-sm flex items-center px-4 gap-4">
+        {/* Back button */}
+        <button
+          onClick={() => navigate('/cosmos-angre')}
+          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hidden sm:inline">Retour</span>
+        </button>
+
+        {/* Title */}
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center">
+            <MapPin className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h1 className="text-sm font-bold leading-tight">Vol.3 — Parcours Client</h1>
+            <p className="text-[10px] text-gray-500">Cosmos Angré</p>
           </div>
         </div>
 
-        {/* Floor selector + profile selector */}
-        <div className="flex items-center gap-3">
-          {/* Floor tabs */}
-          <div className="flex items-center gap-1 bg-gray-900 rounded-lg p-0.5">
+        {/* Floor tabs — only shown when plan is active */}
+        {activeTab === 'plan' && (
+          <div className="flex items-center gap-1 ml-6">
             {floors.map((f) => (
               <button
                 key={f.id}
                 onClick={() => store.setActiveFloor(f.id)}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                   f.id === activeFloorId
-                    ? 'bg-emerald-600 text-white'
+                    ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
                     : 'text-gray-400 hover:text-white hover:bg-gray-800'
                 }`}
               >
@@ -440,8 +650,13 @@ export default function Vol3Module() {
               </button>
             ))}
           </div>
+        )}
 
-          {/* Profile selector */}
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Profile selector — only shown when plan is active */}
+        {activeTab === 'plan' && (
           <div className="relative">
             <select
               value={activeProfileId ?? ''}
@@ -458,55 +673,122 @@ export default function Vol3Module() {
             </select>
             <ChevronDown className="w-3 h-3 text-gray-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
+        )}
 
-          {/* Proph3t badge */}
-          <span className="px-2 py-1 rounded bg-purple-900/40 text-purple-400 text-[10px] font-mono border border-purple-700/30">
-            Proph3t
-          </span>
-
-          {/* Section tabs */}
-          <div className="flex items-center gap-0.5 ml-2 bg-gray-800/60 rounded-lg p-0.5">
-            {([
-              ['plan', 'Plan'],
-              ['parcours', 'Parcours'],
-              ['wayfinding', 'Wayfinding'],
-              ['signaletique', 'Signal.'],
-              ['heatmap', 'Heatmap'],
-              ['rapport', 'Rapport'],
-              ['chat', 'Proph3t IA'],
-            ] as [Vol3Tab, string][]).map(([tab, label]) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-2 py-1 rounded text-[10px] font-medium transition-colors ${
-                  activeTab === tab
-                    ? 'bg-emerald-600/20 text-emerald-400'
-                    : 'text-gray-500 hover:text-gray-300'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+        {/* Proph3t badge */}
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-purple-900/30 border border-purple-700/30">
+          <Sparkles className="w-3 h-3 text-purple-400" />
+          <span className="text-[10px] font-mono text-purple-300">Proph3t</span>
         </div>
       </header>
 
-      {/* ═══ Main Area ═══ */}
-      <div className="flex flex-1 overflow-hidden">
-        {activeTab !== 'plan' ? (
-          <main className="flex-1 min-w-0 bg-gray-950">
-            <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="w-5 h-5 animate-spin text-gray-500" /></div>}>
-              {activeTab === 'parcours' && <ParcoursSectionLazy />}
-              {activeTab === 'wayfinding' && <WayfindingSectionLazy />}
-              {activeTab === 'signaletique' && <SignaleticsSectionLazy />}
-              {activeTab === 'heatmap' && <HeatmapSectionLazy />}
-              {activeTab === 'rapport' && <RapportSectionLazy />}
-              {activeTab === 'chat' && <ChatSectionLazy />}
-            </Suspense>
-          </main>
-        ) : (<>
-        {/* ── Left Sidebar: Toggle Buttons ── */}
+      {/* ═══ Main body ═══ */}
+      <div className="flex-1 flex min-h-0">
+        {/* ── Sidebar navigation — always visible ──────────── */}
+        <aside
+          className="flex-none w-56 border-r border-gray-800 bg-[#0f1623] overflow-y-auto"
+          style={{ scrollbarWidth: 'thin', scrollbarColor: '#1e293b transparent' }}
+        >
+          {/* Sidebar header */}
+          <div className="px-4 pt-4 pb-3 border-b border-gray-800/60">
+            <div className="text-[11px] font-bold text-white tracking-wide">Cosmos Angr{'\u00e9'}</div>
+            <div className="text-[9px] text-gray-500 font-mono mt-0.5">VOL. 3 — PARCOURS CLIENT</div>
+          </div>
+
+          {/* Navigation groups */}
+          <nav className="py-2">
+            {NAV_GROUPS.map((group) => {
+              const isStudio = group.key === 'studio'
+              const groupAccent = isStudio ? '#a855f7' : '#34d399'
+
+              return (
+                <div key={group.key}>
+                  {/* Separator before studio group */}
+                  {group.separator && (
+                    <div className="mx-3 my-2 border-t border-gray-800/60" />
+                  )}
+
+                  {/* Group header */}
+                  <button
+                    onClick={() => toggleGroup(group.key)}
+                    className="w-full flex items-center gap-2 px-4 py-2 cursor-pointer group hover:bg-white/[0.02] transition-colors"
+                  >
+                    <group.icon className="w-3 h-3 flex-none" style={{ color: group.color }} />
+                    <span className="text-[10px] font-semibold tracking-wider flex-1 text-left" style={{ color: '#4a5568' }}>
+                      {group.label}
+                    </span>
+                    {openGroups[group.key] ? (
+                      <ChevronDown className="w-3 h-3 text-gray-600" />
+                    ) : (
+                      <ChevronRight className="w-3 h-3 text-gray-600" />
+                    )}
+                  </button>
+
+                  {/* Group items */}
+                  {openGroups[group.key] && (
+                    <div className="pb-1">
+                      {group.items.map((item) => {
+                        const isActive = activeTab === item.id
+                        const itemAccent = groupAccent
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => setActiveTab(item.id)}
+                            className="w-full flex items-center gap-2.5 pl-5 pr-3 py-1.5 text-left transition-colors"
+                            style={{
+                              background: isActive ? (isStudio ? 'rgba(168,85,247,0.12)' : 'rgba(52,211,153,0.12)') : undefined,
+                              borderLeft: isActive ? `2px solid ${itemAccent}` : '2px solid transparent',
+                              color: isActive ? itemAccent : '#4a5568',
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isActive) {
+                                e.currentTarget.style.color = '#94a3b8'
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.02)'
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isActive) {
+                                e.currentTarget.style.color = '#4a5568'
+                                e.currentTarget.style.background = 'transparent'
+                              }
+                            }}
+                          >
+                            <item.icon className="w-3.5 h-3.5 flex-none" />
+                            <span className="text-[11px] font-medium truncate">{item.label}</span>
+                            {item.dot && (
+                              <span
+                                className="w-1.5 h-1.5 rounded-full flex-none ml-auto"
+                                style={{ background: '#f59e0b' }}
+                              />
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </nav>
+        </aside>
+
+        {/* ── Content area ─────────────────────────────────── */}
+        {activeTab === 'plan' ? (<>
+        {/* ── Left sidebar (toolbar) ────────────────────────── */}
         <aside className="w-12 border-r border-gray-800 bg-gray-950 flex flex-col items-center py-3 gap-2 shrink-0">
+          {/* PLACEMENT TOOLS */}
+          <div className="text-[8px] text-gray-600 font-mono mb-0.5">PLACER</div>
+          <ToolbarButton
+            icon={MapPin}
+            label="+ POI"
+            active={placeTool === 'poi'}
+            onClick={() => setPlaceTool(placeTool === 'poi' ? null : 'poi')}
+            activeColor="text-emerald-400"
+          />
+
+          <div className="w-6 h-px bg-gray-800 my-0.5" />
+          <div className="text-[8px] text-gray-600 font-mono mb-0.5">VUE</div>
+
           <ToolbarButton
             icon={Signpost}
             label="Signalétique"
@@ -573,10 +855,23 @@ export default function Vol3Module() {
 
         {/* ── Center: Floor Plan Canvas ── */}
         <main className="flex-1 relative overflow-hidden bg-gray-900/50">
+          {/* Placement indicator */}
+          {placeTool && (
+            <div className="absolute top-3 left-3 z-20 bg-emerald-900/90 border border-emerald-500/40 text-emerald-200 text-xs px-3 py-2 rounded-lg flex items-center gap-2 backdrop-blur-sm">
+              <span className="animate-pulse w-2 h-2 rounded-full bg-emerald-400" />
+              Cliquez sur le plan pour placer un POI
+              <button onClick={() => setPlaceTool(null)} className="ml-2 text-emerald-400 hover:text-white">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           <FloorPlanCanvas
             floor={activeFloor}
             zones={floorZones}
             showHeatmap={showHeatmap}
+            onCanvasClick={placeTool ? handleCanvasClick : undefined}
+            cursorMode={placeTool ? 'place' : 'select'}
             heatmapContent={
               showHeatmap && heatZoneData.length > 0 ? (
                 <HeatmapOverlay
@@ -889,7 +1184,37 @@ export default function Vol3Module() {
             </div>
           )}
         </aside>
-        </>)}
+        </>) : (
+          /* ── Non-plan sections: full-width content ── */
+          <main className="flex-1 min-w-0 overflow-y-auto" style={{ background: '#080c14' }}>
+            <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="w-5 h-5 animate-spin text-gray-500" /></div>}>
+              {activeTab === 'intro' && <IntroSectionLazy />}
+              {activeTab === 'journeymap' && <JourneyMapSectionLazy />}
+              {activeTab === 'parcoursvisuel' && <SwimlaneSectionLazy />}
+              {activeTab === 'swimlane' && <SwimlaneSectionLazy />}
+              {activeTab === 'personas' && <PersonasGridLazy />}
+              {activeTab === 'awa_moussa' && <PersonaDetailLazy personaId="awa_moussa" />}
+              {activeTab === 'serge' && <PersonaDetailLazy personaId="serge" />}
+              {activeTab === 'pamela' && <PersonaDetailLazy personaId="pamela" />}
+              {activeTab === 'aminata' && <PersonaDetailLazy personaId="aminata" />}
+              {activeTab === 'touchpoints' && <TouchpointsMatrixLazy />}
+              {activeTab === 'kpis' && <KpiDashboardLazy />}
+              {activeTab === 'action' && <PlanActionLazy />}
+              {activeTab === 'signaletique_page' && <SignaletiquePageLazy />}
+              {activeTab === 'parcours' && <ParcoursSectionLazy />}
+              {activeTab === 'wayfinding' && <WayfindingSectionLazy />}
+              {activeTab === 'signaletique' && <SignaleticsSectionLazy />}
+              {activeTab === 'heatmap' && <HeatmapSectionLazy />}
+              {activeTab === 'rapport' && <RapportSectionLazy />}
+              {activeTab === 'chat' && <ChatSectionLazy />}
+              {activeTab === 'exp_dashboard' && <ExperienceDashboardLazy />}
+              {activeTab === 'action_tracker' && <ActionTrackerLazy />}
+              {activeTab === 'signa_tracker' && <SignaletiquTrackerLazy />}
+              {activeTab === 'touch_tracker' && <TouchpointTrackerLazy />}
+              {activeTab === 'feedbacks' && <FeedbackModuleLazy />}
+            </Suspense>
+          </main>
+        )}
       </div>
 
       {/* ═══ Bottom Bar ═══ */}

@@ -2,6 +2,7 @@ import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import VolumesNav from './VolumesNav'
 
+const Vol1Module = React.lazy(() => import('./vol1-commercial'))
 const Vol2Module = React.lazy(() => import('./vol2-securitaire'))
 const Vol3Module = React.lazy(() => import('./vol3-parcours'))
 
@@ -17,6 +18,7 @@ export default function CosmosAngre() {
     }>
       <Routes>
         <Route index element={<VolumesNav />} />
+        <Route path="vol1/*" element={<Vol1Module />} />
         <Route path="vol2/*" element={<Vol2Module />} />
         <Route path="vol3/*" element={<Vol3Module />} />
         <Route path="*" element={<Navigate to="/cosmos-angre" replace />} />

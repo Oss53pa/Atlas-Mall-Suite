@@ -461,6 +461,7 @@ export function recommendDoor(zone: Zone): DoorRecommendation {
         hasSas: false,
         normRef: 'EN 16005',
         note: 'Coulissante automatique avec detecteur de presence',
+        capexFcfa: 1_200_000,
       }
     case 'restauration':
       return {
@@ -471,6 +472,7 @@ export function recommendDoor(zone: Zone): DoorRecommendation {
         hasSas: false,
         normRef: 'EN 1154',
         note: 'Battante double vantail avec ferme-porte',
+        capexFcfa: 480_000,
       }
     case 'technique':
       return {
@@ -481,6 +483,7 @@ export function recommendDoor(zone: Zone): DoorRecommendation {
         hasSas: false,
         normRef: 'EN 1303',
         note: 'Blindee avec lecteur badge RFID',
+        capexFcfa: 1_450_000,
       }
     case 'backoffice':
       return {
@@ -491,6 +494,7 @@ export function recommendDoor(zone: Zone): DoorRecommendation {
         hasSas: true,
         normRef: 'ISO 19794',
         note: 'SAS biometrique double verification',
+        capexFcfa: 2_100_000,
       }
     case 'financier':
       return {
@@ -501,6 +505,7 @@ export function recommendDoor(zone: Zone): DoorRecommendation {
         hasSas: true,
         normRef: 'NF P 25-362',
         note: 'SAS triple verification (badge + biometrie + code)',
+        capexFcfa: 3_200_000,
       }
     case 'sortie_secours':
       return {
@@ -511,6 +516,7 @@ export function recommendDoor(zone: Zone): DoorRecommendation {
         hasSas: false,
         normRef: 'EN 1125',
         note: 'Barre anti-panique conforme EN 1125',
+        capexFcfa: 380_000,
       }
     case 'circulation':
       return {
@@ -523,6 +529,7 @@ export function recommendDoor(zone: Zone): DoorRecommendation {
         note: zone.niveau >= 4
           ? 'Coupe-feu pivotante EI90 pour zone critique'
           : 'Ferme-porte standard circulation',
+        capexFcfa: 720_000,
       }
     case 'parking':
       return {
@@ -533,6 +540,7 @@ export function recommendDoor(zone: Zone): DoorRecommendation {
         hasSas: false,
         normRef: 'EN 13241',
         note: 'Barriere levante avec lecteur de ticket / badge',
+        capexFcfa: 650_000,
       }
     case 'loisirs':
       return {
@@ -543,6 +551,7 @@ export function recommendDoor(zone: Zone): DoorRecommendation {
         hasSas: false,
         normRef: 'EN 16005',
         note: 'Coulissante automatique espace loisirs',
+        capexFcfa: 1_200_000,
       }
     case 'services':
       return {
@@ -553,6 +562,7 @@ export function recommendDoor(zone: Zone): DoorRecommendation {
         hasSas: false,
         normRef: 'EN 1154',
         note: 'Battante standard pour espace services',
+        capexFcfa: 280_000,
       }
     case 'hotel':
       return {
@@ -563,6 +573,7 @@ export function recommendDoor(zone: Zone): DoorRecommendation {
         hasSas: false,
         normRef: 'EN 14846',
         note: 'Serrure electronique a carte hotel',
+        capexFcfa: 540_000,
       }
     case 'bureaux':
       return {
@@ -573,6 +584,7 @@ export function recommendDoor(zone: Zone): DoorRecommendation {
         hasSas: false,
         normRef: 'EN 1303',
         note: 'Lecteur badge RFID pour bureaux',
+        capexFcfa: 1_450_000,
       }
     case 'exterieur':
       return {
@@ -583,6 +595,7 @@ export function recommendDoor(zone: Zone): DoorRecommendation {
         hasSas: false,
         normRef: 'EN 13241',
         note: 'Barriere / portillon perimetre exterieur',
+        capexFcfa: 950_000,
       }
   }
 }

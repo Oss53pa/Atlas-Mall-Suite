@@ -42,7 +42,7 @@ export default function RapportSection() {
       doc.text(`${signageItems.length} elements signaletiques`, 30, y)
 
       doc.setFontSize(8)
-      doc.text('Genere par Proph3t — Atlas Studio / Praedium Tech', 30, 579)
+      doc.text('Genere par Proph3t — Atlas Studio', 30, 579)
 
       doc.save(`Parcours-Client-${projectName.replace(/\s/g, '-')}.pdf`)
     } catch {
