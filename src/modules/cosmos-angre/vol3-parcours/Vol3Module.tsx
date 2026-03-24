@@ -36,6 +36,7 @@ import {
   MessageSquare,
   LayoutDashboard,
   Smartphone,
+  Upload,
 } from 'lucide-react'
 import { useVol3Store } from './store/vol3Store'
 import FloorPlanCanvas, { CANVAS_SCALE } from '../shared/components/FloorPlanCanvas'
@@ -73,9 +74,11 @@ const DwellTimeOptimizerLazy = lazy(() => import('./sections/DwellTimeOptimizer'
 const RevenuePredictorLazy = lazy(() => import('./sections/RevenuePredictor'))
 const SeasonalPlanningLazy = lazy(() => import('./sections/SeasonalPlanning'))
 const TenantMixValidatorLazy = lazy(() => import('./sections/TenantMixValidator'))
+const PlanImportsSectionLazy = lazy(() => import('../shared/components/PlanImportsSection'))
 
 type Vol3Tab =
   | 'plan'
+  | 'plan_imports'
   | 'parcours'
   | 'wayfinding'
   | 'signaletique'
@@ -200,6 +203,7 @@ const NAV_GROUPS: NavGroup[] = [
     color: '#a855f7',
     separator: true,
     items: [
+      { id: 'plan_imports', label: 'Plans importés', icon: Upload },
       { id: 'plan', label: 'Plan interactif', icon: Map },
       { id: 'parcours', label: 'Parcours client', icon: Route },
       { id: 'wayfinding', label: 'Wayfinding', icon: Navigation },
@@ -1211,6 +1215,15 @@ export default function Vol3Module() {
               {activeTab === 'revenue_predictor' && <RevenuePredictorLazy />}
               {activeTab === 'seasonal' && <SeasonalPlanningLazy />}
               {activeTab === 'tenant_mix_validator' && <TenantMixValidatorLazy />}
+              {activeTab === 'plan_imports' && (
+                <PlanImportsSectionLazy
+                  volumeColor="#34d399"
+                  volumeLabel="VOL. 3 — PARCOURS CLIENT"
+                  floors={floors}
+                  activeFloorId={activeFloorId}
+                  onImportComplete={() => {}}
+                />
+              )}
             </Suspense>
           </main>
         )}

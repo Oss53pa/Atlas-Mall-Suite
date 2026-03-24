@@ -14,7 +14,10 @@ import { calculateSignaleticsSpec, optimizeSignaleticsPlacement } from '../../sh
 import { exportSignaletiquePDF } from '../../../export/exportSignaletique'
 import { exportQRCodesPDF } from '../../../export/exportQRCodes'
 
-// ─── Mock Data ───────────────────────────────────────────────
+// ─── Environment check ──────────────────────────────────────
+const IS_PRODUCTION = import.meta.env.PROD
+
+// ─── Mock Data (development only — production loads from Supabase) ───
 
 const MOCK_FLOORS: Floor[] = [
   {
@@ -723,14 +726,14 @@ const initialState = {
   projectId: 'cosmos-angre-vol3',
   projectName: 'Cosmos Angre — Vol.3 Parcours Client',
 
-  floors: MOCK_FLOORS,
-  activeFloorId: 'floor-rdc',
-  transitions: MOCK_TRANSITIONS,
+  floors: IS_PRODUCTION ? [] as Floor[] : MOCK_FLOORS,
+  activeFloorId: IS_PRODUCTION ? '' : 'floor-rdc',
+  transitions: IS_PRODUCTION ? [] as TransitionNode[] : MOCK_TRANSITIONS,
 
-  zones: MOCK_ZONES,
-  pois: MOCK_POIS,
-  signageItems: MOCK_SIGNAGE,
-  moments: MOCK_MOMENTS,
+  zones: IS_PRODUCTION ? [] as Zone[] : MOCK_ZONES,
+  pois: IS_PRODUCTION ? [] as POI[] : MOCK_POIS,
+  signageItems: IS_PRODUCTION ? [] as SignageItem[] : MOCK_SIGNAGE,
+  moments: IS_PRODUCTION ? [] as MomentCle[] : MOCK_MOMENTS,
 
   navGraph: null as NavigationGraph | null,
   currentPath: null as PathResult | null,

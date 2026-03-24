@@ -77,9 +77,9 @@ export function calculateSignaleticsSpec(
   const isLuminousRequired = zoneLux < 200
   const isBAESRequired = zoneLux < 50
 
-  // Distance inter-panneaux : H_panneau(mm) × 100 / 1000 → mètres
-  const signageHeightMm = SIGNAGE_CATALOG[recommendedType]?.defaultHeightMm ?? 300
-  const spacingM = (signageHeightMm * 100) / 1000
+  // Distance inter-panneaux : D_inter_max = textHeightMm × 200 / 1000 (NF X 08-003)
+  // Ensures visual continuity: panel readable at max distance before next one appears
+  const spacingM = Math.max(5, Math.min(30, (textHeightMm * 200) / 1000))
 
   const catalog = SIGNAGE_CATALOG[recommendedType]
 

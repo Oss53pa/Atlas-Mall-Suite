@@ -383,9 +383,9 @@ function simulate(input: EvacInput): EvacuationResult {
         const moveDistM = agent.speed * FRAME_INTERVAL
         const moveRatio = moveDistM / distNorm
 
-        // Move in normalized coordinates
-        const moveX = (dx / (distNorm / (floor.widthM))) * (moveDistM / floor.widthM)
-        const moveY = (dy / (distNorm / (floor.heightM))) * (moveDistM / floor.heightM)
+        // Move in normalized coordinates: direction × distance / floor dimensions
+        const moveX = (dx / distNorm) * (moveDistM / floor.widthM)
+        const moveY = (dy / distNorm) * (moveDistM / floor.heightM)
 
         agent.x = Math.max(0, Math.min(1, agent.x + moveX))
         agent.y = Math.max(0, Math.min(1, agent.y + moveY))

@@ -492,20 +492,20 @@ export function recommendDoor(zone: Zone): DoorRecommendation {
         hasBadge: true,
         hasBiometric: true,
         hasSas: true,
-        normRef: 'ISO 19794',
-        note: 'SAS biometrique double verification',
+        normRef: 'EN 50133',
+        note: 'SAS biometrique double verification (controle d\'acces)',
         capexFcfa: 2_100_000,
       }
     case 'financier':
       return {
         type: 'financier',
-        ref: 'SAGEM MA500+',
+        ref: 'IDEMIA MorphoWave Compact',
         hasBadge: true,
         hasBiometric: true,
         hasSas: true,
         normRef: 'NF P 25-362',
         note: 'SAS triple verification (badge + biometrie + code)',
-        capexFcfa: 3_200_000,
+        capexFcfa: 3_500_000,
       }
     case 'sortie_secours':
       return {
@@ -715,11 +715,18 @@ export function generateReportASPAD(data: {
   // Normes
   lines.push('--- NORMES DE REFERENCE ---')
   lines.push('  - APSAD R82 : Videoprotection')
-  lines.push('  - NF S 61-938 : Securite incendie')
+  lines.push('  - NF S 61-938 : Securite incendie ERP')
   lines.push('  - EN 62676 : Systemes de videosurveillance')
   lines.push('  - EN 1125 : Fermetures anti-panique')
   lines.push('  - EN 1303 : Cylindres de serrure')
-  lines.push('  - ISO 19794 : Biometrie')
+  lines.push('  - EN 50133 : Systemes de controle d\'acces')
+  lines.push('')
+  lines.push('--- AVERTISSEMENT ---')
+  lines.push('  Ce rapport est etabli selon les recommandations APSAD R82 (France)')
+  lines.push('  utilisees comme reference professionnelle. Le score Proph3t est un')
+  lines.push('  indicateur interne et ne constitue pas un audit certifie APSAD.')
+  lines.push('  En Cote d\'Ivoire, se referer au Code de la Construction ivoirien')
+  lines.push('  et aux arretes du Ministere de la Construction et de l\'Urbanisme.')
   lines.push('')
   lines.push('═══════════════════════════════════════════════════')
 

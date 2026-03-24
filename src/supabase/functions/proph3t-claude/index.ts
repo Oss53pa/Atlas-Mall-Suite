@@ -1,10 +1,17 @@
 // supabase/functions/proph3t-claude/index.ts
 // Deno Edge Function — Proph3t Expert Vivant via Claude API
-// Now reads/writes memory from Supabase proph3t_memory table
+// Reads/writes memory from Supabase proph3t_memory table
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-key, content-type, apikey",
+const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "http://localhost:5173,http://localhost:3000").split(",")
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("origin") ?? ""
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-key, content-type, apikey",
+    "Vary": "Origin",
+  }
 }
 
 interface MemoryRow {
@@ -18,7 +25,16 @@ interface MemoryRow {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS })
+  const cors = getCorsHeaders(req)
+
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors })
+
+  let parsedBody: Record<string, unknown>
+  try {
+    parsedBody = await req.json()
+  } catch {
+    return new Response(JSON.stringify({ error: "Corps de requete invalide" }), { status: 400, headers: cors })
+  }
 
   const {
     question,
@@ -30,16 +46,16 @@ Deno.serve(async (req: Request) => {
     mode,
     projectId,
     sessionId,
-  } = await req.json()
+  } = parsedBody as Record<string, string | undefined>
 
   const clientKey = req.headers.get("x-client-key")
   if (!clientKey?.startsWith("sk-ant-")) {
-    return new Response(JSON.stringify({ error: "Cle Claude invalide" }), { status: 401, headers: CORS })
+    return new Response(JSON.stringify({ error: "Cle Claude invalide" }), { status: 401, headers: cors })
   }
 
   // ── Load memory context from Supabase ──────────────────────
 
-  let memoryContext = memoryNarrative ?? ""
+  let memoryContext = (memoryNarrative as string) ?? ""
 
   if (projectId) {
     try {
@@ -48,7 +64,7 @@ Deno.serve(async (req: Request) => {
 
       if (supabaseUrl && supabaseKey) {
         const res = await fetch(
-          `${supabaseUrl}/rest/v1/proph3t_memory?projet_id=eq.${projectId}&order=created_at.desc&limit=20`,
+          `${supabaseUrl}/rest/v1/proph3t_memory?projet_id=eq.${encodeURIComponent(projectId)}&order=created_at.desc&limit=20`,
           {
             headers: {
               "apikey": supabaseKey,
@@ -69,18 +85,18 @@ Deno.serve(async (req: Request) => {
       }
     } catch (err) {
       console.warn("Failed to load memory from Supabase:", err)
-      // Continue with provided memoryNarrative as fallback
     }
   }
 
   // ── System prompts ─────────────────────────────────────────
 
+  const floorCtx = floorContext as Record<string, unknown> | undefined
   const systemPrompts: Record<string, string> = {
     vol2: `Tu es Proph3t, l'Expert Vivant en securite des centres commerciaux africains.
 Tu connais ce projet en profondeur. Voici ton historique de ce projet :
 ${memoryContext}
 
-Etage actuel analyse : ${floorContext?.level} (${floorContext?.widthM}m x ${floorContext?.heightM}m)
+Etage actuel analyse : ${floorCtx?.level} (${floorCtx?.widthM}m x ${floorCtx?.heightM}m)
 Donnees completes du projet : ${JSON.stringify(projectData)}
 
 Normes maitrisees : APSAD R82, NF S 61-938, EN 62676, ISO 22341, EN 50132, reglementations CI/UEMOA.
@@ -98,7 +114,7 @@ Sois concis (max 4 paragraphes). Reponds en francais.`,
 Tu connais ce projet en profondeur. Voici ton historique :
 ${memoryContext}
 
-Etage actuel : ${floorContext?.level}
+Etage actuel : ${floorCtx?.level}
 Donnees projet : ${JSON.stringify(projectData)}
 
 Normes maitrisees : NF X 08-003, ISO 7010, ISO 23601, EN 301 549, NF C 71-800, regles accessibilite PMR.
@@ -120,26 +136,43 @@ Interprete les resultats, identifie les zones de risque, propose des actions cor
 Cite les normes (NF S 61-938, APSAD R82). Max 3 paragraphes, en francais.`,
   }
 
-  const systemPrompt = systemPrompts[mode ?? volume] ?? systemPrompts.vol2
+  const systemPrompt = systemPrompts[(mode as string) ?? (volume as string)] ?? systemPrompts.vol2
 
   // ── Call Claude API ────────────────────────────────────────
 
-  const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": clientKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 900,
-      messages: [{ role: "user", content: systemPrompt + "\n\nQuestion : " + question }]
+  let claudeRes: Response
+  try {
+    claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": clientKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 900,
+        messages: [{ role: "user", content: systemPrompt + "\n\nQuestion : " + question }]
+      })
     })
-  })
+  } catch {
+    return new Response(
+      JSON.stringify({ answer: "Erreur de connexion a l'API Claude. Verifiez votre cle et reessayez." }),
+      { status: 200, headers: { ...cors, "Content-Type": "application/json" } }
+    )
+  }
+
+  // Guard: never expose raw Claude API errors to client
+  if (!claudeRes.ok) {
+    console.warn(`Claude API error: ${claudeRes.status}`)
+    return new Response(
+      JSON.stringify({ answer: "Erreur lors de l'appel a l'API Claude. Veuillez reessayer." }),
+      { status: 200, headers: { ...cors, "Content-Type": "application/json" } }
+    )
+  }
 
   const data = await claudeRes.json()
-  const answer = data.content?.[0]?.text || "Erreur Claude API."
+  const answer = data.content?.[0]?.text || "Reponse Claude vide. Veuillez reformuler votre question."
 
   // ── Save exchange to memory ────────────────────────────────
 
@@ -149,34 +182,31 @@ Cite les normes (NF S 61-938, APSAD R82). Max 3 paragraphes, en francais.`,
       const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 
       if (supabaseUrl && supabaseKey) {
+        const memHeaders = {
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`,
+          "Content-Type": "application/json",
+          "Prefer": "return=minimal",
+        }
+
         // Save the question
         await fetch(`${supabaseUrl}/rest/v1/proph3t_memory`, {
           method: "POST",
-          headers: {
-            "apikey": supabaseKey,
-            "Authorization": `Bearer ${supabaseKey}`,
-            "Content-Type": "application/json",
-            "Prefer": "return=minimal",
-          },
+          headers: memHeaders,
           body: JSON.stringify({
             projet_id: projectId,
             session_id: sessionId,
             event_type: "analysis",
             entity_type: "zone",
             entity_id: "chat",
-            description: `[Q] ${question.slice(0, 200)}`,
+            description: `[Q] ${String(question).slice(0, 200)}`,
           }),
         })
 
         // Save the answer
         await fetch(`${supabaseUrl}/rest/v1/proph3t_memory`, {
           method: "POST",
-          headers: {
-            "apikey": supabaseKey,
-            "Authorization": `Bearer ${supabaseKey}`,
-            "Content-Type": "application/json",
-            "Prefer": "return=minimal",
-          },
+          headers: memHeaders,
           body: JSON.stringify({
             projet_id: projectId,
             session_id: sessionId,
@@ -195,6 +225,6 @@ Cite les normes (NF S 61-938, APSAD R82). Max 3 paragraphes, en francais.`,
 
   return new Response(
     JSON.stringify({ answer }),
-    { headers: { ...CORS, "Content-Type": "application/json" } }
+    { headers: { ...cors, "Content-Type": "application/json" } }
   )
 })

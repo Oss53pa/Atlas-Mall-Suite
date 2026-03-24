@@ -86,8 +86,9 @@ const RondePlannerLazy = lazy(() => import('./sections/RondePlanner'))
 const ComplianceTrackerLazy = lazy(() => import('./sections/ComplianceTracker'))
 const AuditExistantLazy = lazy(() => import('./sections/AuditExistant'))
 const VmsIntegrationLazy = lazy(() => import('./sections/VmsIntegration'))
+const PlanImportsSectionLazy = lazy(() => import('../shared/components/PlanImportsSection'))
 
-type Vol2Tab = 'plan' | 'analyse' | 'rapport' | 'simulation' | 'budget' | 'chat' | 'introduction' | 'kpis' | 'perimetre' | 'acces' | 'video' | 'incendie' | 'procedures' | 'organigramme' | 'control_room' | 'incidents' | 'risk_matrix' | 'whatif' | 'staffing' | 'rondes' | 'compliance' | 'audit_existant' | 'vms'
+type Vol2Tab = 'plan' | 'analyse' | 'rapport' | 'simulation' | 'budget' | 'chat' | 'introduction' | 'kpis' | 'perimetre' | 'acces' | 'video' | 'incendie' | 'procedures' | 'organigramme' | 'control_room' | 'incidents' | 'risk_matrix' | 'whatif' | 'staffing' | 'rondes' | 'compliance' | 'audit_existant' | 'vms' | 'plan_imports'
 
 // ─── Sidebar nav definition ─────────────────────────────────
 
@@ -147,6 +148,7 @@ const NAV_GROUPS: NavGroup[] = [
     color: '#a855f7',
     separator: true,
     items: [
+      { id: 'plan_imports', label: 'Plans importés', icon: Upload },
       { id: 'plan', label: 'Plan interactif', icon: Map },
       { id: 'analyse', label: 'Analyse Proph3t', icon: BarChart2 },
       { id: 'simulation', label: 'Simulation', icon: Play },
@@ -1014,6 +1016,15 @@ export default function Vol2Module() {
               {activeTab === 'compliance' && <ComplianceTrackerLazy />}
               {activeTab === 'audit_existant' && <AuditExistantLazy />}
               {activeTab === 'vms' && <VmsIntegrationLazy />}
+              {activeTab === 'plan_imports' && (
+                <PlanImportsSectionLazy
+                  volumeColor="#38bdf8"
+                  volumeLabel="VOL. 2 — PLAN SÉCURITAIRE"
+                  floors={floors}
+                  activeFloorId={floors.find(f => f.level === activeFloor)?.id ?? floors[0]?.id ?? ''}
+                  onImportComplete={() => {}}
+                />
+              )}
             </Suspense>
           </main>
         )}

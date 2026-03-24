@@ -28,7 +28,10 @@ import { exportASPADPDF } from '../../../export/exportPDFApsad'
 import { exportCAPEXExcel } from '../../../export/exportCAPEX'
 import { exportAnnotatedDXF } from '../../../export/exportDXF'
 
-// ─── Mock Data ───────────────────────────────────────────────
+// ─── Environment check ──────────────────────────────────────
+const IS_PRODUCTION = import.meta.env.PROD
+
+// ─── Mock Data (development only — production loads from Supabase) ───
 
 const MOCK_FLOORS: Floor[] = [
   {
@@ -498,12 +501,12 @@ const initialState = {
   projectId: 'cosmos-angre-vol2',
   projectName: 'Cosmos Angre — Vol.2 Securitaire',
 
-  floors: MOCK_FLOORS,
-  activeFloorId: 'floor-rdc',
-  transitions: MOCK_TRANSITIONS,
+  floors: IS_PRODUCTION ? [] as Floor[] : MOCK_FLOORS,
+  activeFloorId: IS_PRODUCTION ? '' : 'floor-rdc',
+  transitions: IS_PRODUCTION ? [] as TransitionNode[] : MOCK_TRANSITIONS,
 
-  zones: MOCK_ZONES,
-  cameras: MOCK_CAMERAS,
+  zones: IS_PRODUCTION ? [] as Zone[] : MOCK_ZONES,
+  cameras: IS_PRODUCTION ? [] as Camera[] : MOCK_CAMERAS,
   doors: [] as Door[],
   blindSpots: [] as BlindSpot[],
 
