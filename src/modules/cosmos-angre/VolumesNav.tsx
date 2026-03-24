@@ -28,10 +28,10 @@ const volumes: VolumeConfig[] = [
     number: 1,
     badge: 'VOL. 1',
     title: 'Plan Commercial',
-    subtitle: 'Mix enseigne \u00b7 Occupancy \u00b7 Preneurs \u00b7 Leasing',
+    subtitle: 'Mix enseigne · Occupancy · Preneurs · Leasing',
     description:
-      'Pilotage du mix enseigne du centre commercial. Chaque cellule est identifi\u00e9e, qualifi\u00e9e, ' +
-      'reli\u00e9e \u00e0 un preneur, et analysable en un clic.',
+      'Pilotage du mix enseigne du centre commercial. Chaque cellule est identifiée, qualifiée, ' +
+      'reliée à un preneur, et analysable en un clic.',
     icon: Building2,
     accent: '#f59e0b',
     accentRgb: '245, 158, 11',
@@ -46,17 +46,17 @@ const volumes: VolumeConfig[] = [
     id: 'vol2',
     number: 2,
     badge: 'VOL. 2',
-    title: 'Plan S\u00e9curitaire',
-    subtitle: 'S\u00fbret\u00e9 \u00b7 Acc\u00e8s \u00b7 Vid\u00e9osurveillance \u00b7 Proc\u00e9dures',
+    title: 'Plan Sécuritaire',
+    subtitle: 'Sûreté · Accès · Vidéosurveillance · Procédures',
     description:
-      'Audit complet de la strat\u00e9gie s\u00e9curitaire. Placement intelligent des cam\u00e9ras, ' +
-      'contr\u00f4le d\u2019acc\u00e8s et conformit\u00e9 APSAD R82.',
+      'Audit complet de la stratégie sécuritaire. Placement intelligent des caméras, ' +
+      'contrôle d\u2019accès et conformité APSAD R82.',
     icon: ShieldCheck,
     accent: '#38bdf8',
     accentRgb: '56, 189, 248',
     stats: [
       { value: '5', label: 'Zones' },
-      { value: '120+', label: 'Cam\u00e9ras' },
+      { value: '120+', label: 'Caméras' },
       { value: '24/7', label: 'Couverture' },
     ],
     route: '/cosmos-angre/vol2',
@@ -66,17 +66,17 @@ const volumes: VolumeConfig[] = [
     number: 3,
     badge: 'VOL. 3',
     title: 'Parcours Client',
-    subtitle: 'Exp\u00e9rience \u00b7 Signal\u00e9tique \u00b7 Flux \u00b7 Fid\u00e9lisation',
+    subtitle: 'Expérience · Signalétique · Flux · Fidélisation',
     description:
-      'Conception du parcours visiteur optimal. Signal\u00e9tique norm\u00e9e ISO 7010, ' +
+      'Conception du parcours visiteur optimal. Signalétique normée ISO 7010, ' +
       'wayfinding multi-niveaux et programme Cosmos Club.',
     icon: Route,
     accent: '#34d399',
     accentRgb: '52, 211, 153',
     stats: [
-      { value: '7', label: 'Moments cl\u00e9s' },
+      { value: '7', label: 'Moments clés' },
       { value: '3', label: 'Niveaux' },
-      { value: '\u221e', label: 'Exp\u00e9riences' },
+      { value: '\u221e', label: 'Expériences' },
     ],
     route: '/cosmos-angre/vol3',
   },
@@ -91,7 +91,7 @@ function VolumeCard({ vol }: { vol: VolumeConfig }) {
       e.stopPropagation()
       const url = `${window.location.origin}${vol.route}`
       navigator.clipboard.writeText(url).then(() => {
-        toast.success('Lien copi\u00e9 !', {
+        toast.success('Lien copié !', {
           style: {
             background: '#131d35',
             color: '#e2e8f0',
@@ -283,15 +283,15 @@ export default function VolumesNav() {
           <span className="text-[11px] font-medium text-gray-600 tracking-wide uppercase">Projet actif</span>
         </div>
         <h2 className="text-3xl font-bold tracking-tight mb-2">
-          <span className="text-white">Cosmos Angr\u00e9</span>{' '}
+          <span className="text-white">Cosmos Angré</span>{' '}
           <span className="text-gray-600 font-light">Shopping Center</span>
         </h2>
-        <p className="text-gray-500 text-sm font-medium">Abidjan, C\u00f4te d&apos;Ivoire &mdash; Ouverture Octobre 2026</p>
+        <p className="text-gray-500 text-sm font-medium">Abidjan, Côte d&apos;Ivoire &mdash; Ouverture Octobre 2026</p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           {[
             'DG: Cheick Sanankoua',
-            '3 \u00e9tages (B1, RDC, R+1)',
-            '~30 000 m\u00b2',
+            '3 étages (B1, RDC, R+1)',
+            '~30 000 m²',
           ].map((item) => (
             <span
               key={item}
@@ -332,14 +332,14 @@ export default function VolumesNav() {
                 <h3 className="font-bold text-white text-sm tracking-tight">
                   Proph3t &mdash; Expert Vivant
                 </h3>
-                <p className="text-[11px] text-purple-400/70 font-medium">Moteur IA conversationnel \u00e0 m\u00e9moire longue</p>
+                <p className="text-[11px] text-purple-400/70 font-medium">Moteur IA conversationnel à mémoire longue</p>
               </div>
             </div>
 
             <p className="relative text-[13px] leading-[1.8] text-gray-400/80 mb-5 max-w-3xl">
-              Proph3t est un expert qui vit dans le projet. Il conna\u00eet chaque d\u00e9cision depuis le premier
-              import DXF, se souvient de chaque modification, anticipe les probl\u00e8mes avant qu&apos;ils
-              surviennent, et produit des rapports certifi\u00e9s aux normes internationales.
+              Proph3t est un expert qui vit dans le projet. Il connaît chaque décision depuis le premier
+              import DXF, se souvient de chaque modification, anticipe les problèmes avant qu&apos;ils
+              surviennent, et produit des rapports certifiés aux normes internationales.
             </p>
 
             <div className="relative flex flex-wrap gap-2">

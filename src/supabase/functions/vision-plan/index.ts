@@ -104,10 +104,11 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Sanitize fileName to prevent prompt injection
-    const safeFileName = (fileName ?? 'plan.jpg')
-      .replace(/[^\w\s.\-()]/g, '')
-      .slice(0, 100)
+    // Sanitize fileName — preserve French accents (\u00C0-\u024F)
+    const safeFileName = (typeof fileName === 'string' ? fileName : 'plan.jpg')
+      .replace(/[^\w\s.\-()\u00C0-\u024F]/g, '')
+      .trim()
+      .slice(0, 80) || 'plan.jpg'
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",

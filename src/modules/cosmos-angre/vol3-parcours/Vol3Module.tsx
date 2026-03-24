@@ -144,7 +144,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'journeymap', label: 'Journey Map', icon: Map, dot: true },
       { id: 'parcoursvisuel', label: 'Parcours visuel', icon: Eye },
-      { id: 'swimlane', label: 'Swimlane \u00b7 10 couches', icon: Layers },
+      { id: 'swimlane', label: 'Swimlane · 10 couches', icon: Layers },
     ],
   },
   {
@@ -713,7 +713,7 @@ export default function Vol3Module() {
         <aside className="flex-none w-60 border-r border-white/[0.04] bg-surface-1 overflow-y-auto">
           {/* Sidebar header */}
           <div className="px-4 pt-4 pb-3 border-b border-white/[0.04]">
-            <div className="text-[12px] font-bold text-white tracking-tight">Cosmos Angr{'\u00e9'}</div>
+            <div className="text-[12px] font-bold text-white tracking-tight">Cosmos Angré</div>
             <div className="text-[9px] text-gray-500 font-mono mt-0.5 tracking-wider">VOL. 3 — PARCOURS CLIENT</div>
           </div>
 

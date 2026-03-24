@@ -1,40 +1,65 @@
 import React from 'react'
 import { Camera, Monitor, Layers, Zap, Sparkles } from 'lucide-react'
+import { useContentStore } from '../../shared/store/contentStore'
+import EditableText, { EditableStat } from '../../shared/components/EditableText'
 
-const stats = [
-  { value: '120+', label: 'CAMÉRAS', icon: Camera },
-  { value: '24/7', label: 'PC SÉCURITÉ', icon: Monitor },
-  { value: '5', label: 'ZONES', icon: Layers },
-  { value: '<3min', label: 'INTERVENTION', icon: Zap },
-]
+const STAT_ICONS = [Camera, Monitor, Layers, Zap]
 
 export default function IntroSection() {
+  const subtitle = useContentStore((s) => s.vol2IntroSubtitle)
+  const description = useContentStore((s) => s.vol2IntroDescription)
+  const text1 = useContentStore((s) => s.vol2IntroText1)
+  const text2 = useContentStore((s) => s.vol2IntroText2)
+  const insightScore = useContentStore((s) => s.vol2IntroInsightScore)
+  const insightText = useContentStore((s) => s.vol2IntroInsightText)
+  const stats = useContentStore((s) => s.vol2IntroStats)
+  const setField = useContentStore((s) => s.setField)
+  const setVol2IntroStat = useContentStore((s) => s.setVol2IntroStat)
+
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-8">
       {/* Header */}
       <div>
-        <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#38bdf8' }}>
-          VOL. 2 — PLAN SÉCURITAIRE
-        </p>
+        <EditableText
+          value={subtitle}
+          onChange={(v) => setField('vol2IntroSubtitle', v)}
+          className="text-[11px] tracking-[0.2em] font-medium mb-2"
+          style={{ color: '#38bdf8' }}
+          tag="p"
+        />
         <h1 className="text-[28px] font-light text-white mb-3">Introduction</h1>
-        <p className="text-[13px] leading-[1.7]" style={{ color: '#4a5568' }}>
-          Dispositif de sûreté et sécurité incendie — contrôle d'accès, vidéoprotection, procédures d'urgence et formation.
-        </p>
+        <EditableText
+          value={description}
+          onChange={(v) => setField('vol2IntroDescription', v)}
+          className="text-[13px] leading-[1.7]"
+          style={{ color: '#4a5568' }}
+          tag="p"
+        />
       </div>
 
       {/* Stat cards */}
       <div className="grid grid-cols-4 gap-4">
-        {stats.map((s) => {
-          const Icon = s.icon
+        {stats.map((s, i) => {
+          const Icon = STAT_ICONS[i] ?? Zap
           return (
             <div
-              key={s.label}
+              key={i}
               className="rounded-[10px] p-5 flex flex-col items-center text-center"
               style={{ background: '#141e2e', border: '1px solid #1e2a3a' }}
             >
               <Icon size={20} style={{ color: '#38bdf8' }} className="mb-3" />
-              <span className="text-2xl font-semibold" style={{ color: '#38bdf8' }}>{s.value}</span>
-              <span className="text-[10px] tracking-wider mt-1" style={{ color: '#4a5568' }}>{s.label}</span>
+              <EditableStat
+                value={s.value}
+                onChange={(v) => setVol2IntroStat(i, { value: v })}
+                className="text-2xl font-semibold"
+                style={{ color: '#38bdf8' }}
+              />
+              <EditableStat
+                value={s.label}
+                onChange={(v) => setVol2IntroStat(i, { label: v })}
+                className="text-[10px] tracking-wider mt-1"
+                style={{ color: '#4a5568' }}
+              />
             </div>
           )
         })}
@@ -42,13 +67,23 @@ export default function IntroSection() {
 
       {/* Introduction text */}
       <div className="rounded-[10px] p-6" style={{ background: '#141e2e', border: '1px solid #1e2a3a' }}>
-        <h3 className="text-sm font-semibold text-white mb-3">Dispositif global de sécurité</h3>
-        <p className="text-[13px] leading-[1.8]" style={{ color: '#94a3b8' }}>
-          Le centre commercial Cosmos Angré déploie un dispositif de sécurité intégré couvrant cinq périmètres complémentaires : la surveillance périmétrique extérieure, le contrôle d'accès physique et électronique, un réseau de vidéosurveillance intelligent de plus de 120 caméras, un système de sécurité incendie conforme ERP catégorie 1, et un programme de procédures opérationnelles et de formation continue.
-        </p>
-        <p className="text-[13px] leading-[1.8] mt-3" style={{ color: '#94a3b8' }}>
-          L'ensemble est piloté depuis un PC sécurité central opérationnel 24h/24, 7j/7, sous la direction d'un Directeur Sûreté et de deux chefs de poste (jour/nuit) encadrant 12 agents SSIAP qualifiés. Le temps d'intervention cible est inférieur à 3 minutes sur l'ensemble du site.
-        </p>
+        <h3 className="text-sm font-semibold text-white mb-3">Dispositif global de securite</h3>
+        <EditableText
+          value={text1}
+          onChange={(v) => setField('vol2IntroText1', v)}
+          className="text-[13px] leading-[1.8]"
+          style={{ color: '#94a3b8' }}
+          tag="p"
+          multiline
+        />
+        <EditableText
+          value={text2}
+          onChange={(v) => setField('vol2IntroText2', v)}
+          className="text-[13px] leading-[1.8] mt-3"
+          style={{ color: '#94a3b8' }}
+          tag="p"
+          multiline
+        />
       </div>
 
       {/* Proph3t Insight */}
@@ -61,12 +96,21 @@ export default function IntroSection() {
         </div>
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <span className="text-2xl font-bold text-purple-300">87/100</span>
-            <span className="text-sm" style={{ color: '#94a3b8' }}>Score sécurité global</span>
+            <EditableStat
+              value={insightScore}
+              onChange={(v) => setField('vol2IntroInsightScore', v)}
+              className="text-2xl font-bold text-purple-300"
+            />
+            <span className="text-sm" style={{ color: '#94a3b8' }}>Score securite global</span>
           </div>
-          <p className="text-[13px] leading-[1.7]" style={{ color: '#94a3b8' }}>
-            Le dispositif est globalement conforme aux normes APSAD R82 et EN 62676. Points d'attention : renforcer la couverture vidéo en zone parking niveau -2 (angle mort détecté secteur C) et planifier l'exercice d'évacuation T1 2026 conformément à la réglementation ERP.
-          </p>
+          <EditableText
+            value={insightText}
+            onChange={(v) => setField('vol2IntroInsightText', v)}
+            className="text-[13px] leading-[1.7]"
+            style={{ color: '#94a3b8' }}
+            tag="p"
+            multiline
+          />
         </div>
       </div>
     </div>

@@ -15,8 +15,34 @@ interface PlanImportWizardProps {
 }
 
 const ACCEPTED_FORMATS = '.dxf,.dwg,.ifc,.pdf,.jpg,.jpeg,.png,.webp'
-const MAX_SIZE_CAD = 50 * 1024 * 1024  // 50MB
-const MAX_SIZE_IMG = 10 * 1024 * 1024  // 10MB
+
+const MAX_SIZES: Record<PlanSourceType, number> = {
+  dxf: 50 * 1024 * 1024,
+  dwg: 50 * 1024 * 1024,
+  ifc: 50 * 1024 * 1024,
+  pdf: 30 * 1024 * 1024,
+  image_raster: 8 * 1024 * 1024,
+  svg: 10 * 1024 * 1024,
+}
+
+const VALID_EXTENSIONS: Record<PlanSourceType, string[]> = {
+  dxf: ['dxf'], dwg: ['dwg'], ifc: ['ifc'],
+  pdf: ['pdf'], image_raster: ['jpg', 'jpeg', 'png', 'webp'], svg: ['svg'],
+}
+
+function validateFile(file: File, sourceType: PlanSourceType): string | null {
+  const maxSize = MAX_SIZES[sourceType]
+  if (file.size > maxSize) {
+    return `Fichier trop volumineux : ${(file.size / 1024 / 1024).toFixed(1)}MB. Maximum : ${maxSize / 1024 / 1024}MB pour ${sourceType.toUpperCase()}.`
+  }
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+  if (!VALID_EXTENSIONS[sourceType]?.includes(ext)) {
+    return `Extension .${ext} non valide pour ce type. Attendu : ${VALID_EXTENSIONS[sourceType]?.join(', ')}`
+  }
+  return null
+}
+
+type PlanSourceType = import('../planReader/planReaderTypes').PlanSourceType
 
 export default function PlanImportWizard({
   floors, activeFloorId, onImportComplete, onClose,
@@ -46,19 +72,18 @@ export default function PlanImportWizard({
 
   const handleFileSelect = useCallback(async (file: File) => {
     const sourceType = detectPlanSourceType(file)
-    const isImage = sourceType === 'image_raster'
-    const maxSize = isImage ? MAX_SIZE_IMG : MAX_SIZE_CAD
 
-    if (file.size > maxSize) {
+    const validationError = validateFile(file, sourceType)
+    if (validationError) {
       setState(s => ({
         ...s,
         step: 'error',
-        errors: [`Fichier trop volumineux: ${(file.size / 1024 / 1024).toFixed(1)}MB (max ${maxSize / 1024 / 1024}MB)`],
+        errors: [validationError],
       }))
       return
     }
 
-    if (isImage) {
+    if (sourceType === 'image_raster') {
       setImageUrl(URL.createObjectURL(file))
     }
 

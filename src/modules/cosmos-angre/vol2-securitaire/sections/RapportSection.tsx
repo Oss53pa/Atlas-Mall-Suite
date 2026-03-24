@@ -1,6 +1,8 @@
 import React, { useCallback, useState } from 'react'
-import { FileText, Download, Loader2, CheckCircle, FileSpreadsheet } from 'lucide-react'
+import { FileText, Download, Loader2, FileSpreadsheet } from 'lucide-react'
 import { useVol2Store } from '../store/vol2Store'
+import { useContentStore } from '../../shared/store/contentStore'
+import EditableText from '../../shared/components/EditableText'
 
 export default function RapportSection() {
   const projectName = useVol2Store((s) => s.projectName)
@@ -8,9 +10,9 @@ export default function RapportSection() {
   const zones = useVol2Store((s) => s.zones)
   const cameras = useVol2Store((s) => s.cameras)
   const doors = useVol2Store((s) => s.doors)
-  const blindSpots = useVol2Store((s) => s.blindSpots)
   const evacResult = useVol2Store((s) => s.evacResult)
-  const coverageByFloor = useVol2Store((s) => s.coverageByFloor)
+  const address = useContentStore((s) => s.vol2RapportAddress)
+  const setField = useContentStore((s) => s.setField)
   const [exporting, setExporting] = useState<string | null>(null)
 
   const handleExportPDF = useCallback(async (format: 'A1' | 'A3') => {
@@ -161,9 +163,14 @@ export default function RapportSection() {
               <span className="text-gray-400">Etablissement</span>
               <span className="text-white">{projectName}</span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-gray-400">Adresse</span>
-              <span className="text-white">Abidjan, Cote d'Ivoire</span>
+              <EditableText
+                value={address}
+                onChange={(v) => setField('vol2RapportAddress', v)}
+                className="text-white text-xs"
+                tag="span"
+              />
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Date</span>
