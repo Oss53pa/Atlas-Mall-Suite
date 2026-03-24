@@ -631,9 +631,9 @@ export default function Vol3Module() {
   // ── Render ────────────────────────────────────────────────
 
   return (
-    <div className="h-screen flex flex-col bg-gray-950 text-white overflow-hidden">
+    <div className="h-screen flex flex-col bg-surface-0 text-white overflow-hidden">
       {/* ═══ Header ═══ */}
-      <header className="flex-none h-14 border-b border-gray-800 bg-gray-950/90 backdrop-blur-sm flex items-center px-4 gap-4">
+      <header className="flex-none h-14 border-b border-white/[0.04] bg-surface-1/80 backdrop-blur-md flex items-center px-4 gap-4">
         {/* Back button */}
         <button
           onClick={() => navigate('/cosmos-angre')}
