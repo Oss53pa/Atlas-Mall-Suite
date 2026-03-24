@@ -973,8 +973,74 @@ function answerHelp(ctx: FullProjectContext): ChatAnswer {
   text += `- "avant/apres" — Comparaison actuel vs cible\n`
   text += `- "recommandations" — Actions prioritaires\n`
   text += `- Nom de zone — Fiche detaillee\n`
+  text += `- "cotes" / "calibration" — Infos cotes et calibration\n`
+  text += `- "reconnaissance" / "vision" — Reconnaissance plans scannes\n`
+  text += `- "pdf" / "plan pdf" — Import plans PDF vectoriels\n`
 
   return answer(text, 'aide', {
     suggestions: ['Quel est le score de securite ?', 'Montre les angles morts', 'Rapport signaletique', 'Benchmark malls'],
+  })
+}
+
+// ═══ RÉPONSES LECTURE DE PLANS ═══
+
+function answerCalibration(ctx: FullProjectContext): ChatAnswer {
+  const totalZones = ctx.zones.length
+  let text = `Calibration et cotes du plan\n\n`
+  text += `Le plan contient ${totalZones} zone(s).\n\n`
+  text += `Methodes de calibration disponibles :\n`
+  text += `- **dim_auto** : extraction automatique des cotes DXF (entities DIMENSION) + RANSAC pour filtrer les outliers\n`
+  text += `- **ifc_native** : dimensions reelles natives depuis le fichier IFC (BIM)\n`
+  text += `- **user_input** : saisie manuelle de la largeur et hauteur du plan\n`
+  text += `- **dim_manual** : echelle detectee depuis le texte du PDF\n\n`
+  text += `Pour importer un plan avec calibration automatique : bouton "Importer plan" dans la toolbar.\n`
+  text += `Formats supportes : DXF (cotes DIM), DWG, IFC, PDF vectoriel, images (JPG/PNG/WebP via Proph3t Vision).\n\n`
+  text += `Formule calibration : 1 unite DXF = facteur d'echelle x metres reels.\n`
+  text += `Le systeme calcule la mediane des ratios valeur_reelle / distance_DXF, avec rejection des outliers (> 2 ecarts-types).`
+
+  return answer(text, 'info', {
+    suggestions: ['Importer un plan DXF', 'Montrer les cotes', 'Exporter avec cotes'],
+  })
+}
+
+function answerVision(ctx: FullProjectContext): ChatAnswer {
+  let text = `Proph3t Vision — Reconnaissance de plans scannes\n\n`
+  text += `Proph3t Vision peut analyser une photo ou un scan de plan architectural.\n`
+  text += `Formats acceptes : JPG, PNG, WebP (max 10MB).\n\n`
+  text += `Ce qui est detecte :\n`
+  text += `- Espaces / pieces (avec type : commerce, circulation, technique...)\n`
+  text += `- Murs (lignes epaisses)\n`
+  text += `- Portes (arcs de cercle, symboles)\n`
+  text += `- Cotes (chiffres + unites)\n`
+  text += `- Echelle (1:100, 1:200...)\n`
+  text += `- Niveau d'etage (RDC, R+1, B1...)\n\n`
+  text += `Confiance typique sur un plan bien photographie : 75-90%.\n`
+  text += `Pour importer : bouton "Importer plan" → glisser votre image.\n\n`
+  text += `Note : la reconnaissance passe par une Edge Function securisee (vision-plan). `
+  text += `Aucune cle API n'est exposee cote client.`
+
+  return answer(text, 'aide', {
+    suggestions: ['Importer un scan', 'Formats supportes', 'Calibration manuelle'],
+  })
+}
+
+function answerPDFPlan(ctx: FullProjectContext): ChatAnswer {
+  let text = `Import de plans PDF vectoriels\n\n`
+  text += `Atlas Mall Suite lit les PDF vectoriels (export depuis AutoCAD, Revit, ArchiCAD).\n\n`
+  text += `Ce qui est extrait :\n`
+  text += `- **Chemins vectoriels** : murs, contours de zones, lignes de cote\n`
+  text += `- **Textes** : labels de pieces, cotes, titres, echelle\n`
+  text += `- **Niveau d'etage** : detecte depuis les titres (RDC, R+1, etc.)\n\n`
+  text += `Classification automatique :\n`
+  text += `- Polylignes fermees grandes → zones / espaces\n`
+  text += `- Lignes fines → murs\n`
+  text += `- Lignes courtes → lignes de cote\n`
+  text += `- Texte avec chiffres + unite → cotes\n`
+  text += `- Texte majuscule court → label de piece\n\n`
+  text += `Confiance : 85-95% sur un PDF vectoriel bien structure.\n`
+  text += `Attention : les PDF raster (PDF de scan) doivent etre importes comme image (format JPG/PNG).`
+
+  return answer(text, 'aide', {
+    suggestions: ['Importer un PDF', 'Reconnaissance image', 'Calibration'],
   })
 }
