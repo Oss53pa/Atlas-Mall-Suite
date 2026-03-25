@@ -25,6 +25,8 @@ interface FloorPlanCanvasProps {
   cotationSpecs?: CotationSpec[]
   showCotations?: boolean
   planBounds?: { minX: number; minY: number; maxX: number; maxY: number }
+  /** Image de fond du plan (blob URL ou data URL) */
+  planImageUrl?: string
 }
 
 export default function FloorPlanCanvas({

@@ -63,6 +63,16 @@ export interface View3DConfig {
   ssaoEnabled:          boolean
   bloomEnabled:         boolean
   backgroundColor:      string
+  // Enrichment options (isometric decorative elements)
+  showPeople:           boolean
+  showFurniture:        boolean
+  showVegetation:       boolean
+  showAnnotationNumbers: boolean
+  showFloorTiles:       boolean
+  showFacadeSigns:      boolean
+  populationDensity:    number   // multiplier: 0.5 to 2.0
+  mallName:             string
+  accentColor:          string   // for clothing racks, signs, etc.
 }
 
 export interface ZoneHeight {
@@ -79,6 +89,7 @@ export interface FloorStackConfig {
   baseElevationM: number
   visible:        boolean
   opacity:        number
+  heightM:        number   // floor height for symbol placement
 }
 
 export interface ExtrudedZone {
@@ -121,6 +132,9 @@ export const CONCEPTION_DEFAULTS: Partial<View3DConfig> = {
   showOccupancyColors: true, showTenantNames: true, showVacantHighlight: true,
   showPOI: true, showSignage: true, showMoments: true, showWayfinding: false,
   lighting: 'day_natural', ssaoEnabled: false, bloomEnabled: false,
+  showPeople: false, showFurniture: false, showVegetation: false,
+  showAnnotationNumbers: false, showFloorTiles: false, showFacadeSigns: false,
+  populationDensity: 1.0, mallName: 'COSMOS ANGRE', accentColor: '#b8d44a',
 }
 
 export const PRESENTATION_DEFAULTS: Partial<View3DConfig> = {
@@ -130,4 +144,7 @@ export const PRESENTATION_DEFAULTS: Partial<View3DConfig> = {
   showOccupancyColors: true, showTenantNames: true, showVacantHighlight: false,
   showPOI: true, showSignage: true, showMoments: false, showWayfinding: false,
   lighting: 'evening_commercial', ssaoEnabled: true, bloomEnabled: false,
+  showPeople: true, showFurniture: true, showVegetation: true,
+  showAnnotationNumbers: true, showFloorTiles: true, showFacadeSigns: true,
+  populationDensity: 1.0, mallName: 'COSMOS ANGRE', accentColor: '#b8d44a',
 }

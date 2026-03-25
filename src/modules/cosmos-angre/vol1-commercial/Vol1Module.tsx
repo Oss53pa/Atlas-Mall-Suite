@@ -2,6 +2,7 @@
 
 import React, { useState, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useVol1Store } from './store/vol1Store'
 import {
   ArrowLeft,
   Building2,
@@ -126,7 +127,21 @@ export default function Vol1Module() {
                 { id: 'floor-r1', level: 'R+1' as any, order: 2, widthM: 200, heightM: 140, zones: [], transitions: [] },
               ]}
               activeFloorId="floor-rdc"
-              onImportComplete={() => {}}
+              onImportComplete={(importedZones, _dims, _calibration, floorId) => {
+                const { spaces, tenants } = useVol1Store.getState()
+                const newSpaces = importedZones.map((z, i) => ({
+                  id: z.id ?? `import-${Date.now()}-${i}`,
+                  reference: `IMP-${(spaces.length + i + 1).toString().padStart(2, '0')}`,
+                  floorId: z.floorId ?? floorId,
+                  floorLevel: floorId === 'floor-b1' ? 'B1' : floorId === 'floor-r1' ? 'R+1' : 'RDC',
+                  x: (z.x ?? 0) * 200, y: (z.y ?? 0) * 140,
+                  w: (z.w ?? 0.1) * 200, h: (z.h ?? 0.1) * 140,
+                  areaSqm: Math.round((z.w ?? 0.1) * 200 * (z.h ?? 0.1) * 140),
+                  status: 'vacant' as const, tenantId: null,
+                  wing: z.label ?? `Zone ${i + 1}`,
+                }))
+                useVol1Store.setState({ spaces: [...spaces, ...newSpaces] })
+              }}
             />
           )}
           {activeTab === 'plan' && <PlanCommercialSectionLazy />}

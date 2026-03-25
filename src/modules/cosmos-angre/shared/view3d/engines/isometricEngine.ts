@@ -4,6 +4,11 @@ import { getVol1ZoneColors, getVol1ZoneLabel } from './vol1Renderer'
 import { buildCameraEntities, buildBlindSpotOverlaySVG } from './vol2Renderer'
 import { buildPOIEntities, buildMomentEntities, buildWayfindingPathsSVG } from './vol3Renderer'
 import { defaultHeightForType } from './heightResolver'
+import { populateAllZones } from './isoPopulator'
+import { renderSymbolsSVG } from './isoSymbolRenderer'
+import { generateFloorTilesSVG } from './isoFloorRenderer'
+import { autoGenerateAnnotations, generateAnnotationsSVG } from './isoAnnotations'
+import { facadeSign } from './isoSymbolLibrary'
 
 const COS_ISO = Math.cos(Math.PI / 6)
 const SIN_ISO = Math.sin(Math.PI / 6)
@@ -131,9 +136,25 @@ export function buildIsoScene(data: View3DData, config: View3DConfig, scale = 60
 }
 
 export function generateIsoSVG(scene: IsoScene, data: View3DData, config: View3DConfig): string {
-  const { viewBox: vb, extrudedZones, entities, gridLines } = scene
+  const { viewBox: vb, extrudedZones, entities, gridLines, scaleFactor } = scene
   const vbStr = `${vb.x.toFixed(1)} ${vb.y.toFixed(1)} ${vb.w.toFixed(1)} ${vb.h.toFixed(1)}`
+  const { floors, zones } = data
 
+  // ── 1. Floor tiles (dalle avec joints) ──
+  const floorTilesSVG = config.showFloorTiles
+    ? data.floors.map(floor => {
+        const stack = config.floorStack.find(s => s.floorId === floor.id)
+        if (!stack || !stack.visible) return ''
+        return generateFloorTilesSVG(floor, stack, scaleFactor)
+      }).join('\n')
+    : ''
+
+  // ── 2. Grid ──
+  const gridSVG = gridLines.map(([p1, p2]) =>
+    `<line x1="${p1[0].toFixed(1)}" y1="${p1[1].toFixed(1)}" x2="${p2[0].toFixed(1)}" y2="${p2[1].toFixed(1)}" stroke="#ffffff06" stroke-width="0.5"/>`
+  ).join('\n')
+
+  // ── 3. Zone volumes ──
   const zonesSVG = extrudedZones.map(ez => {
     const { iso, colors, label, zone } = ez
     const topC = iso.topFace.reduce((a, p) => [a[0] + p[0] / 4, a[1] + p[1] / 4], [0, 0])
@@ -146,26 +167,73 @@ export function generateIsoSVG(scene: IsoScene, data: View3DData, config: View3D
     </g>`
   }).join('\n')
 
+  // ── 4. Symbols (people, furniture, vegetation) ──
+  const showSymbols = config.showPeople || config.showFurniture || config.showVegetation
+  let symbolsSVG = ''
+  if (showSymbols) {
+    const allInstances = floors.flatMap(floor => {
+      const stack = config.floorStack.find(s => s.floorId === floor.id)
+      if (!stack || !stack.visible) return []
+      const floorZones = zones.filter(z => z.floorId === floor.id)
+      return populateAllZones(floorZones, floor)
+    })
+    // Filter by enabled categories
+    const filtered = allInstances.filter(inst => {
+      const isPerson = inst.type.startsWith('person') || inst.type === 'mannequin'
+      const isPlant = inst.type.startsWith('plant')
+      const isFurniture = !isPerson && !isPlant
+      if (isPerson && !config.showPeople) return false
+      if (isPlant && !config.showVegetation) return false
+      if (isFurniture && !config.showFurniture) return false
+      return true
+    })
+    symbolsSVG = renderSymbolsSVG(filtered, zones, floors, config.floorStack, scaleFactor)
+  }
+
+  // ── 5. Entities (cameras, POI, transitions) ──
   const entitiesSVG = entities.map(e => `
     <circle cx="${e.isoX.toFixed(1)}" cy="${e.isoY.toFixed(1)}" r="5" fill="${e.color}" stroke="#ffffff30" stroke-width="0.8" opacity="${e.opacity ?? 1}"/>
     <text x="${e.isoX.toFixed(1)}" y="${(e.isoY + 3).toFixed(1)}" text-anchor="middle" font-size="6" fill="#ffffffcc" font-family="system-ui">${e.label.slice(0, 10)}</text>
   `).join('\n')
 
-  const gridSVG = gridLines.map(([p1, p2]) =>
-    `<line x1="${p1[0].toFixed(1)}" y1="${p1[1].toFixed(1)}" x2="${p2[0].toFixed(1)}" y2="${p2[1].toFixed(1)}" stroke="#ffffff06" stroke-width="0.5"/>`
-  ).join('\n')
-
+  // ── 6. Overlays (blindspots, wayfinding) ──
   const blindSpotSVG = data.sourceVolume === 'vol2' && data.blindSpots
-    ? buildBlindSpotOverlaySVG(data.blindSpots, data.floors, config.floorStack, scene.scaleFactor, config) : ''
+    ? buildBlindSpotOverlaySVG(data.blindSpots, data.floors, config.floorStack, scaleFactor, config) : ''
   const wayfindingSVG = data.sourceVolume === 'vol3' && data.wayfindingPaths
-    ? buildWayfindingPathsSVG(data.wayfindingPaths, data.floors, config.floorStack, scene.scaleFactor, config) : ''
+    ? buildWayfindingPathsSVG(data.wayfindingPaths, data.floors, config.floorStack, scaleFactor, config) : ''
 
+  // ── 7. Mall name on facade ──
+  let mallNameSVG = ''
+  if (config.showFacadeSigns && config.mallName) {
+    const mainFloor = floors[1] ?? floors[0]
+    const stack = config.floorStack.find(s => s.floorId === mainFloor?.id)
+    if (mainFloor && stack) {
+      const fx = mainFloor.widthM * 0.4
+      const fz = 0  // front facade
+      const fy = stack.baseElevationM + (stack.heightM ?? 4) * 0.7
+      const [iX, iY] = worldToIso(fx, fy, fz, scaleFactor)
+      mallNameSVG = `<g transform="translate(${iX.toFixed(1)},${iY.toFixed(1)})">${facadeSign(config.mallName, 100, 0.8)}</g>`
+    }
+  }
+
+  // ── 8. Annotations (numbered zones with leader lines) ──
+  let annotationsSVG = ''
+  if (config.showAnnotationNumbers) {
+    const annotations = autoGenerateAnnotations(zones)
+    annotationsSVG = generateAnnotationsSVG(zones, annotations, floors, config.floorStack, vb, scaleFactor)
+  }
+
+  // ── COMPOSE FINAL SVG ──
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vbStr}" width="100%" height="100%" style="background:${config.backgroundColor}" id="iso-scene">
     <defs><filter id="shadow"><feDropShadow dx="1.5" dy="3" stdDeviation="2.5" flood-color="#00000050"/></filter></defs>
+    <g id="floor-tiles">${floorTilesSVG}</g>
     <g id="grid">${gridSVG}</g>
     <g id="zones" filter="url(#shadow)">${zonesSVG}</g>
+    <g id="symbols">${symbolsSVG}</g>
     <g id="blindspots">${blindSpotSVG}</g>
     <g id="wayfinding">${wayfindingSVG}</g>
     <g id="entities">${entitiesSVG}</g>
+    <g id="mall-name">${mallNameSVG}</g>
+    <g id="annotations">${annotationsSVG}</g>
   </svg>`
 }

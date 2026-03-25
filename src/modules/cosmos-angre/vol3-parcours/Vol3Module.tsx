@@ -1283,7 +1283,19 @@ export default function Vol3Module() {
                   volumeLabel="VOL. 3 — PARCOURS CLIENT"
                   floors={floors}
                   activeFloorId={activeFloorId}
-                  onImportComplete={() => {}}
+                  onImportComplete={(importedZones, _dims, _calibration, floorId) => {
+                    const current = useVol3Store.getState().zones
+                    const newZones = importedZones.map((z, i) => ({
+                      id: z.id ?? `import-${Date.now()}-${i}`,
+                      floorId: z.floorId ?? floorId,
+                      label: z.label ?? `Zone ${i + 1}`,
+                      type: (z.type ?? 'commerce') as any,
+                      x: z.x ?? 0, y: z.y ?? 0, w: z.w ?? 0.1, h: z.h ?? 0.1,
+                      niveau: (z.niveau ?? 2) as any,
+                      color: z.color ?? '#0a2a15',
+                    }))
+                    useVol3Store.setState({ zones: [...current, ...newZones] })
+                  }}
                 />
               )}
             </Suspense>

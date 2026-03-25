@@ -387,6 +387,8 @@ interface Vol2State {
   calibration: CalibrationResult | null
   showDims: boolean
   cotationSpecs: CotationSpec[]
+  /** Image de fond du plan par etage (floorId → blob URL) */
+  planImageUrls: Record<string, string>
 
   // UI
   selectedEntityId: string | null
@@ -410,6 +412,7 @@ interface Vol2State {
   updateZone: (id: string, updates: Partial<Zone>) => void
   deleteZone: (id: string) => void
   setZones: (zones: Zone[]) => void
+  setPlanImageUrl: (floorId: string, url: string) => void
 
   // Actions - Cameras
   addCamera: (camera: Camera) => void
@@ -547,6 +550,7 @@ const initialState = {
   calibration: null as CalibrationResult | null,
   showDims: false,
   cotationSpecs: [] as CotationSpec[],
+  planImageUrls: {} as Record<string, string>,
 
   selectedEntityId: null as string | null,
   selectedEntityType: null as EntityType | null,
@@ -589,6 +593,7 @@ export const useVol2Store = create<Vol2State>()((set) => ({
     void deleteEntity('zones', id)
   },
   setZones: (zones) => set({ zones }),
+  setPlanImageUrl: (floorId: string, url: string) => set((s) => ({ planImageUrls: { ...s.planImageUrls, [floorId]: url } })),
 
   // ── Cameras (with Supabase persist) ───────────────────
   addCamera: (camera) => {

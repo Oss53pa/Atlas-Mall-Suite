@@ -1061,7 +1061,19 @@ export default function Vol2Module() {
                   volumeLabel="VOL. 2 — PLAN SÉCURITAIRE"
                   floors={floors}
                   activeFloorId={floors.find(f => f.level === activeFloor)?.id ?? floors[0]?.id ?? ''}
-                  onImportComplete={() => {}}
+                  onImportComplete={(zones, _dims, _calibration, floorId) => {
+                    const s = useVol2Store.getState()
+                    const newZones = zones.map((z, i) => ({
+                      id: z.id ?? `import-${Date.now()}-${i}`,
+                      floorId: z.floorId ?? floorId,
+                      label: z.label ?? `Zone ${i + 1}`,
+                      type: (z.type ?? 'commerce') as any,
+                      x: z.x ?? 0, y: z.y ?? 0, w: z.w ?? 0.1, h: z.h ?? 0.1,
+                      niveau: (z.niveau ?? 2) as any,
+                      color: z.color ?? '#0a2a15',
+                    }))
+                    s.setZones([...s.zones, ...newZones])
+                  }}
                 />
               )}
             </Suspense>

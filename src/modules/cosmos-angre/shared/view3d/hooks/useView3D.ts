@@ -26,11 +26,15 @@ export function useView3D(data: View3DData) {
     )
     setConfig(c => ({
       ...c,
-      floorStack: data.floors.map(f => ({
-        floorId: f.id, level: f.level,
-        baseElevationM: elevations[f.id] ?? 0,
-        visible: true, opacity: 1,
-      })),
+      floorStack: data.floors.map(f => {
+        const defaultH: Record<string, number> = { 'B2': 3.0, 'B1': 3.0, 'RDC': 5.5, 'R+1': 4.5, 'R+2': 4.0, 'R+3': 4.0 }
+        return {
+          floorId: f.id, level: f.level,
+          baseElevationM: elevations[f.id] ?? 0,
+          visible: true, opacity: 1,
+          heightM: defaultH[f.level] ?? 4.0,
+        }
+      }),
       zoneHeights: resolveZoneHeights(data.zones, null, {}),
     }))
   }, [data.floors.length, data.zones.length])
