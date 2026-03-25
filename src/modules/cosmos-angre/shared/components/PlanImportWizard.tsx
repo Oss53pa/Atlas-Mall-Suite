@@ -203,13 +203,14 @@ export default function PlanImportWizard({
           {/* STEP 3: Reviewing */}
           {state.step === 'reviewing' && (
             <div className="space-y-4">
-              {/* Raster preview — plan original en fond + zones detectees en overlay */}
+              {/* Raster preview — plan original en fond + zones repositionnables */}
               {state.rasterResult && (state.planImageUrl || imageUrl) && (
                 <RasterPreview
                   imageUrl={state.planImageUrl || imageUrl}
                   result={state.rasterResult}
                   width={860}
                   height={500}
+                  onZonesChanged={(updatedZones) => setState(s => ({ ...s, detectedZones: updatedZones }))}
                 />
               )}
 
