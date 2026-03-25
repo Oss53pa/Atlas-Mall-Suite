@@ -48,6 +48,7 @@ import {
 } from 'lucide-react'
 
 import { useVol2Store } from './store/vol2Store'
+import { usePlanImportStore } from '../shared/stores/planImportStore'
 import type { ChatMessage, Camera, BlindSpot, TransitionNode } from '../shared/proph3t/types'
 import { proph3tAnswer } from '../shared/proph3t/chatEngine'
 import type { FullProjectContext } from '../shared/proph3t/chatEngine'
@@ -813,7 +814,7 @@ export default function Vol2Module() {
               cursorMode={placeTool ? 'place' : 'select'}
               selectedId={selectedEntityId}
               className="w-full h-full"
-              planImageUrl={planImageUrls[activeFloor.id]}
+              planImageUrl={planImageUrls[activeFloor.id] || usePlanImportStore.getState().getActivePlanUrl(activeFloor.id)}
             >
               {/* Camera FOV cones (inside FloorPlanCanvas SVG viewBox) */}
               {showFov &&

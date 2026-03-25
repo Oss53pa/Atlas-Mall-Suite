@@ -1059,6 +1059,7 @@ export const useVol3Store = create<Vol3State>()((set) => ({
   },
 
   setPlanImportState: (state) => set({ planImportState: state }),
+  setPlanImageUrl: (floorId, url) => set((s) => ({ planImageUrls: { ...s.planImageUrls, [floorId]: url } })),
 
   // ── Supabase hydration ─────────────────────────────────
   hydrateFromSupabase: async (projetId) => {

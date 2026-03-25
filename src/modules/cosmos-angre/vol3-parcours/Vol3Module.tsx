@@ -40,6 +40,7 @@ import {
   Box,
 } from 'lucide-react'
 import { useVol3Store } from './store/vol3Store'
+import { usePlanImportStore } from '../shared/stores/planImportStore'
 import FloorPlanCanvas, { CANVAS_SCALE } from '../shared/components/FloorPlanCanvas'
 const Vol3DModuleEmbed = lazy(() => import('../vol-3d/Vol3DModule'))
 import Proph3tChat from '../shared/components/Proph3tChat'
@@ -926,6 +927,7 @@ export default function Vol3Module() {
             showHeatmap={showHeatmap}
             onCanvasClick={placeTool ? handleCanvasClick : undefined}
             cursorMode={placeTool ? 'place' : 'select'}
+            planImageUrl={store.planImageUrls?.[activeFloorId] || usePlanImportStore.getState().getActivePlanUrl(activeFloorId)}
             heatmapContent={
               showHeatmap && heatZoneData.length > 0 ? (
                 <HeatmapOverlay
