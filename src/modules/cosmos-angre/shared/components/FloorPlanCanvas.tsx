@@ -33,6 +33,7 @@ export default function FloorPlanCanvas({
   floor, zones, showHeatmap, heatmapContent, onEntityClick, onCanvasClick, selectedId, children, className = '',
   cursorMode = 'select',
   dims, calibration, showDims = false, onDimClick, cotationSpecs, showCotations = false, planBounds,
+  planImageUrl,
 }: FloorPlanCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const floorZones = useMemo(() => zones.filter(z => z.floorId === floor.id), [zones, floor.id])
@@ -73,8 +74,11 @@ export default function FloorPlanCanvas({
           </pattern>
         </defs>
         <rect width={width} height={height} fill="#0a0a0f" className="canvas-bg" />
-        <rect width={width} height={height} fill="url(#grid-sm)" />
-        <rect width={width} height={height} fill="url(#grid-lg)" />
+        {planImageUrl && (
+          <image href={planImageUrl} x={0} y={0} width={width} height={height} preserveAspectRatio="xMidYMid meet" opacity={0.85} />
+        )}
+        {!planImageUrl && <rect width={width} height={height} fill="url(#grid-sm)" />}
+        {!planImageUrl && <rect width={width} height={height} fill="url(#grid-lg)" />}
 
         {/* Zones */}
         {floorZones.map(zone => {

@@ -8,16 +8,15 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
-    dedupe: ['react', 'react-dom'],
+    dedupe: ['react', 'react-dom', 'zustand'],
   },
   worker: {
     format: 'es',
   },
   server: {
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-    },
+    // COOP/COEP only needed in production for SharedArrayBuffer
+    // In dev they break HMR websocket and cause duplicate React instances
+    hmr: true,
   },
   build: {
     target: 'es2020',
@@ -26,10 +25,10 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('vol1-commercial')) return 'vol1'
-          if (id.includes('vol2-securitaire')) return 'vol2'
-          if (id.includes('vol3-parcours'))   return 'vol3'
-          if (id.includes('planReader'))      return 'plan-reader'
+          // Keep React/Zustand in a single vendor chunk to prevent duplicate instances
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/zustand')) {
+            return 'react-vendor'
+          }
           if (id.includes('three'))           return 'three'
           if (id.includes('pdfjs-dist'))      return 'pdfjs'
           if (id.includes('web-ifc'))         return 'web-ifc'

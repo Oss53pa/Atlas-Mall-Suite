@@ -282,6 +282,7 @@ export default function Vol2Module() {
   const selectedEntityType = useVol2Store((s) => s.selectedEntityType)
   const libraryOpen = useVol2Store((s) => s.libraryOpen)
   const isSimulating = useVol2Store((s) => s.isSimulating)
+  const planImageUrls = useVol2Store((s) => s.planImageUrls)
 
   const setActiveFloor = useVol2Store((s) => s.setActiveFloor)
   const selectEntity = useVol2Store((s) => s.selectEntity)
@@ -812,6 +813,7 @@ export default function Vol2Module() {
               cursorMode={placeTool ? 'place' : 'select'}
               selectedId={selectedEntityId}
               className="w-full h-full"
+              planImageUrl={planImageUrls[activeFloor.id]}
             >
               {/* Camera FOV cones (inside FloorPlanCanvas SVG viewBox) */}
               {showFov &&
@@ -1061,7 +1063,7 @@ export default function Vol2Module() {
                   volumeLabel="VOL. 2 — PLAN SÉCURITAIRE"
                   floors={floors}
                   activeFloorId={floors.find(f => f.level === activeFloor)?.id ?? floors[0]?.id ?? ''}
-                  onImportComplete={(zones, _dims, _calibration, floorId) => {
+                  onImportComplete={(zones, _dims, _calibration, floorId, planImageUrl) => {
                     const s = useVol2Store.getState()
                     const newZones = zones.map((z, i) => ({
                       id: z.id ?? `import-${Date.now()}-${i}`,
@@ -1073,6 +1075,7 @@ export default function Vol2Module() {
                       color: z.color ?? '#0a2a15',
                     }))
                     s.setZones([...s.zones, ...newZones])
+                    if (planImageUrl) s.setPlanImageUrl(floorId, planImageUrl)
                   }}
                 />
               )}

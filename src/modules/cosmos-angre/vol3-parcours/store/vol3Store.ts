@@ -716,6 +716,7 @@ interface Vol3State {
   // Actions - Plan reader
   importPlan: (file: File, floorId: string) => Promise<void>
   setPlanImportState: (state: PlanImportState | null) => void
+  setPlanImageUrl: (floorId: string, url: string) => void
 
   // Actions - Supabase hydration
   hydrateFromSupabase: (projetId: string) => Promise<void>
@@ -766,6 +767,7 @@ const initialState = {
   libraryTab: 'signage' as const,
 
   planImportState: null as PlanImportState | null,
+  planImageUrls: {} as Record<string, string>,
 
   isHydrating: false,
   hydrationError: null as string | null,

@@ -7,6 +7,7 @@ import {
   RotateCcw, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { usePlanImportStore, type PlanImportRecord, type ImportStatus } from '../stores/planImportStore'
+import { MapPin } from 'lucide-react'
 import type { PlanSourceType, CalibrationResult, DimEntity } from '../planReader/planReaderTypes'
 import type { Zone, Floor } from '../proph3t/types'
 import PlanImportWizard from './PlanImportWizard'
@@ -19,7 +20,7 @@ interface PlanImportsSectionProps {
   floors: Floor[]
   activeFloorId: string
   /** Callback quand un import est terminé → le parent peut injecter les zones dans son store */
-  onImportComplete: (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string) => void
+  onImportComplete: (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string) => void
 }
 
 // ─── Helpers ──────────────────────────────────────────
@@ -64,6 +65,8 @@ export default function PlanImportsSection({
   const updateImport = usePlanImportStore((s) => s.updateImport)
   const removeImport = usePlanImportStore((s) => s.removeImport)
   const clearAll = usePlanImportStore((s) => s.clearAll)
+  const activePlanPerFloor = usePlanImportStore((s) => s.activePlanPerFloor)
+  const setActivePlan = usePlanImportStore((s) => s.setActivePlan)
 
   const [showWizard, setShowWizard] = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -72,12 +75,11 @@ export default function PlanImportsSection({
 
   // Handle wizard completion
   const handleImportComplete = useCallback(
-    (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string) => {
-      // Add record to history
+    (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string) => {
       const floor = floors.find((f) => f.id === floorId)
-      const record: PlanImportRecord = {
+      addImport({
         id: uid(),
-        fileName: 'Import',  // will be updated by wizard
+        fileName: 'Import',
         fileSize: 0,
         sourceType: 'dxf',
         floorId,
@@ -89,11 +91,8 @@ export default function PlanImportsSection({
         calibrationMethod: calibration.method,
         calibrationConfidence: calibration.confidence,
         warnings: [],
-      }
-      addImport(record)
-
-      // Forward to parent
-      onImportComplete(zones, dims, calibration, floorId)
+      })
+      onImportComplete(zones, dims, calibration, floorId, planImageUrl)
       setShowWizard(false)
     },
     [floors, addImport, onImportComplete],
@@ -251,6 +250,8 @@ export default function PlanImportsSection({
             expanded={expandedId === record.id}
             onToggle={() => setExpandedId(expandedId === record.id ? null : record.id)}
             onRemove={() => removeImport(record.id)}
+            onSetAsBackground={() => setActivePlan(record.floorId, record.id)}
+            isActiveBackground={activePlanPerFloor[record.floorId] === record.id}
           />
         ))}
       </div>
@@ -312,11 +313,15 @@ function ImportCard({
   expanded,
   onToggle,
   onRemove,
+  onSetAsBackground,
+  isActiveBackground,
 }: {
   record: PlanImportRecord
   expanded: boolean
   onToggle: () => void
   onRemove: () => void
+  onSetAsBackground: () => void
+  isActiveBackground: boolean
 }) {
   const stCfg = statusConfig[record.status]
   const srcCfg = sourceTypeConfig[record.sourceType]
@@ -434,6 +439,19 @@ function ImportCard({
           )}
 
           <div className="flex justify-end gap-2 pt-1">
+            {record.status === 'success' && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onSetAsBackground() }}
+                className={`flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg transition-colors ${
+                  isActiveBackground
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                    : 'text-blue-400 hover:bg-blue-400/10'
+                }`}
+              >
+                <MapPin size={12} />
+                {isActiveBackground ? 'Fond actif' : 'Utiliser comme fond'}
+              </button>
+            )}
             <button
               onClick={(e) => { e.stopPropagation(); onRemove() }}
               className="flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg text-red-400 hover:bg-red-400/10 transition-colors"
