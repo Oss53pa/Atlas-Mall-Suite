@@ -515,87 +515,151 @@ function PlanPreviewModal({ record, onClose }: { record: PlanImportRecord; onClo
 
   const srcCfg = sourceTypeConfig[record.sourceType]
   const stCfg = statusConfig[record.status]
+  const confColor = record.calibrationConfidence >= 0.8 ? '#22c55e' : record.calibrationConfidence >= 0.5 ? '#f59e0b' : '#ef4444'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-[90vw] h-[85vh] rounded-2xl border border-white/[0.08] overflow-hidden flex flex-col"
-        style={{ background: '#0a0f1a' }} onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex bg-black/80 backdrop-blur-sm" onClick={onClose}>
+      <div className="flex w-full h-full" onClick={(e) => e.stopPropagation()}>
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06]" style={{ background: '#0e1629' }}>
-          <div className="flex items-center gap-3">
-            <Eye size={16} className="text-indigo-400" />
-            <div>
-              <h2 className="text-white font-semibold text-sm">{record.fileName}</h2>
-              <div className="flex items-center gap-2 text-[10px] text-gray-500">
-                <span style={{ color: srcCfg.color }}>{srcCfg.label}</span>
-                <span>·</span>
-                <span>{record.floorLevel}</span>
-                <span>·</span>
-                <span>{record.zonesDetected} zones</span>
-                <span>·</span>
-                <span style={{ color: stCfg.color }}>{stCfg.label}</span>
-                {record.calibrationConfidence > 0 && (
-                  <>
-                    <span>·</span>
-                    <span>Calibration : {Math.round(record.calibrationConfidence * 100)}%</span>
-                  </>
-                )}
+        {/* ── Sidebar gauche : donnees du plan ── */}
+        <div className="w-80 flex-shrink-0 h-full flex flex-col border-r border-white/[0.06] overflow-y-auto" style={{ background: '#0e1629' }}>
+          {/* Header sidebar */}
+          <div className="px-5 py-4 border-b border-white/[0.06]">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${srcCfg.color}15`, border: `1px solid ${srcCfg.color}30` }}>
+                {React.createElement(srcCfg.icon, { size: 16, style: { color: srcCfg.color } })}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-white font-display font-bold text-[14px] truncate">{record.fileName}</h2>
+                <span className="text-[10px]" style={{ color: srcCfg.color }}>{srcCfg.label}</span>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
+                style={{ background: `${stCfg.color}10`, border: `1px solid ${stCfg.color}25`, color: stCfg.color }}>
+                {React.createElement(stCfg.icon, { size: 10 })} {stCfg.label}
+              </span>
+              <span className="text-[10px] text-gray-600">{formatDate(record.importedAt)}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setZoom(z => Math.max(0.2, z / 1.3))}
-              className="px-2 py-1 rounded text-[10px] text-gray-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] transition-colors">-</button>
-            <span className="text-[10px] text-gray-400 w-10 text-center">{Math.round(zoom * 100)}%</span>
-            <button onClick={() => setZoom(z => Math.min(5, z * 1.3))}
-              className="px-2 py-1 rounded text-[10px] text-gray-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] transition-colors">+</button>
-            <button onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }) }}
-              className="px-2 py-1 rounded text-[10px] text-gray-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] transition-colors">Réinitialiser</button>
-            <div className="w-px h-4 bg-white/[0.06] mx-1" />
-            <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.08] transition-colors">
-              <X size={16} />
+
+          {/* Infos du plan */}
+          <div className="px-5 py-4 space-y-4">
+            <InfoRow label="Etage" value={record.floorLevel} />
+            <InfoRow label="Format" value={srcCfg.label} valueColor={srcCfg.color} />
+            <InfoRow label="Taille fichier" value={formatFileSize(record.fileSize)} />
+            <InfoRow label="Zones detectees" value={String(record.zonesDetected)} valueColor="#38bdf8" />
+            <InfoRow label="Cotes detectees" value={String(record.dimsDetected)} />
+
+            <div className="border-t border-white/[0.06] pt-4">
+              <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-3">Calibration</p>
+              <InfoRow label="Methode" value={record.calibrationMethod ?? 'Non calibre'} />
+              <div className="mt-2">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] text-slate-500">Confiance</span>
+                  <span className="text-[12px] font-bold" style={{ color: confColor }}>
+                    {Math.round(record.calibrationConfidence * 100)}%
+                  </span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${record.calibrationConfidence * 100}%`, background: confColor }} />
+                </div>
+              </div>
+            </div>
+
+            {record.warnings.length > 0 && (
+              <div className="border-t border-white/[0.06] pt-4">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-2">Avertissements</p>
+                <div className="space-y-1.5">
+                  {record.warnings.map((w, i) => (
+                    <div key={i} className="flex items-start gap-2 text-[11px]">
+                      <AlertTriangle size={10} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-slate-400">{w}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {record.errorMessage && (
+              <div className="rounded-lg p-3 bg-red-500/5 border border-red-500/15">
+                <p className="text-[11px] text-red-400">{record.errorMessage}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Actions en bas */}
+          <div className="mt-auto px-5 py-4 border-t border-white/[0.06] space-y-2">
+            <button onClick={onClose} className="w-full btn-ghost text-[12px] justify-center">
+              Fermer
             </button>
           </div>
         </div>
 
-        {/* Image viewer with zoom/pan */}
-        <div className="flex-1 overflow-hidden relative"
-          style={{ background: '#080c14', cursor: dragging ? 'grabbing' : 'grab' }}
-          onWheel={(e) => {
-            const delta = e.deltaY > 0 ? 0.9 : 1.1
-            setZoom(z => Math.min(5, Math.max(0.2, z * delta)))
-          }}
-          onMouseDown={(e) => {
-            setDragging(true)
-            setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
-          }}
-          onMouseMove={(e) => {
-            if (dragging) setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y })
-          }}
-          onMouseUp={() => setDragging(false)}
-          onMouseLeave={() => setDragging(false)}
-        >
-          <div className="absolute inset-0 flex items-center justify-center">
-            <img
-              src={imageUrl}
-              alt={record.fileName}
-              className="max-w-none select-none"
-              style={{
-                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-                transformOrigin: 'center center',
-                transition: dragging ? 'none' : 'transform 0.15s ease-out',
-              }}
-              draggable={false}
-            />
+        {/* ── Zone principale : visualisation grand ecran ── */}
+        <div className="flex-1 flex flex-col h-full" style={{ background: '#080c14' }}>
+          {/* Toolbar zoom */}
+          <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06]" style={{ background: '#0a0f1a' }}>
+            <span className="text-[11px] text-slate-500">Preview — {record.floorLevel}</span>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setZoom(z => Math.max(0.1, z / 1.3))}
+                className="px-2 py-1 rounded text-[11px] text-gray-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] transition-colors">−</button>
+              <span className="text-[11px] text-gray-400 w-12 text-center font-mono">{Math.round(zoom * 100)}%</span>
+              <button onClick={() => setZoom(z => Math.min(8, z * 1.3))}
+                className="px-2 py-1 rounded text-[11px] text-gray-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] transition-colors">+</button>
+              <div className="w-px h-4 bg-white/[0.06] mx-1" />
+              <button onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }) }}
+                className="px-2 py-1 rounded text-[11px] text-gray-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] transition-colors">
+                <RotateCcw size={12} />
+              </button>
+              <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.08] transition-colors ml-2">
+                <X size={16} />
+              </button>
+            </div>
           </div>
 
-          {/* Info bar */}
-          <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2 text-[10px] text-gray-300 pointer-events-none">
-            <span className="font-medium text-white">{record.floorLevel}</span> · {record.zonesDetected} zones détectées · {formatFileSize(record.fileSize)}
+          {/* Image viewer plein ecran */}
+          <div className="flex-1 overflow-hidden relative"
+            style={{ cursor: dragging ? 'grabbing' : 'grab' }}
+            onWheel={(e) => {
+              const delta = e.deltaY > 0 ? 0.9 : 1.1
+              setZoom(z => Math.min(8, Math.max(0.1, z * delta)))
+            }}
+            onMouseDown={(e) => {
+              setDragging(true)
+              setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
+            }}
+            onMouseMove={(e) => {
+              if (dragging) setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y })
+            }}
+            onMouseUp={() => setDragging(false)}
+            onMouseLeave={() => setDragging(false)}
+          >
+            <div className="absolute inset-0 flex items-center justify-center">
+              <img
+                src={imageUrl}
+                alt={record.fileName}
+                className="max-w-none select-none"
+                style={{
+                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                  transformOrigin: 'center center',
+                  transition: dragging ? 'none' : 'transform 0.15s ease-out',
+                }}
+                draggable={false}
+              />
+            </div>
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function InfoRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-[11px] text-slate-500">{label}</span>
+      <span className="text-[12px] text-white font-medium" style={valueColor ? { color: valueColor } : undefined}>{value}</span>
     </div>
   )
 }
