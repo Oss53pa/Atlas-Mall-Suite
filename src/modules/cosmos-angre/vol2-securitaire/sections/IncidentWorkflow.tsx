@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { AlertTriangle, Clock, User, CheckCircle, Archive, ChevronRight } from 'lucide-react'
+import { DemoBanner } from '../../shared/components/DemoBanner'
 
 type IncidentState = 'detecte' | 'assigne' | 'en_cours' | 'resolu' | 'cloture'
 
@@ -46,11 +47,13 @@ export default function IncidentWorkflow() {
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
+      <DemoBanner dataSource="demo" systemName="Supabase (base incidents)" />
+
       <div>
         <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#38bdf8' }}>
           VOL. 2 — PLAN SECURITAIRE
         </p>
-        <h1 className="text-[28px] font-light text-white mb-3">Workflow Incidents</h1>
+        <h1 className="text-[28px] font-display font-bold text-white mb-3">Workflow Incidents</h1>
         <p className="text-[13px] leading-[1.7]" style={{ color: '#4a5568' }}>
           Suivi du cycle de vie des incidents — de la detection a la cloture.
         </p>

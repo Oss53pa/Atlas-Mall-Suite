@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { Monitor, Wifi, WifiOff, CheckCircle, XCircle, RefreshCw, Settings, Camera } from 'lucide-react'
+import { DemoBanner, ConnectionStatus } from '../../shared/components/DemoBanner'
 
 type VmsProvider = 'milestone' | 'genetec' | 'dahua_dss' | 'hikvision_ivms'
 type ConnectionStatus = 'connected' | 'disconnected' | 'connecting' | 'error'
@@ -59,10 +60,15 @@ export default function VmsIntegration() {
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
-      <div>
-        <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#38bdf8' }}>VOL. 2 — PLAN SECURITAIRE</p>
-        <h1 className="text-[28px] font-light text-white mb-2">Integration VMS Live</h1>
-        <p className="text-[13px]" style={{ color: '#4a5568' }}>Connexion API vers les systemes de videosurveillance — statut temps reel des cameras.</p>
+      <DemoBanner dataSource={activeProvider?.connected ? 'live' : 'demo'} systemName="VMS (Milestone / Genetec)" />
+
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#38bdf8' }}>VOL. 2 — PLAN SECURITAIRE</p>
+          <h1 className="text-[28px] font-display font-bold text-white mb-2">Integration VMS Live</h1>
+          <p className="text-[13px]" style={{ color: '#4a5568' }}>Connexion API vers les systemes de videosurveillance — statut temps reel des cameras.</p>
+        </div>
+        <ConnectionStatus dataSource={activeProvider?.connected ? 'live' : 'demo'} />
       </div>
 
       {/* VMS Providers */}

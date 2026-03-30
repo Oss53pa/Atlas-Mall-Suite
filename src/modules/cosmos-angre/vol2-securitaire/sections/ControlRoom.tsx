@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Camera, AlertTriangle, Shield, Users, Wifi, WifiOff, Eye } from 'lucide-react'
 import { useVol2Store } from '../store/vol2Store'
+import { DemoBanner, ConnectionStatus, type DataSource } from '../../shared/components/DemoBanner'
 
 interface MockIncident {
   id: string
@@ -48,16 +49,23 @@ export default function ControlRoom() {
 
   const filtered = filter === 'all' ? MOCK_INCIDENTS : MOCK_INCIDENTS.filter(i => i.status === filter)
 
+  const dataSource: DataSource = 'demo' // Sera 'live' quand connecte a Supabase/VMS
+
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
-      <div>
-        <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#38bdf8' }}>
-          VOL. 2 — PLAN SECURITAIRE
-        </p>
+      <DemoBanner dataSource={dataSource} systemName="VMS / Supabase" />
+
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#38bdf8' }}>
+            VOL. 2 — PLAN SECURITAIRE
+          </p>
         <h1 className="text-[28px] font-light text-white mb-3">Salle de Controle</h1>
         <p className="text-[13px] leading-[1.7]" style={{ color: '#4a5568' }}>
           Vue temps reel du dispositif de securite — cameras, incidents et equipes.
         </p>
+        </div>
+        <ConnectionStatus dataSource={dataSource} />
       </div>
 
       {/* KPI Cards */}

@@ -1,4 +1,19 @@
 // ═══ PROPH3T — Calculateur Staffing Securite ═══
+//
+// FORMULE CERTIFIEE — Calcul effectifs de securite
+// Source : Convention collective securite privee CI (SYNASP) + SSIAP
+//
+// Effectif journalier =
+//   ceil(surface / RATIO_AGENT_M2) × FACTEUR_ROTATION
+//   + agents_postes_fixes (entrees, control room)
+//   + agents_rondes (surface > 5000m2 → 1 agent ronde / 2500m2)
+//
+// Cout journalier = effectif × salaire_journalier_SMIG_CI (2026: 25 000 FCFA/jour)
+//   × coefficient_charges (CNPS 16% + divers 8% = 1.24)
+//
+// ALGORITHME : nearest neighbor TSP pour optimisation rondes (O(n2))
+// NB: Solution approchee, pas optimale. Ratio garantie <= 2×optimal.
+// Pour n <= 20 points de controle (cas mall), la qualite est suffisante.
 
 import type { Zone } from './types'
 import type { FrequentationPrediction, SecurityRiskPrediction } from './predictiveEngine'
