@@ -504,6 +504,10 @@ function ImportCard({
 // ─── Plan Preview Modal ─────────────────────────────
 
 function PlanPreviewModal({ record, onClose }: { record: PlanImportRecord; onClose: () => void }) {
+  const [zoom, setZoom] = useState(1)
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [dragging, setDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const imageUrl = record.planImageUrl || record.thumbnailUrl
   if (!imageUrl) return null
 
@@ -590,24 +594,51 @@ function PlanPreviewModal({ record, onClose }: { record: PlanImportRecord; onClo
           </div>
         </div>
 
-        {/* ── Zone principale : image plein ecran ── */}
+        {/* ── Zone principale : viewer avec zoom/pan ── */}
         <div className="flex-1 flex flex-col h-full" style={{ background: '#080c14' }}>
-          {/* Barre simple */}
+          {/* Toolbar */}
           <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06] flex-shrink-0" style={{ background: '#0a0f1a' }}>
             <span className="text-[11px] text-slate-500">{record.floorLevel} — {record.fileName}</span>
-            <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.08] transition-colors">
-              <X size={16} />
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button onClick={() => setZoom(z => Math.max(0.1, z / 1.3))}
+                className="px-2 py-1 rounded text-[11px] text-gray-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] transition-colors">−</button>
+              <span className="text-[11px] text-gray-400 w-12 text-center font-mono">{Math.round(zoom * 100)}%</span>
+              <button onClick={() => setZoom(z => Math.min(8, z * 1.3))}
+                className="px-2 py-1 rounded text-[11px] text-gray-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] transition-colors">+</button>
+              <button onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }) }}
+                className="px-2 py-1 rounded text-[11px] text-gray-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] transition-colors ml-1">Reset</button>
+              <div className="w-px h-4 bg-white/[0.06] mx-1" />
+              <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.08] transition-colors">
+                <X size={16} />
+              </button>
+            </div>
           </div>
 
-          {/* Image — affichee en entier, pas de zoom */}
-          <div className="flex-1 flex items-center justify-center p-4">
-            <img
-              src={imageUrl}
-              alt={record.fileName}
-              className="max-w-full max-h-full object-contain rounded-lg"
-              draggable={false}
-            />
+          {/* Image viewer avec zoom molette + drag pan */}
+          <div className="flex-1 overflow-hidden relative"
+            style={{ cursor: dragging ? 'grabbing' : 'grab' }}
+            onWheel={(e) => {
+              e.preventDefault()
+              setZoom(z => Math.min(8, Math.max(0.1, z * (e.deltaY > 0 ? 0.9 : 1.1))))
+            }}
+            onMouseDown={(e) => { setDragging(true); setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y }) }}
+            onMouseMove={(e) => { if (dragging) setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y }) }}
+            onMouseUp={() => setDragging(false)}
+            onMouseLeave={() => setDragging(false)}
+          >
+            <div className="absolute inset-0 flex items-center justify-center">
+              <img
+                src={imageUrl}
+                alt={record.fileName}
+                className="max-w-none select-none"
+                style={{
+                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                  transformOrigin: 'center center',
+                  transition: dragging ? 'none' : 'transform 0.15s ease-out',
+                }}
+                draggable={false}
+              />
+            </div>
           </div>
         </div>
       </div>
