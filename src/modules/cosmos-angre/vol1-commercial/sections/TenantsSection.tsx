@@ -1,12 +1,13 @@
 // ═══ VOL.1 — Gestion des Preneurs (F1.3) ═══
 
 import React, { useState, useMemo } from 'react'
-import { Search, Users, Calendar, DollarSign, Phone, Mail, ChevronDown, ChevronUp, Filter, BarChart2 } from 'lucide-react'
+import { Search, Users, Calendar, DollarSign, Phone, Mail, ChevronDown, ChevronUp, Filter, BarChart2, Plus, Pencil, Trash2 } from 'lucide-react'
 import { useVol1Store } from '../store/vol1Store'
-import type { Tenant, TenantStatus } from '../store/vol1Types'
+import type { Tenant, TenantStatus, Sector } from '../store/vol1Types'
 import GanttChart, { type GanttTask } from '../../shared/components/GanttChart'
 import { formatFcfa } from '../../shared/utils/formatting'
 import { SECTOR_LABELS as sectorLabels } from '../../shared/constants/sectorConfig'
+import { TenantForm } from '../components/TenantForm'
 
 const statusConfig: Record<TenantStatus, { color: string; label: string }> = {
   actif: { color: '#22c55e', label: 'Actif' },
@@ -18,10 +19,13 @@ const statusConfig: Record<TenantStatus, { color: string; label: string }> = {
 export default function TenantsSection() {
   const tenants = useVol1Store(s => s.tenants)
   const spaces = useVol1Store(s => s.spaces)
+  const removeTenant = useVol1Store(s => s.removeTenant)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<TenantStatus | 'all'>('all')
   const [sectorFilter, setSectorFilter] = useState<Sector | 'all'>('all')
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [showForm, setShowForm] = useState(false)
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null)
 
   const filtered = useMemo(() => {
     return tenants.filter(t => {
@@ -39,11 +43,23 @@ export default function TenantsSection() {
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
-      <div>
-        <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#f59e0b' }}>VOL. 1 — PLAN COMMERCIAL</p>
-        <h1 className="text-[28px] font-light text-white mb-2">Gestion des Preneurs</h1>
-        <p className="text-[13px]" style={{ color: '#4a5568' }}>{tenants.length} preneurs references — fiches completes, baux et contacts.</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#f59e0b' }}>VOL. 1 — PLAN COMMERCIAL</p>
+          <h1 className="text-[28px] font-display font-bold text-white mb-2">Gestion des Preneurs</h1>
+          <p className="text-[13px]" style={{ color: '#4a5568' }}>{tenants.length} preneurs references — fiches completes, baux et contacts.</p>
+        </div>
+        <button onClick={() => { setEditingTenant(null); setShowForm(true) }} className="btn-primary text-[12px]">
+          <Plus size={14} /> Ajouter un preneur
+        </button>
       </div>
+
+      {/* Formulaire ajout/edition */}
+      <TenantForm
+        open={showForm}
+        onClose={() => { setShowForm(false); setEditingTenant(null) }}
+        editTenant={editingTenant}
+      />
 
       {/* Search + Filters */}
       <div className="flex flex-wrap items-center gap-3">
@@ -101,6 +117,12 @@ export default function TenantsSection() {
                 <div className="flex items-center gap-4 flex-shrink-0 text-[11px]">
                   {space && <span className="text-slate-400">{space.areaSqm} m²</span>}
                   <span style={{ color: daysToEnd <= 90 ? '#ef4444' : '#4a5568' }}>{daysToEnd > 0 ? `${daysToEnd}j restants` : 'Expiré'}</span>
+                  <button onClick={(e) => { e.stopPropagation(); setEditingTenant(t); setShowForm(true) }} className="p-1 rounded hover:bg-white/[0.06] text-slate-600 hover:text-white transition-colors" title="Modifier">
+                    <Pencil size={12} />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); if (confirm(`Supprimer ${t.brandName} ?`)) removeTenant(t.id) }} className="p-1 rounded hover:bg-red-500/10 text-slate-600 hover:text-red-400 transition-colors" title="Supprimer">
+                    <Trash2 size={12} />
+                  </button>
                   {isOpen ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
                 </div>
               </button>

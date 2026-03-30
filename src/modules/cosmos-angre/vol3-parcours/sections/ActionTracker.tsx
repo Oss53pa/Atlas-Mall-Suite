@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { CheckCircle, Clock, AlertTriangle, Circle, ChevronDown, ChevronUp } from 'lucide-react'
+import { CheckCircle, Clock, AlertTriangle, Circle, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react'
 
 type ActionStatus = 'termine' | 'en_cours' | 'en_retard' | 'a_venir'
 
@@ -38,28 +38,76 @@ const statusConfig: Record<ActionStatus, { color: string; bg: string; label: str
 }
 
 export default function ActionTracker() {
+  const [actions, setActions] = useState<TrackedAction[]>(ACTIONS)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | ActionStatus>('all')
+  const [showAdd, setShowAdd] = useState(false)
+  const [newTitle, setNewTitle] = useState('')
+  const [newResp, setNewResp] = useState('')
+  const [newDate, setNewDate] = useState('')
 
-  const filtered = filter === 'all' ? ACTIONS : ACTIONS.filter(a => a.status === filter)
-
-  const counts = {
-    all: ACTIONS.length,
-    termine: ACTIONS.filter(a => a.status === 'termine').length,
-    en_cours: ACTIONS.filter(a => a.status === 'en_cours').length,
-    en_retard: ACTIONS.filter(a => a.status === 'en_retard').length,
-    a_venir: ACTIONS.filter(a => a.status === 'a_venir').length,
+  const handleAddAction = () => {
+    if (!newTitle.trim()) return
+    const id = `A${String(actions.length + 1).padStart(2, '0')}`
+    setActions(prev => [...prev, {
+      id, title: newTitle, responsable: newResp || 'Non assigne',
+      echeance: newDate || '2026-12-31', status: 'a_venir' as ActionStatus,
+      progress: 0, notes: '', milestones: [],
+    }])
+    setNewTitle(''); setNewResp(''); setNewDate(''); setShowAdd(false)
   }
 
-  const globalProgress = Math.round(ACTIONS.reduce((s, a) => s + a.progress, 0) / ACTIONS.length)
+  const handleUpdateStatus = (id: string, status: ActionStatus) => {
+    setActions(prev => prev.map(a => a.id === id ? { ...a, status, progress: status === 'termine' ? 100 : a.progress } : a))
+  }
+
+  const handleUpdateProgress = (id: string, progress: number) => {
+    setActions(prev => prev.map(a => a.id === id ? { ...a, progress: Math.min(100, Math.max(0, progress)) } : a))
+  }
+
+  const handleDelete = (id: string) => {
+    setActions(prev => prev.filter(a => a.id !== id))
+  }
+
+  const filtered = filter === 'all' ? actions : actions.filter(a => a.status === filter)
+
+  const counts = {
+    all: actions.length,
+    termine: actions.filter(a => a.status === 'termine').length,
+    en_cours: actions.filter(a => a.status === 'en_cours').length,
+    en_retard: actions.filter(a => a.status === 'en_retard').length,
+    a_venir: actions.filter(a => a.status === 'a_venir').length,
+  }
+
+  const globalProgress = actions.length > 0 ? Math.round(actions.reduce((s, a) => s + a.progress, 0) / actions.length) : 0
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
-      <div>
-        <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#06b6d4' }}>VOL. 3 — PILOTAGE</p>
-        <h1 className="text-[28px] font-light text-white mb-2">Plan d'action A01-A13 — Suivi</h1>
-        <p className="text-[13px]" style={{ color: '#4a5568' }}>Suivi operationnel des 13 actions du plan parcours client.</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#06b6d4' }}>VOL. 3 — PILOTAGE</p>
+          <h1 className="text-[28px] font-display font-bold text-white mb-2">Plan d'action — Suivi</h1>
+          <p className="text-[13px]" style={{ color: '#4a5568' }}>Suivi operationnel des {actions.length} actions du plan parcours client.</p>
+        </div>
+        <button onClick={() => setShowAdd(!showAdd)} className="btn-primary text-[12px]">
+          <Plus size={14} /> Ajouter une action
+        </button>
       </div>
+
+      {showAdd && (
+        <div className="rounded-xl p-4 border border-cyan-500/20 bg-cyan-900/10 space-y-3">
+          <p className="text-[12px] font-semibold text-cyan-400">Nouvelle action</p>
+          <div className="grid grid-cols-3 gap-3">
+            <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Titre de l'action..." className="input-dark text-[12px] col-span-2" />
+            <input value={newDate} onChange={e => setNewDate(e.target.value)} type="date" className="input-dark text-[12px]" />
+          </div>
+          <div className="flex gap-3">
+            <input value={newResp} onChange={e => setNewResp(e.target.value)} placeholder="Responsable..." className="input-dark text-[12px] flex-1" />
+            <button onClick={handleAddAction} disabled={!newTitle.trim()} className="btn-primary text-[12px]">Creer</button>
+            <button onClick={() => setShowAdd(false)} className="btn-ghost text-[12px]">Annuler</button>
+          </div>
+        </div>
+      )}
 
       {/* Global progress */}
       <div className="rounded-xl p-5" style={{ background: '#141e2e', border: '1px solid #1e2a3a' }}>
@@ -111,12 +159,29 @@ export default function ActionTracker() {
                     <div className="h-full rounded-full" style={{ width: `${action.progress}%`, background: cfg.color }} />
                   </div>
                   <span className="text-[11px] font-mono w-8 text-right" style={{ color: cfg.color }}>{action.progress}%</span>
+                  <button onClick={(e) => { e.stopPropagation(); handleDelete(action.id) }} className="p-1 rounded hover:bg-red-500/10 text-slate-700 hover:text-red-400 transition-colors" title="Supprimer">
+                    <Trash2 size={12} />
+                  </button>
                   {isOpen ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
                 </div>
               </button>
               {isOpen && (
                 <div className="px-4 pb-4 pt-0 border-t" style={{ borderColor: '#1e2a3a' }}>
                   {action.notes && <p className="text-[12px] text-slate-400 mt-3 mb-3">{action.notes}</p>}
+                  {/* Controles d'edition */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-[10px] text-slate-600">Statut :</span>
+                    {(['a_venir', 'en_cours', 'en_retard', 'termine'] as ActionStatus[]).map(s => (
+                      <button key={s} onClick={() => handleUpdateStatus(action.id, s)}
+                        className={`text-[9px] px-2 py-0.5 rounded-full transition-colors ${action.status === s ? 'text-white' : 'text-slate-500 hover:text-white'}`}
+                        style={{ background: action.status === s ? statusConfig[s].bg : 'transparent', border: `1px solid ${action.status === s ? statusConfig[s].color + '40' : '#1e2a3a'}`, color: action.status === s ? statusConfig[s].color : undefined }}>
+                        {statusConfig[s].label}
+                      </button>
+                    ))}
+                    <span className="text-[10px] text-slate-600 ml-3">Avancement :</span>
+                    <input type="range" min={0} max={100} step={5} value={action.progress} onChange={e => handleUpdateProgress(action.id, parseInt(e.target.value))} className="w-24 accent-cyan-500" />
+                    <span className="text-[10px] text-cyan-400 font-mono">{action.progress}%</span>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {action.milestones.map((m, i) => (
                       <div key={i} className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md" style={{ background: m.done ? 'rgba(34,197,94,0.08)' : 'rgba(107,114,128,0.08)', border: `1px solid ${m.done ? 'rgba(34,197,94,0.2)' : 'rgba(107,114,128,0.2)'}` }}>

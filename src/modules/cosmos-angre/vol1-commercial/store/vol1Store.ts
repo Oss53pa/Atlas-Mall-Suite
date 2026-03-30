@@ -1,6 +1,7 @@
 // ═══ VOL.1 COMMERCIAL — Zustand Store ═══
 
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import type { Tenant, CommercialSpace, SpaceTenantHistory, LeaseAlert, SpaceStatus, Sector, OccupancyStats } from './vol1Types'
 import { shouldUseMockData } from '../../shared/useMockData'
 import { type Phase, DEFAULT_PHASES } from '../engines/phasingEngine'
@@ -149,6 +150,9 @@ interface Vol1State {
   filterSector: Sector | 'all'
   filterStatus: SpaceStatus | 'all'
 
+  // Plan images (imported plan backgrounds per floor)
+  planImageUrls: Record<string, string>
+
   // Phasing
   phases: Phase[]
   activePhaseId: string | null
@@ -157,9 +161,14 @@ interface Vol1State {
   setSearch: (q: string) => void
   setFilterSector: (s: Sector | 'all') => void
   setFilterStatus: (s: SpaceStatus | 'all') => void
+  addTenant: (tenant: Tenant) => void
+  removeTenant: (id: string) => void
   updateTenant: (id: string, data: Partial<Tenant>) => void
   assignTenant: (spaceId: string, tenantId: string) => void
   vacateSpace: (spaceId: string) => void
+  addSpace: (space: CommercialSpace) => void
+  updateSpace: (id: string, data: Partial<CommercialSpace>) => void
+  deleteSpace: (id: string) => void
   setActivePhase: (phaseId: string | null) => void
   updatePhase: (id: string, data: Partial<Phase>) => void
   addPhase: (phase: Phase) => void
@@ -170,7 +179,7 @@ const _useMock = shouldUseMockData()
 const _initTenants = _useMock ? MOCK_TENANTS : []
 const _initSpaces = _useMock ? MOCK_SPACES : []
 
-export const useVol1Store = create<Vol1State>((set, get) => ({
+export const useVol1Store = create<Vol1State>()(persist((set, get) => ({
   tenants: _initTenants,
   spaces: _initSpaces,
   history: [],
@@ -181,6 +190,7 @@ export const useVol1Store = create<Vol1State>((set, get) => ({
   filterSector: 'all',
   filterStatus: 'all',
 
+  planImageUrls: {} as Record<string, string>,
   phases: DEFAULT_PHASES,
   activePhaseId: null,
 
@@ -188,6 +198,18 @@ export const useVol1Store = create<Vol1State>((set, get) => ({
   setSearch: (q) => set({ searchQuery: q }),
   setFilterSector: (s) => set({ filterSector: s }),
   setFilterStatus: (s) => set({ filterStatus: s }),
+
+  addTenant: (tenant) => {
+    const tenants = [...get().tenants, tenant]
+    const spaces = get().spaces
+    set({ tenants, alerts: generateAlerts(tenants, spaces), occupancy: computeOccupancy(spaces, tenants) })
+  },
+
+  removeTenant: (id) => {
+    const tenants = get().tenants.filter(t => t.id !== id)
+    const spaces = get().spaces.map(s => s.tenantId === id ? { ...s, tenantId: null, status: 'vacant' as SpaceStatus } : s)
+    set({ tenants, spaces, alerts: generateAlerts(tenants, spaces), occupancy: computeOccupancy(spaces, tenants) })
+  },
 
   updateTenant: (id, data) => {
     const tenants = get().tenants.map(t => t.id === id ? { ...t, ...data } : t)
@@ -207,6 +229,23 @@ export const useVol1Store = create<Vol1State>((set, get) => ({
     set({ spaces, alerts: generateAlerts(tenants, spaces), occupancy: computeOccupancy(spaces, tenants) })
   },
 
+  // CRUD Spaces
+  addSpace: (space: CommercialSpace) => {
+    const spaces = [...get().spaces, space]
+    const tenants = get().tenants
+    set({ spaces, alerts: generateAlerts(tenants, spaces), occupancy: computeOccupancy(spaces, tenants) })
+  },
+  updateSpace: (id: string, data: Partial<CommercialSpace>) => {
+    const spaces = get().spaces.map(s => s.id === id ? { ...s, ...data } : s)
+    const tenants = get().tenants
+    set({ spaces, alerts: generateAlerts(tenants, spaces), occupancy: computeOccupancy(spaces, tenants) })
+  },
+  deleteSpace: (id: string) => {
+    const spaces = get().spaces.filter(s => s.id !== id)
+    const tenants = get().tenants
+    set({ spaces, alerts: generateAlerts(tenants, spaces), occupancy: computeOccupancy(spaces, tenants) })
+  },
+
   setActivePhase: (phaseId) => set({ activePhaseId: phaseId }),
 
   updatePhase: (id, data) => {
@@ -220,6 +259,14 @@ export const useVol1Store = create<Vol1State>((set, get) => ({
   removePhase: (id) => {
     set({ phases: get().phases.filter(p => p.id !== id), activePhaseId: get().activePhaseId === id ? null : get().activePhaseId })
   },
+}), {
+  name: 'vol1-planning',
+  partialize: (s) => ({
+    tenants: s.tenants,
+    spaces: s.spaces,
+    phases: s.phases,
+    planImageUrls: s.planImageUrls,
+  }),
 }))
 
 export default useVol1Store

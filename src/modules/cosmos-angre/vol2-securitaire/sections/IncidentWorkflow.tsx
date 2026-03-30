@@ -40,10 +40,50 @@ const sevConfig: Record<string, { color: string; bg: string }> = {
 }
 
 export default function IncidentWorkflow() {
+  const [incidents, setIncidents] = useState<Incident[]>(MOCK_INCIDENTS)
   const [filterState, setFilterState] = useState<IncidentState | 'all'>('all')
   const [selected, setSelected] = useState<Incident | null>(null)
+  const [showCreate, setShowCreate] = useState(false)
+  const [newTitle, setNewTitle] = useState('')
+  const [newZone, setNewZone] = useState('')
+  const [newSeverity, setNewSeverity] = useState<Incident['severity']>('moyenne')
 
-  const filtered = filterState === 'all' ? MOCK_INCIDENTS : MOCK_INCIDENTS.filter(i => i.state === filterState)
+  const handleCreateIncident = () => {
+    if (!newTitle.trim()) return
+    const incident: Incident = {
+      id: `INC-${String(incidents.length + 1).padStart(3, '0')}`,
+      title: newTitle,
+      zone: newZone || 'Non defini',
+      detectedAt: new Date().toISOString(),
+      assignee: '',
+      state: 'detecte',
+      severity: newSeverity,
+      description: '',
+      responseTimeSec: 0,
+    }
+    setIncidents(prev => [incident, ...prev])
+    setNewTitle('')
+    setNewZone('')
+    setShowCreate(false)
+  }
+
+  const handleUpdateState = (id: string, newState: IncidentState) => {
+    setIncidents(prev => prev.map(i => i.id === id ? {
+      ...i,
+      state: newState,
+      ...(newState === 'resolu' ? { responseTimeSec: Math.round((Date.now() - new Date(i.detectedAt).getTime()) / 1000) } : {}),
+    } : i))
+    if (selected?.id === id) {
+      setSelected(prev => prev ? { ...prev, state: newState } : null)
+    }
+  }
+
+  const handleDelete = (id: string) => {
+    setIncidents(prev => prev.filter(i => i.id !== id))
+    if (selected?.id === id) setSelected(null)
+  }
+
+  const filtered = filterState === 'all' ? incidents : incidents.filter(i => i.state === filterState)
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
@@ -59,6 +99,34 @@ export default function IncidentWorkflow() {
         </p>
       </div>
 
+      {/* Bouton + formulaire creation */}
+      <div className="flex items-center gap-3">
+        <button onClick={() => setShowCreate(!showCreate)} className="btn-primary text-[12px]">
+          <AlertTriangle size={14} /> Declarer un incident
+        </button>
+        <span className="text-[10px] text-gray-600">{incidents.filter(i => i.state === 'detecte' || i.state === 'assigne').length} incident(s) ouvert(s)</span>
+      </div>
+
+      {showCreate && (
+        <div className="rounded-xl p-4 border border-red-500/20 bg-red-900/10 space-y-3">
+          <p className="text-[12px] font-semibold text-red-400">Nouvel incident</p>
+          <div className="grid grid-cols-3 gap-3">
+            <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Titre de l'incident..." className="input-dark text-[12px] col-span-2" />
+            <select value={newSeverity} onChange={e => setNewSeverity(e.target.value as Incident['severity'])} className="input-dark text-[12px]">
+              <option value="critique">Critique</option>
+              <option value="haute">Haute</option>
+              <option value="moyenne">Moyenne</option>
+              <option value="basse">Basse</option>
+            </select>
+          </div>
+          <div className="flex gap-3">
+            <input value={newZone} onChange={e => setNewZone(e.target.value)} placeholder="Zone (ex: B1 - Parking P2)" className="input-dark text-[12px] flex-1" />
+            <button onClick={handleCreateIncident} disabled={!newTitle.trim()} className="btn-primary text-[12px]">Creer</button>
+            <button onClick={() => setShowCreate(false)} className="btn-ghost text-[12px]">Annuler</button>
+          </div>
+        </div>
+      )}
+
       {/* State Pipeline */}
       <div className="flex items-center gap-1 overflow-x-auto pb-2">
         <button
@@ -70,10 +138,10 @@ export default function IncidentWorkflow() {
             border: '1px solid #1e2a3a',
           }}
         >
-          Tous ({MOCK_INCIDENTS.length})
+          Tous ({incidents.length})
         </button>
         {STATES.map(s => {
-          const count = MOCK_INCIDENTS.filter(i => i.state === s.key).length
+          const count = incidents.filter(i => i.state === s.key).length
           const Icon = s.icon
           return (
             <React.Fragment key={s.key}>
