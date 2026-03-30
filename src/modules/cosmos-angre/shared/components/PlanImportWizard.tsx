@@ -157,18 +157,25 @@ export default function PlanImportWizard({
     )
   }, [state, selectedFloorId, onImportComplete])
 
+  const isReviewing = state.step === 'reviewing'
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-[900px] max-h-[90vh] overflow-y-auto">
+      <div className={`bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden flex flex-col ${
+        isReviewing ? 'w-[95vw] h-[92vh]' : 'w-[900px] max-h-[90vh] overflow-y-auto'
+      }`}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-          <h2 className="text-lg font-semibold text-white">Importer un plan</h2>
+        <div className="flex items-center justify-between px-6 py-3 border-b border-gray-800 flex-shrink-0">
+          <div>
+            <h2 className="text-lg font-display font-bold text-white">Importer un plan</h2>
+            {state.fileName && <p className="text-[11px] text-gray-500">{state.fileName}</p>}
+          </div>
           <button onClick={onClose} className="text-gray-400 hover:text-white text-xl">&times;</button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className={`space-y-6 ${isReviewing ? 'flex-1 flex flex-col overflow-hidden p-0' : 'p-6'}`}>
           {/* Progress */}
-          <PlanReaderProgress state={state} />
+          {!isReviewing && <PlanReaderProgress state={state} />}
 
           {/* STEP 1: Upload */}
           {state.step === 'upload' && (
@@ -202,208 +209,159 @@ export default function PlanImportWizard({
 
           {/* STEP 2: Detecting (shown via PlanReaderProgress) */}
 
-          {/* STEP 3: Reviewing */}
+          {/* STEP 3: Reviewing — layout sidebar gauche + viewer droit plein ecran */}
           {state.step === 'reviewing' && (
-            <div className="space-y-4">
-              {/* Raster preview — plan original en fond + zones repositionnables */}
-              {state.rasterResult && (state.planImageUrl || imageUrl) && (
-                <RasterPreview
-                  imageUrl={state.planImageUrl || imageUrl}
-                  result={state.rasterResult}
-                  width={860}
-                  height={500}
-                  onZonesChanged={(updatedZones) => setState(s => ({ ...s, detectedZones: updatedZones }))}
-                />
-              )}
+            <div className="flex flex-1 overflow-hidden">
 
-              {/* Plan image sans zones detectees */}
-              {!state.rasterResult && state.planImageUrl && (
-                <div className="relative bg-gray-950 rounded-lg overflow-hidden" style={{ height: 500 }}>
-                  <img src={state.planImageUrl} alt="Plan" className="w-full h-full object-contain" />
-                </div>
-              )}
+              {/* ── Sidebar gauche : donnees ── */}
+              <div className="w-80 flex-shrink-0 border-r border-gray-800 overflow-y-auto bg-gray-900/80 flex flex-col">
+                <div className="p-4 space-y-4 flex-1">
+                  <PlanReaderProgress state={state} />
 
-              {/* Zones table */}
-              {state.detectedZones.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-medium text-gray-300 mb-2">
-                    Zones detectees ({state.detectedZones.length})
-                  </h3>
-                  <div className="max-h-48 overflow-y-auto border border-gray-800 rounded">
-                    <table className="w-full text-xs">
-                      <thead className="bg-gray-800/50 sticky top-0">
-                        <tr>
-                          <th className="text-left px-3 py-2 text-gray-400">Label</th>
-                          <th className="text-left px-3 py-2 text-gray-400">Type</th>
-                          <th className="text-right px-3 py-2 text-gray-400">Confiance</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                  {/* Floor selector */}
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wider text-gray-500 block mb-1">Importer sur</label>
+                    <select
+                      value={selectedFloorId}
+                      onChange={e => setSelectedFloorId(e.target.value)}
+                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white"
+                    >
+                      {floors.map(f => (
+                        <option key={f.id} value={f.id}>{f.level}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Zones detectees */}
+                  {state.detectedZones.length > 0 && (
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">
+                        Zones detectees ({state.detectedZones.length})
+                      </p>
+                      <div className="space-y-1 max-h-40 overflow-y-auto">
                         {state.detectedZones.map(zone => (
-                          <tr key={zone.id} className="border-t border-gray-800/50 hover:bg-gray-800/30">
-                            <td className="px-3 py-1.5 text-white">{zone.label}</td>
-                            <td className="px-3 py-1.5 text-gray-300">{zone.estimatedType}</td>
-                            <td className="px-3 py-1.5 text-right">
-                              <span className={`${
-                                zone.confidence >= 0.8 ? 'text-emerald-400' :
-                                zone.confidence >= 0.5 ? 'text-amber-400' : 'text-red-400'
-                              }`}>
-                                {Math.round(zone.confidence * 100)}%
-                              </span>
-                            </td>
-                          </tr>
+                          <div key={zone.id} className="flex items-center justify-between rounded-lg px-2 py-1.5 bg-gray-800/50 text-[11px]">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: zone.color ?? '#38bdf8' }} />
+                              <span className="text-white truncate">{zone.label}</span>
+                            </div>
+                            <span className={`flex-shrink-0 ml-2 ${
+                              zone.confidence >= 0.8 ? 'text-emerald-400' : zone.confidence >= 0.5 ? 'text-amber-400' : 'text-red-400'
+                            }`}>{Math.round(zone.confidence * 100)}%</span>
+                          </div>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+                      </div>
+                    </div>
+                  )}
 
-              {/* Dims table */}
-              {state.detectedDims.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-medium text-gray-300 mb-2">
-                    Cotes detectees ({state.detectedDims.length})
-                  </h3>
-                  <div className="max-h-32 overflow-y-auto border border-gray-800 rounded">
-                    <table className="w-full text-xs">
-                      <thead className="bg-gray-800/50 sticky top-0">
-                        <tr>
-                          <th className="text-left px-3 py-2 text-gray-400">Valeur</th>
-                          <th className="text-left px-3 py-2 text-gray-400">Type</th>
-                          <th className="text-left px-3 py-2 text-gray-400">Unite</th>
-                          <th className="text-right px-3 py-2 text-gray-400">Confiance</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                  {/* Cotes detectees */}
+                  {state.detectedDims.length > 0 && (
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">
+                        Cotes ({state.detectedDims.length})
+                      </p>
+                      <div className="space-y-1 max-h-28 overflow-y-auto">
                         {state.detectedDims.map(dim => (
-                          <tr key={dim.id} className="border-t border-gray-800/50">
-                            <td className="px-3 py-1.5 text-white">{dim.valueText}</td>
-                            <td className="px-3 py-1.5 text-gray-300">{dim.type}</td>
-                            <td className="px-3 py-1.5 text-gray-300">{dim.unit}</td>
-                            <td className="px-3 py-1.5 text-right">
-                              <span className={`${
-                                dim.confidence >= 0.8 ? 'text-emerald-400' :
-                                dim.confidence >= 0.5 ? 'text-amber-400' : 'text-red-400'
-                              }`}>
-                                {Math.round(dim.confidence * 100)}%
-                              </span>
-                            </td>
-                          </tr>
+                          <div key={dim.id} className="flex items-center justify-between text-[11px] px-2 py-1 bg-gray-800/50 rounded">
+                            <span className="text-white">{dim.valueText} {dim.unit}</span>
+                            <span className="text-gray-500">{dim.type}</span>
+                          </div>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+                      </div>
+                    </div>
+                  )}
 
-              {/* Calibration summary */}
-              {state.calibration && (
-                <div className="bg-gray-800/30 rounded-lg p-4">
-                  <h3 className="text-sm font-medium text-gray-300 mb-2">Calibration</h3>
-                  <div className="grid grid-cols-3 gap-4 text-xs">
+                  {/* Calibration */}
+                  {state.calibration && (
                     <div>
-                      <span className="text-gray-400">Methode : </span>
-                      <span className="text-white">{state.calibration.method}</span>
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-2">Calibration</p>
+                      <div className="space-y-2 text-[11px]">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Methode</span>
+                          <span className="text-white">{state.calibration.method}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Dimensions</span>
+                          <span className="text-white">{state.calibration.realWidthM.toFixed(1)}m × {state.calibration.realHeightM.toFixed(1)}m</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Confiance</span>
+                          <span className={`font-bold ${
+                            state.calibration.confidence >= 0.8 ? 'text-emerald-400' :
+                            state.calibration.confidence >= 0.5 ? 'text-amber-400' : 'text-red-400'
+                          }`}>{Math.round(state.calibration.confidence * 100)}%</span>
+                        </div>
+                        <div className="w-full h-1.5 rounded-full bg-gray-800 overflow-hidden">
+                          <div className="h-full rounded-full" style={{
+                            width: `${state.calibration.confidence * 100}%`,
+                            background: state.calibration.confidence >= 0.8 ? '#22c55e' : state.calibration.confidence >= 0.5 ? '#f59e0b' : '#ef4444',
+                          }} />
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-gray-400">Dimensions : </span>
-                      <span className="text-white">
-                        {state.calibration.realWidthM.toFixed(1)}m x {state.calibration.realHeightM.toFixed(1)}m
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">Confiance : </span>
-                      <span className={`font-medium ${
-                        state.calibration.confidence >= 0.8 ? 'text-emerald-400' :
-                        state.calibration.confidence >= 0.5 ? 'text-amber-400' : 'text-red-400'
-                      }`}>
-                        {Math.round(state.calibration.confidence * 100)}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
+                  )}
 
-              {/* Warnings */}
-              {state.warnings.length > 0 && (
-                <div className="bg-amber-900/20 border border-amber-700/50 rounded-lg p-4 space-y-1">
-                  {state.warnings.map((w, i) => (
-                    <p key={i} className="text-xs text-amber-300 flex items-start gap-2">
-                      <span className="text-amber-500 flex-shrink-0">⚠</span>
-                      {w}
-                    </p>
-                  ))}
-                </div>
-              )}
-
-              {/* Manual calibration if low confidence */}
-              {(!state.calibration || state.calibration.confidence < 0.7) && (
-                <div className="bg-amber-900/20 border border-amber-700/50 rounded-lg p-4 space-y-3">
-                  <p className="text-xs text-amber-300">
-                    Calibration automatique insuffisante. Saisir les dimensions reelles :
-                  </p>
-                  <div className="flex gap-3">
-                    <div>
-                      <label className="text-[10px] text-gray-400 block mb-1">Largeur (m)</label>
-                      <input
-                        type="number"
-                        value={manualWidthM}
-                        onChange={e => setManualWidthM(e.target.value)}
-                        placeholder="ex: 200"
-                        className="bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-sm text-white w-32"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-gray-400 block mb-1">Hauteur (m)</label>
-                      <input
-                        type="number"
-                        value={manualHeightM}
-                        onChange={e => setManualHeightM(e.target.value)}
-                        placeholder="ex: 140"
-                        className="bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-sm text-white w-32"
-                      />
-                    </div>
-                    <div className="flex items-end">
-                      <button
-                        onClick={handleManualCalibration}
-                        className="bg-amber-600 hover:bg-amber-500 text-white text-xs px-4 py-1.5 rounded transition-colors"
-                      >
-                        Calibrer
+                  {/* Manual calibration */}
+                  {(!state.calibration || state.calibration.confidence < 0.7) && (
+                    <div className="rounded-lg p-3 bg-amber-900/20 border border-amber-700/50 space-y-2">
+                      <p className="text-[10px] text-amber-300">Calibration insuffisante — saisir les dimensions :</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[9px] text-gray-500 block mb-0.5">Largeur (m)</label>
+                          <input type="number" value={manualWidthM} onChange={e => setManualWidthM(e.target.value)} placeholder="200" className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-xs text-white" />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-gray-500 block mb-0.5">Hauteur (m)</label>
+                          <input type="number" value={manualHeightM} onChange={e => setManualHeightM(e.target.value)} placeholder="140" className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-xs text-white" />
+                        </div>
+                      </div>
+                      <button onClick={handleManualCalibration} className="w-full bg-amber-600 hover:bg-amber-500 text-white text-[11px] px-3 py-1.5 rounded transition-colors">
+                        Calibrer manuellement
                       </button>
                     </div>
-                  </div>
-                </div>
-              )}
+                  )}
 
-              {/* Floor selector */}
-              <div className="flex items-center gap-3">
-                <label className="text-xs text-gray-400">Importer sur :</label>
-                <select
-                  value={selectedFloorId}
-                  onChange={e => setSelectedFloorId(e.target.value)}
-                  className="bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-sm text-white"
-                >
-                  {floors.map(f => (
-                    <option key={f.id} value={f.id}>{f.level}</option>
-                  ))}
-                </select>
+                  {/* Warnings */}
+                  {state.warnings.length > 0 && (
+                    <div className="space-y-1">
+                      {state.warnings.map((w, i) => (
+                        <div key={i} className="flex items-start gap-2 text-[10px] text-amber-400">
+                          <span className="flex-shrink-0">⚠</span>
+                          <span>{w}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions en bas de la sidebar */}
+                <div className="p-4 border-t border-gray-800 flex gap-2">
+                  <button onClick={onClose} className="flex-1 text-gray-400 hover:text-white text-[12px] py-2 rounded-lg hover:bg-white/[0.04] transition-colors">
+                    Annuler
+                  </button>
+                  <button onClick={handleConfirm} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[12px] py-2 rounded-lg font-medium transition-colors">
+                    Importer ({state.detectedZones.length} zones)
+                  </button>
+                </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  onClick={onClose}
-                  className="text-gray-400 hover:text-white text-sm px-4 py-2 rounded transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={handleConfirm}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white text-sm px-6 py-2 rounded font-medium transition-colors"
-                >
-                  Importer ({state.detectedZones.length} zones)
-                </button>
+              {/* ── Viewer droit : visualisation grand ecran ── */}
+              <div className="flex-1 flex items-center justify-center overflow-hidden relative" style={{ background: '#060a10' }}>
+                {state.rasterResult && (state.planImageUrl || imageUrl) ? (
+                  <RasterPreview
+                    imageUrl={state.planImageUrl || imageUrl}
+                    result={state.rasterResult}
+                    width={typeof window !== 'undefined' ? window.innerWidth - 320 - 80 : 1000}
+                    height={typeof window !== 'undefined' ? window.innerHeight - 120 : 700}
+                    onZonesChanged={(updatedZones) => setState(s => ({ ...s, detectedZones: updatedZones }))}
+                  />
+                ) : state.planImageUrl ? (
+                  <img src={state.planImageUrl} alt="Plan" className="max-w-full max-h-full object-contain" />
+                ) : (
+                  <div className="text-center text-gray-600">
+                    <p className="text-sm">Aucune preview disponible</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
