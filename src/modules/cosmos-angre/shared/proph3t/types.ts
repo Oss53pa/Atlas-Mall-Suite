@@ -623,3 +623,181 @@ export interface Vol3ReportData {
   normReferences: string[]
   recommendations: string[]
 }
+
+// ═══ TYPES CASCADE v3 — INTER-VOLUMES ═══
+
+export interface CrossVolumeInsight {
+  sourceVolume: 'vol1' | 'vol2' | 'vol3'
+  targetVolume: 'vol1' | 'vol2' | 'vol3'
+  sourceEntityId: string
+  targetEntityId: string
+  insightType: 'conflict' | 'opportunity' | 'risk' | 'optimization'
+  severity: 'critique' | 'attention' | 'info'
+  title: string
+  explanation: string
+  recommendedAction: string
+}
+
+export interface JourneyImpact {
+  affectedMoments: string[]
+  zoneHeatValues: Record<string, number>
+  axisHeatValues: Record<string, number>
+}
+
+export interface CommercialImpact {
+  affectedTenants: string[]
+  revenueImpactFcfa: number
+}
+
+export interface CascadeResultV3 extends CascadeResult {
+  capex: number
+  complianceCertifiable: boolean
+  journeyImpact: JourneyImpact | null
+  commercialImpact: CommercialImpact | null
+  crossVolumeInsights: CrossVolumeInsight[]
+  proactiveInsights: ProactiveInsight[]
+}
+
+// ═══ TYPES PHASAGE TEMPOREL ═══
+
+export interface ProjectPhase {
+  id: string
+  name: string
+  targetDate: string
+  confirmedTenantIds: string[]
+  plannedCameraIds: string[]
+  plannedDoorIds: string[]
+  targetOccupancyRate: number
+  notes?: string
+}
+
+export interface PhaseSimulation {
+  phase: ProjectPhase
+  activeZones: Zone[]
+  activeCameras: Camera[]
+  activeDoors: Door[]
+  securityScore: SecurityScore
+  capexPhase: number
+  revenueMonthlyFcfa: number
+  occupancyRate: number
+  isASPADCertifiable: boolean
+  blockers: string[]
+  warnings: string[]
+  proph3tAdvice: string
+}
+
+// ═══ TYPES APPRENTISSAGE BAYÉSIEN ═══
+
+export interface RecommendationFeedbackV2 {
+  id: string
+  projectId: string
+  ruleId: string
+  ruleCategory: string
+  recommendation: string
+  userAction: 'accepted' | 'rejected' | 'modified' | 'deferred'
+  modifiedValue?: string
+  context: Record<string, string>
+  timestamp: string
+}
+
+export interface RuleWeight {
+  ruleId: string
+  baseWeight: number
+  adjustedWeight: number
+  acceptanceRate: number
+  totalFeedbacks: number
+  trend: 'improving' | 'stable' | 'declining'
+  lastUpdated: string
+  userPreferences: {
+    preferredCameraModel?: string
+    preferredDoorBrand?: string
+    signageHeightOffset?: number
+    capexThreshold?: number
+  }
+}
+
+// ═══ TYPES INSIGHTS PROACTIFS ═══
+
+export type InsightLevel = 'bloquant' | 'attention' | 'opportunite'
+
+export interface ProactiveInsight {
+  id: string
+  level: InsightLevel
+  sessionCount: number
+  title: string
+  explanation: string
+  impact: string
+  action: string
+  normReference?: string
+  estimatedEffortMin: number
+  zoomTarget?: { x: number; y: number; floorId: string }
+}
+
+// ═══ TYPES BENCHMARK v2 ═══
+
+export interface MallBenchmarkV2 {
+  id: string
+  name: string
+  city: string
+  country: string
+  glaM2: number
+  classType: 'A' | 'B' | 'C'
+  cameraDensity: number
+  securityScore: number
+  exitCount: number
+  occupancyRate: number
+  avgRentFcfaM2: number
+  avgDwellTimeMin: number
+  dailyVisitorBase: number
+  signagetDensity: number
+  anchorTypes: string[]
+  openYear: number
+}
+
+export interface BenchmarkReport {
+  groupLabel: string
+  peerCount: number
+  percentiles: Record<string, number>
+  stats: Record<string, { min: number; max: number; avg: number; median: number }>
+  narrative: string
+  topPerformer: MallBenchmarkV2
+  recommendations: string[]
+}
+
+export interface ProjectMetrics {
+  cameraDensity: number
+  securityScore: number
+  occupancyRate: number
+  avgDwellTimeMin: number
+  signagetDensity: number
+  exitCount: number
+}
+
+// ═══ TYPES TENANT (VOL.1 CROSS-REF) ═══
+
+export interface TenantInfo {
+  spaceId: string
+  name: string
+  status: 'active' | 'vacant' | 'confirmed' | 'negotiation'
+  sector: string
+  rentFcfaM2?: number
+}
+
+// ═══ CONTEXTE PROJET COMPLET v3 ═══
+
+export interface FullProjectContextV3 extends FullProjectContext {
+  tenants?: TenantInfo[]
+  phases?: ProjectPhase[]
+  lastApprovedVersion?: { date: string; snapshotId: string } | null
+  crossVolumeInsights?: CrossVolumeInsight[]
+  moments?: MomentCle[]
+  signageGaps?: Array<{
+    id: string
+    axisId: string
+    description: string
+    distanceM: number
+    recommendedPoseHeight: number
+  }>
+  userPreferences?: Record<string, unknown>
+  projectClass?: 'A' | 'B' | 'C'
+}

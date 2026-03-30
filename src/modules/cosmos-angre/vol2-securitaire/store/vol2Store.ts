@@ -2,13 +2,15 @@
 
 import { create } from 'zustand'
 import * as THREE from 'three'
+import { shouldUseMockData } from '../../shared/useMockData'
 import type {
   FloorLevel, Floor, Zone, Camera, Door, BlindSpot,
   SecurityScore, TransitionNode, EvacuationResult,
   MonteCarloResult, EvacuationScenario, CascadeTrigger,
   CascadeResult, CapexItem, WiseFMLink, CockpitMilestone,
   LibraryItem, MallBenchmark, ProPh3tMemory,
-  ProjectMemorySummary, ChatMessage, SecurityScenario, SignageItem
+  ProjectMemorySummary, ChatMessage, SecurityScenario, SignageItem,
+  CrossVolumeInsight, ProactiveInsight, ProjectPhase,
 } from '../../shared/proph3t/types'
 import { addImported3DModel } from './imported3DModel'
 import {
@@ -378,6 +380,13 @@ interface Vol2State {
   // CAPEX
   capexItems: CapexItem[]
 
+  // Proph3t v3 — Insights inter-volumes, phasage, apprentissage
+  crossVolumeInsights: CrossVolumeInsight[]
+  proactiveInsights: ProactiveInsight[]
+  phases: ProjectPhase[]
+  lastApprovedVersion: { date: string; snapshotId: string } | null
+  userPreferences: Record<string, unknown>
+
   // Signalétique
   signageItems: SignageItem[]
 
@@ -544,6 +553,13 @@ const initialState = {
   capexItems: [] as CapexItem[],
 
   signageItems: [] as SignageItem[],
+
+  // Proph3t v3
+  crossVolumeInsights: [] as CrossVolumeInsight[],
+  proactiveInsights: [] as ProactiveInsight[],
+  phases: [] as ProjectPhase[],
+  lastApprovedVersion: null,
+  userPreferences: {} as Record<string, unknown>,
 
   planImportState: null as PlanImportState | null,
   detectedDims: [] as DimEntity[],
@@ -1010,8 +1026,8 @@ export const useVol2Store = create<Vol2State>()((set) => ({
           signageItems: data.signageItems,
           isHydrating: false,
         })
-      } else {
-        // No data in Supabase — fall back to mock data for demo
+      } else if (shouldUseMockData()) {
+        // No data in Supabase — fall back to mock data for demo (dev only)
         set({
           projectId: projetId,
           floors: MOCK_FLOORS,
@@ -1021,15 +1037,17 @@ export const useVol2Store = create<Vol2State>()((set) => ({
           cameras: MOCK_CAMERAS,
           isHydrating: false,
         })
+      } else {
+        // Production: start empty — user will import or create data
+        set({ projectId: projetId, isHydrating: false })
       }
     } catch (err) {
-      console.warn('[Vol2Store] Hydration failed, using mock data:', err)
+      console.warn('[Vol2Store] Hydration failed:', err)
+      const fallback = shouldUseMockData()
+        ? { floors: MOCK_FLOORS, activeFloorId: 'floor-rdc', transitions: MOCK_TRANSITIONS, zones: MOCK_ZONES, cameras: MOCK_CAMERAS }
+        : {}
       set({
-        floors: MOCK_FLOORS,
-        activeFloorId: 'floor-rdc',
-        transitions: MOCK_TRANSITIONS,
-        zones: MOCK_ZONES,
-        cameras: MOCK_CAMERAS,
+        ...fallback,
         isHydrating: false,
         hydrationError: err instanceof Error ? err.message : 'Erreur de chargement',
       })
