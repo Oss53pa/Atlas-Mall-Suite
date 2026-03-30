@@ -341,8 +341,6 @@ function ImportCard({
   const srcCfg = sourceTypeConfig[record.sourceType]
   const StIcon = stCfg.icon
   const SrcIcon = srcCfg.icon
-  const hasPlanImage = !!(record.planImageUrl || record.thumbnailUrl)
-
   return (
     <div
       className="rounded-xl overflow-hidden transition-all"
@@ -350,23 +348,22 @@ function ImportCard({
     >
       {/* Row */}
       <button onClick={onToggle} className="w-full flex items-center gap-4 p-4 text-left">
-        {/* Thumbnail or format icon */}
-        {hasPlanImage ? (
-          <div className="w-16 h-12 rounded-lg overflow-hidden flex-shrink-0 relative group/thumb border border-white/[0.08]"
-            onClick={(e) => { e.stopPropagation(); onPreview() }}>
+        {/* Thumbnail — toujours cliquable pour preview */}
+        <div className="w-16 h-12 rounded-lg overflow-hidden flex-shrink-0 relative group/thumb border border-white/[0.08] cursor-pointer"
+          style={{ background: `${srcCfg.color}08` }}
+          onClick={(e) => { e.stopPropagation(); onPreview() }}>
+          {(record.planImageUrl || record.thumbnailUrl) ? (
             <img src={record.planImageUrl || record.thumbnailUrl} alt={record.fileName}
               className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
-              <ZoomIn size={14} className="text-white" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <SrcIcon size={18} style={{ color: srcCfg.color }} />
             </div>
+          )}
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
+            <Eye size={14} className="text-white" />
           </div>
-        ) : (
-          <div
-            className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ background: `${srcCfg.color}12`, border: `1px solid ${srcCfg.color}25` }}
-          >
-            <SrcIcon size={18} style={{ color: srcCfg.color }} />
-          </div>
+        </div>
         )}
 
         {/* Info */}
@@ -465,7 +462,6 @@ function ImportCard({
           )}
 
           <div className="flex justify-end gap-2 pt-1">
-            {hasPlanImage && (
               <button
                 onClick={(e) => { e.stopPropagation(); onPreview() }}
                 className="flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg text-indigo-400 hover:bg-indigo-400/10 transition-colors"
@@ -473,7 +469,6 @@ function ImportCard({
                 <Maximize2 size={12} />
                 Prévisualiser
               </button>
-            )}
             {record.status === 'success' && (
               <button
                 onClick={(e) => { e.stopPropagation(); onSetAsBackground() }}
@@ -509,7 +504,6 @@ function PlanPreviewModal({ record, onClose }: { record: PlanImportRecord; onClo
   const [dragging, setDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const imageUrl = record.planImageUrl || record.thumbnailUrl
-  if (!imageUrl) return null
 
   const srcCfg = sourceTypeConfig[record.sourceType]
   const stCfg = statusConfig[record.status]
@@ -615,31 +609,41 @@ function PlanPreviewModal({ record, onClose }: { record: PlanImportRecord; onClo
           </div>
 
           {/* Image viewer avec zoom molette + drag pan */}
-          <div className="flex-1 overflow-hidden relative"
-            style={{ cursor: dragging ? 'grabbing' : 'grab' }}
-            onWheel={(e) => {
-              e.preventDefault()
-              setZoom(z => Math.min(8, Math.max(0.1, z * (e.deltaY > 0 ? 0.9 : 1.1))))
-            }}
-            onMouseDown={(e) => { setDragging(true); setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y }) }}
-            onMouseMove={(e) => { if (dragging) setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y }) }}
-            onMouseUp={() => setDragging(false)}
-            onMouseLeave={() => setDragging(false)}
-          >
-            <div className="absolute inset-0 flex items-center justify-center">
-              <img
-                src={imageUrl}
-                alt={record.fileName}
-                className="max-w-none select-none"
-                style={{
-                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-                  transformOrigin: 'center center',
-                  transition: dragging ? 'none' : 'transform 0.15s ease-out',
-                }}
-                draggable={false}
-              />
+          {imageUrl ? (
+            <div className="flex-1 overflow-hidden relative"
+              style={{ cursor: dragging ? 'grabbing' : 'grab' }}
+              onWheel={(e) => {
+                e.preventDefault()
+                setZoom(z => Math.min(8, Math.max(0.1, z * (e.deltaY > 0 ? 0.9 : 1.1))))
+              }}
+              onMouseDown={(e) => { setDragging(true); setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y }) }}
+              onMouseMove={(e) => { if (dragging) setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y }) }}
+              onMouseUp={() => setDragging(false)}
+              onMouseLeave={() => setDragging(false)}
+            >
+              <div className="absolute inset-0 flex items-center justify-center">
+                <img
+                  src={imageUrl}
+                  alt={record.fileName}
+                  className="max-w-none select-none"
+                  style={{
+                    transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                    transformOrigin: 'center center',
+                    transition: dragging ? 'none' : 'transform 0.15s ease-out',
+                  }}
+                  draggable={false}
+                />
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <Eye size={32} className="mx-auto mb-3 text-gray-700" />
+                <p className="text-sm text-gray-500">Aucune image disponible pour ce plan</p>
+                <p className="text-[11px] text-gray-600 mt-1">Re-importez le plan pour generer la preview</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
