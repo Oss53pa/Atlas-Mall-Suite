@@ -40,7 +40,7 @@ const volumes: VolumeConfig[] = [
       { value: '12', label: 'Preneurs' },
       { value: '92%', label: 'Occupation' },
     ],
-    route: '/cosmos-angre/vol1',
+    route: '/projects/cosmos-angre/vol1',
   },
   {
     id: 'vol2',
@@ -59,7 +59,7 @@ const volumes: VolumeConfig[] = [
       { value: '120+', label: 'Caméras' },
       { value: '24/7', label: 'Couverture' },
     ],
-    route: '/cosmos-angre/vol2',
+    route: '/projects/cosmos-angre/vol2',
   },
   {
     id: 'vol3',
@@ -78,7 +78,7 @@ const volumes: VolumeConfig[] = [
       { value: '3', label: 'Niveaux' },
       { value: '\u221e', label: 'Expériences' },
     ],
-    route: '/cosmos-angre/vol3',
+    route: '/projects/cosmos-angre/vol3',
   },
 ]
 
@@ -231,7 +231,7 @@ function VolumeCard({ vol }: { vol: VolumeConfig }) {
 
 export default function VolumesNav() {
   return (
-    <div className="min-h-screen text-white relative overflow-hidden" style={{ background: '#060a13' }}>
+    <div className="h-full text-white relative overflow-auto" style={{ background: '#060a13' }}>
       {/* Background gradient mesh */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full opacity-[0.03] blur-[120px]"
@@ -248,33 +248,7 @@ export default function VolumesNav() {
           }} />
       </div>
 
-      {/* Header */}
-      <header className="relative border-b border-white/[0.04] backdrop-blur-md" style={{ background: 'rgba(6,10,19,0.8)' }}>
-        <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3.5">
-            <div className="relative">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-glow-purple">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
-              <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 opacity-20 blur-md" />
-            </div>
-            <div>
-              <h1 className="text-[15px] font-bold tracking-tight text-white">Atlas Mall Suite</h1>
-              <p className="text-[11px] text-gray-500 font-medium">Praedium Tech &middot; Atlas Studio</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-glow" />
-              <span className="text-[10px] font-semibold text-emerald-400 tracking-wide">EN LIGNE</span>
-            </div>
-            <span className="rounded-lg bg-white/[0.03] border border-white/[0.06] px-3 py-1.5 text-[11px] font-mono text-gray-500 flex items-center gap-1.5">
-              <Zap size={11} className="text-purple-400" />
-              Proph3t Engine
-            </span>
-          </div>
-        </div>
-      </header>
+      {/* Header removed — now in AppLayout topbar */}
 
       {/* Project info */}
       <div className="relative mx-auto max-w-6xl px-6 pt-12 pb-2">

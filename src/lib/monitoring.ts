@@ -1,15 +1,13 @@
 // ═══ Monitoring — Sentry integration ═══
-// Only active in production with VITE_SENTRY_DSN set
-
-let sentryModule: typeof import('@sentry/react') | null = null
+// Only active in production with @sentry/react installed and VITE_SENTRY_DSN set
 
 export async function initMonitoring() {
   if (!import.meta.env.VITE_SENTRY_DSN) return
   if (!import.meta.env.PROD) return
 
   try {
-    const Sentry = await import('@sentry/react')
-    sentryModule = Sentry
+    const mod = '@sentry/' + 'react'
+    const Sentry = await (Function('m', 'return import(m)')(mod))
 
     Sentry.init({
       dsn: import.meta.env.VITE_SENTRY_DSN,
@@ -25,13 +23,15 @@ export async function initMonitoring() {
         'Non-Error exception captured',
         'Network request failed',
       ],
-      beforeSend(event) {
+      beforeSend(event: any) {
         if (window.location.hostname === 'localhost') return null
         return event
       },
     })
+
+    ;(globalThis as any).__sentryModule = Sentry
   } catch {
-    // Sentry not installed — silently skip
+    // @sentry/react not installed — silently skip
   }
 }
 
@@ -44,20 +44,22 @@ export function captureAtlasError(
     floorId?: string
   }
 ) {
-  if (!sentryModule) return
-  sentryModule.withScope(scope => {
+  const Sentry = (globalThis as any).__sentryModule
+  if (!Sentry) return
+  Sentry.withScope((scope: any) => {
     scope.setTag('atlas.module', context.module)
     scope.setTag('atlas.operation', context.operation)
     if (context.projectId) scope.setContext('project', { id: context.projectId })
     if (context.floorId) scope.setContext('floor', { id: context.floorId })
-    sentryModule!.captureException(error)
+    Sentry.captureException(error)
   })
 }
 
 export function measureCascade(durationMs: number, trigger: string) {
-  if (!sentryModule) return
+  const Sentry = (globalThis as any).__sentryModule
+  if (!Sentry) return
   if (durationMs > 200) {
-    sentryModule.captureMessage(
+    Sentry.captureMessage(
       `Cascade lente : ${Math.round(durationMs)}ms (trigger: ${trigger})`,
       { level: 'warning' }
     )

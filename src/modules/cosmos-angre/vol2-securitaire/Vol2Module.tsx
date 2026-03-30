@@ -61,6 +61,7 @@ import ScoreGauge from '../shared/components/ScoreGauge'
 import DXFImportModal from './components/DXFImportModal'
 import Model3DImportModal from './components/Model3DImportModal'
 import { useCascade } from './hooks/useCascade'
+import SaveStatusIndicator, { type SaveStatus } from '../shared/components/SaveStatusIndicator'
 
 import type { ClippingConfig, ClippingAxis, NavMode } from './components/FloorPlan3D'
 
@@ -91,7 +92,7 @@ const VmsIntegrationLazy = lazy(() => import('./sections/VmsIntegration'))
 const PlanImportsSectionLazy = lazy(() => import('../shared/components/PlanImportsSection'))
 const View3DSectionLazy = lazy(() => import('../shared/view3d/View3DSection'))
 
-type Vol2Tab = 'plan' | '3d' | 'analyse' | 'rapport' | 'simulation' | 'budget' | 'chat' | 'introduction' | 'kpis' | 'perimetre' | 'acces' | 'video' | 'incendie' | 'procedures' | 'organigramme' | 'control_room' | 'incidents' | 'risk_matrix' | 'whatif' | 'staffing' | 'rondes' | 'compliance' | 'audit_existant' | 'vms' | 'plan_imports'
+type Vol2Tab = 'plan' | 'analyse' | 'rapport' | 'simulation' | 'budget' | 'chat' | 'introduction' | 'kpis' | 'perimetre' | 'acces' | 'video' | 'incendie' | 'procedures' | 'organigramme' | 'control_room' | 'incidents' | 'risk_matrix' | 'whatif' | 'staffing' | 'rondes' | 'compliance' | 'audit_existant' | 'vms' | 'plan_imports'
 
 // ─── Sidebar nav definition ─────────────────────────────────
 
@@ -153,7 +154,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'plan_imports', label: 'Plans importés', icon: Upload },
       { id: 'plan', label: 'Plan interactif', icon: Map },
-      { id: '3d', label: 'Vue 3D', icon: Box },
       { id: 'analyse', label: 'Analyse Proph3t', icon: BarChart2 },
       { id: 'simulation', label: 'Simulation', icon: Play },
       { id: 'budget', label: 'Budget CAPEX', icon: DollarSign },
@@ -262,6 +262,9 @@ export default function Vol2Module() {
   useEffect(() => {
     void hydrateFromSupabase('cosmos-angre')
   }, [hydrateFromSupabase])
+
+  const hydrationError = useVol2Store((s) => s.hydrationError)
+  const saveStatus: SaveStatus = isHydrating ? 'saving' : hydrationError ? 'offline' : 'saved'
 
   // ── Store selectors ──────────────────────────────────────
   const floors = useVol2Store((s) => s.floors)
@@ -493,12 +496,12 @@ export default function Vol2Module() {
   // ═══ RENDER ═══════════════════════════════════════════════
 
   return (
-    <div className="h-screen flex flex-col bg-surface-0 text-white overflow-hidden">
+    <div className="h-full flex flex-col bg-surface-0 text-white overflow-hidden">
       {/* ── Header ──────────────────────────────────────────── */}
       <header className="flex-none h-14 border-b border-white/[0.04] bg-surface-1/80 backdrop-blur-md flex items-center px-4 gap-4">
         {/* Back button */}
         <button
-          onClick={() => navigate('/cosmos-angre')}
+          onClick={() => navigate('/projects/cosmos-angre')}
           className="flex items-center gap-1.5 text-[13px] text-gray-500 hover:text-white transition-colors duration-200"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -729,6 +732,11 @@ export default function Vol2Module() {
               </div>
             ))}
           </nav>
+
+          {/* Save status */}
+          <div className="px-4 py-2 border-t border-white/[0.04]">
+            <SaveStatusIndicator status={saveStatus} />
+          </div>
         </aside>
 
         {/* ── Content area ─────────────────────────────────── */}
@@ -1036,11 +1044,6 @@ export default function Vol2Module() {
               {activeTab === 'chat' && <ChatSectionLazy />}
               {activeTab === 'simulation' && <SimulationSectionLazy />}
               {activeTab === 'budget' && <BudgetSectionLazy />}
-              {activeTab === '3d' && <View3DSectionLazy data={{
-                sourceVolume: 'vol2',
-                floors, zones, transitions,
-                cameras, doors, blindSpots,
-              }} />}
               {activeTab === 'introduction' && <IntroSectionLazy />}
               {activeTab === 'kpis' && <KpisSectionLazy />}
               {activeTab === 'perimetre' && <PerimetreSectionLazy />}

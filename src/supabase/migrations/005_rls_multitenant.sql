@@ -6,7 +6,7 @@ create table if not exists project_members (
   projet_id uuid references projets(id) on delete cascade not null,
   user_id uuid references auth.users(id) on delete cascade not null,
   role text not null default 'viewer'
-    check (role in ('owner', 'editor', 'viewer', 'security_manager', 'commercial_manager')),
+    check (role in ('owner', 'editor', 'viewer', 'security_manager', 'commercial_manager', 'external_validator', 'tenant_access')),
   invited_by uuid references auth.users(id),
   created_at timestamptz default now(),
   unique(projet_id, user_id)

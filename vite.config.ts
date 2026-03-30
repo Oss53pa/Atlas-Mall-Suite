@@ -17,11 +17,15 @@ export default defineConfig({
     // COOP/COEP only needed in production for SharedArrayBuffer
     // In dev they break HMR websocket and cause duplicate React instances
     hmr: true,
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+    },
   },
   build: {
     target: 'es2020',
     sourcemap: true,
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 500,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -29,19 +33,45 @@ export default defineConfig({
           if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/zustand')) {
             return 'react-vendor'
           }
-          if (id.includes('three'))           return 'three'
-          if (id.includes('pdfjs-dist'))      return 'pdfjs'
-          if (id.includes('web-ifc'))         return 'web-ifc'
-          if (id.includes('dxf-parser'))      return 'dxf-parser'
-          if (id.includes('recharts') || id.includes('d3')) return 'charts'
-          if (id.includes('@supabase'))       return 'supabase'
-          if (id.includes('jspdf'))           return 'jspdf'
-          if (id.includes('docx'))            return 'docx'
+          // Volume code splitting
+          if (id.includes('vol1-commercial'))    return 'vol1'
+          if (id.includes('vol2-securitaire'))   return 'vol2'
+          if (id.includes('vol3-parcours'))      return 'vol3'
+          if (id.includes('view3d') || id.includes('vol-3d')) return 'view3d'
+          if (id.includes('scenarios'))          return 'scenarios'
+          if (id.includes('dce'))                return 'dce'
+          if (id.includes('validation'))         return 'validation'
+          if (id.includes('planReader'))          return 'plan-reader'
+          // Vendor chunks
+          if (id.includes('three'))              return 'vendor-three'
+          if (id.includes('pdfjs-dist'))         return 'vendor-pdfjs'
+          if (id.includes('web-ifc'))            return 'vendor-web-ifc'
+          if (id.includes('dxf-parser'))         return 'vendor-dxf'
+          if (id.includes('recharts') || id.includes('d3')) return 'vendor-charts'
+          if (id.includes('@supabase'))          return 'vendor-supabase'
+          if (id.includes('@tanstack'))          return 'vendor-query'
+          if (id.includes('jspdf'))              return 'vendor-jspdf'
+          if (id.includes('docx'))               return 'vendor-docx'
         },
       },
     },
   },
   optimizeDeps: {
     exclude: ['web-ifc'],
+  },
+  // ═══ Vitest configuration ═══
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/__tests__/setup.ts'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    coverage: {
+      provider: 'v8',
+      include: ['src/modules/cosmos-angre/shared/**/*.ts'],
+      thresholds: {
+        functions: 65,
+        lines: 60,
+      },
+    },
   },
 });

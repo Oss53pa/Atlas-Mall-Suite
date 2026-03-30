@@ -47,6 +47,7 @@ import Proph3tChat from '../shared/components/Proph3tChat'
 import EntityPanel from '../shared/components/EntityPanel'
 import ToolbarButton from '../shared/components/ToolbarButton'
 import ScoreGauge from '../shared/components/ScoreGauge'
+import SaveStatusIndicator, { type SaveStatus } from '../shared/components/SaveStatusIndicator'
 import HeatmapOverlay, { type ZoneHeatData } from './components/HeatmapOverlay'
 import GeoNotificationPanel, { type GeoNotification } from './components/GeoNotificationPanel'
 import VisitReplay, { type VisitPath } from './components/VisitReplay'
@@ -82,7 +83,6 @@ const View3DSectionLazy = lazy(() => import('../shared/view3d/View3DSection'))
 
 type Vol3Tab =
   | 'plan'
-  | '3d'
   | 'plan_imports'
   | 'parcours'
   | 'wayfinding'
@@ -210,7 +210,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'plan_imports', label: 'Plans importés', icon: Upload },
       { id: 'plan', label: 'Plan interactif', icon: Map },
-      { id: '3d', label: 'Vue 3D', icon: Box },
       { id: 'parcours', label: 'Parcours client', icon: Route },
       { id: 'wayfinding', label: 'Wayfinding', icon: Navigation },
       { id: 'signaletique', label: 'Signalétique (plan)', icon: Signpost },
@@ -369,6 +368,8 @@ export default function Vol3Module() {
     void store.hydrateFromSupabase('cosmos-angre')
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const saveStatus: SaveStatus = store.isHydrating ? 'saving' : store.hydrationError ? 'offline' : 'saved'
 
   const {
     floors,
@@ -650,12 +651,12 @@ export default function Vol3Module() {
   // ── Render ────────────────────────────────────────────────
 
   return (
-    <div className="h-screen flex flex-col bg-surface-0 text-white overflow-hidden">
+    <div className="h-full flex flex-col bg-surface-0 text-white overflow-hidden">
       {/* ═══ Header ═══ */}
       <header className="flex-none h-14 border-b border-white/[0.04] bg-surface-1/80 backdrop-blur-md flex items-center px-4 gap-4">
         {/* Back button */}
         <button
-          onClick={() => navigate('/cosmos-angre')}
+          onClick={() => navigate('/projects/cosmos-angre')}
           className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -813,6 +814,11 @@ export default function Vol3Module() {
               )
             })}
           </nav>
+
+          {/* Save status */}
+          <div className="px-4 py-2 border-t border-white/[0.04]">
+            <SaveStatusIndicator status={saveStatus} />
+          </div>
         </aside>
 
         {/* ── Content area ─────────────────────────────────── */}
@@ -1246,12 +1252,6 @@ export default function Vol3Module() {
           <main className="flex-1 min-w-0 overflow-y-auto" style={{ background: '#080c14' }}>
             <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="w-5 h-5 animate-spin text-gray-500" /></div>}>
               {activeTab === 'intro' && <IntroSectionLazy />}
-              {activeTab === '3d' && <View3DSectionLazy data={{
-                sourceVolume: 'vol3',
-                floors: store.floors, zones: store.zones, transitions: store.transitions,
-                pois: store.pois, signageItems: store.signageItems,
-                moments: store.moments.map(m => ({ id: m.id, x: m.x, y: m.y, floorId: m.floorId, number: m.number, name: m.name })),
-              }} />}
               {activeTab === 'journeymap' && <JourneyMapSectionLazy />}
               {activeTab === 'parcoursvisuel' && <SwimlaneSectionLazy />}
               {activeTab === 'swimlane' && <SwimlaneSectionLazy />}

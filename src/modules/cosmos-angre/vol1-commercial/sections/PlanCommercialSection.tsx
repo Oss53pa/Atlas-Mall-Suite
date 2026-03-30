@@ -1,8 +1,12 @@
 // ═══ VOL.1 — Plan Interactif Commercial (F1.2) ═══
 
-import React, { useMemo, useCallback, useRef } from 'react'
+import React, { useState, useMemo, useCallback, useRef, lazy, Suspense } from 'react'
 import { useVol1Store } from '../store/vol1Store'
 import type { CommercialSpace, SpaceStatus, Sector } from '../store/vol1Types'
+import { Grid3X3, Box, Sparkles, Loader2, CalendarDays } from 'lucide-react'
+import { getSpacePhaseStatus, PHASE_STATUS_COLORS, type PhaseSpaceStatus } from '../engines/phasingEngine'
+
+const View3DSection = lazy(() => import('../../shared/view3d/View3DSection'))
 
 const statusColors: Record<SpaceStatus, string> = {
   occupied: '#22c55e',
@@ -33,8 +37,13 @@ export default function PlanCommercialSection() {
   const setFilterStatus = useVol1Store(s => s.setFilterStatus)
   const setSearch = useVol1Store(s => s.setSearch)
 
+  const phases = useVol1Store(s => s.phases)
+  const activePhaseId = useVol1Store(s => s.activePhaseId)
+  const setActivePhase = useVol1Store(s => s.setActivePhase)
+
   const floors = ['B1', 'RDC', 'R+1']
   const [activeFloor, setActiveFloor] = React.useState('RDC')
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d')
 
   const filteredSpaces = useMemo(() => {
     return spaces.filter(s => {
@@ -105,47 +114,131 @@ export default function PlanCommercialSection() {
       </div>
 
       {/* Canvas */}
-      <div className="flex-1 overflow-auto p-6">
-        <svg width={800} height={500} className="mx-auto" style={{ background: '#0a0f1a', borderRadius: 12, border: '1px solid #1e2a3a' }}>
-          {/* Grid lines */}
-          {Array.from({ length: 20 }).map((_, i) => (
-            <React.Fragment key={i}>
-              <line x1={i * 40} y1={0} x2={i * 40} y2={500} stroke="#1e2a3a" strokeWidth={0.5} />
-              <line x1={0} y1={i * 25} x2={800} y2={i * 25} stroke="#1e2a3a" strokeWidth={0.5} />
-            </React.Fragment>
-          ))}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* View mode toggle */}
+        <div className="flex items-center gap-2 px-4 py-2 border-b" style={{ borderColor: '#1e2a3a', background: '#0b1120' }}>
+          <div className="flex items-center gap-0.5 bg-gray-800 rounded-lg p-0.5">
+            <button
+              onClick={() => setViewMode('2d')}
+              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
+                viewMode === '2d' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              <Grid3X3 className="w-3 h-3" />
+              2D
+            </button>
+            <button
+              onClick={() => setViewMode('3d')}
+              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
+                viewMode === '3d' ? 'bg-purple-700 text-white' : 'text-gray-500 hover:text-gray-300'
+              }`}
+              title="Vue 3D : Isométrique, Perspective, Semi-réaliste"
+            >
+              <Sparkles className="w-3 h-3" />
+              3D
+            </button>
+          </div>
+          <span className="text-[10px] text-slate-500">
+            {viewMode === '2d' ? 'Plan interactif 2D' : 'Vue 3D isometrique · perspective · realiste'}
+          </span>
 
-          {/* Spaces */}
-          {filteredSpaces.map(sp => {
-            const t = tenants.find(t2 => t2.id === sp.tenantId)
-            const color = statusColors[sp.status]
-            const isSelected = sp.id === selectedSpaceId
-            return (
-              <g key={sp.id} onClick={() => selectSpace(sp.id)} style={{ cursor: 'pointer' }}>
-                <rect
-                  x={sp.x * SCALE + PADDING} y={sp.y * SCALE + PADDING}
-                  width={sp.w * SCALE} height={sp.h * SCALE}
-                  fill={`${color}20`} stroke={isSelected ? '#ffffff' : color}
-                  strokeWidth={isSelected ? 2 : 1} rx={4}
-                />
-                <text
-                  x={sp.x * SCALE + PADDING + (sp.w * SCALE) / 2}
-                  y={sp.y * SCALE + PADDING + (sp.h * SCALE) / 2 - 6}
-                  textAnchor="middle" fill={color} fontSize={10} fontWeight="bold"
-                >
-                  {t ? t.brandName : sp.reference}
-                </text>
-                <text
-                  x={sp.x * SCALE + PADDING + (sp.w * SCALE) / 2}
-                  y={sp.y * SCALE + PADDING + (sp.h * SCALE) / 2 + 8}
-                  textAnchor="middle" fill="#4a5568" fontSize={8}
-                >
-                  {sp.areaSqm} m²
-                </text>
-              </g>
-            )
-          })}
-        </svg>
+          {/* Phase switcher */}
+          <div className="ml-auto flex items-center gap-1">
+            <CalendarDays size={12} className="text-slate-600" />
+            <button
+              onClick={() => setActivePhase(null)}
+              className={`px-2 py-0.5 rounded text-[9px] font-medium transition-colors ${
+                activePhaseId === null ? 'bg-gray-700 text-white' : 'text-slate-600 hover:text-slate-400'
+              }`}
+            >
+              Actuel
+            </button>
+            {phases.map(p => (
+              <button
+                key={p.id}
+                onClick={() => setActivePhase(p.id)}
+                className={`px-2 py-0.5 rounded text-[9px] font-medium transition-colors ${
+                  activePhaseId === p.id ? 'text-white' : 'text-slate-600 hover:text-slate-400'
+                }`}
+                style={activePhaseId === p.id ? { background: `${p.color}30`, color: p.color } : undefined}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {viewMode === '3d' ? (
+          <Suspense fallback={
+            <div className="flex-1 flex items-center justify-center" style={{ background: '#080c14' }}>
+              <div className="flex items-center gap-2 text-gray-500 text-sm">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Chargement Vue 3D...
+              </div>
+            </div>
+          }>
+            <View3DSection data={{
+              sourceVolume: 'vol1',
+              floors: [
+                { id: 'floor-b1', level: 'B1' as any, order: 0, widthM: 180, heightM: 120, zones: [], transitions: [] },
+                { id: 'floor-rdc', level: 'RDC' as any, order: 1, widthM: 200, heightM: 140, zones: [], transitions: [] },
+                { id: 'floor-r1', level: 'R+1' as any, order: 2, widthM: 200, heightM: 140, zones: [], transitions: [] },
+              ],
+              zones: [],
+              transitions: [],
+              tenants: spaces.map(s => ({
+                spaceId: s.id,
+                brandName: tenants.find(t => t.id === s.tenantId)?.brandName ?? '',
+                sector: tenants.find(t => t.id === s.tenantId)?.sector ?? '',
+                status: s.status,
+                surfaceM2: s.areaSqm ?? 0,
+              })),
+            }} />
+          </Suspense>
+        ) : (
+          <div className="flex-1 overflow-auto p-6">
+            <svg width={800} height={500} className="mx-auto" style={{ background: '#0a0f1a', borderRadius: 12, border: '1px solid #1e2a3a' }}>
+              {/* Grid lines */}
+              {Array.from({ length: 20 }).map((_, i) => (
+                <React.Fragment key={i}>
+                  <line x1={i * 40} y1={0} x2={i * 40} y2={500} stroke="#1e2a3a" strokeWidth={0.5} />
+                  <line x1={0} y1={i * 25} x2={800} y2={i * 25} stroke="#1e2a3a" strokeWidth={0.5} />
+                </React.Fragment>
+              ))}
+
+              {/* Spaces */}
+              {filteredSpaces.map(sp => {
+                const t = tenants.find(t2 => t2.id === sp.tenantId)
+                const color = statusColors[sp.status]
+                const isSelected = sp.id === selectedSpaceId
+                return (
+                  <g key={sp.id} onClick={() => selectSpace(sp.id)} style={{ cursor: 'pointer' }}>
+                    <rect
+                      x={sp.x * SCALE + PADDING} y={sp.y * SCALE + PADDING}
+                      width={sp.w * SCALE} height={sp.h * SCALE}
+                      fill={`${color}20`} stroke={isSelected ? '#ffffff' : color}
+                      strokeWidth={isSelected ? 2 : 1} rx={4}
+                    />
+                    <text
+                      x={sp.x * SCALE + PADDING + (sp.w * SCALE) / 2}
+                      y={sp.y * SCALE + PADDING + (sp.h * SCALE) / 2 - 6}
+                      textAnchor="middle" fill={color} fontSize={10} fontWeight="bold"
+                    >
+                      {t ? t.brandName : sp.reference}
+                    </text>
+                    <text
+                      x={sp.x * SCALE + PADDING + (sp.w * SCALE) / 2}
+                      y={sp.y * SCALE + PADDING + (sp.h * SCALE) / 2 + 8}
+                      textAnchor="middle" fill="#4a5568" fontSize={8}
+                    >
+                      {sp.areaSqm} m²
+                    </text>
+                  </g>
+                )
+              })}
+            </svg>
+          </div>
+        )}
       </div>
 
       {/* Right panel — selected space detail */}

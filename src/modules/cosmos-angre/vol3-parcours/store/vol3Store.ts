@@ -1,6 +1,7 @@
 // ═══ VOL.3 PARCOURS CLIENT — Zustand Store ═══
 
 import { create } from 'zustand'
+import { shouldUseMockData } from '../../shared/useMockData'
 import type {
   Floor, Zone, TransitionNode, POI, SignageItem,
   MomentCle, VisitorProfile, NavigationGraph, PathResult,
@@ -1078,8 +1079,8 @@ export const useVol3Store = create<Vol3State>()((set) => ({
           moments: generateParcours(data.zones, data.pois),
           isHydrating: false,
         })
-      } else {
-        // No data in Supabase — fall back to mock data for demo
+      } else if (shouldUseMockData()) {
+        // No data in Supabase — fall back to mock data for demo (dev only)
         set({
           projectId: projetId,
           floors: MOCK_FLOORS,
@@ -1091,20 +1092,30 @@ export const useVol3Store = create<Vol3State>()((set) => ({
           moments: MOCK_MOMENTS,
           isHydrating: false,
         })
+      } else {
+        // Production: start empty — user will import or create data
+        set({ projectId: projetId, isHydrating: false })
       }
     } catch (err) {
-      console.warn('[Vol3Store] Hydration failed, using mock data:', err)
-      set({
-        floors: MOCK_FLOORS,
-        activeFloorId: 'floor-rdc',
-        transitions: MOCK_TRANSITIONS,
-        zones: MOCK_ZONES,
-        pois: MOCK_POIS,
-        signageItems: MOCK_SIGNAGE,
-        moments: MOCK_MOMENTS,
-        isHydrating: false,
-        hydrationError: err instanceof Error ? err.message : 'Erreur de chargement',
-      })
+      console.warn('[Vol3Store] Hydration failed:', err)
+      if (shouldUseMockData()) {
+        set({
+          floors: MOCK_FLOORS,
+          activeFloorId: 'floor-rdc',
+          transitions: MOCK_TRANSITIONS,
+          zones: MOCK_ZONES,
+          pois: MOCK_POIS,
+          signageItems: MOCK_SIGNAGE,
+          moments: MOCK_MOMENTS,
+          isHydrating: false,
+          hydrationError: err instanceof Error ? err.message : 'Erreur de chargement',
+        })
+      } else {
+        set({
+          isHydrating: false,
+          hydrationError: err instanceof Error ? err.message : 'Erreur de chargement',
+        })
+      }
     }
   },
 

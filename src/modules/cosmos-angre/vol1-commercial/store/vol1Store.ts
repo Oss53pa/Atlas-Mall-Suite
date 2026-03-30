@@ -2,6 +2,8 @@
 
 import { create } from 'zustand'
 import type { Tenant, CommercialSpace, SpaceTenantHistory, LeaseAlert, SpaceStatus, Sector, OccupancyStats } from './vol1Types'
+import { shouldUseMockData } from '../../shared/useMockData'
+import { type Phase, DEFAULT_PHASES } from '../engines/phasingEngine'
 
 // ─── Mock Tenants ──────────────────────────────────────────
 
@@ -147,6 +149,10 @@ interface Vol1State {
   filterSector: Sector | 'all'
   filterStatus: SpaceStatus | 'all'
 
+  // Phasing
+  phases: Phase[]
+  activePhaseId: string | null
+
   selectSpace: (id: string | null) => void
   setSearch: (q: string) => void
   setFilterSector: (s: Sector | 'all') => void
@@ -154,18 +160,29 @@ interface Vol1State {
   updateTenant: (id: string, data: Partial<Tenant>) => void
   assignTenant: (spaceId: string, tenantId: string) => void
   vacateSpace: (spaceId: string) => void
+  setActivePhase: (phaseId: string | null) => void
+  updatePhase: (id: string, data: Partial<Phase>) => void
+  addPhase: (phase: Phase) => void
+  removePhase: (id: string) => void
 }
 
+const _useMock = shouldUseMockData()
+const _initTenants = _useMock ? MOCK_TENANTS : []
+const _initSpaces = _useMock ? MOCK_SPACES : []
+
 export const useVol1Store = create<Vol1State>((set, get) => ({
-  tenants: MOCK_TENANTS,
-  spaces: MOCK_SPACES,
+  tenants: _initTenants,
+  spaces: _initSpaces,
   history: [],
-  alerts: generateAlerts(MOCK_TENANTS, MOCK_SPACES),
-  occupancy: computeOccupancy(MOCK_SPACES, MOCK_TENANTS),
+  alerts: generateAlerts(_initTenants, _initSpaces),
+  occupancy: computeOccupancy(_initSpaces, _initTenants),
   selectedSpaceId: null,
   searchQuery: '',
   filterSector: 'all',
   filterStatus: 'all',
+
+  phases: DEFAULT_PHASES,
+  activePhaseId: null,
 
   selectSpace: (id) => set({ selectedSpaceId: id }),
   setSearch: (q) => set({ searchQuery: q }),
@@ -188,6 +205,20 @@ export const useVol1Store = create<Vol1State>((set, get) => ({
     const spaces = get().spaces.map(s => s.id === spaceId ? { ...s, tenantId: null, status: 'vacant' as SpaceStatus } : s)
     const tenants = get().tenants
     set({ spaces, alerts: generateAlerts(tenants, spaces), occupancy: computeOccupancy(spaces, tenants) })
+  },
+
+  setActivePhase: (phaseId) => set({ activePhaseId: phaseId }),
+
+  updatePhase: (id, data) => {
+    set({ phases: get().phases.map(p => p.id === id ? { ...p, ...data } : p) })
+  },
+
+  addPhase: (phase) => {
+    set({ phases: [...get().phases, phase] })
+  },
+
+  removePhase: (id) => {
+    set({ phases: get().phases.filter(p => p.id !== id), activePhaseId: get().activePhaseId === id ? null : get().activePhaseId })
   },
 }))
 

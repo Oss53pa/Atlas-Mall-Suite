@@ -44,10 +44,10 @@ export default function Vol3DModule() {
   const viewProps = { floors, zones, cameras, doors, pois, signageItems, transitions, config }
 
   return (
-    <div className="flex h-screen" style={{ background: '#080c14', color: '#e2e8f0' }}>
+    <div className="flex h-full" style={{ background: '#080c14', color: '#e2e8f0' }}>
       {/* Sidebar */}
       <aside className="w-64 flex-shrink-0 border-r border-white/10 flex flex-col overflow-y-auto" style={{ background: '#0b1120' }}>
-        <button onClick={() => navigate('/cosmos-angre')} className="flex items-center gap-2 px-4 py-3 text-xs text-slate-400 hover:text-white border-b border-white/5">
+        <button onClick={() => navigate('/projects/cosmos-angre')} className="flex items-center gap-2 px-4 py-3 text-xs text-slate-400 hover:text-white border-b border-white/5">
           <ArrowLeft size={14} /> Atlas Mall Suite
         </button>
         <div className="px-4 py-3 border-b border-white/5">
