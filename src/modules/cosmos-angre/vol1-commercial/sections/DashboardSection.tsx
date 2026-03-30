@@ -3,27 +3,18 @@
 import React, { useMemo } from 'react'
 import { Building2, TrendingUp, TrendingDown, DollarSign, Users, BarChart2 } from 'lucide-react'
 import { useVol1Store } from '../store/vol1Store'
-import type { Sector } from '../store/vol1Types'
-
-const sectorLabels: Record<Sector, string> = {
-  mode: 'Mode', restauration: 'Restauration', services: 'Services', loisirs: 'Loisirs',
-  alimentaire: 'Alimentaire', beaute: 'Beauté', electronique: 'Electronique', bijouterie: 'Bijouterie',
-  banque: 'Banque', sante: 'Santé', enfants: 'Enfants', maison: 'Maison', sport: 'Sport',
-}
-
-const sectorColors: Record<string, string> = {
-  mode: '#ec4899', restauration: '#f59e0b', services: '#38bdf8', loisirs: '#8b5cf6',
-  alimentaire: '#22c55e', beaute: '#f472b6', electronique: '#06b6d4', bijouterie: '#fbbf24',
-  banque: '#6366f1', sante: '#ef4444', enfants: '#a78bfa', maison: '#14b8a6', sport: '#f97316',
-}
-
-const formatFcfa = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
+import { formatFcfa } from '../../shared/utils/formatting'
+import { SECTOR_LABELS as sectorLabels, SECTOR_COLORS as sectorColors } from '../../shared/constants/sectorConfig'
+import { StatCard, StatCardGrid } from '../../shared/components/StatCard'
+import { Panel } from '../../shared/components/SectionLayout'
 
 export default function DashboardSection() {
   const occupancy = useVol1Store(s => s.occupancy)
   const alerts = useVol1Store(s => s.alerts)
+  const tenants = useVol1Store(s => s.tenants)
 
   const criticalAlerts = alerts.filter(a => a.severity === 'critical')
+  const activeTenantCount = tenants.filter(t => t.status === 'actif').length
 
   // Monthly evolution (mock)
   const monthlyOcc = useMemo(() => [
@@ -44,33 +35,17 @@ export default function DashboardSection() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: 'Taux d\'occupation', value: `${occupancy.occupancyRate}%`, icon: Building2, color: '#22c55e', sub: `${formatFcfa(occupancy.occupiedGla)} m² / ${formatFcfa(occupancy.totalGla)} m²` },
-          { label: 'GLA vacante', value: `${formatFcfa(occupancy.vacantGla)} m²`, icon: BarChart2, color: '#ef4444', sub: `${occupancy.vacantByDuration.length} cellules` },
-          { label: 'Loyer encaissé / an', value: `${formatFcfa(occupancy.totalCollectedRent)} F`, icon: DollarSign, color: '#f59e0b', sub: `Potentiel : ${formatFcfa(occupancy.totalPotentialRent)} F` },
-          { label: 'Preneurs actifs', value: String(useVol1Store.getState().tenants.filter(t => t.status === 'actif').length), icon: Users, color: '#38bdf8', sub: `${criticalAlerts.length} alertes critiques` },
-        ].map((kpi) => {
-          const Icon = kpi.icon
-          return (
-            <div key={kpi.label} className="rounded-xl p-5" style={{ background: '#141e2e', border: '1px solid #1e2a3a' }}>
-              <div className="flex items-center justify-between mb-3">
-                <Icon size={20} style={{ color: kpi.color }} />
-                <TrendingUp size={14} style={{ color: '#22c55e' }} />
-              </div>
-              <p className="text-2xl font-bold text-white">{kpi.value}</p>
-              <p className="text-[12px] text-slate-400 mt-1">{kpi.label}</p>
-              <p className="text-[10px] mt-2" style={{ color: '#4a5568' }}>{kpi.sub}</p>
-            </div>
-          )
-        })}
-      </div>
+      <StatCardGrid columns={4}>
+        <StatCard label="Taux d'occupation" value={`${occupancy.occupancyRate}%`} icon={Building2} color="#22c55e" sub={`${formatFcfa(occupancy.occupiedGla)} m² / ${formatFcfa(occupancy.totalGla)} m²`} />
+        <StatCard label="GLA vacante" value={`${formatFcfa(occupancy.vacantGla)} m²`} icon={BarChart2} color="#ef4444" sub={`${occupancy.vacantByDuration.length} cellules`} />
+        <StatCard label="Loyer encaisse / an" value={`${formatFcfa(occupancy.totalCollectedRent)} F`} icon={DollarSign} color="#f59e0b" sub={`Potentiel : ${formatFcfa(occupancy.totalPotentialRent)} F`} />
+        <StatCard label="Preneurs actifs" value={activeTenantCount} icon={Users} color="#38bdf8" sub={`${criticalAlerts.length} alertes critiques`} />
+      </StatCardGrid>
 
       {/* Two columns: Sector breakdown + Monthly evolution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Sector Breakdown */}
-        <div className="rounded-xl p-5" style={{ background: '#141e2e', border: '1px solid #1e2a3a' }}>
-          <h3 className="text-white font-semibold mb-4">Mix enseigne par secteur</h3>
+        <Panel title="Mix enseigne par secteur">
           <div className="space-y-3">
             {occupancy.sectorBreakdown.map((s) => (
               <div key={s.sector}>
@@ -84,11 +59,10 @@ export default function DashboardSection() {
               </div>
             ))}
           </div>
-        </div>
+        </Panel>
 
         {/* Monthly Evolution */}
-        <div className="rounded-xl p-5" style={{ background: '#141e2e', border: '1px solid #1e2a3a' }}>
-          <h3 className="text-white font-semibold mb-4">Evolution mensuelle du taux d'occupation</h3>
+        <Panel title="Evolution mensuelle du taux d'occupation">
           <div className="flex items-end gap-3 h-40">
             {monthlyOcc.map((m) => (
               <div key={m.month} className="flex-1 flex flex-col items-center">
@@ -98,11 +72,11 @@ export default function DashboardSection() {
               </div>
             ))}
           </div>
-        </div>
+        </Panel>
       </div>
 
       {/* Floor Breakdown */}
-      <div className="rounded-xl p-5" style={{ background: '#141e2e', border: '1px solid #1e2a3a' }}>
+      <Panel>
         <h3 className="text-white font-semibold mb-4">Occupation par niveau</h3>
         <div className="grid grid-cols-3 gap-4">
           {occupancy.floorBreakdown.map((f) => (
@@ -113,11 +87,10 @@ export default function DashboardSection() {
             </div>
           ))}
         </div>
-      </div>
+      </Panel>
 
       {/* Top vacant spaces */}
-      <div className="rounded-xl p-5" style={{ background: '#141e2e', border: '1px solid #1e2a3a' }}>
-        <h3 className="text-white font-semibold mb-4">Cellules vacantes par durée</h3>
+      <Panel title="Cellules vacantes par duree">
         {occupancy.vacantByDuration.length === 0 ? (
           <p className="text-[13px] text-slate-500">Aucune cellule vacante</p>
         ) : (
@@ -136,12 +109,11 @@ export default function DashboardSection() {
             ))}
           </div>
         )}
-      </div>
+      </Panel>
 
       {/* Alerts */}
       {alerts.length > 0 && (
-        <div className="rounded-xl p-5" style={{ background: '#141e2e', border: '1px solid #1e2a3a' }}>
-          <h3 className="text-white font-semibold mb-4">Alertes ({alerts.length})</h3>
+        <Panel title={`Alertes (${alerts.length})`}>
           <div className="space-y-2">
             {alerts.map((a) => {
               const sevColor = a.severity === 'critical' ? '#ef4444' : a.severity === 'warning' ? '#f59e0b' : '#38bdf8'
@@ -154,7 +126,7 @@ export default function DashboardSection() {
               )
             })}
           </div>
-        </div>
+        </Panel>
       )}
     </div>
   )

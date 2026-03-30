@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { FileText, Download, Table2, FileImage, Presentation, Loader2, CheckCircle } from 'lucide-react'
 import { useVol1Store } from '../store/vol1Store'
+import { formatFcfa } from '../../shared/utils/formatting'
 
 type ExportFormat = 'pdf' | 'xlsx' | 'dwg' | 'pptx'
 
@@ -37,8 +38,6 @@ export default function ExportCommercialSection() {
     setDone(format)
     setTimeout(() => setDone(null), 3000)
   }
-
-  const formatFcfa = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-6">

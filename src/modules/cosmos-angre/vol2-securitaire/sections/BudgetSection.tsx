@@ -1,10 +1,7 @@
 import React, { useMemo } from 'react'
 import { Banknote, Camera, DoorOpen, Signpost, TrendingUp } from 'lucide-react'
 import { useVol2Store } from '../store/vol2Store'
-
-function formatFcfa(n: number): string {
-  return n.toLocaleString('fr-FR') + ' FCFA'
-}
+import { formatFcfaWithUnit as formatFcfa } from '../../shared/utils/formatting'
 
 export default function BudgetSection() {
   const cameras = useVol2Store((s) => s.cameras)

@@ -24,6 +24,7 @@ import {
 } from '../../shared/planReader'
 import type { DimEntity, CalibrationResult, CotationSpec, PlanImportState } from '../../shared/planReader/planReaderTypes'
 import { runCascade as cascadeRun, type CascadeState } from '../../shared/proph3t/cascadeEngine'
+import type { TenantInfo } from '../../shared/proph3t/types'
 import { runMonteCarlo as monteCarloRun, simulateEvacuation } from '../../shared/proph3t/simulationEngine'
 import { optimizeSignaleticsPlacement } from '../../shared/proph3t/signaleticsEngine'
 import { exportASPADPDF } from '../../../export/exportPDFApsad'
@@ -806,15 +807,34 @@ export const useVol2Store = create<Vol2State>()((set) => ({
 
   runCascade: async (trigger) => {
     const s = useVol2Store.getState()
+
+    // Lecture cross-volume : recuperer les tenants Vol.1 pour l'analyse commerciale
+    let vol1Tenants: TenantInfo[] = []
+    try {
+      const { useVol1Store } = await import('../../vol1-commercial/store/vol1Store')
+      const vol1 = useVol1Store.getState()
+      vol1Tenants = vol1.tenants.map(t => ({
+        spaceId: vol1.spaces.find(sp => sp.tenantId === t.id)?.id ?? t.id,
+        name: t.brandName,
+        status: t.status === 'actif' ? 'active' as const : t.status === 'en_negociation' ? 'negotiation' as const : 'vacant' as const,
+        sector: t.sector,
+        rentFcfaM2: t.baseRentFcfa,
+      }))
+    } catch { /* Vol1 non charge — cascade continue sans donnees commerciales */ }
+
     const cascadeState: CascadeState = {
       floors: s.floors, zones: s.zones, cameras: s.cameras,
       doors: s.doors, transitions: s.transitions, signageItems: s.signageItems,
+      tenants: vol1Tenants.length > 0 ? vol1Tenants : undefined,
+      phases: s.phases.length > 0 ? s.phases : undefined,
     }
     const result = await cascadeRun(cascadeState, trigger)
     set({
       blindSpots: result.blindSpots,
       score: result.score,
       coverageByFloor: result.coverageByFloor,
+      crossVolumeInsights: result.crossVolumeInsights,
+      proactiveInsights: result.proactiveInsights,
     })
   },
 

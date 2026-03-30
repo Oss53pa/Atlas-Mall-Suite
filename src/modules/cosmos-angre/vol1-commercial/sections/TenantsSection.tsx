@@ -3,8 +3,10 @@
 import React, { useState, useMemo } from 'react'
 import { Search, Users, Calendar, DollarSign, Phone, Mail, ChevronDown, ChevronUp, Filter, BarChart2 } from 'lucide-react'
 import { useVol1Store } from '../store/vol1Store'
-import type { Tenant, TenantStatus, Sector } from '../store/vol1Types'
+import type { Tenant, TenantStatus } from '../store/vol1Types'
 import GanttChart, { type GanttTask } from '../../shared/components/GanttChart'
+import { formatFcfa } from '../../shared/utils/formatting'
+import { SECTOR_LABELS as sectorLabels } from '../../shared/constants/sectorConfig'
 
 const statusConfig: Record<TenantStatus, { color: string; label: string }> = {
   actif: { color: '#22c55e', label: 'Actif' },
@@ -12,14 +14,6 @@ const statusConfig: Record<TenantStatus, { color: string; label: string }> = {
   en_contentieux: { color: '#ef4444', label: 'En contentieux' },
   sortant: { color: '#6b7280', label: 'Sortant' },
 }
-
-const sectorLabels: Record<Sector, string> = {
-  mode: 'Mode', restauration: 'Restauration', services: 'Services', loisirs: 'Loisirs',
-  alimentaire: 'Alimentaire', beaute: 'Beauté', electronique: 'Electronique', bijouterie: 'Bijouterie',
-  banque: 'Banque', sante: 'Santé', enfants: 'Enfants', maison: 'Maison', sport: 'Sport',
-}
-
-const formatFcfa = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
 
 export default function TenantsSection() {
   const tenants = useVol1Store(s => s.tenants)

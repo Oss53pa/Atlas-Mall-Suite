@@ -6,6 +6,7 @@ import type {
   FullProjectContext, Zone, Camera,
 } from './types'
 import { calcArea } from './engine'
+import { formatFcfaWithUnit as formatFcfa } from '../utils/formatting'
 
 // ─── Types internes ──────────────────────────────────────────
 
@@ -18,10 +19,6 @@ interface InsightRule {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────
-
-function formatFcfa(v: number): string {
-  return Math.round(v).toLocaleString('fr-FR') + ' FCFA'
-}
 
 function findNearbyCamera(cam: Camera, cameras: Camera[], maxDist: number): Camera | undefined {
   return cameras.find(c =>

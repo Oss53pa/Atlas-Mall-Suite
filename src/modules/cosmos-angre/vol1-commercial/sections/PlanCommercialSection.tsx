@@ -4,23 +4,11 @@ import React, { useState, useMemo, useCallback, useRef, lazy, Suspense } from 'r
 import { useVol1Store } from '../store/vol1Store'
 import type { CommercialSpace, SpaceStatus, Sector } from '../store/vol1Types'
 import { Grid3X3, Box, Sparkles, Loader2, CalendarDays } from 'lucide-react'
-import { getSpacePhaseStatus, PHASE_STATUS_COLORS, type PhaseSpaceStatus } from '../engines/phasingEngine'
+import { getSpacePhaseStatus, computePhaseMetrics, PHASE_STATUS_COLORS, type PhaseSpaceStatus } from '../engines/phasingEngine'
+import { SPACE_STATUS_COLORS as statusColors, SPACE_STATUS_LABELS as statusLabels } from '../../shared/constants/statusConfig'
+import { formatFcfa } from '../../shared/utils/formatting'
 
 const View3DSection = lazy(() => import('../../shared/view3d/View3DSection'))
-
-const statusColors: Record<SpaceStatus, string> = {
-  occupied: '#22c55e',
-  vacant: '#ef4444',
-  reserved: '#f59e0b',
-  under_works: '#6b7280',
-}
-
-const statusLabels: Record<SpaceStatus, string> = {
-  occupied: 'Occupé',
-  vacant: 'Vacant',
-  reserved: 'Réservé',
-  under_works: 'En travaux',
-}
 
 const SCALE = 4
 const PADDING = 20
@@ -65,7 +53,31 @@ export default function PlanCommercialSection() {
   const selectedSpace = spaces.find(s => s.id === selectedSpaceId)
   const selectedTenant = selectedSpace?.tenantId ? tenants.find(t => t.id === selectedSpace.tenantId) : null
 
-  const formatFcfa = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
+  // Active phase object
+  const activePhase = activePhaseId ? phases.find(p => p.id === activePhaseId) : null
+
+  // Compute phase metrics when a phase is selected
+  const phaseMetrics = useMemo(() => {
+    if (!activePhase) return null
+    return computePhaseMetrics(activePhase, spaces, tenants)
+  }, [activePhase, spaces, tenants])
+
+  // Resolve color for a space based on phase or current status
+  const getSpaceColor = useCallback((sp: CommercialSpace): string => {
+    if (!activePhase) return statusColors[sp.status]
+    const phaseStatus = getSpacePhaseStatus(sp, activePhase)
+    return PHASE_STATUS_COLORS[phaseStatus]
+  }, [activePhase])
+
+  // Phase status label for detail panel
+  const getPhaseLabel = (sp: CommercialSpace): { label: string; color: string } | null => {
+    if (!activePhase) return null
+    const ps = getSpacePhaseStatus(sp, activePhase)
+    return {
+      label: ps === 'confirmed' ? 'Confirmé' : ps === 'projected' ? 'Projeté' : 'Vacant',
+      color: PHASE_STATUS_COLORS[ps],
+    }
+  }
 
   return (
     <div className="flex h-full" style={{ background: '#080c14' }}>
@@ -104,12 +116,29 @@ export default function PlanCommercialSection() {
         {/* Legend */}
         <div>
           <p className="text-[10px] text-slate-500 mb-1">LEGENDE</p>
-          {(Object.entries(statusLabels) as [SpaceStatus, string][]).map(([k, v]) => (
-            <div key={k} className="flex items-center gap-2 text-[10px] text-slate-400 mb-1">
-              <div className="w-3 h-3 rounded" style={{ background: statusColors[k], opacity: 0.6 }} />
-              {v}
-            </div>
-          ))}
+          {activePhase ? (
+            <>
+              <div className="flex items-center gap-2 text-[10px] text-slate-400 mb-1">
+                <div className="w-3 h-3 rounded" style={{ background: PHASE_STATUS_COLORS.confirmed, opacity: 0.6 }} />
+                Confirmé
+              </div>
+              <div className="flex items-center gap-2 text-[10px] text-slate-400 mb-1">
+                <div className="w-3 h-3 rounded" style={{ background: PHASE_STATUS_COLORS.projected, opacity: 0.6 }} />
+                Projeté
+              </div>
+              <div className="flex items-center gap-2 text-[10px] text-slate-400 mb-1">
+                <div className="w-3 h-3 rounded" style={{ background: PHASE_STATUS_COLORS.vacant, opacity: 0.6 }} />
+                Vacant
+              </div>
+            </>
+          ) : (
+            (Object.entries(statusLabels) as [SpaceStatus, string][]).map(([k, v]) => (
+              <div key={k} className="flex items-center gap-2 text-[10px] text-slate-400 mb-1">
+                <div className="w-3 h-3 rounded" style={{ background: statusColors[k], opacity: 0.6 }} />
+                {v}
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -168,6 +197,51 @@ export default function PlanCommercialSection() {
           </div>
         </div>
 
+        {/* Phase metrics bar */}
+        {activePhase && phaseMetrics && (
+          <div className="flex items-center gap-4 px-4 py-2 border-b" style={{ borderColor: '#1e2a3a', background: `${activePhase.color}08` }}>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full" style={{ background: activePhase.color }} />
+              <span className="text-[10px] font-semibold" style={{ color: activePhase.color }}>{activePhase.name}</span>
+              <span className="text-[9px] text-gray-500 ml-1">— Objectif {activePhase.targetOccupancyRate}%</span>
+            </div>
+            <div className="w-px h-4 bg-white/[0.06]" />
+            <div className="flex items-center gap-4 text-[10px]">
+              <div>
+                <span className="text-gray-500">Occupancy : </span>
+                <span className={`font-semibold ${phaseMetrics.occupancyRate >= activePhase.targetOccupancyRate ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {phaseMetrics.occupancyRate}%
+                </span>
+                <span className="text-gray-600"> ({phaseMetrics.occupiedSpaces}/{phaseMetrics.totalSpaces})</span>
+              </div>
+              <div>
+                <span className="text-gray-500">GLA occupée : </span>
+                <span className="text-white font-medium">{phaseMetrics.occupiedGla.toLocaleString('fr-FR')} m²</span>
+                <span className="text-gray-600"> / {phaseMetrics.totalGla.toLocaleString('fr-FR')} m²</span>
+              </div>
+              <div>
+                <span className="text-gray-500">Revenus : </span>
+                <span className="text-white font-medium">{(phaseMetrics.revenueFcfa / 1000000).toFixed(1)} M FCFA</span>
+              </div>
+              {phaseMetrics.vacantCells.length > 0 && (
+                <div>
+                  <span className="text-red-400 font-medium">{phaseMetrics.vacantCells.length} vacante(s)</span>
+                </div>
+              )}
+            </div>
+            {/* Progress bar */}
+            <div className="ml-auto flex items-center gap-2">
+              <div className="w-24 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all" style={{
+                  width: `${phaseMetrics.occupancyRate}%`,
+                  background: phaseMetrics.occupancyRate >= activePhase.targetOccupancyRate ? '#22c55e' : activePhase.color,
+                }} />
+              </div>
+              <span className="text-[9px] text-gray-500">{activePhase.date}</span>
+            </div>
+          </div>
+        )}
+
         {viewMode === '3d' ? (
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center" style={{ background: '#080c14' }}>
@@ -206,11 +280,14 @@ export default function PlanCommercialSection() {
                 </React.Fragment>
               ))}
 
-              {/* Spaces */}
+              {/* Spaces — color changes based on active phase */}
               {filteredSpaces.map(sp => {
                 const t = tenants.find(t2 => t2.id === sp.tenantId)
-                const color = statusColors[sp.status]
+                const color = getSpaceColor(sp)
                 const isSelected = sp.id === selectedSpaceId
+                // Show phase status badge on each cell when a phase is active
+                const phaseStatus = activePhase ? getSpacePhaseStatus(sp, activePhase) : null
+                const phaseTag = phaseStatus === 'confirmed' ? '✓' : phaseStatus === 'projected' ? '~' : phaseStatus === 'vacant' ? '!' : null
                 return (
                   <g key={sp.id} onClick={() => selectSpace(sp.id)} style={{ cursor: 'pointer' }}>
                     <rect
@@ -219,6 +296,14 @@ export default function PlanCommercialSection() {
                       fill={`${color}20`} stroke={isSelected ? '#ffffff' : color}
                       strokeWidth={isSelected ? 2 : 1} rx={4}
                     />
+                    {/* Phase indicator stripe at top of cell */}
+                    {activePhase && (
+                      <rect
+                        x={sp.x * SCALE + PADDING + 1} y={sp.y * SCALE + PADDING + 1}
+                        width={sp.w * SCALE - 2} height={3}
+                        fill={color} rx={2} opacity={0.8}
+                      />
+                    )}
                     <text
                       x={sp.x * SCALE + PADDING + (sp.w * SCALE) / 2}
                       y={sp.y * SCALE + PADDING + (sp.h * SCALE) / 2 - 6}
@@ -233,6 +318,16 @@ export default function PlanCommercialSection() {
                     >
                       {sp.areaSqm} m²
                     </text>
+                    {/* Phase status tag in corner */}
+                    {phaseTag && (
+                      <text
+                        x={sp.x * SCALE + PADDING + sp.w * SCALE - 8}
+                        y={sp.y * SCALE + PADDING + 14}
+                        textAnchor="middle" fill={color} fontSize={9} fontWeight="bold"
+                      >
+                        {phaseTag}
+                      </text>
+                    )}
                   </g>
                 )
               })}
@@ -250,6 +345,16 @@ export default function PlanCommercialSection() {
           </div>
           <div className="space-y-3 text-[12px]">
             <div className="flex justify-between"><span className="text-slate-500">Statut</span><span style={{ color: statusColors[selectedSpace.status] }}>{statusLabels[selectedSpace.status]}</span></div>
+            {/* Phase status */}
+            {(() => {
+              const pl = getPhaseLabel(selectedSpace)
+              return pl ? (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Phase</span>
+                  <span className="font-medium" style={{ color: pl.color }}>{pl.label} — {activePhase!.name}</span>
+                </div>
+              ) : null
+            })()}
             <div className="flex justify-between"><span className="text-slate-500">Surface</span><span className="text-white">{selectedSpace.areaSqm} m²</span></div>
             <div className="flex justify-between"><span className="text-slate-500">Aile</span><span className="text-white">{selectedSpace.wing}</span></div>
             <div className="flex justify-between"><span className="text-slate-500">Niveau</span><span className="text-white">{selectedSpace.floorLevel}</span></div>

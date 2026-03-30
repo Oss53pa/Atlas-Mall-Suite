@@ -4,15 +4,8 @@
 import React, { useState, useMemo } from 'react'
 import { Brain, Sparkles, Target, DollarSign, MapPin, ArrowRight, Loader2 } from 'lucide-react'
 import { useVol1Store } from '../store/vol1Store'
-import type { Sector } from '../store/vol1Types'
-
-const sectorLabels: Record<Sector, string> = {
-  mode: 'Mode', restauration: 'Restauration', services: 'Services', loisirs: 'Loisirs',
-  alimentaire: 'Alimentaire', beaute: 'Beauté', electronique: 'Electronique', bijouterie: 'Bijouterie',
-  banque: 'Banque', sante: 'Santé', enfants: 'Enfants', maison: 'Maison', sport: 'Sport',
-}
-
-const formatFcfa = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
+import { formatFcfa } from '../../shared/utils/formatting'
+import { SECTOR_LABELS as sectorLabels } from '../../shared/constants/sectorConfig'
 
 type AnalysisTab = 'mix' | 'vacancy' | 'rent'
 
