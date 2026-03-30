@@ -8,7 +8,7 @@ import RasterPreview from './RasterPreview'
 interface PlanImportWizardProps {
   floors: Floor[]
   activeFloorId: string
-  onImportComplete: (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string) => void
+  onImportComplete: (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string, fileInfo?: { fileName: string; fileSize: number; sourceType: string }) => void
   onClose: () => void
 }
 
@@ -152,7 +152,8 @@ export default function PlanImportWizard({
         samplesUsed: 0, outlierCount: 0, issues: [],
       },
       selectedFloorId,
-      state.planImageUrl
+      state.planImageUrl,
+      { fileName: state.fileName || 'Import', fileSize: state.fileSize || 0, sourceType: state.sourceType ?? 'image_raster' },
     )
   }, [state, selectedFloorId, onImportComplete])
 

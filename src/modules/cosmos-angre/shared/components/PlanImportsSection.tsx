@@ -4,7 +4,8 @@ import React, { useState, useCallback } from 'react'
 import {
   Upload, FileText, Image, FileCode2, Trash2, Eye,
   CheckCircle, XCircle, Clock, AlertTriangle, Layers,
-  RotateCcw, ChevronDown, ChevronUp,
+  RotateCcw, ChevronDown, ChevronUp, X, ZoomIn,
+  Maximize2,
 } from 'lucide-react'
 import { usePlanImportStore, type PlanImportRecord, type ImportStatus } from '../stores/planImportStore'
 import { MapPin } from 'lucide-react'
@@ -20,7 +21,7 @@ interface PlanImportsSectionProps {
   floors: Floor[]
   activeFloorId: string
   /** Callback quand un import est terminé → le parent peut injecter les zones dans son store */
-  onImportComplete: (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string) => void
+  onImportComplete: (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string, fileInfo?: { fileName: string; fileSize: number; sourceType: string }) => void
 }
 
 // ─── Helpers ──────────────────────────────────────────
@@ -72,16 +73,18 @@ export default function PlanImportsSection({
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<ImportStatus | 'all'>('all')
   const [filterType, setFilterType] = useState<PlanSourceType | 'all'>('all')
+  const [previewRecord, setPreviewRecord] = useState<PlanImportRecord | null>(null)
 
   // Handle wizard completion
   const handleImportComplete = useCallback(
-    (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string) => {
+    (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string, fileInfo?: { fileName: string; fileSize: number; sourceType: string }) => {
       const floor = floors.find((f) => f.id === floorId)
+      const importId = uid()
       addImport({
-        id: uid(),
-        fileName: 'Import',
-        fileSize: 0,
-        sourceType: 'dxf',
+        id: importId,
+        fileName: fileInfo?.fileName || 'Import',
+        fileSize: fileInfo?.fileSize || 0,
+        sourceType: (fileInfo?.sourceType ?? 'image_raster') as PlanSourceType,
         floorId,
         floorLevel: floor?.level ?? floorId,
         status: 'success',
@@ -90,12 +93,16 @@ export default function PlanImportsSection({
         dimsDetected: dims.length,
         calibrationMethod: calibration.method,
         calibrationConfidence: calibration.confidence,
+        planImageUrl: planImageUrl ?? undefined,
+        thumbnailUrl: planImageUrl ?? undefined,
         warnings: [],
       })
-      onImportComplete(zones, dims, calibration, floorId, planImageUrl)
+      // Definir automatiquement comme plan actif pour cet etage
+      setActivePlan(floorId, importId)
+      onImportComplete(zones, dims, calibration, floorId, planImageUrl, fileInfo)
       setShowWizard(false)
     },
-    [floors, addImport, onImportComplete],
+    [floors, addImport, setActivePlan, onImportComplete],
   )
 
   // Filtered list
@@ -251,6 +258,7 @@ export default function PlanImportsSection({
             onToggle={() => setExpandedId(expandedId === record.id ? null : record.id)}
             onRemove={() => removeImport(record.id)}
             onSetAsBackground={() => setActivePlan(record.floorId, record.id)}
+            onPreview={() => setPreviewRecord(record)}
             isActiveBackground={activePlanPerFloor[record.floorId] === record.id}
           />
         ))}
@@ -264,6 +272,11 @@ export default function PlanImportsSection({
           onImportComplete={handleImportComplete}
           onClose={() => setShowWizard(false)}
         />
+      )}
+
+      {/* Preview modal */}
+      {previewRecord && (
+        <PlanPreviewModal record={previewRecord} onClose={() => setPreviewRecord(null)} />
       )}
     </div>
   )
@@ -314,6 +327,7 @@ function ImportCard({
   onToggle,
   onRemove,
   onSetAsBackground,
+  onPreview,
   isActiveBackground,
 }: {
   record: PlanImportRecord
@@ -321,12 +335,14 @@ function ImportCard({
   onToggle: () => void
   onRemove: () => void
   onSetAsBackground: () => void
+  onPreview: () => void
   isActiveBackground: boolean
 }) {
   const stCfg = statusConfig[record.status]
   const srcCfg = sourceTypeConfig[record.sourceType]
   const StIcon = stCfg.icon
   const SrcIcon = srcCfg.icon
+  const hasPlanImage = !!(record.planImageUrl || record.thumbnailUrl)
 
   return (
     <div
@@ -335,13 +351,24 @@ function ImportCard({
     >
       {/* Row */}
       <button onClick={onToggle} className="w-full flex items-center gap-4 p-4 text-left">
-        {/* Format icon */}
-        <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ background: `${srcCfg.color}12`, border: `1px solid ${srcCfg.color}25` }}
-        >
-          <SrcIcon size={18} style={{ color: srcCfg.color }} />
-        </div>
+        {/* Thumbnail or format icon */}
+        {hasPlanImage ? (
+          <div className="w-16 h-12 rounded-lg overflow-hidden flex-shrink-0 relative group/thumb border border-white/[0.08]"
+            onClick={(e) => { e.stopPropagation(); onPreview() }}>
+            <img src={record.planImageUrl || record.thumbnailUrl} alt={record.fileName}
+              className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
+              <ZoomIn size={14} className="text-white" />
+            </div>
+          </div>
+        ) : (
+          <div
+            className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ background: `${srcCfg.color}12`, border: `1px solid ${srcCfg.color}25` }}
+          >
+            <SrcIcon size={18} style={{ color: srcCfg.color }} />
+          </div>
+        )}
 
         {/* Info */}
         <div className="flex-1 min-w-0">
@@ -439,6 +466,15 @@ function ImportCard({
           )}
 
           <div className="flex justify-end gap-2 pt-1">
+            {hasPlanImage && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onPreview() }}
+                className="flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg text-indigo-400 hover:bg-indigo-400/10 transition-colors"
+              >
+                <Maximize2 size={12} />
+                Prévisualiser
+              </button>
+            )}
             {record.status === 'success' && (
               <button
                 onClick={(e) => { e.stopPropagation(); onSetAsBackground() }}
@@ -462,6 +498,104 @@ function ImportCard({
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Plan Preview Modal ─────────────────────────────
+
+function PlanPreviewModal({ record, onClose }: { record: PlanImportRecord; onClose: () => void }) {
+  const [zoom, setZoom] = useState(1)
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [dragging, setDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+
+  const imageUrl = record.planImageUrl || record.thumbnailUrl
+  if (!imageUrl) return null
+
+  const srcCfg = sourceTypeConfig[record.sourceType]
+  const stCfg = statusConfig[record.status]
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-[90vw] h-[85vh] rounded-2xl border border-white/[0.08] overflow-hidden flex flex-col"
+        style={{ background: '#0a0f1a' }} onClick={(e) => e.stopPropagation()}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06]" style={{ background: '#0e1629' }}>
+          <div className="flex items-center gap-3">
+            <Eye size={16} className="text-indigo-400" />
+            <div>
+              <h2 className="text-white font-semibold text-sm">{record.fileName}</h2>
+              <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                <span style={{ color: srcCfg.color }}>{srcCfg.label}</span>
+                <span>·</span>
+                <span>{record.floorLevel}</span>
+                <span>·</span>
+                <span>{record.zonesDetected} zones</span>
+                <span>·</span>
+                <span style={{ color: stCfg.color }}>{stCfg.label}</span>
+                {record.calibrationConfidence > 0 && (
+                  <>
+                    <span>·</span>
+                    <span>Calibration : {Math.round(record.calibrationConfidence * 100)}%</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setZoom(z => Math.max(0.2, z / 1.3))}
+              className="px-2 py-1 rounded text-[10px] text-gray-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] transition-colors">-</button>
+            <span className="text-[10px] text-gray-400 w-10 text-center">{Math.round(zoom * 100)}%</span>
+            <button onClick={() => setZoom(z => Math.min(5, z * 1.3))}
+              className="px-2 py-1 rounded text-[10px] text-gray-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] transition-colors">+</button>
+            <button onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }) }}
+              className="px-2 py-1 rounded text-[10px] text-gray-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] transition-colors">Réinitialiser</button>
+            <div className="w-px h-4 bg-white/[0.06] mx-1" />
+            <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/[0.08] transition-colors">
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Image viewer with zoom/pan */}
+        <div className="flex-1 overflow-hidden relative"
+          style={{ background: '#080c14', cursor: dragging ? 'grabbing' : 'grab' }}
+          onWheel={(e) => {
+            const delta = e.deltaY > 0 ? 0.9 : 1.1
+            setZoom(z => Math.min(5, Math.max(0.2, z * delta)))
+          }}
+          onMouseDown={(e) => {
+            setDragging(true)
+            setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
+          }}
+          onMouseMove={(e) => {
+            if (dragging) setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y })
+          }}
+          onMouseUp={() => setDragging(false)}
+          onMouseLeave={() => setDragging(false)}
+        >
+          <div className="absolute inset-0 flex items-center justify-center">
+            <img
+              src={imageUrl}
+              alt={record.fileName}
+              className="max-w-none select-none"
+              style={{
+                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                transformOrigin: 'center center',
+                transition: dragging ? 'none' : 'transform 0.15s ease-out',
+              }}
+              draggable={false}
+            />
+          </div>
+
+          {/* Info bar */}
+          <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2 text-[10px] text-gray-300 pointer-events-none">
+            <span className="font-medium text-white">{record.floorLevel}</span> · {record.zonesDetected} zones détectées · {formatFileSize(record.fileSize)}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
