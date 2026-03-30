@@ -364,7 +364,6 @@ function ImportCard({
             <Eye size={14} className="text-white" />
           </div>
         </div>
-        )}
 
         {/* Info */}
         <div className="flex-1 min-w-0">
