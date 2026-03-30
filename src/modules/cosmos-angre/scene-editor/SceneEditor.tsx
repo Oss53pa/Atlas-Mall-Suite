@@ -26,7 +26,7 @@ export default function SceneEditor() {
   ]
 
   return (
-    <div className="flex flex-col h-screen bg-surface-0">
+    <div className="fixed inset-0 z-50 flex flex-col bg-surface-0">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06] bg-surface-1">
         <div className="flex items-center gap-3">
@@ -34,12 +34,18 @@ export default function SceneEditor() {
           <span className="text-[13px] text-white font-semibold">{sceneName}</span>
           {isDirty && <span className="text-[10px] text-amber-400">Non sauvegarde</span>}
         </div>
+        <button
+          onClick={() => window.history.back()}
+          className="text-[11px] text-slate-500 hover:text-white px-3 py-1 rounded-lg hover:bg-white/[0.04] transition-colors"
+        >
+          Fermer
+        </button>
       </div>
 
       {/* Toolbar */}
       <SceneToolbar />
 
-      {/* Main area */}
+      {/* Main area — pleine largeur */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left — Library */}
         <FurnitureLibrary />
