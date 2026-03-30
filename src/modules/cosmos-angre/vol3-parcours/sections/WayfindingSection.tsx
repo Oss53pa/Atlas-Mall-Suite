@@ -10,9 +10,19 @@ export default function WayfindingSection() {
   const [toPoi, setToPoi] = useState('')
   const [pmrOnly, setPmrOnly] = useState(false)
 
-  const handleCalculate = useCallback(() => {
-    // Wayfinding calculation would be triggered here via store action
-  }, [fromPoi, toPoi, pmrOnly])
+  const calculateWayfinding = useVol3Store((s) => s.calculateWayfinding)
+  const buildGraph = useVol3Store((s) => s.buildGraph)
+  const [noPath, setNoPath] = useState(false)
+
+  const handleCalculate = useCallback(async () => {
+    setNoPath(false)
+    // S'assurer que le graphe est construit
+    if (!navGraph || navGraph.nodes.length === 0) {
+      await buildGraph()
+    }
+    const result = calculateWayfinding(fromPoi, toPoi, pmrOnly)
+    if (!result) setNoPath(true)
+  }, [fromPoi, toPoi, pmrOnly, navGraph, calculateWayfinding, buildGraph])
 
   return (
     <div className="flex flex-col h-full overflow-y-auto bg-gray-950">
@@ -119,6 +129,14 @@ export default function WayfindingSection() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* No path message */}
+        {noPath && !currentPath && (
+          <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3 text-center">
+            <p className="text-xs text-red-400">Itineraire indisponible — zones non connectees</p>
+            <p className="text-[10px] text-red-400/60 mt-1">Construisez le graphe de navigation ou ajoutez des transitions entre les etages.</p>
           </div>
         )}
 

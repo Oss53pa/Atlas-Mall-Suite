@@ -918,27 +918,77 @@ export const useVol3Store = create<Vol3State>()((set) => ({
     const fromNode = s.navGraph.nodes.find(n => n.poiId === fromId || n.id === fromId)
     const toNode = s.navGraph.nodes.find(n => n.poiId === toId || n.id === toId)
     if (!fromNode || !toNode) return null
-    const visited = new Set<string>()
-    const queue: { node: NavigationNode; path: NavigationNode[]; dist: number }[] = [{ node: fromNode, path: [fromNode], dist: 0 }]
-    visited.add(fromNode.id)
-    while (queue.length > 0) {
-      const current = queue.shift()!
-      if (current.node.id === toNode.id) {
-        const result: PathResult = { path: current.path, totalDistanceM: current.dist, totalTimeSec: current.dist / 1.2, floorsTraversed: [...new Set(current.path.map(n => n.floorId))] as FloorLevel[], pmrCompliant: true, instructions: current.path.map((n, i) => i === 0 ? `Depart : ${n.label ?? 'Point'}` : `-> ${n.label ?? 'Point'}`) }
+
+    // A* pathfinding — heuristique Manhattan
+    const heuristic = (a: NavigationNode, b: NavigationNode) =>
+      Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
+
+    const openSet = new Set<string>([fromNode.id])
+    const cameFrom = new Map<string, string>()
+    const gScore = new Map<string, number>()
+    const fScore = new Map<string, number>()
+    const nodeMap = new Map(s.navGraph.nodes.map(n => [n.id, n]))
+
+    gScore.set(fromNode.id, 0)
+    fScore.set(fromNode.id, heuristic(fromNode, toNode))
+
+    while (openSet.size > 0) {
+      // Noeud avec le fScore le plus bas
+      let current = ''
+      let bestF = Infinity
+      for (const id of openSet) {
+        const f = fScore.get(id) ?? Infinity
+        if (f < bestF) { bestF = f; current = id }
+      }
+
+      if (current === toNode.id) {
+        // Reconstruire le chemin
+        const pathIds: string[] = []
+        let node = current
+        while (cameFrom.has(node)) { pathIds.unshift(node); node = cameFrom.get(node)! }
+        pathIds.unshift(fromNode.id)
+        const pathNodes = pathIds.map(id => nodeMap.get(id)!).filter(Boolean)
+        const totalDist = gScore.get(toNode.id) ?? 0
+        const allPmr = pmrOnly // Si PMR exige, le chemin est filtre en amont
+        const result: PathResult = {
+          path: pathNodes,
+          totalDistanceM: Math.round(totalDist * 10) / 10,
+          totalTimeSec: Math.round(totalDist / 1.2),
+          floorsTraversed: [...new Set(pathNodes.map(n => n.floorId))] as FloorLevel[],
+          pmrCompliant: allPmr || !pmrOnly,
+          instructions: pathNodes.map((n, i) => i === 0 ? `Depart : ${n.label ?? 'Point'}` : `-> ${n.label ?? 'Point'}`),
+        }
         set({ currentPath: result })
         return result
       }
-      const neighbors = s.navGraph!.edges.filter(e => (e.from === current.node.id || e.to === current.node.id) && (!pmrOnly || e.pmr)).map(e => ({ nodeId: e.from === current.node.id ? e.to : e.from, dist: e.distanceM }))
-      const ifeN = s.navGraph!.interFloorEdges.filter(e => (e.fromNodeId === current.node.id || e.toNodeId === current.node.id) && (!pmrOnly || e.pmr)).map(e => ({ nodeId: e.fromNodeId === current.node.id ? e.toNodeId : e.fromNodeId, dist: e.timeSec * 1.2 }))
-      for (const nb of [...neighbors, ...ifeN]) {
-        if (!visited.has(nb.nodeId)) {
-          visited.add(nb.nodeId)
-          const nextNode = s.navGraph!.nodes.find(n => n.id === nb.nodeId)
-          if (nextNode) queue.push({ node: nextNode, path: [...current.path, nextNode], dist: current.dist + nb.dist })
+
+      openSet.delete(current)
+
+      // Voisins via aretes intra-etage
+      const neighbors = s.navGraph!.edges
+        .filter(e => (e.from === current || e.to === current) && (!pmrOnly || e.pmr))
+        .map(e => ({ nodeId: e.from === current ? e.to : e.from, dist: e.distanceM }))
+
+      // Voisins via aretes inter-etages
+      const ifeNeighbors = s.navGraph!.interFloorEdges
+        .filter(e => (e.fromNodeId === current || e.toNodeId === current) && (!pmrOnly || e.pmr))
+        .map(e => ({ nodeId: e.fromNodeId === current ? e.toNodeId : e.fromNodeId, dist: e.timeSec * 1.2 }))
+
+      for (const nb of [...neighbors, ...ifeNeighbors]) {
+        const tentativeG = (gScore.get(current) ?? Infinity) + nb.dist
+        if (tentativeG < (gScore.get(nb.nodeId) ?? Infinity)) {
+          cameFrom.set(nb.nodeId, current)
+          gScore.set(nb.nodeId, tentativeG)
+          const nextNode = nodeMap.get(nb.nodeId)
+          if (nextNode) {
+            fScore.set(nb.nodeId, tentativeG + heuristic(nextNode, toNode))
+            openSet.add(nb.nodeId)
+          }
         }
       }
     }
-    return null
+
+    return null // Aucun chemin trouve
   },
 
   simulateProfile: async (profileId) => {

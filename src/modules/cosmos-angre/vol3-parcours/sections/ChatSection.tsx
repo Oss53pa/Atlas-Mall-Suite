@@ -1,19 +1,29 @@
+// ═══ VOL.3 — Chat Proph3t Parcours (Faille #4 corrigee) ═══
+// Connexion IA reelle : Ollama → Claude API → keyword matching fallback
+
 import React, { useCallback, useState } from 'react'
 import { Send, Sparkles } from 'lucide-react'
 import { useVol3Store } from '../store/vol3Store'
 import type { ChatMessage } from '../../shared/proph3t/types'
+import {
+  askProph3t, buildMallContext, getSourceIndicator,
+  type AISource, type AIMessage,
+} from '../../shared/proph3t/proph3tService'
 
 function uid(): string {
   return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
+// Suggestions contextuelles selon l'activite
 const SUGGESTIONS = [
-  'Score expérience ?',
-  'Signalétique ?',
-  'Itinéraire PMR ?',
-  'Moments clés ?',
-  'Cosmos Club ?',
-  'Benchmark ?',
+  'Score experience global ?',
+  'Quelle zone optimiser pour Tabaski ?',
+  'Itineraire PMR entre parking et food court ?',
+  'Moments cles manquants ?',
+  'Programme Cosmos Club — projections ?',
+  'Benchmark vs malls CI Classe A ?',
+  'Comparer Noel et Rentree',
+  'Combien de signages installer ?',
 ]
 
 export default function ChatSection() {
@@ -21,53 +31,100 @@ export default function ChatSection() {
   const addChatMessage = useVol3Store((s) => s.addChatMessage)
   const clearChat = useVol3Store((s) => s.clearChat)
   const pois = useVol3Store((s) => s.pois)
+  const zones = useVol3Store((s) => s.zones)
   const signageItems = useVol3Store((s) => s.signageItems)
   const moments = useVol3Store((s) => s.moments)
 
   const [input, setInput] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [lastSource, setLastSource] = useState<AISource | null>(null)
 
-  const handleSend = useCallback((text: string) => {
-    if (!text.trim()) return
+  // Historique de conversation pour le contexte
+  const conversationHistory: AIMessage[] = chatMessages.map(m => ({
+    role: m.role === 'user' ? 'user' as const : 'assistant' as const,
+    content: m.content,
+  }))
+
+  const handleSend = useCallback(async (text: string) => {
+    if (!text.trim() || isLoading) return
 
     const userMsg: ChatMessage = { id: uid(), role: 'user', content: text, timestamp: new Date().toISOString() }
     addChatMessage(userMsg)
     setInput('')
+    setIsLoading(true)
 
-    const q = text.toLowerCase()
-    let reply = ''
-    const refs: string[] = []
-
-    if (q.includes('score') || q.includes('experience')) {
-      const score = Math.min(95, 45 + pois.length * 3 + moments.length * 4)
-      reply = `Score expérience Proph3t : ${score}/100.\n${pois.length} POI, ${moments.length} moments clés, ${signageItems.length} éléments signalétiques.`
-      refs.push('NF P96-105')
-    } else if (q.includes('pmr') || q.includes('accessib')) {
-      const pmrPois = pois.filter(p => p.pmr)
-      reply = `${pmrPois.length}/${pois.length} POI accessibles PMR (${pois.length > 0 ? Math.round(pmrPois.length / pois.length * 100) : 0}%).\nPOI PMR : ${pmrPois.map(p => p.label).join(', ') || 'Aucun'}.`
-      refs.push('NF P96-105', 'ISO 7001')
-    } else if (q.includes('moment') || q.includes('parcours')) {
-      const addressed = moments.filter(m => m.signageItems.length > 0).length
-      reply = `${moments.length}/7 moments clés générés.\n${addressed} adressés avec signalétique.`
-    } else if (q.includes('signal') || q.includes('totem') || q.includes('panneau')) {
-      const byType: Record<string, number> = {}
-      signageItems.forEach(s => { byType[s.type] = (byType[s.type] ?? 0) + 1 })
-      reply = `${signageItems.length} éléments signalétiques.\n${Object.entries(byType).map(([t, n]) => `${t}: ${n}`).join('\n')}`
-      refs.push('ISO 7010', 'NF X 08-003')
-    } else if (q.includes('cosmos') || q.includes('club') || q.includes('fid')) {
-      const cosmosClubPoi = pois.find(p => p.type === 'cosmos_club')
-      reply = cosmosClubPoi ? `Cosmos Club : ${cosmosClubPoi.label}\nOffre : ${cosmosClubPoi.cosmosClubOffre ?? 'Non définie'}` : 'Aucun point Cosmos Club configuré.'
-    } else if (q.includes('benchmark') || q.includes('comparatif')) {
-      reply = `Benchmark 50+ malls africains Classe A :\n• Score parcours moyen : 68/100\n• Densité signalétique : 0.7/100m²\n• Vos métriques : ${moments.length} moments, ${pois.length} POI, ${signageItems.length} signalétique`
-    } else {
-      reply = `Proph3t Parcours — Je peux aider avec :\n• Score expérience\n• PMR & accessibilité\n• Moments clés\n• Signalétique\n• Wayfinding\n• Cosmos Club\n• Benchmark`
-    }
-
-    setTimeout(() => {
-      addChatMessage({
-        id: uid(), role: 'proph3t', content: reply, timestamp: new Date().toISOString(), references: refs.length > 0 ? refs : undefined,
+    try {
+      // Construire le contexte du mall
+      const systemPrompt = buildMallContext({
+        zoneCount: zones.length,
+        storeCount: pois.filter(p => p.type === 'enseigne').length,
+        kpis: {
+          pois: pois.length,
+          moments: moments.length,
+          signageItems: signageItems.length,
+          pmrRate: pois.length > 0 ? Math.round(pois.filter(p => p.pmr).length / pois.length * 100) : 0,
+        },
       })
-    }, 300)
-  }, [pois, signageItems, moments, addChatMessage])
+
+      const messages: AIMessage[] = [
+        { role: 'system', content: systemPrompt },
+        ...conversationHistory.slice(-10), // Garder les 10 derniers messages pour le contexte
+        { role: 'user', content: text },
+      ]
+
+      const response = await askProph3t(messages, {
+        projectData: {
+          pois: pois.length,
+          zones: zones.length,
+          moments: moments.length,
+          signageItems: signageItems.length,
+        },
+      })
+
+      setLastSource(response.source)
+
+      // Si mode offline, utiliser le keyword matching comme avant
+      let reply = response.text
+      const refs: string[] = []
+
+      if (response.source === 'offline') {
+        const q = text.toLowerCase()
+        if (q.includes('score') || q.includes('experience')) {
+          const score = Math.min(95, 45 + pois.length * 3 + moments.length * 4)
+          reply = `Score experience Proph3t : ${score}/100.\n${pois.length} POI, ${moments.length} moments cles, ${signageItems.length} elements signaletiques.`
+          refs.push('NF P96-105')
+        } else if (q.includes('pmr') || q.includes('accessib')) {
+          const pmrPois = pois.filter(p => p.pmr)
+          reply = `${pmrPois.length}/${pois.length} POI accessibles PMR (${pois.length > 0 ? Math.round(pmrPois.length / pois.length * 100) : 0}%).`
+          refs.push('NF P96-105', 'ISO 7001')
+        } else if (q.includes('signal') || q.includes('totem')) {
+          reply = `${signageItems.length} elements signaletiques configures.`
+          refs.push('ISO 7010')
+        } else {
+          reply = `Mode hors-ligne. ${pois.length} POI, ${moments.length} moments, ${signageItems.length} signages configures.\nPour une analyse complete, connectez Ollama ou configurez la cle Claude API.`
+        }
+      }
+
+      addChatMessage({
+        id: uid(),
+        role: 'proph3t',
+        content: reply,
+        timestamp: new Date().toISOString(),
+        references: refs.length > 0 ? refs : undefined,
+      })
+    } catch {
+      addChatMessage({
+        id: uid(),
+        role: 'proph3t',
+        content: 'Erreur de communication avec Proph3t. Reessayez.',
+        timestamp: new Date().toISOString(),
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [pois, zones, signageItems, moments, addChatMessage, isLoading, conversationHistory])
+
+  const sourceInfo = lastSource ? getSourceIndicator(lastSource) : null
 
   return (
     <div className="flex flex-col h-full">
@@ -76,7 +133,12 @@ export default function ChatSection() {
           <Sparkles className="w-3 h-3 text-purple-400" />
         </div>
         <h3 className="text-sm font-semibold text-purple-300">Proph3t — Parcours</h3>
-        <div className="flex-1" />
+        {/* Indicateur source IA */}
+        {sourceInfo && (
+          <span className="text-[9px] flex items-center gap-1 ml-auto mr-2" style={{ color: sourceInfo.color }}>
+            {sourceInfo.emoji} {sourceInfo.label}
+          </span>
+        )}
         <button onClick={clearChat} className="text-[10px] text-gray-500 hover:text-gray-300">Effacer</button>
       </div>
 
@@ -84,15 +146,17 @@ export default function ChatSection() {
         {chatMessages.length === 0 && (
           <div className="space-y-2 mt-4">
             <div className="text-xs text-gray-600 text-center mb-3">Suggestions :</div>
-            {SUGGESTIONS.map((s) => (
-              <button
-                key={s}
-                onClick={() => handleSend(s)}
-                className="w-full text-left text-[11px] text-gray-400 bg-gray-900/50 border border-gray-800 rounded-lg px-3 py-2 hover:border-emerald-500/30 hover:text-gray-300 transition-colors"
-              >
-                {s}
-              </button>
-            ))}
+            <div className="grid grid-cols-2 gap-1.5">
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => handleSend(s)}
+                  className="text-left text-[11px] text-gray-400 bg-gray-900/50 border border-gray-800 rounded-lg px-3 py-2 hover:border-emerald-500/30 hover:text-gray-300 transition-colors"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
         )}
         {chatMessages.map((msg) => (
@@ -105,7 +169,9 @@ export default function ChatSection() {
             }`}
           >
             {msg.role === 'proph3t' && (
-              <div className="text-[10px] text-purple-500 font-mono mb-1">Proph3t IA locale</div>
+              <div className="text-[10px] text-purple-500 font-mono mb-1">
+                Proph3t {sourceInfo ? `(${sourceInfo.label})` : ''}
+              </div>
             )}
             <p className="leading-relaxed whitespace-pre-line">{msg.content}</p>
             {msg.references && msg.references.length > 0 && (
@@ -117,6 +183,14 @@ export default function ChatSection() {
             )}
           </div>
         ))}
+        {isLoading && (
+          <div className="bg-purple-900/20 border border-purple-800/30 rounded-lg px-3 py-2 mr-6">
+            <div className="flex items-center gap-2 text-purple-400 text-xs">
+              <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+              Proph3t reflechit...
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="border-t border-gray-800 p-3">
@@ -128,10 +202,11 @@ export default function ChatSection() {
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(input) } }}
             placeholder="Question sur le parcours..."
             className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-emerald-500"
+            disabled={isLoading}
           />
           <button
             onClick={() => handleSend(input)}
-            disabled={!input.trim()}
+            disabled={!input.trim() || isLoading}
             className="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white transition-colors"
           >
             <Send className="w-4 h-4" />
