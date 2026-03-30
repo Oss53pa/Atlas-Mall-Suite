@@ -7,6 +7,7 @@ import { Grid3X3, Box, Sparkles, Loader2, CalendarDays } from 'lucide-react'
 import { getSpacePhaseStatus, computePhaseMetrics, PHASE_STATUS_COLORS, type PhaseSpaceStatus } from '../engines/phasingEngine'
 import { SPACE_STATUS_COLORS as statusColors, SPACE_STATUS_LABELS as statusLabels } from '../../shared/constants/statusConfig'
 import { formatFcfa } from '../../shared/utils/formatting'
+import { PlanLayerSelector } from '../../shared/components/PlanLayerSelector'
 
 const View3DSection = lazy(() => import('../../shared/view3d/View3DSection'))
 
@@ -28,6 +29,7 @@ export default function PlanCommercialSection() {
   const phases = useVol1Store(s => s.phases)
   const activePhaseId = useVol1Store(s => s.activePhaseId)
   const setActivePhase = useVol1Store(s => s.setActivePhase)
+  const planImageUrls = useVol1Store(s => s.planImageUrls)
 
   const floors = ['B1', 'RDC', 'R+1']
   const [activeFloor, setActiveFloor] = React.useState('RDC')
@@ -171,6 +173,17 @@ export default function PlanCommercialSection() {
             {viewMode === '2d' ? 'Plan interactif 2D' : 'Vue 3D isometrique · perspective · realiste'}
           </span>
 
+          {/* Plan layer selector */}
+          {viewMode === '2d' && (
+            <PlanLayerSelector
+              floorId={activeFloor === 'B1' ? 'floor-b1' : activeFloor === 'R+1' ? 'floor-r1' : 'floor-rdc'}
+              onPrimaryPlanChange={(url) => {
+                const floorId = activeFloor === 'B1' ? 'floor-b1' : activeFloor === 'R+1' ? 'floor-r1' : 'floor-rdc'
+                useVol1Store.setState(s => ({ planImageUrls: { ...s.planImageUrls, [floorId]: url } }))
+              }}
+            />
+          )}
+
           {/* Phase switcher */}
           <div className="ml-auto flex items-center gap-1">
             <CalendarDays size={12} className="text-slate-600" />
@@ -272,6 +285,16 @@ export default function PlanCommercialSection() {
         ) : (
           <div className="flex-1 overflow-auto p-6">
             <svg width={800} height={500} className="mx-auto" style={{ background: '#0a0f1a', borderRadius: 12, border: '1px solid #1e2a3a' }}>
+              {/* Plan background image (from imported plan) */}
+              {planImageUrls[activeFloor === 'B1' ? 'floor-b1' : activeFloor === 'R+1' ? 'floor-r1' : 'floor-rdc'] && (
+                <image
+                  href={planImageUrls[activeFloor === 'B1' ? 'floor-b1' : activeFloor === 'R+1' ? 'floor-r1' : 'floor-rdc']}
+                  x={0} y={0} width={800} height={500}
+                  preserveAspectRatio="xMidYMid meet"
+                  opacity={0.3}
+                />
+              )}
+
               {/* Grid lines */}
               {Array.from({ length: 20 }).map((_, i) => (
                 <React.Fragment key={i}>

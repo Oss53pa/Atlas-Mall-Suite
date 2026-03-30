@@ -49,6 +49,7 @@ import {
 
 import { useVol2Store } from './store/vol2Store'
 import { usePlanImportStore } from '../shared/stores/planImportStore'
+import { PlanLayerSelector } from '../shared/components/PlanLayerSelector'
 import type { ChatMessage, Camera, BlindSpot, TransitionNode } from '../shared/proph3t/types'
 import { proph3tAnswer } from '../shared/proph3t/chatEngine'
 import type { FullProjectContext } from '../shared/proph3t/chatEngine'
@@ -62,6 +63,8 @@ import DXFImportModal from './components/DXFImportModal'
 import Model3DImportModal from './components/Model3DImportModal'
 import { useCascade } from './hooks/useCascade'
 import SaveStatusIndicator, { type SaveStatus } from '../shared/components/SaveStatusIndicator'
+import { useActiveProjectId } from '../../../hooks/useActiveProject'
+import { savePlanImageFromUrl, loadAllPlanImages } from '../shared/stores/planImageCache'
 
 import type { ClippingConfig, ClippingAxis, NavMode } from './components/FloorPlan3D'
 
@@ -255,13 +258,24 @@ function transitionIcon(type: TransitionNode['type']): string {
 export default function Vol2Module() {
   const navigate = useNavigate()
 
-  // ── Hydrate from Supabase on mount ───────────────────────
+  // ── Hydrate from Supabase on mount / project switch ──────
+  const projectId = useActiveProjectId()
   const hydrateFromSupabase = useVol2Store((s) => s.hydrateFromSupabase)
   const isHydrating = useVol2Store((s) => s.isHydrating)
 
   useEffect(() => {
-    void hydrateFromSupabase('cosmos-angre')
-  }, [hydrateFromSupabase])
+    void hydrateFromSupabase(projectId)
+  }, [hydrateFromSupabase, projectId])
+
+  // Restore plan images from IndexedDB on mount
+  const setPlanImageUrl = useVol2Store((s) => s.setPlanImageUrl)
+  useEffect(() => {
+    void loadAllPlanImages().then(urls => {
+      for (const [floorId, url] of Object.entries(urls)) {
+        setPlanImageUrl(floorId, url)
+      }
+    })
+  }, [setPlanImageUrl])
 
   const hydrationError = useVol2Store((s) => s.hydrationError)
   const saveStatus: SaveStatus = isHydrating ? 'saving' : hydrationError ? 'offline' : 'saved'
@@ -600,6 +614,14 @@ export default function Vol2Module() {
           </div>
         )}
 
+        {/* Plan layer selector — superposition de plans */}
+        {activeTab === 'plan' && viewMode === '2d' && activeFloor && (
+          <PlanLayerSelector
+            floorId={activeFloor.id}
+            onPrimaryPlanChange={(url) => setPlanImageUrl(activeFloor.id, url)}
+          />
+        )}
+
         {/* Show all floors (3D + plan only) */}
         {activeTab === 'plan' && viewMode === '3d' && (
           <button
@@ -822,7 +844,8 @@ export default function Vol2Module() {
               cursorMode={placeTool ? 'place' : 'select'}
               selectedId={selectedEntityId}
               className="w-full h-full"
-              planImageUrl={planImageUrls[activeFloor.id] || usePlanImportStore.getState().getActivePlanUrl(activeFloor.id)}
+              planImageUrl={activeFloor ? (planImageUrls[activeFloor.id] || usePlanImportStore.getState().getActivePlanUrl(activeFloor.id)) : undefined}
+              overlayLayers={activeFloor ? usePlanImportStore.getState().getVisibleLayers(activeFloor.id) : undefined}
             >
               {/* Camera FOV cones (inside FloorPlanCanvas SVG viewBox) */}
               {showFov &&
@@ -1078,8 +1101,14 @@ export default function Vol2Module() {
                       niveau: (z.niveau ?? 2) as any,
                       color: z.color ?? '#0a2a15',
                     }))
-                    s.setZones([...s.zones, ...newZones])
-                    if (planImageUrl) s.setPlanImageUrl(floorId, planImageUrl)
+                    // Replace zones on this floor (remove old mock/imported zones for this floor)
+                    const otherFloorZones = s.zones.filter(z => z.floorId !== floorId)
+                    s.setZones([...otherFloorZones, ...newZones])
+                    if (planImageUrl) {
+                      s.setPlanImageUrl(floorId, planImageUrl)
+                      // Persist in IndexedDB so it survives page refresh
+                      void savePlanImageFromUrl(floorId, planImageUrl, 'plan-import.png')
+                    }
                   }}
                 />
               )}

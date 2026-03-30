@@ -25,10 +25,19 @@ export interface PlanImportRecord {
   warnings: string[]
 }
 
+/** Un plan visible sur le canvas avec son opacite */
+export interface PlanLayer {
+  importId: string
+  opacity: number   // 0-1
+  visible: boolean
+}
+
 interface PlanImportStoreState {
   imports: PlanImportRecord[]
-  /** Which import is active per floor (floorId → importId) */
+  /** Which import is active per floor (floorId → importId) — backward compat */
   activePlanPerFloor: Record<string, string>
+  /** Plans superposes par etage (floorId → PlanLayer[]) */
+  layersPerFloor: Record<string, PlanLayer[]>
   addImport: (record: PlanImportRecord) => void
   updateImport: (id: string, data: Partial<PlanImportRecord>) => void
   removeImport: (id: string) => void
@@ -37,6 +46,16 @@ interface PlanImportStoreState {
   setActivePlan: (floorId: string, importId: string) => void
   /** Get the plan image URL for a floor (from the active import) */
   getActivePlanUrl: (floorId: string) => string | undefined
+  /** Ajouter un plan comme couche superposee sur un etage */
+  addLayer: (floorId: string, importId: string) => void
+  /** Retirer une couche */
+  removeLayer: (floorId: string, importId: string) => void
+  /** Modifier l'opacite d'une couche */
+  setLayerOpacity: (floorId: string, importId: string, opacity: number) => void
+  /** Basculer la visibilite d'une couche */
+  toggleLayerVisibility: (floorId: string, importId: string) => void
+  /** Obtenir toutes les couches visibles pour un etage */
+  getVisibleLayers: (floorId: string) => Array<{ importId: string; planImageUrl: string; opacity: number }>
 }
 
 export const usePlanImportStore = create<PlanImportStoreState>()(
@@ -44,6 +63,7 @@ export const usePlanImportStore = create<PlanImportStoreState>()(
     (set, get) => ({
       imports: [],
       activePlanPerFloor: {},
+      layersPerFloor: {},
 
       addImport: (record) =>
         set((s) => ({ imports: [record, ...s.imports] })),
@@ -62,7 +82,7 @@ export const usePlanImportStore = create<PlanImportStoreState>()(
           return { imports: s.imports.filter((r) => r.id !== id), activePlanPerFloor: newActive }
         }),
 
-      clearAll: () => set({ imports: [], activePlanPerFloor: {} }),
+      clearAll: () => set({ imports: [], activePlanPerFloor: {}, layersPerFloor: {} }),
 
       setActivePlan: (floorId, importId) =>
         set((s) => ({ activePlanPerFloor: { ...s.activePlanPerFloor, [floorId]: importId } })),
@@ -73,6 +93,62 @@ export const usePlanImportStore = create<PlanImportStoreState>()(
         if (!importId) return undefined
         const record = s.imports.find((r) => r.id === importId)
         return record?.planImageUrl
+      },
+
+      // ── Gestion des couches superposees ──
+
+      addLayer: (floorId, importId) =>
+        set((s) => {
+          const current = s.layersPerFloor[floorId] ?? []
+          if (current.some(l => l.importId === importId)) return s // Deja present
+          return {
+            layersPerFloor: {
+              ...s.layersPerFloor,
+              [floorId]: [...current, { importId, opacity: 0.5, visible: true }],
+            },
+          }
+        }),
+
+      removeLayer: (floorId, importId) =>
+        set((s) => ({
+          layersPerFloor: {
+            ...s.layersPerFloor,
+            [floorId]: (s.layersPerFloor[floorId] ?? []).filter(l => l.importId !== importId),
+          },
+        })),
+
+      setLayerOpacity: (floorId, importId, opacity) =>
+        set((s) => ({
+          layersPerFloor: {
+            ...s.layersPerFloor,
+            [floorId]: (s.layersPerFloor[floorId] ?? []).map(l =>
+              l.importId === importId ? { ...l, opacity: Math.max(0, Math.min(1, opacity)) } : l
+            ),
+          },
+        })),
+
+      toggleLayerVisibility: (floorId, importId) =>
+        set((s) => ({
+          layersPerFloor: {
+            ...s.layersPerFloor,
+            [floorId]: (s.layersPerFloor[floorId] ?? []).map(l =>
+              l.importId === importId ? { ...l, visible: !l.visible } : l
+            ),
+          },
+        })),
+
+      getVisibleLayers: (floorId) => {
+        const s = get()
+        const layers = s.layersPerFloor[floorId] ?? []
+        return layers
+          .filter(l => l.visible)
+          .map(l => {
+            const record = s.imports.find(r => r.id === l.importId)
+            return record?.planImageUrl
+              ? { importId: l.importId, planImageUrl: record.planImageUrl, opacity: l.opacity }
+              : null
+          })
+          .filter((l): l is NonNullable<typeof l> => l !== null)
       },
     }),
     { name: 'atlas-plan-imports' }
