@@ -6,6 +6,7 @@ import type { Vol2ExportData } from '../cosmos-angre/shared/proph3t/types'
 import type { ASPADCartouche } from './exportTypes'
 import type { CotationSpec, CalibrationResult } from '../cosmos-angre/shared/planReader/planReaderTypes'
 import { renderCotationsOnPDF } from '../cosmos-angre/shared/planReader/cotationEngine'
+import { registerPDFFonts, setHeadingFont, setBodyFont } from './pdfFonts'
 
 function hexRgb(hex: string): [number, number, number] {
   const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
@@ -20,13 +21,14 @@ export async function exportASPADPDF(
   calibration?: CalibrationResult | null,
 ): Promise<Blob> {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [841, 594] })
+  await registerPDFFonts(doc)
 
   // Cartouche
   const cx = 640, cy = 500, cw = 190, ch = 85
   doc.setDrawColor(0); doc.setLineWidth(0.5); doc.rect(cx, cy, cw, ch)
-  doc.setFontSize(12); doc.setFont('helvetica', 'bold')
+  setHeadingFont(doc, 12)
   doc.text('PLAN DE SÉCURITÉ — APSAD R82', cx + cw / 2, cy + 8, { align: 'center' })
-  doc.setFontSize(8); doc.setFont('helvetica', 'normal')
+  setBodyFont(doc, 8)
   const lines = [
     `Établissement : ${cartouche.projectName}`, `Adresse : ${cartouche.address}`,
     `Type : ${cartouche.establishmentType}`, `Surface : ${cartouche.surface_m2.toLocaleString()} m²`,
@@ -37,9 +39,9 @@ export async function exportASPADPDF(
   lines.forEach((l, i) => doc.text(l, cx + 5, cy + 18 + i * 6))
 
   // Legend
-  doc.setFontSize(10); doc.setFont('helvetica', 'bold')
+  setHeadingFont(doc, 10)
   doc.text('LÉGENDE', cx + cw / 2, 18, { align: 'center' })
-  doc.setFontSize(7); doc.setFont('helvetica', 'normal')
+  setBodyFont(doc, 7)
   const syms = [
     { l: 'Caméra dôme', c: '#2196F3' }, { l: 'Caméra PTZ', c: '#FF9800' },
     { l: 'Caméra bullet', c: '#4CAF50' }, { l: 'Porte contrôle accès', c: '#F44336' },
@@ -64,7 +66,7 @@ export async function exportASPADPDF(
 
   // Calibration cartouche
   if (calibration) {
-    doc.setFontSize(6); doc.setFont('helvetica', 'italic')
+    setBodyFont(doc, 6)
     doc.setTextColor(100, 100, 100)
     doc.text(
       `Echelle : 1:${Math.round(1 / (calibration.scaleFactorX || 0.001))} | ` +
@@ -76,9 +78,9 @@ export async function exportASPADPDF(
   }
 
   // Camera table
-  doc.setFontSize(8); doc.setFont('helvetica', 'bold')
+  setHeadingFont(doc, 8)
   doc.text('RÉCAPITULATIF CAMÉRAS', 10, 450)
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(6)
+  setBodyFont(doc, 6)
   const hdrs = ['ID', 'Modèle', 'Étage', 'FOV°', 'Portée(m)', 'Priorité']
   const cws = [30, 50, 25, 20, 25, 25]
   let px = 10

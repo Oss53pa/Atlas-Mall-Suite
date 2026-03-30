@@ -27,7 +27,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['InterVar', 'system-ui', 'sans-serif'],
+        display: ['Plus Jakarta Sans', 'InterVar', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       boxShadow: {
