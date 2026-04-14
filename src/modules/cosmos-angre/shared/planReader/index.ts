@@ -1802,27 +1802,9 @@ export async function importPlan(
             centerY: bH * unitScale / 2,
           }
 
-          // Build DetectedSpaces from deduped zones (convert from normalized 0-1 to metres, flip Y)
-          const planSpaces: DetectedSpace[] = dedupedZones.map((z) => {
-            const x = z.boundingBox.x * normalizedBounds.width
-            const rawY = z.boundingBox.y * normalizedBounds.height
-            const w = z.boundingBox.w * normalizedBounds.width
-            const h = z.boundingBox.h * normalizedBounds.height
-            // Flip Y: convert from bottom-up to top-down
-            const y = normalizedBounds.height - rawY - h
-            const polygon: [number, number][] = [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]
-            return {
-              id: z.id,
-              polygon,
-              areaSqm: Math.round(w * h * 10) / 10,
-              label: z.label,
-              layer: 'import',
-              type: (z.estimatedType ?? 'commerce') as import('../proph3t/types').SpaceType,
-              bounds: computeBoundsFromPoints(polygon),
-              color: z.color ?? null,
-              metadata: {},
-            }
-          })
+          // No auto-detected spaces — the plan SVG image is the main content.
+          // Users can draw zones manually on top of the plan image.
+          const planSpaces: DetectedSpace[] = []
 
           // Build wall segments (structure layers)
           const planWalls: WallSegment[] = dxfWallSegs
@@ -1847,13 +1829,13 @@ export async function importPlan(
           }))
 
           state.parsedPlan = {
-            entities: normalizedEntities,
+            entities: [],  // SVG image is used for rendering, not individual entities
             layers: planLayers,
             spaces: planSpaces,
             bounds: normalizedBounds,
             unitScale,
             detectedUnit: detectedUnit as 'mm' | 'cm' | 'm',
-            wallSegments: planWalls,
+            wallSegments: [],
             planImageUrl: state.planImageUrl,
           }
 
