@@ -139,75 +139,53 @@ export function DxfViewerCanvas({ dxfUrl, viewMode = '2d', className = '' }: Dxf
       }
       camera.lookAt(centerX, centerY, 0)
 
-      // Ground plane with captured texture
+      // ── Plan as textured ground plane ──
       const texture = new THREE.CanvasTexture(canvas2d)
       texture.minFilter = THREE.LinearFilter
       texture.magFilter = THREE.LinearFilter
-      const groundGeo = new THREE.PlaneGeometry(planW, planH)
-      const groundMat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide })
-      const ground = new THREE.Mesh(groundGeo, groundMat)
-      ground.position.set(centerX, centerY, 0)
-      scene.add(ground)
 
-      // Grid below
-      const gridHelper = new THREE.GridHelper(diagonal, 40, 0x222244, 0x111133)
+      // Slight elevation for the plan slab
+      const SLAB_H = diagonal * 0.002
+
+      // Floor slab (thin box with plan texture on top)
+      const slabGeo = new THREE.BoxGeometry(planW, planH, SLAB_H)
+      const slabTopMat = new THREE.MeshBasicMaterial({ map: texture })
+      const slabSideMat = new THREE.MeshBasicMaterial({ color: 0x2a3a5c })
+      const slabBottomMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e })
+      const slab = new THREE.Mesh(slabGeo, [
+        slabSideMat, slabSideMat,  // +x, -x
+        slabSideMat, slabSideMat,  // +y, -y
+        slabTopMat, slabBottomMat, // +z (top with texture), -z
+      ])
+      slab.position.set(centerX, centerY, 0)
+      scene.add(slab)
+
+      // Ground grid below the slab
+      const gridHelper = new THREE.GridHelper(diagonal * 1.5, 30, 0x1a1a3a, 0x111128)
       gridHelper.rotation.x = Math.PI / 2
-      gridHelper.position.set(centerX, centerY, -0.1)
+      gridHelper.position.set(centerX, centerY, -SLAB_H)
       scene.add(gridHelper)
 
-      // Extrude walls from the 2D canvas line data
-      // Read pixel data to detect edges would be complex — instead use
-      // simple wall outlines from the DXF bounds + subdivisions
-      const wallMat = new THREE.MeshBasicMaterial({ color: 0x3b5998, transparent: true, opacity: 0.6, side: THREE.DoubleSide })
-      const wallMat2 = new THREE.MeshBasicMaterial({ color: 0x5b7ab8, transparent: true, opacity: 0.4, side: THREE.DoubleSide })
-
-      // Create boundary walls
-      const createWall = (x1: number, y1: number, x2: number, y2: number, mat: THREE.Material) => {
+      // Outer boundary walls (frame around the plan)
+      const FRAME_H = diagonal * 0.008
+      const frameMat = new THREE.MeshBasicMaterial({ color: 0x4a6fa5, transparent: true, opacity: 0.5 })
+      const createFrame = (x1: number, y1: number, x2: number, y2: number) => {
         const dx = x2 - x1, dy = y2 - y1
         const len = Math.sqrt(dx * dx + dy * dy)
-        if (len < 1) return
-        const geo = new THREE.BoxGeometry(len, planW * 0.002, WALL_H)
-        const wall = new THREE.Mesh(geo, mat)
-        wall.position.set((x1 + x2) / 2, (y1 + y2) / 2, WALL_H / 2)
-        wall.rotation.z = Math.atan2(dy, dx)
-        scene.add(wall)
+        const thick = diagonal * 0.003
+        const geo = new THREE.BoxGeometry(len, thick, FRAME_H)
+        const mesh = new THREE.Mesh(geo, frameMat)
+        mesh.position.set((x1 + x2) / 2, (y1 + y2) / 2, FRAME_H / 2 + SLAB_H / 2)
+        mesh.rotation.z = Math.atan2(dy, dx)
+        scene.add(mesh)
       }
+      createFrame(bounds.minX, bounds.minY, bounds.maxX, bounds.minY)
+      createFrame(bounds.maxX, bounds.minY, bounds.maxX, bounds.maxY)
+      createFrame(bounds.maxX, bounds.maxY, bounds.minX, bounds.maxY)
+      createFrame(bounds.minX, bounds.maxY, bounds.minX, bounds.minY)
 
-      // Outer boundary walls
-      createWall(bounds.minX, bounds.minY, bounds.maxX, bounds.minY, wallMat)
-      createWall(bounds.maxX, bounds.minY, bounds.maxX, bounds.maxY, wallMat)
-      createWall(bounds.maxX, bounds.maxY, bounds.minX, bounds.maxY, wallMat)
-      createWall(bounds.minX, bounds.maxY, bounds.minX, bounds.minY, wallMat)
-
-      // Internal walls from scene geometry (safe — using our own Three.js)
-      // Read the 2D viewer's renderer to get line positions
-      const dxfRenderer = viewer.GetRenderer()
-      const dxfScene = viewer.GetScene()
-      if (dxfRenderer && dxfScene) {
-        let wallCount = 0
-        dxfScene.traverse((obj: { geometry?: { getAttribute?: (n: string) => { array: Float32Array } | null } }) => {
-          if (wallCount > 3000) return
-          const geo = obj.geometry
-          if (!geo?.getAttribute) return
-          const pos = geo.getAttribute('position')
-          if (!pos) return
-          const arr = pos.array
-          for (let i = 0; i < arr.length - 5 && wallCount < 3000; i += 6) {
-            const x1 = arr[i], y1 = arr[i + 1]
-            const x2 = arr[i + 3], y2 = arr[i + 4]
-            const dx = x2 - x1, dy = y2 - y1
-            const len = Math.sqrt(dx * dx + dy * dy)
-            if (len < planW * 0.01 || len > planW * 0.5) continue
-            createWall(x1, y1, x2, y2, wallCount % 2 === 0 ? wallMat : wallMat2)
-            wallCount++
-          }
-        })
-        console.log(`[3D] Extruded ${wallCount} internal walls`)
-      }
-
-      // Ambient light
-      const ambient = new THREE.AmbientLight(0x606080, 1.5)
-      scene.add(ambient)
+      // Lighting
+      scene.add(new THREE.AmbientLight(0xffffff, 1.2))
 
       // Controls
       const controls = new OrbitControls(camera, renderer.domElement)
