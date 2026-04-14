@@ -17,7 +17,128 @@ interface DxfViewerCanvasProps {
   className?: string
 }
 
-// Apply 3D camera mode to the dxf-viewer's Three.js scene
+// ── 3D EXTRUSION ENGINE ──
+// Walks the dxf-viewer Three.js scene, finds line geometries,
+// and extrudes them into 3D walls + adds a ground plane.
+
+const WALL_HEIGHT = 3.5   // metres — typical floor height
+const WALL_THICKNESS = 0.15 // metres
+
+function extrudeSceneTo3D(scene: THREE.Scene, bounds: { minX: number; maxX: number; minY: number; maxY: number }) {
+  const width = bounds.maxX - bounds.minX
+  const height = bounds.maxY - bounds.minY
+  const centerX = (bounds.minX + bounds.maxX) / 2
+  const centerY = (bounds.minY + bounds.maxY) / 2
+
+  const extrudedGroup = new THREE.Group()
+  extrudedGroup.name = '__3d_extrusion'
+
+  // 1. Ground plane
+  const groundGeo = new THREE.PlaneGeometry(width * 1.2, height * 1.2)
+  const groundMat = new THREE.MeshPhongMaterial({
+    color: 0x1a1a2e,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.8,
+  })
+  const ground = new THREE.Mesh(groundGeo, groundMat)
+  ground.position.set(centerX, centerY, -0.01)
+  extrudedGroup.add(ground)
+
+  // 2. Walk scene to find line segments and extrude them as walls
+  const wallMat = new THREE.MeshPhongMaterial({
+    color: 0x4a6fa5,
+    transparent: true,
+    opacity: 0.7,
+    side: THREE.DoubleSide,
+  })
+
+  const wallMat2 = new THREE.MeshPhongMaterial({
+    color: 0x6b8cba,
+    transparent: true,
+    opacity: 0.5,
+    side: THREE.DoubleSide,
+  })
+
+  let wallCount = 0
+  const MAX_WALLS = 5000 // Limit for performance
+
+  scene.traverse((obj) => {
+    if (wallCount >= MAX_WALLS) return
+    if (!(obj instanceof THREE.LineSegments || obj instanceof THREE.Line)) return
+
+    const geo = obj.geometry
+    const posAttr = geo.getAttribute('position')
+    if (!posAttr) return
+
+    const positions = posAttr.array as Float32Array
+
+    // Extract line segments and create wall boxes
+    for (let i = 0; i < positions.length - 5; i += 6) {
+      if (wallCount >= MAX_WALLS) break
+
+      const x1 = positions[i], y1 = positions[i + 1]
+      const x2 = positions[i + 3], y2 = positions[i + 4]
+
+      const dx = x2 - x1, dy = y2 - y1
+      const len = Math.sqrt(dx * dx + dy * dy)
+
+      // Skip very short or very long segments
+      if (len < width * 0.005 || len > width * 0.8) continue
+
+      // Create a wall box
+      const wallGeo = new THREE.BoxGeometry(len, WALL_THICKNESS, WALL_HEIGHT)
+      const angle = Math.atan2(dy, dx)
+
+      const wall = new THREE.Mesh(wallGeo, wallCount % 3 === 0 ? wallMat2 : wallMat)
+      wall.position.set(
+        (x1 + x2) / 2,
+        (y1 + y2) / 2,
+        WALL_HEIGHT / 2,
+      )
+      wall.rotation.z = angle
+
+      extrudedGroup.add(wall)
+      wallCount++
+    }
+  })
+
+  // 3. Lighting
+  const ambient = new THREE.AmbientLight(0x404060, 0.6)
+  ambient.name = '__3d_light_ambient'
+  extrudedGroup.add(ambient)
+
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8)
+  dirLight.position.set(centerX + width * 0.5, centerY + height * 0.5, width)
+  dirLight.name = '__3d_light_dir'
+  extrudedGroup.add(dirLight)
+
+  const hemiLight = new THREE.HemisphereLight(0x8899bb, 0x1a1a2e, 0.4)
+  hemiLight.name = '__3d_light_hemi'
+  extrudedGroup.add(hemiLight)
+
+  scene.add(extrudedGroup)
+  console.log(`[3D] Extruded ${wallCount} walls, height=${WALL_HEIGHT}m`)
+}
+
+function remove3DExtrusion(scene: THREE.Scene) {
+  const group = scene.getObjectByName('__3d_extrusion')
+  if (group) {
+    group.traverse((obj) => {
+      if (obj instanceof THREE.Mesh) {
+        obj.geometry.dispose()
+        if (obj.material instanceof THREE.Material) obj.material.dispose()
+      }
+    })
+    scene.remove(group)
+  }
+  // Remove lights
+  for (const name of ['__3d_light_ambient', '__3d_light_dir', '__3d_light_hemi']) {
+    const light = scene.getObjectByName(name)
+    if (light) scene.remove(light)
+  }
+}
+
 function applyViewMode(viewer: DxfViewer, mode: string) {
   const renderer = viewer.GetRenderer()
   const scene = viewer.GetScene()
@@ -32,39 +153,45 @@ function applyViewMode(viewer: DxfViewer, mode: string) {
   const height = bounds.maxY - bounds.minY
   const diagonal = Math.sqrt(width * width + height * height)
 
+  // Clean up previous 3D extrusion
+  remove3DExtrusion(scene)
+
   if (mode === '2d') {
-    // Default orthographic view — dxf-viewer handles this natively
     viewer.FitView(bounds.minX, bounds.maxX, bounds.minY, bounds.maxY, 20)
     viewer.Render()
     return
   }
 
-  // For 3D modes, we need to swap to a PerspectiveCamera
+  // ── Extrude the 2D plan into 3D walls ──
+  extrudeSceneTo3D(scene, bounds)
+
+  // ── Set up perspective camera + OrbitControls ──
   const canvas = viewer.GetCanvas()
   const aspect = canvas.width / canvas.height
-
-  const perspCamera = new THREE.PerspectiveCamera(45, aspect, 0.1, diagonal * 10)
+  const perspCamera = new THREE.PerspectiveCamera(50, aspect, 0.1, diagonal * 10)
 
   if (mode === '3d') {
-    // Perspective view — tilted camera looking down at the plan
-    perspCamera.position.set(centerX, centerY - diagonal * 0.3, diagonal * 0.6)
-    perspCamera.lookAt(centerX, centerY, 0)
+    perspCamera.position.set(
+      centerX - width * 0.3,
+      centerY - height * 0.4,
+      diagonal * 0.35,
+    )
   } else {
-    // Isometric view (3d-advanced)
-    const iso = diagonal * 0.5
-    perspCamera.position.set(centerX + iso, centerY - iso, iso)
-    perspCamera.lookAt(centerX, centerY, 0)
+    // Isometric
+    const d = diagonal * 0.4
+    perspCamera.position.set(centerX + d * 0.7, centerY - d * 0.7, d * 0.8)
   }
+  perspCamera.lookAt(centerX, centerY, WALL_HEIGHT * 0.3)
 
-  // Add OrbitControls for rotation/pan/zoom
   const controls = new OrbitControls(perspCamera, canvas)
-  controls.target.set(centerX, centerY, 0)
+  controls.target.set(centerX, centerY, WALL_HEIGHT * 0.3)
   controls.enableDamping = true
-  controls.dampingFactor = 0.1
-  controls.maxPolarAngle = Math.PI / 2.1 // Don't go below ground
+  controls.dampingFactor = 0.08
+  controls.maxPolarAngle = Math.PI / 2.05
+  controls.minDistance = diagonal * 0.05
+  controls.maxDistance = diagonal * 3
   controls.update()
 
-  // Animation loop for orbit controls
   let animating = true
   const animate = () => {
     if (!animating) return
@@ -74,10 +201,20 @@ function applyViewMode(viewer: DxfViewer, mode: string) {
   }
   animate()
 
-  // Store cleanup ref
+  // Handle resize
+  const handleResize = () => {
+    const w = canvas.parentElement?.clientWidth ?? canvas.width
+    const h = canvas.parentElement?.clientHeight ?? canvas.height
+    perspCamera.aspect = w / h
+    perspCamera.updateProjectionMatrix()
+  }
+  window.addEventListener('resize', handleResize)
+
   ;(viewer as unknown as Record<string, unknown>).__3dCleanup = () => {
     animating = false
     controls.dispose()
+    window.removeEventListener('resize', handleResize)
+    remove3DExtrusion(scene)
   }
 }
 
