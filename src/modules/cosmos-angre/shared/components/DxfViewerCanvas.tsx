@@ -47,6 +47,7 @@ export function DxfViewerCanvas({ dxfUrl, viewMode = '2d', className = '' }: Dxf
           antialias: true,
           colorCorrection: true,
           blackWhiteInversion: true,
+          preserveDrawingBuffer: true,
           sceneOptions: {
             arcTessellationAngle: 6,
             minArcTessellationSubdivisions: 8,
@@ -104,7 +105,8 @@ export function DxfViewerCanvas({ dxfUrl, viewMode = '2d', className = '' }: Dxf
     const bounds = viewer.GetBounds()
     if (!bounds) return
 
-    // Capture the 2D canvas as a texture
+    // Force a render of the 2D viewer and capture its canvas
+    viewer.Render()
     const canvas2d = viewer.GetCanvas()
     if (!canvas2d) return
 
@@ -272,11 +274,11 @@ export function DxfViewerCanvas({ dxfUrl, viewMode = '2d', className = '' }: Dxf
 
   return (
     <div className={`relative w-full h-full overflow-hidden bg-gray-950 ${className}`}>
-      {/* 2D DXF viewer — always mounted (hidden in 3D mode, used as texture source) */}
-      <div ref={containerRef} className="w-full h-full" style={{ display: is3D ? 'none' : 'block' }} />
+      {/* 2D DXF viewer — always mounted and rendered (behind 3D canvas when in 3D mode) */}
+      <div ref={containerRef} className="w-full h-full absolute inset-0" style={{ zIndex: is3D ? 0 : 1 }} />
 
-      {/* 3D canvas — shown in 3D modes */}
-      {is3D && <div ref={container3dRef} className="w-full h-full" />}
+      {/* 3D canvas — above the 2D canvas */}
+      {is3D && <div ref={container3dRef} className="w-full h-full absolute inset-0" style={{ zIndex: 2 }} />}
 
       {/* Loading */}
       {loading && (
