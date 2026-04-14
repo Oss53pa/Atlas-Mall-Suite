@@ -35,7 +35,7 @@ function extrudeSceneTo3D(scene: THREE.Scene, bounds: { minX: number; maxX: numb
 
   // 1. Ground plane
   const groundGeo = new THREE.PlaneGeometry(width * 1.2, height * 1.2)
-  const groundMat = new THREE.MeshPhongMaterial({
+  const groundMat = new THREE.MeshBasicMaterial({
     color: 0x1a1a2e,
     side: THREE.DoubleSide,
     transparent: true,
@@ -46,14 +46,14 @@ function extrudeSceneTo3D(scene: THREE.Scene, bounds: { minX: number; maxX: numb
   extrudedGroup.add(ground)
 
   // 2. Walk scene to find line segments and extrude them as walls
-  const wallMat = new THREE.MeshPhongMaterial({
+  const wallMat = new THREE.MeshBasicMaterial({
     color: 0x4a6fa5,
     transparent: true,
     opacity: 0.7,
     side: THREE.DoubleSide,
   })
 
-  const wallMat2 = new THREE.MeshPhongMaterial({
+  const wallMat2 = new THREE.MeshBasicMaterial({
     color: 0x6b8cba,
     transparent: true,
     opacity: 0.5,
@@ -103,20 +103,6 @@ function extrudeSceneTo3D(scene: THREE.Scene, bounds: { minX: number; maxX: numb
     }
   })
 
-  // 3. Lighting
-  const ambient = new THREE.AmbientLight(0x404060, 0.6)
-  ambient.name = '__3d_light_ambient'
-  extrudedGroup.add(ambient)
-
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8)
-  dirLight.position.set(centerX + width * 0.5, centerY + height * 0.5, width)
-  dirLight.name = '__3d_light_dir'
-  extrudedGroup.add(dirLight)
-
-  const hemiLight = new THREE.HemisphereLight(0x8899bb, 0x1a1a2e, 0.4)
-  hemiLight.name = '__3d_light_hemi'
-  extrudedGroup.add(hemiLight)
-
   scene.add(extrudedGroup)
   console.log(`[3D] Extruded ${wallCount} walls, height=${WALL_HEIGHT}m`)
 }
@@ -131,11 +117,6 @@ function remove3DExtrusion(scene: THREE.Scene) {
       }
     })
     scene.remove(group)
-  }
-  // Remove lights
-  for (const name of ['__3d_light_ambient', '__3d_light_dir', '__3d_light_hemi']) {
-    const light = scene.getObjectByName(name)
-    if (light) scene.remove(light)
   }
 }
 
