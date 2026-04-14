@@ -243,7 +243,7 @@ export function PlanCanvasV2({
   if (plan.dxfBlobUrl) {
     return (
       <div className={`relative w-full h-full flex overflow-hidden bg-gray-950 ${className}`}>
-        <DxfViewerCanvas dxfUrl={plan.dxfBlobUrl} viewMode={viewMode} className="flex-1" />
+        <DxfViewerCanvas dxfUrl={plan.dxfBlobUrl} planImageUrl={plan.planImageUrl} viewMode={viewMode} className="flex-1" />
         {/* Plan selector dropdown */}
         <PlanSelector />
       </div>

@@ -8,11 +8,13 @@ import type { LayerInfo } from 'dxf-viewer'
 
 interface DxfViewerCanvasProps {
   dxfUrl: string
+  /** SVG preview blob URL (used as 3D texture — more reliable than canvas capture) */
+  planImageUrl?: string
   viewMode?: '2d' | '3d' | '3d-advanced'
   className?: string
 }
 
-export function DxfViewerCanvas({ dxfUrl, viewMode = '2d', className = '' }: DxfViewerCanvasProps) {
+export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', className = '' }: DxfViewerCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const container3dRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<DxfViewer | null>(null)
@@ -105,11 +107,6 @@ export function DxfViewerCanvas({ dxfUrl, viewMode = '2d', className = '' }: Dxf
     const bounds = viewer.GetBounds()
     if (!bounds) return
 
-    // Force a render of the 2D viewer and capture its canvas
-    viewer.Render()
-    const canvas2d = viewer.GetCanvas()
-    if (!canvas2d) return
-
     // Dynamic import to use project's Three.js
     import('three').then(async (THREE) => {
       const { OrbitControls } = await import('three/examples/jsm/controls/OrbitControls.js')
@@ -141,8 +138,20 @@ export function DxfViewerCanvas({ dxfUrl, viewMode = '2d', className = '' }: Dxf
       }
       camera.lookAt(centerX, centerY, 0)
 
-      // ── Plan as textured ground plane ──
-      const texture = new THREE.CanvasTexture(canvas2d)
+      // ── Load plan image as texture ──
+      const textureLoader = new THREE.TextureLoader()
+      const imgUrl = planImageUrl || ''
+      let texture: THREE.Texture
+      if (imgUrl) {
+        texture = await new Promise<THREE.Texture>((resolve, reject) => {
+          textureLoader.load(imgUrl, resolve, undefined, reject)
+        })
+      } else {
+        // Fallback: try canvas capture
+        const canvas2d = viewer.GetCanvas()
+        viewer.Render()
+        texture = canvas2d ? new THREE.CanvasTexture(canvas2d) : new THREE.Texture()
+      }
       texture.minFilter = THREE.LinearFilter
       texture.magFilter = THREE.LinearFilter
 
@@ -201,8 +210,6 @@ export function DxfViewerCanvas({ dxfUrl, viewMode = '2d', className = '' }: Dxf
       const animate = () => {
         if (!running) return
         requestAnimationFrame(animate)
-        // Update ground texture from 2D viewer
-        texture.needsUpdate = true
         controls.update()
         renderer.render(scene, camera)
       }
