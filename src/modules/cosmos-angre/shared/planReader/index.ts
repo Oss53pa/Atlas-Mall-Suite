@@ -1669,66 +1669,79 @@ export async function importPlan(
         state.progress = 82
         emit()
 
-        // ── Auto-detect floor clusters: find large Y-gaps between groups of entities ──
-        // DXF files often contain multiple floors stacked vertically in the same drawing.
-        // We detect clusters by finding gaps > 15% of total height between entity Y ranges.
+        // ── Auto-detect floor clusters: find large gaps on X or Y axis ──
+        // DXF files often contain multiple floors side-by-side (X) or stacked (Y).
+        // We try both axes and pick the one that gives the best cluster separation.
         interface FloorCluster {
           label: string
-          yMin: number; yMax: number
+          axisMin: number; axisMax: number
           entityCount: number
+          axis: 'x' | 'y'
         }
-        const floorClusters: FloorCluster[] = []
+        let floorClusters: FloorCluster[] = []
 
-        // Collect Y centroids of all entities (sample for performance)
-        const yCentroids: number[] = []
-        const maxSample = Math.min(planEntities.length, 50000)
-        const step = Math.max(1, Math.floor(planEntities.length / maxSample))
-        for (let i = 0; i < planEntities.length; i += step) {
-          const e = planEntities[i]
-          yCentroids.push(e.bounds.centerY)
-        }
-        yCentroids.sort((a, b) => a - b)
+        // Try clustering on a given axis
+        const findClusters = (axis: 'x' | 'y'): { splits: { start: number; end: number }[]; gapSize: number } => {
+          const vals: number[] = []
+          const maxSample = Math.min(planEntities.length, 50000)
+          const step = Math.max(1, Math.floor(planEntities.length / maxSample))
+          for (let i = 0; i < planEntities.length; i += step) {
+            vals.push(axis === 'x' ? planEntities[i].bounds.centerX : planEntities[i].bounds.centerY)
+          }
+          vals.sort((a, b) => a - b)
+          if (vals.length < 100) return { splits: [], gapSize: 0 }
 
-        if (yCentroids.length > 100) {
-          // Find gaps: sorted Y values, look for jumps > 15% of total range
-          const totalRange = yCentroids[yCentroids.length - 1] - yCentroids[0]
-          const gapThreshold = totalRange * 0.10 // 10% of total range = floor separation
+          const totalRange = vals[vals.length - 1] - vals[0]
+          const gapThreshold = totalRange * 0.08 // 8% gap = floor separation
 
-          let clusterStart = yCentroids[0]
-          let prevY = yCentroids[0]
+          let clusterStart = vals[0], prevV = vals[0]
           const splits: { start: number; end: number }[] = []
+          let maxGap = 0
 
-          for (let i = 1; i < yCentroids.length; i++) {
-            if (yCentroids[i] - prevY > gapThreshold) {
-              splits.push({ start: clusterStart, end: prevY })
-              clusterStart = yCentroids[i]
+          for (let i = 1; i < vals.length; i++) {
+            const gap = vals[i] - prevV
+            if (gap > gapThreshold) {
+              splits.push({ start: clusterStart, end: prevV })
+              clusterStart = vals[i]
+              if (gap > maxGap) maxGap = gap
             }
-            prevY = yCentroids[i]
+            prevV = vals[i]
           }
-          splits.push({ start: clusterStart, end: prevY })
+          splits.push({ start: clusterStart, end: prevV })
+          return { splits: splits.length > 1 ? splits : [], gapSize: maxGap }
+        }
 
-          if (splits.length > 1) {
-            // Multiple floors detected — assign labels based on position (bottom = B1, etc.)
-            const floorLabels = splits.length === 2
-              ? ['RDC', 'R+1']
-              : splits.length === 3
-                ? ['B1', 'RDC', 'R+1']
-                : splits.map((_, i) => `Etage ${i + 1}`)
+        // Try both axes, pick the one with more clusters (or biggest gap)
+        const xResult = findClusters('x')
+        const yResult = findClusters('y')
 
-            for (let i = 0; i < splits.length; i++) {
-              const margin = (splits[i].end - splits[i].start) * 0.05
-              const yMin = splits[i].start - margin
-              const yMax = splits[i].end + margin
-              const count = planEntities.filter(e => e.bounds.centerY >= yMin && e.bounds.centerY <= yMax).length
-              floorClusters.push({ label: floorLabels[i], yMin, yMax, entityCount: count })
-            }
+        const bestAxis = xResult.splits.length >= yResult.splits.length && xResult.splits.length > 1
+          ? 'x' : yResult.splits.length > 1 ? 'y' : null
 
-            console.log(`[DXF] ${floorClusters.length} etages detectes:`, floorClusters.map(c => `${c.label}: Y=${c.yMin.toFixed(0)}..${c.yMax.toFixed(0)} (${c.entityCount} entites)`))
+        const bestSplits = bestAxis === 'x' ? xResult.splits : bestAxis === 'y' ? yResult.splits : []
+
+        if (bestSplits.length > 1 && bestAxis) {
+          const floorLabels = bestSplits.length === 2
+            ? ['RDC', 'R+1']
+            : bestSplits.length === 3
+              ? ['B1', 'RDC', 'R+1']
+              : bestSplits.map((_, i) => `Etage ${i + 1}`)
+
+          for (let i = 0; i < bestSplits.length; i++) {
+            const margin = (bestSplits[i].end - bestSplits[i].start) * 0.05
+            const aMin = bestSplits[i].start - margin
+            const aMax = bestSplits[i].end + margin
+            const count = planEntities.filter(e => {
+              const v = bestAxis === 'x' ? e.bounds.centerX : e.bounds.centerY
+              return v >= aMin && v <= aMax
+            }).length
+            floorClusters.push({ label: floorLabels[i], axisMin: aMin, axisMax: aMax, entityCount: count, axis: bestAxis })
           }
+
+          console.log(`[DXF] ${floorClusters.length} etages detectes (axe ${bestAxis.toUpperCase()}):`, floorClusters.map(c => `${c.label}: ${c.axis}=${c.axisMin.toFixed(0)}..${c.axisMax.toFixed(0)} (${c.entityCount} entites)`))
         }
 
         // If multiple clusters found, keep only the largest one (most entities = main floor)
-        // and store the cluster info for floor switching later
         let filteredEntities = planEntities
         let filteredBounds = dxfBoundsRaw
         let activeClusterIdx = -1
@@ -1745,9 +1758,10 @@ export async function importPlan(
           }
 
           const cluster = floorClusters[activeClusterIdx]
-          filteredEntities = planEntities.filter(e =>
-            e.bounds.centerY >= cluster.yMin && e.bounds.centerY <= cluster.yMax
-          )
+          filteredEntities = planEntities.filter(e => {
+            const v = cluster.axis === 'x' ? e.bounds.centerX : e.bounds.centerY
+            return v >= cluster.axisMin && v <= cluster.axisMax
+          })
 
           // Recompute bounds for this cluster only
           let cMinX = Infinity, cMinY = Infinity, cMaxX = -Infinity, cMaxY = -Infinity
@@ -1766,14 +1780,19 @@ export async function importPlan(
           console.log(`[DXF] Etage actif: ${cluster.label} (${filteredEntities.length}/${planEntities.length} entites)`)
           state.warnings.push(`${floorClusters.length} etages detectes — affichage: ${cluster.label} (${filteredEntities.length} entites)`)
 
-          // Also filter zones to this cluster
-          const clusterNormYMin = (cluster.yMin - minY) / bH
-          const clusterNormYMax = (cluster.yMax - minY) / bH
+          // Also filter zones to this cluster (using correct axis)
           const clusterZones = dedupedZones.filter(z => {
-            const zy = z.boundingBox.y
-            const zh = z.boundingBox.h
-            const zCenter = zy + zh / 2
-            return zCenter >= clusterNormYMin && zCenter <= clusterNormYMax
+            if (cluster.axis === 'x') {
+              const normMin = (cluster.axisMin - minX) / bW
+              const normMax = (cluster.axisMax - minX) / bW
+              const zCenter = z.boundingBox.x + z.boundingBox.w / 2
+              return zCenter >= normMin && zCenter <= normMax
+            } else {
+              const normMin = (cluster.axisMin - minY) / bH
+              const normMax = (cluster.axisMax - minY) / bH
+              const zCenter = z.boundingBox.y + z.boundingBox.h / 2
+              return zCenter >= normMin && zCenter <= normMax
+            }
           })
           // Re-normalize zone coords relative to cluster bounds
           const cBW = filteredBounds.width
