@@ -1741,74 +1741,11 @@ export async function importPlan(
           console.log(`[DXF] ${floorClusters.length} etages detectes (axe ${bestAxis.toUpperCase()}):`, floorClusters.map(c => `${c.label}: ${c.axis}=${c.axisMin.toFixed(0)}..${c.axisMax.toFixed(0)} (${c.entityCount} entites)`))
         }
 
-        // If multiple clusters found, keep only the largest one (most entities = main floor)
-        let filteredEntities = planEntities
-        let filteredBounds = dxfBoundsRaw
-        let activeClusterIdx = -1
-
+        // When multiple floor clusters are detected, use SVG preview as background
+        // (it renders the full plan correctly). Don't filter entities — use all of them
+        // with the full bounds so the SVG image aligns properly.
         if (floorClusters.length > 1) {
-          // Pick the cluster with the most entities as default (usually RDC)
-          activeClusterIdx = 0
-          let maxCount = 0
-          for (let i = 0; i < floorClusters.length; i++) {
-            if (floorClusters[i].entityCount > maxCount) {
-              maxCount = floorClusters[i].entityCount
-              activeClusterIdx = i
-            }
-          }
-
-          const cluster = floorClusters[activeClusterIdx]
-          filteredEntities = planEntities.filter(e => {
-            const v = cluster.axis === 'x' ? e.bounds.centerX : e.bounds.centerY
-            return v >= cluster.axisMin && v <= cluster.axisMax
-          })
-
-          // Recompute bounds for this cluster only
-          let cMinX = Infinity, cMinY = Infinity, cMaxX = -Infinity, cMaxY = -Infinity
-          for (const e of filteredEntities) {
-            if (e.bounds.minX < cMinX) cMinX = e.bounds.minX
-            if (e.bounds.minY < cMinY) cMinY = e.bounds.minY
-            if (e.bounds.maxX > cMaxX) cMaxX = e.bounds.maxX
-            if (e.bounds.maxY > cMaxY) cMaxY = e.bounds.maxY
-          }
-          filteredBounds = {
-            minX: cMinX, minY: cMinY, maxX: cMaxX, maxY: cMaxY,
-            width: cMaxX - cMinX || 1, height: cMaxY - cMinY || 1,
-            centerX: (cMinX + cMaxX) / 2, centerY: (cMinY + cMaxY) / 2,
-          }
-
-          console.log(`[DXF] Etage actif: ${cluster.label} (${filteredEntities.length}/${planEntities.length} entites)`)
-          state.warnings.push(`${floorClusters.length} etages detectes — affichage: ${cluster.label} (${filteredEntities.length} entites)`)
-
-          // Also filter zones to this cluster (using correct axis)
-          const clusterZones = dedupedZones.filter(z => {
-            if (cluster.axis === 'x') {
-              const normMin = (cluster.axisMin - minX) / bW
-              const normMax = (cluster.axisMax - minX) / bW
-              const zCenter = z.boundingBox.x + z.boundingBox.w / 2
-              return zCenter >= normMin && zCenter <= normMax
-            } else {
-              const normMin = (cluster.axisMin - minY) / bH
-              const normMax = (cluster.axisMax - minY) / bH
-              const zCenter = z.boundingBox.y + z.boundingBox.h / 2
-              return zCenter >= normMin && zCenter <= normMax
-            }
-          })
-          // Re-normalize zone coords relative to cluster bounds
-          const cBW = filteredBounds.width
-          const cBH = filteredBounds.height
-          for (const z of clusterZones) {
-            z.boundingBox = {
-              x: (z.boundingBox.x * bW - (filteredBounds.minX - minX)) / cBW,
-              y: (z.boundingBox.y * bH - (filteredBounds.minY - minY)) / cBH,
-              w: z.boundingBox.w * bW / cBW,
-              h: z.boundingBox.h * bH / cBH,
-            }
-          }
-          // Replace dedupedZones with cluster-filtered zones
-          dedupedZones.length = 0
-          dedupedZones.push(...clusterZones)
-          state.detectedZones = dedupedZones
+          state.warnings.push(`${floorClusters.length} etages detectes (axe ${floorClusters[0].axis.toUpperCase()}) — utilisez le panneau Calques pour filtrer`)
         }
 
         state.currentOperation = 'Construction du plan interactif...'
@@ -1816,17 +1753,18 @@ export async function importPlan(
         emit()
 
         // ── Build ParsedPlan for PlanCanvasV2 vectorial rendering ──
+        // Use planImageUrl (SVG preview) as background — it renders the full plan correctly.
+        // Entities are normalized to full bounds so the SVG image aligns with zone overlays.
         try {
-          // Use filtered entities/bounds (single floor cluster if detected)
-          const normalizedEntities = normalizeAllEntities(filteredEntities, filteredBounds, unitScale)
+          const normalizedEntities = normalizeAllEntities(planEntities, dxfBoundsRaw, unitScale)
           const normalizedBounds: Bounds = {
             minX: 0, minY: 0,
-            maxX: filteredBounds.width * unitScale,
-            maxY: filteredBounds.height * unitScale,
-            width: filteredBounds.width * unitScale,
-            height: filteredBounds.height * unitScale,
-            centerX: filteredBounds.width * unitScale / 2,
-            centerY: filteredBounds.height * unitScale / 2,
+            maxX: bW * unitScale,
+            maxY: bH * unitScale,
+            width: bW * unitScale,
+            height: bH * unitScale,
+            centerX: bW * unitScale / 2,
+            centerY: bH * unitScale / 2,
           }
 
           // Build DetectedSpaces from deduped zones (convert from normalized 0-1 to metres, flip Y)
