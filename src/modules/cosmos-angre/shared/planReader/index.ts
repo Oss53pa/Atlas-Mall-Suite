@@ -1629,20 +1629,51 @@ export async function importPlan(
           const svgParts: string[] = []
           let svgCount = 0
           const MAX_SVG = 300_000
+
+          // AutoCAD ACI color index → hex (basic 7 colors)
+          const ACI_COLORS: Record<number, string> = {
+            1: '#ff0000', 2: '#ffff00', 3: '#00ff00', 4: '#00ffff',
+            5: '#0000ff', 6: '#ff00ff', 7: '#ffffff',
+          }
+
+          // Layer name → color mapping (architectural conventions)
+          const layerColor = (layer: string): string => {
+            const l = (layer ?? '').toUpperCase()
+            if (/MUR|WALL|STRUCT|BETON|FACADE|MACONN/.test(l)) return '#94a3b8' // gray walls
+            if (/CLOIS|PARTITION/.test(l)) return '#64748b' // lighter partitions
+            if (/PORTE|DOOR|FENETRE|WINDOW/.test(l)) return '#60a5fa' // blue doors/windows
+            if (/CVC|CLIM|HVAC|VENTIL|CHAUFF/.test(l)) return '#22d3ee' // cyan HVAC
+            if (/ELEC|COURANT|CABLE/.test(l)) return '#f97316' // orange electrical
+            if (/PLOMB|SANITAIRE|EAU/.test(l)) return '#3b82f6' // blue plumbing
+            if (/INCENDIE|SSI|SPRINKL|DESENFUM/.test(l)) return '#ef4444' // red fire
+            if (/VEGETA|ARBRE|PLANT|PAYSAG/.test(l)) return '#22c55e' // green vegetation
+            if (/PARKING|VOIRIE|ROUTE/.test(l)) return '#a3a3a3' // gray parking
+            if (/HATCH|PATTERN/.test(l)) return '#475569' // dark hatches
+            if (/COTE|DIM|COTATION/.test(l)) return '#ef4444' // red dims
+            if (/TEXT|ANNOT|LABEL/.test(l)) return '#e2e8f0' // white text
+            return '#7dd3fc' // default cyan-blue
+          }
+
           for (const e of modelEntities) {
             if (svgCount >= MAX_SVG) break
+            const layer = e.layer ?? '0'
+            // Use entity color (ACI) if available, otherwise layer color
+            const entityColor = (e as Record<string, unknown>).colorIndex
+              ? ACI_COLORS[(e as Record<string, unknown>).colorIndex as number] ?? layerColor(layer)
+              : layerColor(layer)
+
             if (e.type === 'LINE' && e.startPoint && e.endPoint) {
               if (!inBounds(e.startPoint.x, e.startPoint.y) && !inBounds(e.endPoint.x, e.endPoint.y)) continue
-              svgParts.push(`<line x1="${svgTx(e.startPoint.x)}" y1="${svgTy(e.startPoint.y)}" x2="${svgTx(e.endPoint.x)}" y2="${svgTy(e.endPoint.y)}"/>`)
+              svgParts.push(`<line x1="${svgTx(e.startPoint.x)}" y1="${svgTy(e.startPoint.y)}" x2="${svgTx(e.endPoint.x)}" y2="${svgTy(e.endPoint.y)}" stroke="${entityColor}"/>`)
               svgCount++
             } else if ((e.type === 'LWPOLYLINE' || e.type === 'POLYLINE') && e.vertices && e.vertices.length >= 2) {
               if (!e.vertices.some(v => inBounds(v.x, v.y))) continue
               const pts = e.vertices.map(v => `${svgTx(v.x)},${svgTy(v.y)}`).join(' ')
-              svgParts.push(`<polyline points="${pts}"/>`)
+              svgParts.push(`<polyline points="${pts}" stroke="${entityColor}"/>`)
               svgCount++
             } else if (e.type === 'CIRCLE' && e.center && inBounds(e.center.x, e.center.y)) {
               const r = (e.radius ?? 0) * svgScale
-              svgParts.push(`<circle cx="${svgTx(e.center.x)}" cy="${svgTy(e.center.y)}" r="${r.toFixed(1)}"/>`)
+              svgParts.push(`<circle cx="${svgTx(e.center.x)}" cy="${svgTy(e.center.y)}" r="${r.toFixed(1)}" stroke="${entityColor}" stroke-width="0.5"/>`)
               svgCount++
             } else if (e.type === 'ARC' && e.center && inBounds(e.center.x, e.center.y)) {
               const r = (e.radius ?? 0) * svgScale
@@ -1655,11 +1686,11 @@ export async function importPlan(
               let sweep = ea - sa
               if (sweep < 0) sweep += 2 * Math.PI
               const largeArc = sweep > Math.PI ? 1 : 0
-              svgParts.push(`<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${r.toFixed(1)} ${r.toFixed(1)} 0 ${largeArc} 0 ${x2.toFixed(1)} ${y2.toFixed(1)}"/>`)
+              svgParts.push(`<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${r.toFixed(1)} ${r.toFixed(1)} 0 ${largeArc} 0 ${x2.toFixed(1)} ${y2.toFixed(1)}" stroke="${entityColor}"/>`)
               svgCount++
             }
           }
-          const previewSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" style="background:#0b0f14"><g fill="none" stroke="#7dd3fc" stroke-width="1" vector-effect="non-scaling-stroke">${svgParts.join('')}</g></svg>`
+          const previewSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" style="background:#0b0f14"><g fill="none" stroke-width="1" vector-effect="non-scaling-stroke">${svgParts.join('')}</g></svg>`
           const blob = new Blob([previewSvg], { type: 'image/svg+xml' })
           state.planImageUrl = URL.createObjectURL(blob)
           console.log(`[DXF] Preview SVG: ${svgCount} entites, ${W}x${H}px`)
