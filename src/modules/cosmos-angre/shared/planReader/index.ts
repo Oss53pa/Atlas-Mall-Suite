@@ -1673,7 +1673,11 @@ export async function importPlan(
               svgCount++
             } else if (e.type === 'CIRCLE' && e.center && inBounds(e.center.x, e.center.y)) {
               const r = (e.radius ?? 0) * svgScale
-              svgParts.push(`<circle cx="${svgTx(e.center.x)}" cy="${svgTy(e.center.y)}" r="${r.toFixed(1)}" stroke="${entityColor}" stroke-width="0.5"/>`)
+              // Large circles (trees, equipment symbols) → thin + transparent
+              const isLarge = r > W * 0.02 // > 2% of plan width
+              const sw = isLarge ? '0.3' : '0.5'
+              const op = isLarge ? ' opacity="0.3"' : ''
+              svgParts.push(`<circle cx="${svgTx(e.center.x)}" cy="${svgTy(e.center.y)}" r="${r.toFixed(1)}" stroke="${entityColor}" stroke-width="${sw}"${op}/>`)
               svgCount++
             } else if (e.type === 'ARC' && e.center && inBounds(e.center.x, e.center.y)) {
               const r = (e.radius ?? 0) * svgScale
