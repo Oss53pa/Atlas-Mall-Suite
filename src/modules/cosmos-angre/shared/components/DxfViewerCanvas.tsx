@@ -6,15 +6,82 @@ import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { DxfViewer } from 'dxf-viewer'
 import type { LayerInfo } from 'dxf-viewer'
 import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 interface DxfViewerCanvasProps {
   /** Blob URL of the DXF file to render */
   dxfUrl: string
+  /** View mode: 2d (top-down), 3d (perspective), 3d-advanced (isometric) */
+  viewMode?: '2d' | '3d' | '3d-advanced'
   /** Optional class name for the container */
   className?: string
 }
 
-export function DxfViewerCanvas({ dxfUrl, className = '' }: DxfViewerCanvasProps) {
+// Apply 3D camera mode to the dxf-viewer's Three.js scene
+function applyViewMode(viewer: DxfViewer, mode: string) {
+  const renderer = viewer.GetRenderer()
+  const scene = viewer.GetScene()
+  if (!renderer || !scene) return
+
+  const bounds = viewer.GetBounds()
+  if (!bounds) return
+
+  const centerX = (bounds.minX + bounds.maxX) / 2
+  const centerY = (bounds.minY + bounds.maxY) / 2
+  const width = bounds.maxX - bounds.minX
+  const height = bounds.maxY - bounds.minY
+  const diagonal = Math.sqrt(width * width + height * height)
+
+  if (mode === '2d') {
+    // Default orthographic view — dxf-viewer handles this natively
+    viewer.FitView(bounds.minX, bounds.maxX, bounds.minY, bounds.maxY, 20)
+    viewer.Render()
+    return
+  }
+
+  // For 3D modes, we need to swap to a PerspectiveCamera
+  const canvas = viewer.GetCanvas()
+  const aspect = canvas.width / canvas.height
+
+  const perspCamera = new THREE.PerspectiveCamera(45, aspect, 0.1, diagonal * 10)
+
+  if (mode === '3d') {
+    // Perspective view — tilted camera looking down at the plan
+    perspCamera.position.set(centerX, centerY - diagonal * 0.3, diagonal * 0.6)
+    perspCamera.lookAt(centerX, centerY, 0)
+  } else {
+    // Isometric view (3d-advanced)
+    const iso = diagonal * 0.5
+    perspCamera.position.set(centerX + iso, centerY - iso, iso)
+    perspCamera.lookAt(centerX, centerY, 0)
+  }
+
+  // Add OrbitControls for rotation/pan/zoom
+  const controls = new OrbitControls(perspCamera, canvas)
+  controls.target.set(centerX, centerY, 0)
+  controls.enableDamping = true
+  controls.dampingFactor = 0.1
+  controls.maxPolarAngle = Math.PI / 2.1 // Don't go below ground
+  controls.update()
+
+  // Animation loop for orbit controls
+  let animating = true
+  const animate = () => {
+    if (!animating) return
+    requestAnimationFrame(animate)
+    controls.update()
+    renderer.render(scene, perspCamera)
+  }
+  animate()
+
+  // Store cleanup ref
+  ;(viewer as unknown as Record<string, unknown>).__3dCleanup = () => {
+    animating = false
+    controls.dispose()
+  }
+}
+
+export function DxfViewerCanvas({ dxfUrl, viewMode = '2d', className = '' }: DxfViewerCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<DxfViewer | null>(null)
   const [layers, setLayers] = useState<LayerInfo[]>([])
@@ -81,6 +148,9 @@ export function DxfViewerCanvas({ dxfUrl, className = '' }: DxfViewerCanvasProps
         if (bounds) {
           viewer.FitView(bounds.minX, bounds.maxX, bounds.minY, bounds.maxY, 20)
         }
+
+        // Apply 3D camera if needed
+        applyViewMode(viewer, viewMode)
       } catch (err) {
         if (cancelled) return
         setLoading(false)
@@ -100,6 +170,16 @@ export function DxfViewerCanvas({ dxfUrl, className = '' }: DxfViewerCanvasProps
       viewerRef.current = null
     }
   }, [dxfUrl])
+
+  // React to viewMode changes
+  useEffect(() => {
+    const viewer = viewerRef.current
+    if (!viewer || loading) return
+    // Clean up previous 3D controls
+    const cleanup = (viewer as unknown as Record<string, unknown>).__3dCleanup as (() => void) | undefined
+    if (cleanup) { cleanup(); (viewer as unknown as Record<string, unknown>).__3dCleanup = undefined }
+    applyViewMode(viewer, viewMode)
+  }, [viewMode, loading])
 
   // Toggle layer visibility
   const toggleLayer = useCallback((name: string) => {

@@ -1806,9 +1806,42 @@ export async function importPlan(
             centerY: bH * unitScale / 2,
           }
 
-          // No auto-detected spaces — the plan SVG image is the main content.
-          // Users can draw zones manually on top of the plan image.
-          const planSpaces: DetectedSpace[] = []
+          // Build DetectedSpaces from deduped zones — filter out elongated bands
+          // (galeries/couloirs that span the full plan width/height)
+          const planSpaces: DetectedSpace[] = dedupedZones
+            .filter(z => {
+              const w = z.boundingBox.w * normalizedBounds.width
+              const h = z.boundingBox.h * normalizedBounds.height
+              if (w <= 0 || h <= 0) return false
+              // Skip zones that are too elongated (aspect ratio > 8:1)
+              const ratio = Math.max(w, h) / Math.min(w, h)
+              if (ratio > 8) return false
+              // Skip zones larger than 40% of the plan
+              if (z.boundingBox.w > 0.4 || z.boundingBox.h > 0.4) return false
+              // Skip tiny zones (< 1m²)
+              if (w * h < 1) return false
+              return true
+            })
+            .map((z) => {
+              const x = z.boundingBox.x * normalizedBounds.width
+              const rawY = z.boundingBox.y * normalizedBounds.height
+              const w = z.boundingBox.w * normalizedBounds.width
+              const h = z.boundingBox.h * normalizedBounds.height
+              const y = normalizedBounds.height - rawY - h
+              const polygon: [number, number][] = [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]
+              return {
+                id: z.id,
+                polygon,
+                areaSqm: Math.round(w * h * 10) / 10,
+                label: z.label,
+                layer: 'import',
+                type: (z.estimatedType ?? 'commerce') as import('../proph3t/types').SpaceType,
+                bounds: computeBoundsFromPoints(polygon),
+                color: z.color ?? null,
+                metadata: {},
+              }
+            })
+          console.log(`[DXF] Spaces for 3D: ${planSpaces.length} (filtered from ${dedupedZones.length}, removed elongated/oversized)`)
 
           // Build wall segments (structure layers)
           const planWalls: WallSegment[] = dxfWallSegs

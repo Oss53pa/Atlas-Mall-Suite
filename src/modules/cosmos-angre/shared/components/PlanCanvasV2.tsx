@@ -28,11 +28,13 @@ interface PlanCanvasV2Props {
   onSpaceClick?: (space: DetectedSpace) => void
   /** Called on canvas click with world coordinates in metres */
   onCanvasClick?: (x: number, y: number) => void
+  /** View mode for DXF rendering */
+  viewMode?: '2d' | '3d' | '3d-advanced'
 }
 
 export function PlanCanvasV2({
   plan, planImageUrl, children, className = '',
-  onSpaceClick, onCanvasClick,
+  onSpaceClick, onCanvasClick, viewMode = '2d',
 }: PlanCanvasV2Props) {
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -241,7 +243,7 @@ export function PlanCanvasV2({
   if (plan.dxfBlobUrl) {
     return (
       <div className={`relative w-full h-full flex overflow-hidden bg-gray-950 ${className}`}>
-        <DxfViewerCanvas dxfUrl={plan.dxfBlobUrl} className="flex-1" />
+        <DxfViewerCanvas dxfUrl={plan.dxfBlobUrl} viewMode={viewMode} className="flex-1" />
         {/* Plan selector dropdown */}
         <PlanSelector />
       </div>

@@ -835,7 +835,14 @@ export default function Vol2Module() {
 
         {/* ── Center — 2D/3D View ─────────────────────────── */}
         <main className="flex-1 relative min-w-0">
-          {viewMode === '3d-advanced' ? (
+          {/* When a real DXF plan is imported, PlanCanvasV2 handles all view modes (2D/3D/3D+) */}
+          {parsedPlan?.dxfBlobUrl ? (
+            <PlanCanvasV2
+              plan={parsedPlan}
+              planImageUrl={activeFloor ? (planImageUrls[activeFloor.id] || usePlanImportStore.getState().getActivePlanUrl(activeFloor.id)) : undefined}
+              viewMode={viewMode === '3d-advanced' ? '3d-advanced' : viewMode === '3d' ? '3d' : '2d'}
+            />
+          ) : viewMode === '3d-advanced' ? (
             <Suspense fallback={
               <div className="w-full h-full flex items-center justify-center bg-gray-950">
                 <div className="flex items-center gap-2 text-gray-500 text-sm">
@@ -847,14 +854,11 @@ export default function Vol2Module() {
               <Vol3DModuleEmbed />
             </Suspense>
           ) : viewMode === '2d' ? (
-            // When a real plan has been imported (parsedPlan exists), use PlanCanvasV2
-            // for full vectorial rendering. Otherwise fall back to FloorPlanCanvas.
             parsedPlan ? (
             <PlanCanvasV2
               plan={parsedPlan}
               planImageUrl={activeFloor ? (planImageUrls[activeFloor.id] || usePlanImportStore.getState().getActivePlanUrl(activeFloor.id)) : undefined}
             />
-            /* PlanCanvasV2 renders: plan image + detected spaces overlay + toolbar + minimap */
             ) : (
             <FloorPlanCanvas
               floor={activeFloor}
