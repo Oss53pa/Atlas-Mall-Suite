@@ -1665,22 +1665,149 @@ export async function importPlan(
           console.log(`[DXF] Preview SVG: ${svgCount} entites, ${W}x${H}px`)
         }
 
+        state.currentOperation = 'Detection des etages...'
+        state.progress = 82
+        emit()
+
+        // ── Auto-detect floor clusters: find large Y-gaps between groups of entities ──
+        // DXF files often contain multiple floors stacked vertically in the same drawing.
+        // We detect clusters by finding gaps > 15% of total height between entity Y ranges.
+        interface FloorCluster {
+          label: string
+          yMin: number; yMax: number
+          entityCount: number
+        }
+        const floorClusters: FloorCluster[] = []
+
+        // Collect Y centroids of all entities (sample for performance)
+        const yCentroids: number[] = []
+        const maxSample = Math.min(planEntities.length, 50000)
+        const step = Math.max(1, Math.floor(planEntities.length / maxSample))
+        for (let i = 0; i < planEntities.length; i += step) {
+          const e = planEntities[i]
+          yCentroids.push(e.bounds.centerY)
+        }
+        yCentroids.sort((a, b) => a - b)
+
+        if (yCentroids.length > 100) {
+          // Find gaps: sorted Y values, look for jumps > 15% of total range
+          const totalRange = yCentroids[yCentroids.length - 1] - yCentroids[0]
+          const gapThreshold = totalRange * 0.10 // 10% of total range = floor separation
+
+          let clusterStart = yCentroids[0]
+          let prevY = yCentroids[0]
+          const splits: { start: number; end: number }[] = []
+
+          for (let i = 1; i < yCentroids.length; i++) {
+            if (yCentroids[i] - prevY > gapThreshold) {
+              splits.push({ start: clusterStart, end: prevY })
+              clusterStart = yCentroids[i]
+            }
+            prevY = yCentroids[i]
+          }
+          splits.push({ start: clusterStart, end: prevY })
+
+          if (splits.length > 1) {
+            // Multiple floors detected — assign labels based on position (bottom = B1, etc.)
+            const floorLabels = splits.length === 2
+              ? ['RDC', 'R+1']
+              : splits.length === 3
+                ? ['B1', 'RDC', 'R+1']
+                : splits.map((_, i) => `Etage ${i + 1}`)
+
+            for (let i = 0; i < splits.length; i++) {
+              const margin = (splits[i].end - splits[i].start) * 0.05
+              const yMin = splits[i].start - margin
+              const yMax = splits[i].end + margin
+              const count = planEntities.filter(e => e.bounds.centerY >= yMin && e.bounds.centerY <= yMax).length
+              floorClusters.push({ label: floorLabels[i], yMin, yMax, entityCount: count })
+            }
+
+            console.log(`[DXF] ${floorClusters.length} etages detectes:`, floorClusters.map(c => `${c.label}: Y=${c.yMin.toFixed(0)}..${c.yMax.toFixed(0)} (${c.entityCount} entites)`))
+          }
+        }
+
+        // If multiple clusters found, keep only the largest one (most entities = main floor)
+        // and store the cluster info for floor switching later
+        let filteredEntities = planEntities
+        let filteredBounds = dxfBoundsRaw
+        let activeClusterIdx = -1
+
+        if (floorClusters.length > 1) {
+          // Pick the cluster with the most entities as default (usually RDC)
+          activeClusterIdx = 0
+          let maxCount = 0
+          for (let i = 0; i < floorClusters.length; i++) {
+            if (floorClusters[i].entityCount > maxCount) {
+              maxCount = floorClusters[i].entityCount
+              activeClusterIdx = i
+            }
+          }
+
+          const cluster = floorClusters[activeClusterIdx]
+          filteredEntities = planEntities.filter(e =>
+            e.bounds.centerY >= cluster.yMin && e.bounds.centerY <= cluster.yMax
+          )
+
+          // Recompute bounds for this cluster only
+          let cMinX = Infinity, cMinY = Infinity, cMaxX = -Infinity, cMaxY = -Infinity
+          for (const e of filteredEntities) {
+            if (e.bounds.minX < cMinX) cMinX = e.bounds.minX
+            if (e.bounds.minY < cMinY) cMinY = e.bounds.minY
+            if (e.bounds.maxX > cMaxX) cMaxX = e.bounds.maxX
+            if (e.bounds.maxY > cMaxY) cMaxY = e.bounds.maxY
+          }
+          filteredBounds = {
+            minX: cMinX, minY: cMinY, maxX: cMaxX, maxY: cMaxY,
+            width: cMaxX - cMinX || 1, height: cMaxY - cMinY || 1,
+            centerX: (cMinX + cMaxX) / 2, centerY: (cMinY + cMaxY) / 2,
+          }
+
+          console.log(`[DXF] Etage actif: ${cluster.label} (${filteredEntities.length}/${planEntities.length} entites)`)
+          state.warnings.push(`${floorClusters.length} etages detectes — affichage: ${cluster.label} (${filteredEntities.length} entites)`)
+
+          // Also filter zones to this cluster
+          const clusterNormYMin = (cluster.yMin - minY) / bH
+          const clusterNormYMax = (cluster.yMax - minY) / bH
+          const clusterZones = dedupedZones.filter(z => {
+            const zy = z.boundingBox.y
+            const zh = z.boundingBox.h
+            const zCenter = zy + zh / 2
+            return zCenter >= clusterNormYMin && zCenter <= clusterNormYMax
+          })
+          // Re-normalize zone coords relative to cluster bounds
+          const cBW = filteredBounds.width
+          const cBH = filteredBounds.height
+          for (const z of clusterZones) {
+            z.boundingBox = {
+              x: (z.boundingBox.x * bW - (filteredBounds.minX - minX)) / cBW,
+              y: (z.boundingBox.y * bH - (filteredBounds.minY - minY)) / cBH,
+              w: z.boundingBox.w * bW / cBW,
+              h: z.boundingBox.h * bH / cBH,
+            }
+          }
+          // Replace dedupedZones with cluster-filtered zones
+          dedupedZones.length = 0
+          dedupedZones.push(...clusterZones)
+          state.detectedZones = dedupedZones
+        }
+
         state.currentOperation = 'Construction du plan interactif...'
-        state.progress = 85
+        state.progress = 88
         emit()
 
         // ── Build ParsedPlan for PlanCanvasV2 vectorial rendering ──
         try {
-          // Normalize all entities to metres starting at (0,0), flip Y axis
-          const normalizedEntities = normalizeAllEntities(planEntities, dxfBoundsRaw, unitScale)
+          // Use filtered entities/bounds (single floor cluster if detected)
+          const normalizedEntities = normalizeAllEntities(filteredEntities, filteredBounds, unitScale)
           const normalizedBounds: Bounds = {
             minX: 0, minY: 0,
-            maxX: bW * unitScale,
-            maxY: bH * unitScale,
-            width: bW * unitScale,
-            height: bH * unitScale,
-            centerX: bW * unitScale / 2,
-            centerY: bH * unitScale / 2,
+            maxX: filteredBounds.width * unitScale,
+            maxY: filteredBounds.height * unitScale,
+            width: filteredBounds.width * unitScale,
+            height: filteredBounds.height * unitScale,
+            centerX: filteredBounds.width * unitScale / 2,
+            centerY: filteredBounds.height * unitScale / 2,
           }
 
           // Build DetectedSpaces from deduped zones (convert from normalized 0-1 to metres, flip Y)
