@@ -1,5 +1,6 @@
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import type { PlanImportState, CalibrationResult, RecognizedZone, DimEntity } from '../planReader/planReaderTypes'
+import type { ParsedPlan } from '../planReader/planEngineTypes'
 import type { Zone, Floor, FloorLevel } from '../proph3t/types'
 import { importPlan, detectPlanSourceType } from '../planReader'
 import PlanReaderProgress from './PlanReaderProgress'
@@ -8,16 +9,16 @@ import RasterPreview from './RasterPreview'
 interface PlanImportWizardProps {
   floors: Floor[]
   activeFloorId: string
-  onImportComplete: (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string, fileInfo?: { fileName: string; fileSize: number; sourceType: string }) => void
+  onImportComplete: (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string, fileInfo?: { fileName: string; fileSize: number; sourceType: string }, parsedPlan?: ParsedPlan) => void
   onClose: () => void
 }
 
 const ACCEPTED_FORMATS = '.dxf,.dwg,.ifc,.pdf,.jpg,.jpeg,.png,.webp'
 
 const MAX_SIZES: Record<PlanSourceType, number> = {
-  dxf: 50 * 1024 * 1024,
-  dwg: 50 * 1024 * 1024,
-  ifc: 50 * 1024 * 1024,
+  dxf: 500 * 1024 * 1024,
+  dwg: 500 * 1024 * 1024,
+  ifc: 200 * 1024 * 1024,
   pdf: 30 * 1024 * 1024,
   image_raster: 8 * 1024 * 1024,
   svg: 10 * 1024 * 1024,
@@ -63,6 +64,7 @@ export default function PlanImportWizard({
   const [manualWidthM, setManualWidthM] = useState('')
   const [manualHeightM, setManualHeightM] = useState('')
   const [imageUrl, setImageUrl] = useState<string>('')
+  const [dragOver, setDragOver] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // ─── STEP 1: UPLOAD ───
@@ -154,6 +156,7 @@ export default function PlanImportWizard({
       selectedFloorId,
       state.planImageUrl,
       { fileName: state.fileName || 'Import', fileSize: state.fileSize || 0, sourceType: state.sourceType ?? 'image_raster' },
+      state.parsedPlan,
     )
   }, [state, selectedFloorId, onImportComplete])
 
@@ -180,9 +183,13 @@ export default function PlanImportWizard({
           {/* STEP 1: Upload */}
           {state.step === 'upload' && (
             <div
-              onDrop={handleDrop}
-              onDragOver={e => e.preventDefault()}
-              className="border-2 border-dashed border-gray-600 rounded-xl p-12 text-center hover:border-blue-500 transition-colors cursor-pointer"
+              onDrop={(e) => { e.preventDefault(); e.stopPropagation(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleFileSelect(f) }}
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation() }}
+              onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragOver(true) }}
+              onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragOver(false) }}
+              className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors cursor-pointer ${
+                dragOver ? 'border-blue-400 bg-blue-500/10' : 'border-gray-600 hover:border-blue-500'
+              }`}
               onClick={() => fileRef.current?.click()}
             >
               <input
@@ -193,16 +200,16 @@ export default function PlanImportWizard({
                 className="hidden"
               />
               <div className="text-4xl mb-4">
-                📁
+                {dragOver ? '📥' : '📁'}
               </div>
               <p className="text-gray-300 font-medium mb-2">
-                Glisser-deposer ou cliquer pour importer
+                {dragOver ? 'Relacher pour importer' : 'Glisser-deposer ou cliquer pour importer'}
               </p>
               <p className="text-xs text-gray-500">
                 DXF, DWG, IFC, PDF (vectoriel), JPG, PNG, WebP
               </p>
               <p className="text-xs text-gray-600 mt-1">
-                CAD: max 50MB | Images: max 10MB
+                CAD: max 500MB | Images: max 8MB
               </p>
             </div>
           )}
@@ -356,7 +363,7 @@ export default function PlanImportWizard({
                     onZonesChanged={(updatedZones) => setState(s => ({ ...s, detectedZones: updatedZones }))}
                   />
                 ) : state.planImageUrl ? (
-                  <img src={state.planImageUrl} alt="Plan" className="max-w-full max-h-full object-contain" />
+                  <ZoomPanImage src={state.planImageUrl} />
                 ) : (
                   <div className="text-center text-gray-600">
                     <p className="text-sm">Aucune preview disponible</p>
@@ -378,6 +385,71 @@ export default function PlanImportWizard({
             </div>
           )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+function ZoomPanImage({ src }: { src: string }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
+  const [tx, setTx] = useState(0)
+  const [ty, setTy] = useState(0)
+  const dragRef = useRef<{ x: number; y: number; tx: number; ty: number } | null>(null)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const rect = el.getBoundingClientRect()
+      const mx = e.clientX - rect.left - rect.width / 2
+      const my = e.clientY - rect.top - rect.height / 2
+      const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15
+      setScale(s => {
+        const ns = Math.max(0.05, Math.min(80, s * factor))
+        const ratio = ns / s
+        setTx(x => mx - (mx - x) * ratio)
+        setTy(y => my - (my - y) * ratio)
+        return ns
+      })
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [])
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    dragRef.current = { x: e.clientX, y: e.clientY, tx, ty }
+  }
+  const onMouseMove = (e: React.MouseEvent) => {
+    const d = dragRef.current
+    if (!d) return
+    setTx(d.tx + (e.clientX - d.x))
+    setTy(d.ty + (e.clientY - d.y))
+  }
+  const onMouseUp = () => { dragRef.current = null }
+  const reset = () => { setScale(1); setTx(0); setTy(0) }
+
+  return (
+    <div
+      ref={containerRef}
+      className="w-full h-full overflow-hidden relative cursor-grab active:cursor-grabbing"
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}
+      onMouseLeave={onMouseUp}
+    >
+      <div
+        className="absolute inset-0 flex items-center justify-center"
+        style={{ transform: `translate(${tx}px, ${ty}px) scale(${scale})`, transformOrigin: 'center center' }}
+      >
+        <img src={src} alt="Plan" className="max-w-full max-h-full object-contain select-none pointer-events-none" draggable={false} />
+      </div>
+      <div className="absolute top-3 right-3 flex gap-1 bg-black/60 backdrop-blur rounded-md p-1 text-[11px] text-gray-300">
+        <button onClick={() => setScale(s => Math.min(80, s * 1.25))} className="px-2 py-1 hover:bg-white/10 rounded">+</button>
+        <button onClick={() => setScale(s => Math.max(0.05, s / 1.25))} className="px-2 py-1 hover:bg-white/10 rounded">−</button>
+        <button onClick={reset} className="px-2 py-1 hover:bg-white/10 rounded">Reset</button>
+        <span className="px-2 py-1 text-gray-500">{Math.round(scale * 100)}%</span>
       </div>
     </div>
   )

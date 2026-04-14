@@ -21,29 +21,44 @@ export function extractDimEntities(rawEntities: DXFEntity[]): DimEntity[] {
   return (rawEntities as DXFDimEntity[])
     .filter(e => e.type === 'DIMENSION')
     .map((e, idx): DimEntity => {
-      const dimTypeCode = (e.dxf?.dimensionType ?? 0) & 0b00001111
+      // dxf-parser puts properties at root level; legacy code used nested e.dxf
+      const flat = e as Record<string, unknown>
+      const nested = e.dxf ?? {} as Record<string, unknown>
+      const get = (key: string) => flat[key] ?? (nested as Record<string, unknown>)[key]
+      const getPoint = (key: string): { x: number; y: number } | undefined => {
+        const v = get(key) as { x: number; y: number } | undefined
+        return v && typeof v.x === 'number' ? v : undefined
+      }
+
+      const dimTypeCode = ((get('dimensionType') as number) ?? 0) & 0b00001111
       const typeMap: Record<number, DimType> = {
         0: 'lineaire', 1: 'alignee', 2: 'angulaire',
         3: 'diametrale', 4: 'radiale', 6: 'ordinatee',
       }
 
-      const rawValue = e.dxf?.actualMeasurement ?? 0
-      const textRaw = e.dxf?.text ?? '<>'
+      const rawValue = (get('actualMeasurement') as number) ?? (get('measurement') as number) ?? 0
+      const textRaw = (get('text') as string) ?? '<>'
 
       const { value, unit, confidence: unitConf } = detectUnit(rawValue, textRaw)
 
+      const dp = getPoint('definitionPoint') ?? getPoint('anchorPoint')
+      const p1 = getPoint('linearOrAngularPoint1')
+      const p2 = getPoint('linearOrAngularPoint2')
+
       const defPoint1: [number, number] = [
-        e.dxf?.definitionPoint?.x ?? e.dxf?.linearOrAngularPoint1?.x ?? 0,
-        e.dxf?.definitionPoint?.y ?? e.dxf?.linearOrAngularPoint1?.y ?? 0,
+        dp?.x ?? p1?.x ?? 0,
+        dp?.y ?? p1?.y ?? 0,
       ]
       const defPoint2: [number, number] = [
-        e.dxf?.linearOrAngularPoint2?.x ?? 0,
-        e.dxf?.linearOrAngularPoint2?.y ?? 0,
+        p2?.x ?? 0,
+        p2?.y ?? 0,
       ]
 
       const measuredDistance = Math.sqrt(
         (defPoint2[0] - defPoint1[0]) ** 2 + (defPoint2[1] - defPoint1[1]) ** 2
       )
+
+      const textPos = getPoint('middleOfText') ?? getPoint('textMidpoint')
 
       return {
         id: `dim-${idx}`,
@@ -54,7 +69,7 @@ export function extractDimEntities(rawEntities: DXFEntity[]): DimEntity[] {
         confidence: unitConf,
         defPoint1,
         defPoint2,
-        textPosition: [e.dxf?.middleOfText?.x ?? 0, e.dxf?.middleOfText?.y ?? 0],
+        textPosition: [textPos?.x ?? 0, textPos?.y ?? 0],
         measuredDistance,
         layer: e.layer ?? '0',
       }

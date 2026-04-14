@@ -1,7 +1,8 @@
-import React, { lazy, Suspense, useEffect } from 'react'
+import React, { lazy, Suspense, useEffect, useMemo } from 'react'
 import { useVol3DStore } from './store/vol3dStore'
 import { useVol2Store } from '../vol2-securitaire/store/vol2Store'
 import { useVol3Store } from '../vol3-parcours/store/vol3Store'
+import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import ModeSwitch from './components/ModeSwitch'
 import LayerControls from './components/LayerControls'
 import ExportPanel3D from './components/ExportPanel3D'
@@ -27,21 +28,50 @@ export default function Vol3DModule() {
   const lastBuildMs = useVol3DStore(s => s.lastBuildMs)
 
   const floors = useVol2Store(s => s.floors)
-  const zones = useVol2Store(s => s.zones)
+  const storeZones = useVol2Store(s => s.zones)
   const cameras = useVol2Store(s => s.cameras)
   const doors = useVol2Store(s => s.doors)
   const transitions = useVol2Store(s => s.transitions)
   const pois = useVol3Store(s => s.pois)
   const signageItems = useVol3Store(s => s.signageItems)
+  const parsedPlan = usePlanEngineStore(s => s.parsedPlan)
+
+  // When a real plan is imported, convert ParsedPlan spaces → Zone format for 3D
+  const zones = useMemo(() => {
+    if (!parsedPlan || parsedPlan.spaces.length === 0) return storeZones
+    return parsedPlan.spaces.map((sp, i) => ({
+      id: sp.id,
+      floorId: floors[0]?.id ?? 'floor-rdc',
+      label: sp.label,
+      type: sp.type as any,
+      x: sp.bounds.minX,
+      y: sp.bounds.minY,
+      w: sp.bounds.width,
+      h: sp.bounds.height,
+      niveau: 2 as any,
+      color: sp.color ?? '#3b82f6',
+      surfaceM2: sp.areaSqm,
+    }))
+  }, [parsedPlan, storeZones, floors])
+
+  // Use parsed plan dimensions for floor size when available
+  const effectiveFloors = useMemo(() => {
+    if (!parsedPlan || floors.length === 0) return floors
+    return floors.map(f => ({
+      ...f,
+      widthM: parsedPlan.bounds.width || f.widthM,
+      heightM: parsedPlan.bounds.height || f.heightM,
+    }))
+  }, [floors, parsedPlan])
 
   useEffect(() => {
-    if (floors.length === 0) return
-    const elevations = resolveFloorElevations(floors.map(f => ({ id: f.id, level: f.level, order: f.order })))
-    setFloorStack(floors.map(f => ({ floorId: f.id, level: f.level, baseElevationM: elevations[f.id] ?? 0, visible: true, opacity: 1 })))
+    if (effectiveFloors.length === 0) return
+    const elevations = resolveFloorElevations(effectiveFloors.map(f => ({ id: f.id, level: f.level, order: f.order })))
+    setFloorStack(effectiveFloors.map(f => ({ floorId: f.id, level: f.level, baseElevationM: elevations[f.id] ?? 0, visible: true, opacity: 1 })))
     setZoneHeights(resolveZoneHeights(zones, null, userOvrd))
-  }, [floors, zones])
+  }, [effectiveFloors, zones])
 
-  const viewProps = { floors, zones, cameras, doors, pois, signageItems, transitions, config }
+  const viewProps = { floors: effectiveFloors, zones, cameras, doors, pois, signageItems, transitions, config }
 
   return (
     <div className="flex h-full" style={{ background: '#080c14', color: '#e2e8f0' }}>
@@ -61,7 +91,7 @@ export default function Vol3DModule() {
           <ModeSwitch />
           {config.mode !== 'isometric' && <CameraControls3D />}
           <LightingControls />
-          <FloorStackControls floors={floors} />
+          <FloorStackControls floors={effectiveFloors} />
           <LayerControls />
           <HeightEditor zones={zones} />
         </div>

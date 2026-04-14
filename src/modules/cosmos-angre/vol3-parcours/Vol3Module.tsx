@@ -42,12 +42,16 @@ import {
 import { useVol3Store } from './store/vol3Store'
 import { usePlanImportStore } from '../shared/stores/planImportStore'
 import FloorPlanCanvas, { CANVAS_SCALE } from '../shared/components/FloorPlanCanvas'
+import { PlanCanvasV2 } from '../shared/components/PlanCanvasV2'
+import { usePlanEngineStore } from '../shared/stores/planEngineStore'
+import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
 const Vol3DModuleEmbed = lazy(() => import('../vol-3d/Vol3DModule'))
 import Proph3tChat from '../shared/components/Proph3tChat'
 import EntityPanel from '../shared/components/EntityPanel'
 import ToolbarButton from '../shared/components/ToolbarButton'
 import ScoreGauge from '../shared/components/ScoreGauge'
 import SaveStatusIndicator, { type SaveStatus } from '../shared/components/SaveStatusIndicator'
+import { useActiveProjectId } from '../../../hooks/useActiveProject'
 import HeatmapOverlay, { type ZoneHeatData } from './components/HeatmapOverlay'
 import GeoNotificationPanel, { type GeoNotification } from './components/GeoNotificationPanel'
 import VisitReplay, { type VisitPath } from './components/VisitReplay'
@@ -363,11 +367,12 @@ export default function Vol3Module() {
   const navigate = useNavigate()
   const store = useVol3Store()
 
-  // ── Hydrate from Supabase on mount ───────────────────────
+  // ── Hydrate from Supabase on mount / project switch ──────
+  const projectId = useActiveProjectId()
   useEffect(() => {
-    void store.hydrateFromSupabase('cosmos-angre')
+    void store.hydrateFromSupabase(projectId)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [projectId])
 
   const saveStatus: SaveStatus = store.isHydrating ? 'saving' : store.hydrationError ? 'offline' : 'saved'
 
@@ -927,6 +932,13 @@ export default function Vol3Module() {
             </div>
           )}
 
+          {/* When a real plan is imported (parsedPlan exists), use PlanCanvasV2 */}
+          {usePlanEngineStore.getState().parsedPlan ? (
+            <PlanCanvasV2
+              plan={usePlanEngineStore.getState().parsedPlan!}
+              onCanvasClick={placeTool ? (x, y) => handleCanvasClick(x, y) : undefined}
+            />
+          ) : (
           <FloorPlanCanvas
             floor={activeFloor}
             zones={floorZones}
@@ -1113,6 +1125,7 @@ export default function Vol3Module() {
               />
             )}
           </FloorPlanCanvas>
+          )}
 
           {/* Heatmap hour slider overlay */}
           {showHeatmap && (
@@ -1285,7 +1298,7 @@ export default function Vol3Module() {
                   volumeLabel="VOL. 3 — PARCOURS CLIENT"
                   floors={floors}
                   activeFloorId={activeFloorId}
-                  onImportComplete={(importedZones, _dims, _calibration, floorId) => {
+                  onImportComplete={(importedZones, dims, calibration, floorId, _planImageUrl, _fileInfo, parsedPlan, importId) => {
                     const current = useVol3Store.getState().zones
                     const newZones = importedZones.map((z, i) => ({
                       id: z.id ?? `import-${Date.now()}-${i}`,
@@ -1297,6 +1310,12 @@ export default function Vol3Module() {
                       color: z.color ?? '#0a2a15',
                     }))
                     useVol3Store.setState({ zones: [...current, ...newZones] })
+                    // Store ParsedPlan in engine store for vectorial rendering
+                    const plan = parsedPlan ?? buildParsedPlanFromImport(importedZones, dims, calibration)
+                    usePlanEngineStore.getState().setParsedPlan(plan)
+                    usePlanEngineStore.getState().setSpaces(plan.spaces)
+                    usePlanEngineStore.getState().setLayers(plan.layers)
+                    if (importId) usePlanEngineStore.getState().storeParsedPlan(importId, plan)
                   }}
                 />
               )}

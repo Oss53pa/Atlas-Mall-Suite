@@ -1,9 +1,27 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string ?? 'https://placeholder.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string ?? 'placeholder-anon-key'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string ?? ''
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string ?? ''
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+const isConfigured = supabaseUrl.length > 0
+  && !supabaseUrl.includes('placeholder')
+  && supabaseAnonKey.length > 0
+  && !supabaseAnonKey.includes('placeholder')
+
+// Local user for offline mode
+export const LOCAL_USER = {
+  id: 'local-user-001',
+  email: 'local@atlas.dev',
+  user_metadata: { full_name: 'Utilisateur Local' },
+}
+
+export const isOfflineMode = !isConfigured
+
+export const supabase: SupabaseClient = isConfigured
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : createClient('https://localhost.invalid', 'offline', {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    })
 
 // ── Project Members helpers (RLS multi-tenant) ──
 

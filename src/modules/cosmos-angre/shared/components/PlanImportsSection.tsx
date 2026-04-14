@@ -9,6 +9,7 @@ import {
 import { usePlanImportStore, type PlanImportRecord, type ImportStatus } from '../stores/planImportStore'
 import { MapPin } from 'lucide-react'
 import type { PlanSourceType, CalibrationResult, DimEntity } from '../planReader/planReaderTypes'
+import type { ParsedPlan } from '../planReader/planEngineTypes'
 import type { Zone, Floor } from '../proph3t/types'
 import PlanImportWizard from './PlanImportWizard'
 
@@ -20,7 +21,7 @@ interface PlanImportsSectionProps {
   floors: Floor[]
   activeFloorId: string
   /** Callback quand un import est terminé → le parent peut injecter les zones dans son store */
-  onImportComplete: (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string, fileInfo?: { fileName: string; fileSize: number; sourceType: string }) => void
+  onImportComplete: (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string, fileInfo?: { fileName: string; fileSize: number; sourceType: string }, parsedPlan?: ParsedPlan, importId?: string) => void
 }
 
 // ─── Helpers ──────────────────────────────────────────
@@ -73,10 +74,11 @@ export default function PlanImportsSection({
   const [filterStatus, setFilterStatus] = useState<ImportStatus | 'all'>('all')
   const [filterType, setFilterType] = useState<PlanSourceType | 'all'>('all')
   const [previewRecord, setPreviewRecord] = useState<PlanImportRecord | null>(null)
+  const [pageDragOver, setPageDragOver] = useState(false)
 
   // Handle wizard completion
   const handleImportComplete = useCallback(
-    (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string, fileInfo?: { fileName: string; fileSize: number; sourceType: string }) => {
+    (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string, fileInfo?: { fileName: string; fileSize: number; sourceType: string }, parsedPlan?: ParsedPlan) => {
       const floor = floors.find((f) => f.id === floorId)
       const importId = uid()
       addImport({
@@ -98,7 +100,7 @@ export default function PlanImportsSection({
       })
       // Definir automatiquement comme plan actif pour cet etage
       setActivePlan(floorId, importId)
-      onImportComplete(zones, dims, calibration, floorId, planImageUrl, fileInfo)
+      onImportComplete(zones, dims, calibration, floorId, planImageUrl, fileInfo, parsedPlan, importId)
       setShowWizard(false)
     },
     [floors, addImport, setActivePlan, onImportComplete],
@@ -115,7 +117,13 @@ export default function PlanImportsSection({
   const totalZones = imports.filter((r) => r.status === 'success').reduce((s, r) => s + r.zonesDetected, 0)
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-6">
+    <div
+      className={`p-8 max-w-6xl mx-auto space-y-6 min-h-full transition-colors ${pageDragOver ? 'bg-blue-500/5 ring-2 ring-inset ring-blue-500/30 rounded-xl' : ''}`}
+      onDragOver={(e) => { e.preventDefault(); e.stopPropagation() }}
+      onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setPageDragOver(true) }}
+      onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (e.currentTarget === e.target) setPageDragOver(false) }}
+      onDrop={(e) => { e.preventDefault(); e.stopPropagation(); setPageDragOver(false); setShowWizard(true) }}
+    >
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>

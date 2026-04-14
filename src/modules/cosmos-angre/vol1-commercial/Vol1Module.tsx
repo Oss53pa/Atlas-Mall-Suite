@@ -19,6 +19,9 @@ import {
   Sparkles,
 } from 'lucide-react'
 import SaveStatusIndicator from '../shared/components/SaveStatusIndicator'
+import { savePlanImageFromUrl } from '../shared/stores/planImageCache'
+import { usePlanEngineStore } from '../shared/stores/planEngineStore'
+import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
 
 const DashboardSectionLazy = lazy(() => import('./sections/DashboardSection'))
 const PlanCommercialSectionLazy = lazy(() => import('./sections/PlanCommercialSection'))
@@ -132,8 +135,8 @@ export default function Vol1Module() {
                 { id: 'floor-r1', level: 'R+1' as any, order: 2, widthM: 200, heightM: 140, zones: [], transitions: [] },
               ]}
               activeFloorId="floor-rdc"
-              onImportComplete={(importedZones, _dims, _calibration, floorId) => {
-                const { spaces, tenants } = useVol1Store.getState()
+              onImportComplete={(importedZones, dims, calibration, floorId, planImageUrl, _fileInfo, parsedPlan, importId) => {
+                const { spaces } = useVol1Store.getState()
                 const newSpaces = importedZones.map((z, i) => ({
                   id: z.id ?? `import-${Date.now()}-${i}`,
                   reference: `IMP-${(spaces.length + i + 1).toString().padStart(2, '0')}`,
@@ -145,7 +148,24 @@ export default function Vol1Module() {
                   status: 'vacant' as const, tenantId: null,
                   wing: z.label ?? `Zone ${i + 1}`,
                 }))
-                useVol1Store.setState({ spaces: [...spaces, ...newSpaces] })
+                // Replace spaces on this floor (remove old mock/imported for this floor)
+                const otherFloorSpaces = spaces.filter(s => s.floorId !== floorId)
+                useVol1Store.setState({ spaces: [...otherFloorSpaces, ...newSpaces] })
+                // Store plan image as background for the commercial plan canvas
+                if (planImageUrl) {
+                  useVol1Store.setState((s: Record<string, unknown>) => ({
+                    ...s,
+                    planImageUrls: { ...(s.planImageUrls as Record<string, string> ?? {}), [floorId]: planImageUrl },
+                  }))
+                  // Persist in IndexedDB so it survives page refresh
+                  void savePlanImageFromUrl(floorId, planImageUrl, 'plan-import.png')
+                }
+                // Store ParsedPlan in engine store for PlanCanvasV2 vectorial rendering
+                const plan = parsedPlan ?? buildParsedPlanFromImport(importedZones, dims, calibration)
+                usePlanEngineStore.getState().setParsedPlan(plan)
+                usePlanEngineStore.getState().setSpaces(plan.spaces)
+                usePlanEngineStore.getState().setLayers(plan.layers)
+                if (importId) usePlanEngineStore.getState().storeParsedPlan(importId, plan)
               }}
             />
           )}

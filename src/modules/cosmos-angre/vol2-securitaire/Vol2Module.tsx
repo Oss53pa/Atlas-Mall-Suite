@@ -55,16 +55,21 @@ import { proph3tAnswer } from '../shared/proph3t/chatEngine'
 import type { FullProjectContext } from '../shared/proph3t/chatEngine'
 
 import FloorPlanCanvas from '../shared/components/FloorPlanCanvas'
+import { PlanCanvasV2 } from '../shared/components/PlanCanvasV2'
+import { usePlanEngineStore } from '../shared/stores/planEngineStore'
+import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
+import type { ParsedPlan } from '../shared/planReader/planEngineTypes'
 import Proph3tChat from '../shared/components/Proph3tChat'
 import EntityPanel from '../shared/components/EntityPanel'
 import ToolbarButton from '../shared/components/ToolbarButton'
 import ScoreGauge from '../shared/components/ScoreGauge'
-import DXFImportModal from './components/DXFImportModal'
+// DXFImportModal removed — use PlanImportsSection (unified pipeline) instead
 import Model3DImportModal from './components/Model3DImportModal'
 import { useCascade } from './hooks/useCascade'
 import SaveStatusIndicator, { type SaveStatus } from '../shared/components/SaveStatusIndicator'
 import { useActiveProjectId } from '../../../hooks/useActiveProject'
-import { savePlanImageFromUrl, loadAllPlanImages } from '../shared/stores/planImageCache'
+import { savePlanImageFromUrl, loadAllPlanImages, clearAllPlanImages } from '../shared/stores/planImageCache'
+import { cacheImportedZones, getAllCachedZones, hasAnyCachedZones } from '../shared/stores/importedZonesCache'
 
 import type { ClippingConfig, ClippingAxis, NavMode } from './components/FloorPlan3D'
 
@@ -277,6 +282,22 @@ export default function Vol2Module() {
     })
   }, [setPlanImageUrl])
 
+  // Restore imported zones from localStorage on mount
+  const setZones = useVol2Store((s) => s.setZones)
+  useEffect(() => {
+    if (!hasAnyCachedZones()) return
+    const cached = getAllCachedZones()
+    const restoredZones = cached.flatMap(c => c.zones as import('../shared/proph3t/types').Zone[])
+    if (restoredZones.length > 0) {
+      // Merge: keep current zones that aren't on imported floors, add imported
+      const importedFloorIds = new Set(cached.map(c => c.floorId))
+      const currentZones = useVol2Store.getState().zones
+      const keptZones = currentZones.filter(z => !importedFloorIds.has(z.floorId))
+      setZones([...keptZones, ...restoredZones])
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const hydrationError = useVol2Store((s) => s.hydrationError)
   const saveStatus: SaveStatus = isHydrating ? 'saving' : hydrationError ? 'offline' : 'saved'
 
@@ -301,6 +322,9 @@ export default function Vol2Module() {
   const libraryOpen = useVol2Store((s) => s.libraryOpen)
   const isSimulating = useVol2Store((s) => s.isSimulating)
   const planImageUrls = useVol2Store((s) => s.planImageUrls)
+
+  // Plan engine store — real imported plan data
+  const parsedPlan = usePlanEngineStore(s => s.parsedPlan)
 
   const setActiveFloor = useVol2Store((s) => s.setActiveFloor)
   const selectEntity = useVol2Store((s) => s.selectEntity)
@@ -370,7 +394,6 @@ export default function Vol2Module() {
   // ── View mode state ─────────────────────────────────────
   const [viewMode, setViewMode] = useState<'2d' | '3d' | '3d-advanced'>('2d')
   const [showAllFloors, setShowAllFloors] = useState(false)
-  const [showDXFImport, setShowDXFImport] = useState(false)
   const [activeTab, setActiveTab] = useState<Vol2Tab>('introduction')
   const [show3DImport, setShow3DImport] = useState(false)
   const [clipping, setClipping] = useState<ClippingConfig>({
@@ -667,17 +690,6 @@ export default function Vol2Module() {
           </button>
         )}
 
-        {/* Import DXF/DWG/RVT — plan only */}
-        {activeTab === 'plan' && (
-          <button
-            onClick={() => setShowDXFImport(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-600/15 border border-blue-500/30 text-blue-300 text-[10px] font-medium hover:bg-blue-600/25 transition-colors"
-          >
-            <Upload className="w-3 h-3" />
-            DXF/DWG/RVT
-          </button>
-        )}
-
         {/* Import 3D model — plan only */}
         {activeTab === 'plan' && (
           <button
@@ -835,6 +847,15 @@ export default function Vol2Module() {
               <Vol3DModuleEmbed />
             </Suspense>
           ) : viewMode === '2d' ? (
+            // When a real plan has been imported (parsedPlan exists), use PlanCanvasV2
+            // for full vectorial rendering. Otherwise fall back to FloorPlanCanvas.
+            parsedPlan ? (
+            <PlanCanvasV2
+              plan={parsedPlan}
+              planImageUrl={activeFloor ? (planImageUrls[activeFloor.id] || usePlanImportStore.getState().getActivePlanUrl(activeFloor.id)) : undefined}
+            />
+            /* PlanCanvasV2 renders: plan image + detected spaces overlay + toolbar + minimap */
+            ) : (
             <FloorPlanCanvas
               floor={activeFloor}
               zones={floorZones}
@@ -939,6 +960,7 @@ export default function Vol2Module() {
                   </g>
                 ))}
             </FloorPlanCanvas>
+            )
           ) : (
             <div className="relative w-full h-full">
               <Suspense fallback={
@@ -952,7 +974,11 @@ export default function Vol2Module() {
                 <FloorPlan3D
                   floors={floors}
                   activeFloorId={activeFloorId}
-                  zones={zones}
+                  zones={parsedPlan ? parsedPlan.spaces.map((sp) => ({
+                    id: sp.id, floorId: activeFloorId, label: sp.label, type: sp.type as any,
+                    x: sp.bounds.minX, y: sp.bounds.minY, w: sp.bounds.width, h: sp.bounds.height,
+                    niveau: 2 as any, color: sp.color ?? '#3b82f6', surfaceM2: sp.areaSqm,
+                  })) : zones}
                   cameras={cameras}
                   doors={doors}
                   blindSpots={blindSpots}
@@ -1090,7 +1116,7 @@ export default function Vol2Module() {
                   volumeLabel="VOL. 2 — PLAN SÉCURITAIRE"
                   floors={floors}
                   activeFloorId={floors.find(f => f.level === activeFloor)?.id ?? floors[0]?.id ?? ''}
-                  onImportComplete={(zones, _dims, _calibration, floorId, planImageUrl) => {
+                  onImportComplete={(zones, dims, calibration, floorId, planImageUrl, _fileInfo, parsedPlan, importId) => {
                     const s = useVol2Store.getState()
                     const newZones = zones.map((z, i) => ({
                       id: z.id ?? `import-${Date.now()}-${i}`,
@@ -1101,14 +1127,32 @@ export default function Vol2Module() {
                       niveau: (z.niveau ?? 2) as any,
                       color: z.color ?? '#0a2a15',
                     }))
-                    // Replace zones on this floor (remove old mock/imported zones for this floor)
+                    // Replace ALL zones and clear old plan images
                     const otherFloorZones = s.zones.filter(z => z.floorId !== floorId)
                     s.setZones([...otherFloorZones, ...newZones])
+                    // Clear stale plan image URLs for all floors
+                    for (const fid of Object.keys(s.planImageUrls)) {
+                      if (fid !== floorId) s.setPlanImageUrl(fid, '')
+                    }
+                    // Persist imported zones in localStorage so they survive refresh
+                    cacheImportedZones(floorId, newZones, 'import')
+                    // Set plan image URL synchronously FIRST
                     if (planImageUrl) {
                       s.setPlanImageUrl(floorId, planImageUrl)
-                      // Persist in IndexedDB so it survives page refresh
-                      void savePlanImageFromUrl(floorId, planImageUrl, 'plan-import.png')
+                      // Also persist to IndexedDB for page refresh
+                      void clearAllPlanImages().then(() => {
+                        void savePlanImageFromUrl(floorId, planImageUrl, 'plan-import.png')
+                      })
                     }
+                    // Store ParsedPlan in engine store — ensure planImageUrl is attached
+                    const plan = parsedPlan ?? buildParsedPlanFromImport(zones, dims, calibration)
+                    if (planImageUrl && !plan.planImageUrl) {
+                      plan.planImageUrl = planImageUrl
+                    }
+                    usePlanEngineStore.getState().setParsedPlan(plan)
+                    usePlanEngineStore.getState().setSpaces(plan.spaces)
+                    usePlanEngineStore.getState().setLayers(plan.layers)
+                    if (importId) usePlanEngineStore.getState().storeParsedPlan(importId, plan)
                   }}
                 />
               )}
@@ -1176,8 +1220,6 @@ export default function Vol2Module() {
         </span>
       </footer>
 
-      {/* ── DXF Import Modal ────────────────────────────────── */}
-      <DXFImportModal open={showDXFImport} onClose={() => setShowDXFImport(false)} />
       <Model3DImportModal open={show3DImport} onClose={() => setShow3DImport(false)} />
     </div>
   )

@@ -172,6 +172,8 @@ export interface PlanImportState {
   rasterResult?: RasterRecognitionResult
   /** URL blob de l'image du plan (pour affichage background) */
   planImageUrl?: string
+  /** Full parsed plan for PlanCanvasV2 vectorial rendering */
+  parsedPlan?: import('./planEngineTypes').ParsedPlan
   errors: string[]
   warnings: string[]
 }

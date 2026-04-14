@@ -1,9 +1,9 @@
 import type { PlanSourceType } from './planReaderTypes'
 
 export const FILE_LIMITS: Record<PlanSourceType, { maxBytes: number; label: string }> = {
-  dxf:          { maxBytes: 50 * 1024 * 1024, label: '50 MB' },
-  dwg:          { maxBytes: 50 * 1024 * 1024, label: '50 MB' },
-  ifc:          { maxBytes: 50 * 1024 * 1024, label: '50 MB' },
+  dxf:          { maxBytes: 500 * 1024 * 1024, label: '500 MB' },
+  dwg:          { maxBytes: 500 * 1024 * 1024, label: '500 MB' },
+  ifc:          { maxBytes: 200 * 1024 * 1024, label: '200 MB' },
   pdf:          { maxBytes: 30 * 1024 * 1024, label: '30 MB' },
   image_raster: { maxBytes:  8 * 1024 * 1024, label: '8 MB'  },
   svg:          { maxBytes: 10 * 1024 * 1024, label: '10 MB' },

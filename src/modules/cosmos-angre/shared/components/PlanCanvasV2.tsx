@@ -1,0 +1,518 @@
+// ═══ PLAN CANVAS V2 — Full vectorial SVG plan engine ═══
+// Pure SVG rendering with cursor-centered zoom, space+drag pan,
+// LOD, viewport culling, minimap, rulers, and space interaction.
+
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { DetectedSpace, ParsedPlan, ViewportState, PlanTool } from '../planReader/planEngineTypes'
+import {
+  fitToScreen, zoomAtPoint, screenToWorld, computeLOD,
+} from '../planReader/coordinateEngine'
+import { usePlanEngineStore } from '../stores/planEngineStore'
+import { PlanEntitiesRenderer } from './PlanEntitiesRenderer'
+import { SpaceOverlay } from './SpaceOverlay'
+import { SpaceEditPanel } from './SpaceEditPanel'
+import { PlanMinimap } from './PlanMinimap'
+import { PlanToolbar } from './PlanToolbar'
+import { ObjectLibraryPanel } from './ObjectLibraryPanel'
+import { PlanSelector } from './PlanSelector'
+
+interface PlanCanvasV2Props {
+  plan: ParsedPlan
+  /** Optional plan image URL to render as background (from existing import) */
+  planImageUrl?: string
+  /** Children overlays rendered inside the transform group */
+  children?: React.ReactNode
+  className?: string
+  /** Called when a space is clicked */
+  onSpaceClick?: (space: DetectedSpace) => void
+  /** Called on canvas click with world coordinates in metres */
+  onCanvasClick?: (x: number, y: number) => void
+}
+
+export function PlanCanvasV2({
+  plan, planImageUrl, children, className = '',
+  onSpaceClick, onCanvasClick,
+}: PlanCanvasV2Props) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [containerSize, setContainerSize] = useState({ w: 800, h: 600 })
+
+  // ── Store ──
+  const viewport = usePlanEngineStore(s => s.viewport)
+  const setViewport = usePlanEngineStore(s => s.setViewport)
+  const activeTool = usePlanEngineStore(s => s.activeTool)
+  const setTool = usePlanEngineStore(s => s.setTool)
+  const selectedSpaceId = usePlanEngineStore(s => s.selectedSpaceId)
+  const selectSpace = usePlanEngineStore(s => s.selectSpace)
+  const spaceStates = usePlanEngineStore(s => s.spaceStates)
+  const showGrid = usePlanEngineStore(s => s.showGrid)
+  const showDimensions = usePlanEngineStore(s => s.showDimensions)
+  const showLabels = usePlanEngineStore(s => s.showLabels)
+  const showMinimap = usePlanEngineStore(s => s.showMinimap)
+  const showZones = usePlanEngineStore(s => s.showZones)
+
+  // ── Object library state ──
+  const [objectLibraryOpen, setObjectLibraryOpen] = useState(false)
+  const [objectLibrarySpaceId, setObjectLibrarySpaceId] = useState<string | null>(null)
+
+  // ── Observe container size ──
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(entries => {
+      const { width, height } = entries[0].contentRect
+      if (width > 0 && height > 0) setContainerSize({ w: width, h: height })
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  // ── Auto-fit on plan change or container resize ──
+  const lastFitRef = useRef('')
+  useEffect(() => {
+    if (plan.bounds.width <= 0 || plan.bounds.height <= 0) return
+    if (containerSize.w <= 0 || containerSize.h <= 0) return
+    // Avoid re-fitting when nothing changed
+    const key = `${plan.bounds.width.toFixed(1)}_${plan.bounds.height.toFixed(1)}_${containerSize.w}_${containerSize.h}`
+    if (lastFitRef.current === key) return
+    lastFitRef.current = key
+    const vp = fitToScreen(plan.bounds.width, plan.bounds.height, containerSize.w, containerSize.h, 60)
+    setViewport(vp)
+    console.log(`[PlanCanvasV2] fitToScreen: plan=${plan.bounds.width.toFixed(1)}x${plan.bounds.height.toFixed(1)}m, canvas=${containerSize.w}x${containerSize.h}px, scale=${vp.scale.toFixed(2)}`)
+  }, [plan.bounds.width, plan.bounds.height, containerSize.w, containerSize.h]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Space bar tracking ──
+  const isSpacePressed = useRef(false)
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !e.repeat) {
+        isSpacePressed.current = true
+        e.preventDefault()
+      }
+      // Ctrl+0 = fit to screen
+      if (e.code === 'Digit0' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        const vp = fitToScreen(plan.bounds.width, plan.bounds.height, containerSize.w, containerSize.h)
+        setViewport(vp)
+      }
+      // Escape = deselect
+      if (e.code === 'Escape') {
+        selectSpace(null)
+        setObjectLibraryOpen(false)
+      }
+    }
+    const up = (e: KeyboardEvent) => {
+      if (e.code === 'Space') isSpacePressed.current = false
+    }
+    window.addEventListener('keydown', down)
+    window.addEventListener('keyup', up)
+    return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up) }
+  }, [plan.bounds, containerSize]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── ZOOM (cursor-centered, Figma formula) ──
+  useEffect(() => {
+    const svg = svgRef.current
+    if (!svg) return
+    const handler = (e: WheelEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const rect = svg.getBoundingClientRect()
+      const cursorX = e.clientX - rect.left
+      const cursorY = e.clientY - rect.top
+
+      if (e.ctrlKey || e.metaKey) {
+        // Pinch-to-zoom (trackpad) or Ctrl+scroll → zoom
+        const delta = e.deltaY * 0.01
+        setViewport(v => zoomAtPoint(v, cursorX, cursorY, delta))
+      } else if (e.shiftKey) {
+        // Shift+scroll → horizontal pan
+        setViewport(v => ({ ...v, offsetX: v.offsetX - e.deltaY * 1.5 }))
+      } else {
+        // Regular scroll → zoom (vertical scroll = zoom in/out)
+        const delta = e.deltaY * 0.003
+        setViewport(v => zoomAtPoint(v, cursorX, cursorY, delta))
+      }
+    }
+    svg.addEventListener('wheel', handler, { passive: false })
+    return () => svg.removeEventListener('wheel', handler)
+  }, [setViewport])
+
+  // ── PAN (left-click drag, middle-click, space+drag, hand tool) ──
+  const panState = useRef({ active: false, didMove: false, startX: 0, startY: 0, startOffX: 0, startOffY: 0 })
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Always allow pan with left click (like Google Maps), middle click, Space, or hand tool
+    const isPanMode =
+      activeTool === 'hand' ||
+      e.button === 1 ||
+      e.button === 0 // Left click always starts a potential pan
+
+    if (isPanMode) {
+      e.preventDefault()
+      panState.current = {
+        active: true,
+        didMove: false,
+        startX: e.clientX,
+        startY: e.clientY,
+        startOffX: viewport.offsetX,
+        startOffY: viewport.offsetY,
+      }
+    }
+  }, [activeTool, viewport.offsetX, viewport.offsetY])
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!panState.current.active) return
+    e.preventDefault()
+    const dx = e.clientX - panState.current.startX
+    const dy = e.clientY - panState.current.startY
+    // Only start panning after 3px threshold (avoid accidental drags on click)
+    if (!panState.current.didMove && Math.abs(dx) < 3 && Math.abs(dy) < 3) return
+    panState.current.didMove = true
+    setViewport(v => ({
+      ...v,
+      offsetX: panState.current.startOffX + dx,
+      offsetY: panState.current.startOffY + dy,
+    }))
+  }, [setViewport])
+
+  const handleMouseUp = useCallback(() => {
+    panState.current.active = false
+  }, [])
+
+  // ── Canvas click → world coordinates ──
+  const handleSvgClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    // Ignore clicks that were actually drag-pans
+    if (panState.current.didMove) return
+    const svg = svgRef.current
+    if (!svg) return
+    const rect = svg.getBoundingClientRect()
+    const screenX = e.clientX - rect.left
+    const screenY = e.clientY - rect.top
+    const world = screenToWorld(screenX, screenY, viewport)
+    onCanvasClick?.(world.x, world.y)
+  }, [viewport, onCanvasClick])
+
+  // ── Space click handler ──
+  const handleSpaceClick = useCallback((space: DetectedSpace) => {
+    selectSpace(space.id)
+    onSpaceClick?.(space)
+  }, [selectSpace, onSpaceClick])
+
+  // ── LOD ──
+  const lod = useMemo(() => computeLOD(viewport.scale), [viewport.scale])
+
+  // ── Transform string ──
+  const transform = `translate(${viewport.offsetX}, ${viewport.offsetY}) scale(${viewport.scale})`
+
+  // ── Cursor ──
+  const cursor = panState.current.active && panState.current.didMove ? 'grabbing'
+    : activeTool === 'hand' || isSpacePressed.current ? 'grab'
+    : activeTool === 'select' ? 'grab'
+    : activeTool === 'measure' ? 'crosshair'
+    : activeTool === 'zoom-in' ? 'zoom-in'
+    : activeTool === 'zoom-out' ? 'zoom-out'
+    : 'grab'
+
+  // ── Cursor world coordinates ──
+  const [cursorWorld, setCursorWorld] = useState({ x: 0, y: 0 })
+  const handleMouseMoveCoords = useCallback((e: React.MouseEvent) => {
+    handleMouseMove(e)
+    const svg = svgRef.current
+    if (!svg) return
+    const rect = svg.getBoundingClientRect()
+    const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top, viewport)
+    setCursorWorld(world)
+  }, [handleMouseMove, viewport])
+
+  // ── Selected space object ──
+  const selectedSpace = useMemo(
+    () => plan.spaces.find(s => s.id === selectedSpaceId) ?? null,
+    [plan.spaces, selectedSpaceId]
+  )
+
+  // ── Fit-to-screen callback for toolbar ──
+  const handleFitScreen = useCallback(() => {
+    const vp = fitToScreen(plan.bounds.width, plan.bounds.height, containerSize.w, containerSize.h)
+    setViewport(vp)
+  }, [plan.bounds, containerSize, setViewport])
+
+  return (
+    <div className={`relative w-full h-full flex overflow-hidden bg-gray-950 ${className}`}>
+      {/* Main canvas area */}
+      <div ref={containerRef} className="flex-1 relative overflow-hidden">
+        <svg
+          ref={svgRef}
+          className="w-full h-full"
+          style={{ cursor }}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMoveCoords}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onClick={handleSvgClick}
+        >
+          {/* Background */}
+          <rect width="100%" height="100%" fill="#0a0a0f" />
+
+          {/* Grid (drawn in screen space, before transform group) */}
+          {showGrid && (
+            <PlanGrid viewport={viewport} canvasW={containerSize.w} canvasH={containerSize.h} />
+          )}
+
+          {/* Transform group — all plan content */}
+          <g transform={transform}>
+            {/* Rendering: image (from import) if available, else vectorial entities */}
+            {(() => {
+              const imgUrl = planImageUrl || plan.planImageUrl
+              if (imgUrl) {
+                return (
+                  <image
+                    href={imgUrl}
+                    x={0} y={0}
+                    width={plan.bounds.width}
+                    height={plan.bounds.height}
+                    preserveAspectRatio="none"
+                  />
+                )
+              }
+              // Fallback: vectorial rendering
+              return (
+                <PlanEntitiesRenderer
+                  entities={plan.entities}
+                  layers={plan.layers}
+                  lod={lod}
+                  viewport={viewport}
+                  canvasW={containerSize.w}
+                  canvasH={containerSize.h}
+                />
+              )
+            })()}
+
+            {/* Space overlay (polygon zones) — toggleable */}
+            {showZones && (
+              <SpaceOverlay
+                spaces={plan.spaces}
+                spaceStates={spaceStates}
+                selectedId={selectedSpaceId}
+                onSpaceClick={handleSpaceClick}
+                viewport={viewport}
+                showLabels={showLabels}
+              />
+            )}
+
+            {/* Custom overlays from parent */}
+            {children}
+          </g>
+        </svg>
+
+        {/* Plan selector dropdown */}
+        <PlanSelector />
+
+        {/* Floating toolbar */}
+        <PlanToolbar
+          activeTool={activeTool}
+          onToolChange={setTool}
+          onFitScreen={handleFitScreen}
+          showGrid={showGrid}
+          onToggleGrid={usePlanEngineStore.getState().toggleShowGrid}
+          showDimensions={showDimensions}
+          onToggleDimensions={usePlanEngineStore.getState().toggleShowDimensions}
+          showLabels={showLabels}
+          onToggleLabels={usePlanEngineStore.getState().toggleShowLabels}
+          showZones={showZones}
+          onToggleZones={usePlanEngineStore.getState().toggleShowZones}
+        />
+
+        {/* Minimap */}
+        {showMinimap && (
+          <PlanMinimap
+            plan={plan}
+            viewport={viewport}
+            onViewportChange={setViewport}
+            canvasW={containerSize.w}
+            canvasH={containerSize.h}
+          />
+        )}
+
+        {/* Layer panel toggle */}
+        <LayerPanel
+          layers={plan.layers.length > 0 ? plan.layers : layers}
+          onToggle={usePlanEngineStore.getState().toggleLayerVisibility}
+        />
+
+        {/* Cursor coordinates bar */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gray-950/80 px-3 py-1 flex items-center gap-4 text-[10px] font-mono text-gray-400 z-10">
+          <span>X: {cursorWorld.x.toFixed(2)} m</span>
+          <span>Y: {cursorWorld.y.toFixed(2)} m</span>
+          <span className="text-gray-600">|</span>
+          <span>Zoom: {Math.round(viewport.scale * 100)}%</span>
+          <span className="text-gray-600">|</span>
+          <span>Plan: {plan.bounds.width.toFixed(1)} x {plan.bounds.height.toFixed(1)} m</span>
+          <span className="text-gray-600">|</span>
+          <span>{plan.spaces.length} espaces</span>
+          <span>{plan.entities.length} entites</span>
+        </div>
+      </div>
+
+      {/* Right panel: space editor */}
+      {selectedSpace && (
+        <SpaceEditPanel
+          space={selectedSpace}
+          onClose={() => selectSpace(null)}
+          onOpenObjectLibrary={(spaceId) => {
+            setObjectLibrarySpaceId(spaceId)
+            setObjectLibraryOpen(true)
+          }}
+        />
+      )}
+
+      {/* Object library modal */}
+      {objectLibraryOpen && objectLibrarySpaceId && (
+        <ObjectLibraryPanel
+          spaceId={objectLibrarySpaceId}
+          onClose={() => setObjectLibraryOpen(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── GRID COMPONENT ──────────────────────────────────────
+
+function PlanGrid({ viewport, canvasW, canvasH }: {
+  viewport: ViewportState; canvasW: number; canvasH: number
+}) {
+  const lines = useMemo(() => {
+    const result: React.ReactElement[] = []
+    // Determine grid spacing in metres based on zoom level
+    const baseSpacing = viewport.scale > 5 ? 1
+      : viewport.scale > 1 ? 5
+      : viewport.scale > 0.2 ? 10
+      : viewport.scale > 0.05 ? 50
+      : 100
+
+    const spacing = baseSpacing
+    const majorEvery = 5
+
+    // World bounds visible on screen
+    const worldMinX = -viewport.offsetX / viewport.scale
+    const worldMinY = -viewport.offsetY / viewport.scale
+    const worldMaxX = (canvasW - viewport.offsetX) / viewport.scale
+    const worldMaxY = (canvasH - viewport.offsetY) / viewport.scale
+
+    const startX = Math.floor(worldMinX / spacing) * spacing
+    const startY = Math.floor(worldMinY / spacing) * spacing
+
+    for (let x = startX; x <= worldMaxX; x += spacing) {
+      const sx = x * viewport.scale + viewport.offsetX
+      const isMajor = Math.round(x / spacing) % majorEvery === 0
+      result.push(
+        <line
+          key={`vg-${x}`}
+          x1={sx} y1={0} x2={sx} y2={canvasH}
+          stroke={isMajor ? '#374151' : '#1f2937'}
+          strokeWidth={isMajor ? 0.8 : 0.4}
+        />
+      )
+    }
+
+    for (let y = startY; y <= worldMaxY; y += spacing) {
+      const sy = y * viewport.scale + viewport.offsetY
+      const isMajor = Math.round(y / spacing) % majorEvery === 0
+      result.push(
+        <line
+          key={`hg-${y}`}
+          x1={0} y1={sy} x2={canvasW} y2={sy}
+          stroke={isMajor ? '#374151' : '#1f2937'}
+          strokeWidth={isMajor ? 0.8 : 0.4}
+        />
+      )
+    }
+
+    return result
+  }, [viewport, canvasW, canvasH])
+
+  return <g className="plan-grid">{lines}</g>
+}
+
+// ─── LAYER PANEL ─────────────────────────────────────
+
+import type { PlanLayer } from '../planReader/planEngineTypes'
+
+function LayerPanel({ layers, onToggle }: { layers: PlanLayer[]; onToggle: (name: string) => void }) {
+  const [open, setOpen] = useState(false)
+
+  if (layers.length === 0) return null
+
+  const visible = layers.filter(l => l.visible).length
+  const total = layers.length
+
+  // Group layers by category
+  const byCategory = new Map<string, PlanLayer[]>()
+  for (const l of layers) {
+    const cat = l.category || 'other'
+    if (!byCategory.has(cat)) byCategory.set(cat, [])
+    byCategory.get(cat)!.push(l)
+  }
+
+  const CATEGORY_LABELS: Record<string, string> = {
+    structure: 'Structure / Murs',
+    partition: 'Cloisons / Portes',
+    space: 'Espaces / Locaux',
+    dimension: 'Cotations',
+    text: 'Textes / Annotations',
+    equipment: 'Equipements',
+    hatch: 'Hachures',
+    other: 'Autres',
+  }
+
+  return (
+    <div className="absolute bottom-10 left-3 z-20">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-800/90 border border-white/[0.08] hover:bg-gray-700/90 text-[10px] text-gray-300 transition-colors"
+      >
+        <span style={{ fontSize: 14 }}>📋</span>
+        Calques ({visible}/{total})
+      </button>
+
+      {open && (
+        <div className="absolute bottom-10 left-0 w-56 max-h-80 overflow-y-auto rounded-lg bg-gray-900 border border-white/[0.08] shadow-xl">
+          <div className="px-3 py-2 border-b border-white/[0.06] flex items-center justify-between">
+            <span className="text-[9px] uppercase tracking-wider text-gray-500 font-medium">Calques DXF</span>
+            <div className="flex gap-1">
+              <button
+                onClick={() => layers.forEach(l => { if (!l.visible) onToggle(l.name) })}
+                className="text-[9px] text-blue-400 hover:text-blue-300 px-1"
+              >Tout</button>
+              <button
+                onClick={() => layers.forEach(l => { if (l.visible) onToggle(l.name) })}
+                className="text-[9px] text-gray-500 hover:text-gray-300 px-1"
+              >Rien</button>
+            </div>
+          </div>
+          {Array.from(byCategory.entries()).map(([cat, catLayers]) => (
+            <div key={cat}>
+              <div className="px-3 py-1 text-[8px] uppercase tracking-wider text-gray-600 bg-gray-950/50">
+                {CATEGORY_LABELS[cat] ?? cat}
+              </div>
+              {catLayers.map(l => (
+                <button
+                  key={l.name}
+                  onClick={() => onToggle(l.name)}
+                  className={`w-full flex items-center gap-2 px-3 py-1 text-left text-[10px] transition-colors hover:bg-gray-800 ${
+                    l.visible ? 'text-gray-200' : 'text-gray-600'
+                  }`}
+                >
+                  <span className={`w-2.5 h-2.5 rounded-sm border flex-shrink-0 ${
+                    l.visible ? 'bg-blue-500 border-blue-400' : 'bg-transparent border-gray-600'
+                  }`} />
+                  <span className="truncate">{l.name}</span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
