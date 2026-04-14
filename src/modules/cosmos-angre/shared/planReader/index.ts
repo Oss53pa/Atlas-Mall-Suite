@@ -1055,6 +1055,10 @@ export async function importPlan(
         state.progress = 10
         emit()
 
+        // Store raw DXF file as blob URL for WebGL viewer
+        const dxfBlobUrl = URL.createObjectURL(file)
+        state.dxfBlobUrl = dxfBlobUrl
+
         const text = await file.text()
         const { default: DxfParser } = await import('dxf-parser')
         const parser = new DxfParser()
@@ -1837,9 +1841,10 @@ export async function importPlan(
             detectedUnit: detectedUnit as 'mm' | 'cm' | 'm',
             wallSegments: [],
             planImageUrl: state.planImageUrl,
+            dxfBlobUrl,
           }
 
-          console.log(`[DXF] ParsedPlan: ${normalizedEntities.length} entites, ${planSpaces.length} espaces, ${planLayers.length} calques, ${planWalls.length} murs, unite=${detectedUnit}, plan=${normalizedBounds.width.toFixed(1)}x${normalizedBounds.height.toFixed(1)}m`)
+          console.log(`[DXF] ParsedPlan: ${normalizedEntities.length} entites, ${planSpaces.length} espaces, ${planLayers.length} calques, unite=${detectedUnit}, plan=${normalizedBounds.width.toFixed(1)}x${normalizedBounds.height.toFixed(1)}m`)
         } catch (err) {
           console.error('[DXF] ERREUR ParsedPlan:', err)
           // Fallback: generate static SVG preview

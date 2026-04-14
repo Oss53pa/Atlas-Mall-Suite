@@ -57,6 +57,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
+    include: ['dxf-parser', 'dexie'],
     exclude: ['web-ifc'],
   },
   // ═══ Vitest configuration ═══

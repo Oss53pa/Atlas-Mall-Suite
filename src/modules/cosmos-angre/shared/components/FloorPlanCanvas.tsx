@@ -2,12 +2,14 @@
 // The imported plan image IS the canvas. Zones are SVG overlays in 0-1 coordinates.
 // Works with any format: DWG, DXF, PDF, PNG, JPG — everything becomes an image + zones.
 
-import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react'
+import React, { useCallback, useMemo, useRef, useState, useEffect, lazy, Suspense } from 'react'
 import type { Floor, Zone } from '../proph3t/types'
 import type { DimEntity, CalibrationResult, CotationSpec } from '../planReader/planReaderTypes'
 import DimOverlay from './DimOverlay'
 import CotationLayer from './CotationLayer'
 import { useCadStore, CadRenderer, CadToolbar, useCadInteraction } from '../cad'
+
+const View3DSection = lazy(() => import('../view3d/View3DSection'))
 
 export const CANVAS_SCALE = 4
 
@@ -24,14 +26,16 @@ interface FloorPlanCanvasProps {
   cursorMode?: 'select' | 'place'
   dims?: DimEntity[]
   calibration?: CalibrationResult | null
-  showDims?: boolean
+  showDims?: boolean | undefined
   onDimClick?: (dim: DimEntity) => void
   cotationSpecs?: CotationSpec[]
-  showCotations?: boolean
+  showCotations?: boolean | undefined
   planBounds?: { minX: number; minY: number; maxX: number; maxY: number }
   planImageUrl?: string
   /** Plans superposes avec opacite individuelle */
   overlayLayers?: Array<{ planImageUrl: string; opacity: number }>
+  /** Zone editing callbacks */
+  onZoneUpdate?: (zoneId: string, updates: Partial<Zone>) => void
 }
 
 // ── Zoom/pan state ───────────────────────────────────────────
@@ -51,15 +55,29 @@ const ZOOM_STEP = 0.1
 export default function FloorPlanCanvas({
   floor, zones, showHeatmap, heatmapContent, onEntityClick, onCanvasClick, selectedId, children, className = '',
   cursorMode = 'select',
-  dims, calibration, showDims = false, onDimClick, cotationSpecs, showCotations = false, planBounds,
+  dims, calibration, showDims: showDimsProp, onDimClick, cotationSpecs, showCotations: showCotationsProp, planBounds,
   planImageUrl,
   overlayLayers,
+  onZoneUpdate,
 }: FloorPlanCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
 
   const floorId = floor?.id ?? ''
   const floorZones = useMemo(() => zones.filter(z => z.floorId === floorId), [zones, floorId])
+
+  // ── View mode (2D / 3D) ──────
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d')
+
+  // ── Zone editing state ──────
+  const [editingZoneId, setEditingZoneId] = useState<string | null>(null)
+  const editingZone = editingZoneId ? zones.find(z => z.id === editingZoneId) : null
+
+  // ── Dims/cotations toggle (auto-enable when data available) ──────
+  const [showDimsLocal, setShowDimsLocal] = useState(true)
+  const [showCotationsLocal, setShowCotationsLocal] = useState(true)
+  const showDims = showDimsProp ?? (dims && dims.length > 0 ? showDimsLocal : false)
+  const showCotations = showCotationsProp ?? (cotationSpecs && cotationSpecs.length > 0 ? showCotationsLocal : false)
 
   // ── Image dimensions (detected from loaded image) ──────
   const [imgSize, setImgSize] = useState<{ w: number; h: number } | null>(null)
@@ -106,43 +124,132 @@ export default function FloorPlanCanvas({
   const isPanning = useRef(false)
   const panStart = useRef({ x: 0, y: 0 })
 
-  // Reset zoom when plan changes
-  useEffect(() => { setView({ zoom: 1, panX: 0, panY: 0 }) }, [planImageUrl, floorId])
+  // Auto-fit zoom when plan changes
+  // SVG viewBox + w-full h-full already handles fitting to container.
+  // We just reset zoom to 1 (= natural fit). User zooms in/out from there.
+  useEffect(() => {
+    setView({ zoom: 1, panX: 0, panY: 0 })
+  }, [planImageUrl, floorId, canvasW, canvasH])
 
-  // Wheel zoom — must use non-passive listener to allow preventDefault
+  // Wheel zoom — cursor-centered: zoom towards mouse position
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
     const handler = (e: WheelEvent) => {
       e.preventDefault()
-      const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP
-      setView(v => ({
-        ...v,
-        zoom: Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, v.zoom + delta * v.zoom)),
-      }))
+      const rect = el.getBoundingClientRect()
+      const mx = e.clientX - rect.left
+      const my = e.clientY - rect.top
+
+      setView(v => {
+        const factor = e.deltaY > 0 ? 1 - ZOOM_STEP : 1 + ZOOM_STEP
+        const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, v.zoom * factor))
+        const scale = newZoom / v.zoom
+        // Adjust pan so the point under the cursor stays fixed
+        const newPanX = mx - scale * (mx - v.panX)
+        const newPanY = my - scale * (my - v.panY)
+        return { zoom: newZoom, panX: newPanX, panY: newPanY }
+      })
     }
     el.addEventListener('wheel', handler, { passive: false })
     return () => el.removeEventListener('wheel', handler)
   }, [])
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 1 || (e.button === 0 && e.altKey)) {
-      // Middle click or Alt+click → pan
+    // Pan with: middle-click, Alt+click, Space+click, or left-click when pan/select tool
+    const isMiddle = e.button === 1
+    const isAltClick = e.button === 0 && e.altKey
+    const isSpaceClick = e.button === 0 && spaceHeld
+    const isSpacePan = e.button === 0 && cadActiveTool === 'pan'
+    const isLeftPan = e.button === 0 && (cadActiveTool === 'select' || cadActiveTool === 'pan') && !cadIsDrawing
+    if (isMiddle || isAltClick || isSpaceClick || isSpacePan || isLeftPan) {
       isPanning.current = true
       panStart.current = { x: e.clientX - view.panX, y: e.clientY - view.panY }
       e.preventDefault()
     }
-  }, [view.panX, view.panY])
+  }, [view.panX, view.panY, cadActiveTool, cadIsDrawing])
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isPanning.current) return
     setView(v => ({ ...v, panX: e.clientX - panStart.current.x, panY: e.clientY - panStart.current.y }))
   }, [])
 
-  const handleMouseUp = useCallback(() => { isPanning.current = false }, [])
+  const wasPanning = useRef(false)
+  const handleMouseUp = useCallback(() => {
+    wasPanning.current = isPanning.current
+    isPanning.current = false
+  }, [])
+
+  // ── Space key → temporary pan mode ──
+  const [spaceHeld, setSpaceHeld] = useState(false)
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => { if (e.code === 'Space' && !e.repeat) { setSpaceHeld(true); e.preventDefault() } }
+    const up = (e: KeyboardEvent) => { if (e.code === 'Space') setSpaceHeld(false) }
+    window.addEventListener('keydown', down)
+    window.addEventListener('keyup', up)
+    return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up) }
+  }, [])
+
+  // ── Touch gestures: pinch-to-zoom + two-finger pan ──
+  const lastTouches = useRef<{ x1: number; y1: number; x2: number; y2: number; dist: number; cx: number; cy: number } | null>(null)
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault()
+        const t0 = e.touches[0], t1 = e.touches[1]
+        const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY)
+        lastTouches.current = {
+          x1: t0.clientX, y1: t0.clientY, x2: t1.clientX, y2: t1.clientY,
+          dist, cx: (t0.clientX + t1.clientX) / 2, cy: (t0.clientY + t1.clientY) / 2,
+        }
+      }
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && lastTouches.current) {
+        e.preventDefault()
+        const t0 = e.touches[0], t1 = e.touches[1]
+        const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY)
+        const cx = (t0.clientX + t1.clientX) / 2
+        const cy = (t0.clientY + t1.clientY) / 2
+        const prev = lastTouches.current
+        const scaleFactor = dist / prev.dist
+
+        setView(v => {
+          const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, v.zoom * scaleFactor))
+          const s = newZoom / v.zoom
+          const rect = el.getBoundingClientRect()
+          const mx = cx - rect.left, my = cy - rect.top
+          return {
+            zoom: newZoom,
+            panX: mx - s * (mx - v.panX) + (cx - prev.cx),
+            panY: my - s * (my - v.panY) + (cy - prev.cy),
+          }
+        })
+
+        lastTouches.current = { x1: t0.clientX, y1: t0.clientY, x2: t1.clientX, y2: t1.clientY, dist, cx, cy }
+      }
+    }
+
+    const handleTouchEnd = () => { lastTouches.current = null }
+
+    el.addEventListener('touchstart', handleTouchStart, { passive: false })
+    el.addEventListener('touchmove', handleTouchMove, { passive: false })
+    el.addEventListener('touchend', handleTouchEnd)
+    return () => {
+      el.removeEventListener('touchstart', handleTouchStart)
+      el.removeEventListener('touchmove', handleTouchMove)
+      el.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [])
 
   // ── Click handler (converts screen coords to 0-1 plan coords) ──
   const handleSvgClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    // Don't trigger click after a pan drag
+    if (wasPanning.current) { wasPanning.current = false; return }
     if (!onCanvasClick || !svgRef.current) return
     const target = e.target as Element
     if (target.tagName !== 'rect' || !target.classList.contains('canvas-bg')) return
@@ -194,12 +301,44 @@ export default function FloorPlanCanvas({
     return { x: z.x * CANVAS_SCALE, y: z.y * CANVAS_SCALE, w: z.w * CANVAS_SCALE, h: z.h * CANVAS_SCALE }
   }
 
-  // Determine cursor based on CAD tool
-  const cadCursor = cadActiveTool === 'select' ? 'default'
+  // Determine cursor based on CAD tool and state
+  const cadCursor = spaceHeld ? (isPanning.current ? 'grabbing' : 'grab')
+    : cadActiveTool === 'select' ? (isPanning.current ? 'grabbing' : 'default')
     : cadActiveTool === 'pan' ? (isPanning.current ? 'grabbing' : 'grab')
     : cadActiveTool === 'eraser' ? 'crosshair'
     : cadActiveTool === 'text' ? 'text'
     : 'crosshair'
+
+  // ── 3D view data (built from current floor/zones) ──
+  const view3DData = useMemo(() => ({
+    sourceVolume: 'vol1' as const,
+    floors: floor ? [floor] : [],
+    zones: floorZones,
+    transitions: [],
+  }), [floor, floorZones])
+
+  // ── 3D MODE: render View3DSection fullscreen ──
+  if (viewMode === '3d') {
+    return (
+      <div ref={containerRef} className={`relative overflow-hidden bg-gray-950 flex flex-col ${className}`}>
+        {/* 2D/3D toggle */}
+        <div className="absolute top-3 right-3 z-20 flex gap-1">
+          <button
+            onClick={() => setViewMode('2d')}
+            className="px-3 py-1.5 rounded bg-gray-800/90 text-gray-300 text-[11px] font-medium hover:bg-gray-700 transition-colors"
+          >2D</button>
+          <button
+            className="px-3 py-1.5 rounded bg-blue-600/90 text-white text-[11px] font-medium"
+          >3D</button>
+        </div>
+        <Suspense fallback={
+          <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">Chargement 3D...</div>
+        }>
+          <View3DSection data={view3DData} />
+        </Suspense>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -221,8 +360,18 @@ export default function FloorPlanCanvas({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-      {/* Zoom controls */}
+      {/* Zoom controls + view mode toggle */}
       <div className="absolute top-3 right-3 z-10 flex flex-col gap-1">
+        {/* 2D/3D toggle */}
+        <div className="flex gap-0.5 mb-1">
+          <button
+            className="flex-1 px-1.5 py-1 rounded-l bg-blue-600/80 text-white text-[9px] font-bold"
+          >2D</button>
+          <button
+            onClick={() => setViewMode('3d')}
+            className="flex-1 px-1.5 py-1 rounded-r bg-gray-800/80 text-gray-400 text-[9px] font-bold hover:bg-gray-700"
+          >3D</button>
+        </div>
         <button
           onClick={() => setView(v => ({ ...v, zoom: Math.min(MAX_ZOOM, v.zoom + 0.2) }))}
           className="w-7 h-7 rounded bg-gray-800/80 text-white text-sm font-bold hover:bg-gray-700 flex items-center justify-center"
@@ -234,8 +383,24 @@ export default function FloorPlanCanvas({
         <button
           onClick={() => setView({ zoom: 1, panX: 0, panY: 0 })}
           className="w-7 h-7 rounded bg-gray-800/80 text-gray-400 text-[9px] hover:bg-gray-700 flex items-center justify-center"
-          title="Reset zoom"
-        >1:1</button>
+          title="Recentrer (zoom 100%)"
+        >Fit</button>
+        {/* Dims toggle */}
+        {dims && dims.length > 0 && (
+          <button
+            onClick={() => setShowDimsLocal(v => !v)}
+            className={`w-7 h-7 rounded text-[9px] font-bold flex items-center justify-center ${showDims ? 'bg-red-600/80 text-white' : 'bg-gray-800/80 text-gray-500'}`}
+            title={showDims ? 'Masquer les cotes' : 'Afficher les cotes'}
+          >D</button>
+        )}
+        {/* Cotations toggle */}
+        {cotationSpecs && cotationSpecs.length > 0 && (
+          <button
+            onClick={() => setShowCotationsLocal(v => !v)}
+            className={`w-7 h-7 rounded text-[9px] font-bold flex items-center justify-center ${showCotations ? 'bg-blue-600/80 text-white' : 'bg-gray-800/80 text-gray-500'}`}
+            title={showCotations ? 'Masquer les cotations' : 'Afficher les cotations'}
+          >C</button>
+        )}
       </div>
 
       {/* Zoom info */}
@@ -243,15 +408,16 @@ export default function FloorPlanCanvas({
         {Math.round(view.zoom * 100)}% {hasImage ? `· ${imgSize!.w}×${imgSize!.h}px` : `· ${floor.widthM}×${floor.heightM}m`}
       </div>
 
-      {/* SVG Canvas */}
+      {/* SVG Canvas — viewBox handles auto-fit, transform handles zoom/pan */}
       <svg
         ref={svgRef}
         viewBox={`0 0 ${canvasW} ${canvasH}`}
         className="w-full h-full"
+        preserveAspectRatio="xMidYMid meet"
         style={{
           cursor: cadCursor,
-          transform: `scale(${view.zoom}) translate(${view.panX / view.zoom}px, ${view.panY / view.zoom}px)`,
-          transformOrigin: 'center center',
+          transform: `translate(${view.panX}px, ${view.panY}px) scale(${view.zoom})`,
+          transformOrigin: '0 0',
         }}
         onClick={(e) => {
           handleSvgClick(e)
@@ -313,7 +479,11 @@ export default function FloorPlanCanvas({
           return (
             <g
               key={zone.id}
-              onClick={() => onEntityClick?.(zone.id, 'zone')}
+              onClick={(e) => {
+                e.stopPropagation()
+                onEntityClick?.(zone.id, 'zone')
+                if (onZoneUpdate) setEditingZoneId(zone.id === editingZoneId ? null : zone.id)
+              }}
               className="cursor-pointer"
             >
               <rect
@@ -534,6 +704,79 @@ export default function FloorPlanCanvas({
           {dims && dims.length > 0 && (
             <span className="text-gray-400">{dims.length} cote(s)</span>
           )}
+        </div>
+      )}
+
+      {/* ═══ ZONE EDITOR PANEL ═══ */}
+      {editingZone && onZoneUpdate && (
+        <div className="absolute top-3 left-14 z-20 w-64 bg-gray-900/95 border border-gray-700 rounded-xl shadow-2xl backdrop-blur-sm overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-gray-800">
+            <span className="text-[11px] font-bold text-white truncate">{editingZone.label || 'Zone sans nom'}</span>
+            <button onClick={() => setEditingZoneId(null)} className="text-gray-500 hover:text-white text-sm">&times;</button>
+          </div>
+          <div className="p-3 space-y-3">
+            {/* Zone name */}
+            <div>
+              <label className="text-[9px] uppercase tracking-wider text-gray-500 block mb-1">Nom</label>
+              <input
+                type="text"
+                value={editingZone.label}
+                onChange={(e) => onZoneUpdate(editingZone.id, { label: e.target.value })}
+                className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-[12px] text-white focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+            {/* Zone color */}
+            <div>
+              <label className="text-[9px] uppercase tracking-wider text-gray-500 block mb-1">Couleur</label>
+              <div className="flex gap-1.5 flex-wrap">
+                {['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#a855f7', '#14b8a6', '#ec4899', '#6366f1', '#64748b', '#84cc16', '#06b6d4', '#dc2626'].map(c => (
+                  <button
+                    key={c}
+                    onClick={() => onZoneUpdate(editingZone.id, { color: c })}
+                    className="w-6 h-6 rounded-md border-2 transition-transform hover:scale-110"
+                    style={{
+                      background: c,
+                      borderColor: editingZone.color === c ? '#fff' : 'transparent',
+                    }}
+                  />
+                ))}
+                <input
+                  type="color"
+                  value={editingZone.color || '#3b82f6'}
+                  onChange={(e) => onZoneUpdate(editingZone.id, { color: e.target.value })}
+                  className="w-6 h-6 rounded cursor-pointer bg-transparent border border-gray-600"
+                  title="Couleur personnalisee"
+                />
+              </div>
+            </div>
+            {/* Zone type */}
+            <div>
+              <label className="text-[9px] uppercase tracking-wider text-gray-500 block mb-1">Type</label>
+              <select
+                value={editingZone.type || 'commerce'}
+                onChange={(e) => onZoneUpdate(editingZone.id, { type: e.target.value as any })}
+                className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5 text-[12px] text-white"
+              >
+                <option value="commerce">Commerce</option>
+                <option value="restauration">Restauration</option>
+                <option value="services">Services</option>
+                <option value="loisirs">Loisirs</option>
+                <option value="circulation">Circulation</option>
+                <option value="technique">Technique</option>
+                <option value="backoffice">Back-office</option>
+                <option value="parking">Parking</option>
+                <option value="financier">Securite / Finance</option>
+                <option value="sortie_secours">Sortie de secours</option>
+                <option value="exterieur">Exterieur</option>
+              </select>
+            </div>
+            {/* Surface */}
+            {editingZone.surfaceM2 && (
+              <div className="text-[10px] text-gray-500">
+                Surface : {editingZone.surfaceM2} m²
+              </div>
+            )}
+          </div>
         </div>
       )}
       </div>

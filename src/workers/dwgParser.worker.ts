@@ -64,6 +64,16 @@ interface DwgParserInput {
   heightM: number
 }
 
+interface DwgDimension {
+  id: string
+  valueText: string
+  value: number
+  unit: string
+  x: number
+  y: number
+  confidence: number
+}
+
 interface DwgParserOutput {
   entities: DXFEntity[]
   layers: string[]
@@ -74,6 +84,10 @@ interface DwgParserOutput {
   layerClassification: LayerClassificationResult[]
   dwgVersion: string
   parseMethod: 'binary' | 'partial'
+  dimensions: DwgDimension[]
+  detectedUnit: 'mm' | 'm' | 'cm' | 'unknown'
+  realWidthM: number
+  realHeightM: number
 }
 
 interface LayerClassificationResult {
@@ -204,40 +218,48 @@ function extractDwgStrings(buffer: ArrayBuffer): string[] {
 function extractLayersFromStrings(strings: string[]): string[] {
   const layerSet = new Set<string>()
 
-  // DWG layer names often appear near "AcDbLayerTableRecord" or as repeated identifiers
+  // DWG layer names appear after "AcDbLayerTableRecord" marker
   const layerIndicators = /^[A-Za-z0-9_\-\.]+$/
   const skipPatterns = /^(AcDb|Ac[A-Z]|ACAD|Standard|Model|Paper|Plot|Block|Dim|Text|By|ISO|CONTINUOUS|BYLAYER|BYBLOCK)/i
 
   for (let i = 0; i < strings.length; i++) {
     const s = strings[i].trim()
 
-    // Look for layer table records
+    // Primary: look for layer table records (most reliable)
     if (s === 'AcDbLayerTableRecord' && i + 1 < strings.length) {
       const nextStr = strings[i + 1].trim()
       if (nextStr.length >= 2 && nextStr.length <= 80 && layerIndicators.test(nextStr) && !skipPatterns.test(nextStr)) {
         layerSet.add(nextStr)
       }
     }
+  }
 
-    // Also collect strings that match typical layer naming conventions
-    if (s.length >= 3 && s.length <= 60 && layerIndicators.test(s) && !skipPatterns.test(s)) {
-      // Check if it looks like a layer name (contains zone/type identifiers)
-      for (const pattern of LAYER_PATTERNS) {
-        if (pattern.pattern.test(s)) {
-          layerSet.add(s)
-          break
-        }
+  // If we found proper layer records, use only those
+  if (layerSet.size > 0) {
+    layerSet.add('0')
+    return Array.from(layerSet).sort()
+  }
+
+  // Fallback: search for strings matching known architectural patterns
+  // Require minimum length of 4 to avoid fragments like "-WC", ".wc."
+  for (const s of strings) {
+    const trimmed = s.trim()
+    if (trimmed.length < 4 || trimmed.length > 60) continue
+    if (!layerIndicators.test(trimmed)) continue
+    if (skipPatterns.test(trimmed)) continue
+
+    for (const pattern of LAYER_PATTERNS) {
+      if (pattern.pattern.test(trimmed)) {
+        layerSet.add(trimmed)
+        break
       }
-      // Also check door patterns
-      if (DOOR_PATTERNS.some(p => p.test(s))) {
-        layerSet.add(s)
-      }
+    }
+    if (DOOR_PATTERNS.some(p => p.test(trimmed))) {
+      layerSet.add(trimmed)
     }
   }
 
-  // Always include "0" default layer
   layerSet.add('0')
-
   return Array.from(layerSet).sort()
 }
 
@@ -391,7 +413,7 @@ function buildZonesFromCoords(
 function generateSVG(
   coords: DwgCoordinate[],
   bounds: DXFBounds,
-  layers: string[],
+  _layers: string[],
   svgWidth: number = 1200,
   svgHeight: number = 800
 ): string {
@@ -403,19 +425,143 @@ function generateSVG(
   const scale = Math.min(svgWidth / dxfWidth, svgHeight / dxfHeight)
   const paths: string[] = []
 
-  // Draw coordinate points as small circles
+  // Background
+  paths.push(`<rect x="0" y="0" width="${svgWidth}" height="${svgHeight}" fill="#0f172a"/>`)
+
+  // Connect nearby consecutive coordinate pairs as line segments (wall-like)
+  // This produces a much better visual than isolated dots
+  const maxGap = Math.max(dxfWidth, dxfHeight) * 0.08 // max 8% of plan size
+
+  for (let i = 0; i < coords.length - 1; i++) {
+    const a = coords[i]
+    const b = coords[i + 1]
+    const dx = b.x - a.x
+    const dy = b.y - a.y
+    const dist = Math.sqrt(dx * dx + dy * dy)
+
+    if (dist < maxGap && dist > 0.01) {
+      const x1 = (a.x - bounds.minX) * scale
+      const y1 = svgHeight - (a.y - bounds.minY) * scale
+      const x2 = (b.x - bounds.minX) * scale
+      const y2 = svgHeight - (b.y - bounds.minY) * scale
+      paths.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#60a5fa" stroke-width="1.2" opacity="0.7"/>`)
+    }
+  }
+
+  // Draw remaining isolated points
   for (const c of coords) {
     const cx = (c.x - bounds.minX) * scale
     const cy = svgHeight - (c.y - bounds.minY) * scale
-    paths.push(`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="1.5" fill="#3b82f6" opacity="0.6"/>`)
+    paths.push(`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="1" fill="#93c5fd" opacity="0.4"/>`)
   }
 
-  // Draw bounding box
-  paths.push(
-    `<rect x="0" y="0" width="${svgWidth}" height="${svgHeight}" fill="none" stroke="#374151" stroke-width="1"/>`
-  )
-
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}">${paths.join('')}</svg>`
+}
+
+// ═══ DIMENSION EXTRACTION FROM STRINGS ═══
+
+function extractDimensionsFromStrings(strings: string[], _bounds: DXFBounds): DwgDimension[] {
+  const dims: DwgDimension[] = []
+  // Only match strings that look like real dimension labels:
+  // "14.50", "3,20 m", "2500 mm", "1.80m" etc.
+  // Must have a decimal point/comma OR a unit suffix to qualify
+  const dimWithUnit = /^(\d+[.,]\d+)\s*(mm|cm|m)$/i
+  const dimWithDot = /^(\d+[.,]\d{1,3})$/  // e.g. "14.50", "3,20"
+  const dimMmLarge = /^(\d{3,5})\s*(mm)?$/i // e.g. "2500" or "2500 mm" (likely mm)
+  const seen = new Set<number>()
+  let idx = 0
+
+  for (const s of strings) {
+    const trimmed = s.trim()
+    if (trimmed.length < 2 || trimmed.length > 12) continue
+
+    let value = 0
+    let unit = ''
+    let confidence = 0
+
+    // Priority 1: dimension with explicit unit
+    const m1 = trimmed.match(dimWithUnit)
+    if (m1) {
+      value = parseFloat(m1[1].replace(',', '.'))
+      unit = m1[2].toLowerCase()
+      confidence = 0.9
+    }
+
+    // Priority 2: decimal number (likely metres)
+    if (!m1) {
+      const m2 = trimmed.match(dimWithDot)
+      if (m2) {
+        value = parseFloat(m2[1].replace(',', '.'))
+        // Architectural dims: 0.5m to 100m are typical
+        if (value >= 0.3 && value <= 150) {
+          unit = 'm'
+          confidence = 0.7
+        } else {
+          continue
+        }
+      }
+    }
+
+    // Priority 3: large integer likely in mm (1000-50000)
+    if (!m1 && !trimmed.includes('.') && !trimmed.includes(',')) {
+      const m3 = trimmed.match(dimMmLarge)
+      if (m3) {
+        const raw = parseInt(m3[1], 10)
+        if (raw >= 500 && raw <= 50000) {
+          value = raw / 1000
+          unit = 'mm'
+          confidence = 0.6
+        } else {
+          continue
+        }
+      }
+    }
+
+    if (value <= 0 || confidence === 0) continue
+
+    // Deduplicate by rounded value
+    const rounded = Math.round(value * 100)
+    if (seen.has(rounded)) continue
+    seen.add(rounded)
+
+    dims.push({
+      id: `dwg-dim-${idx++}`,
+      valueText: trimmed,
+      value,
+      unit,
+      x: 0.5,
+      y: 0.1 + (idx * 0.04) % 0.8,
+      confidence,
+    })
+
+    if (dims.length >= 50) break // cap to avoid noise
+  }
+
+  return dims
+}
+
+// ═══ UNIT DETECTION ═══
+
+function detectUnit(bounds: DXFBounds, strings: string[]): { unit: 'mm' | 'm' | 'cm' | 'unknown'; factor: number } {
+  const w = bounds.maxX - bounds.minX
+  const h = bounds.maxY - bounds.minY
+  const maxDim = Math.max(w, h)
+
+  // Check strings for unit hints
+  const allText = strings.join(' ').toLowerCase()
+  if (allText.includes('millimeter') || allText.includes('millimetre')) return { unit: 'mm', factor: 0.001 }
+  if (allText.includes('centimeter') || allText.includes('centimetre')) return { unit: 'cm', factor: 0.01 }
+  if (allText.includes('meter') || allText.includes('metre')) return { unit: 'm', factor: 1 }
+
+  // Heuristic based on coordinate range
+  // Architectural plans in mm: typical mall floor ~200,000 x 140,000
+  // In cm: ~20,000 x 14,000
+  // In m: ~200 x 140
+  if (maxDim > 50000) return { unit: 'mm', factor: 0.001 }
+  if (maxDim > 5000) return { unit: 'cm', factor: 0.01 }
+  if (maxDim > 10 && maxDim < 5000) return { unit: 'm', factor: 1 }
+
+  return { unit: 'unknown', factor: 1 }
 }
 
 // ═══ MAIN PARSE ═══
@@ -520,7 +666,17 @@ function parseDwg(input: DwgParserInput): DwgParserOutput {
     return (order[a.confidence] ?? 3) - (order[b.confidence] ?? 3)
   })
 
-  // 10. Generate SVG preview
+  // 10. Detect unit and compute real dimensions
+  const unitInfo = detectUnit(bounds, allStrings)
+  const dxfWidth = bounds.maxX - bounds.minX
+  const dxfHeight = bounds.maxY - bounds.minY
+  const realWidthM = dxfWidth * unitInfo.factor
+  const realHeightM = dxfHeight * unitInfo.factor
+
+  // 11. Extract dimension texts from binary strings
+  const dimensions = extractDimensionsFromStrings(allStrings, bounds)
+
+  // 12. Generate SVG preview
   const svgContent = generateSVG(coords, bounds, layers)
 
   self.postMessage({ type: 'progress', percent: 95 })
@@ -535,6 +691,10 @@ function parseDwg(input: DwgParserInput): DwgParserOutput {
     layerClassification,
     dwgVersion,
     parseMethod: layers.length > 1 ? 'binary' : 'partial',
+    dimensions,
+    detectedUnit: unitInfo.unit,
+    realWidthM,
+    realHeightM,
   }
 }
 

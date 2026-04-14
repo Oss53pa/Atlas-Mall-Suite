@@ -1031,6 +1031,20 @@ export const useVol2Store = create<Vol2State>()((set) => ({
 
   // ── Supabase hydration ─────────────────────────────────
   hydrateFromSupabase: async (projetId) => {
+    // CRITICAL: if zones were already imported, do NOT overwrite them with mock data
+    const currentZones = useVol2Store.getState().zones
+    const hasImportedData = currentZones.length > 0 && currentZones.some(z => z.id.startsWith('import-') || z.id.startsWith('dwg-') || z.id.startsWith('dxf-') || z.id.startsWith('proph3t-') || z.id.startsWith('txt-zone-'))
+
+    if (hasImportedData) {
+      // Already have imported zones — only load floors/transitions if needed, keep zones intact
+      const s = useVol2Store.getState()
+      if (s.floors.length === 0) {
+        set({ floors: MOCK_FLOORS, activeFloorId: s.activeFloorId || 'floor-rdc', transitions: MOCK_TRANSITIONS })
+      }
+      set({ isHydrating: false, projectId: projetId })
+      return
+    }
+
     set({ isHydrating: true, hydrationError: null })
     try {
       const data = await loadProjectFromSupabase(projetId)

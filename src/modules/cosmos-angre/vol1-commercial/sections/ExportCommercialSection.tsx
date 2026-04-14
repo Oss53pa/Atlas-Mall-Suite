@@ -1,42 +1,50 @@
-// ═══ VOL.1 — Exports (F1.6) ═══
+// ═══ VOL.1 — Exports réels (XLSX + PDF + PPTX + DXF) ═══
 
 import React, { useState } from 'react'
 import { FileText, Download, Table2, FileImage, Presentation, Loader2, CheckCircle } from 'lucide-react'
 import { useVol1Store } from '../store/vol1Store'
+import { exportToXLSX, exportToPDF, exportToPPTX, exportToDXF } from '../engines/exportService'
 import { formatFcfa } from '../../shared/utils/formatting'
+import toast from 'react-hot-toast'
 
 type ExportFormat = 'pdf' | 'xlsx' | 'dwg' | 'pptx'
 
-interface ExportOption {
-  id: ExportFormat
-  label: string
-  description: string
-  icon: React.ElementType
-  color: string
-}
-
-const EXPORTS: ExportOption[] = [
-  { id: 'pdf', label: 'Plan Commercial PDF', description: 'Plan annote avec couleurs par statut + etiquettes enseignes. Format A1 vectoriel.', icon: FileText, color: '#ef4444' },
-  { id: 'xlsx', label: 'Tableau Occupancy XLSX', description: 'Tableau complet des cellules : reference, surface, preneur, loyer, statut, dates bail.', icon: Table2, color: '#22c55e' },
-  { id: 'dwg', label: 'DWG Annote', description: 'Plan AutoCAD retourne avec calques mis a jour (occupancy, enseignes, surfaces).', icon: FileImage, color: '#38bdf8' },
-  { id: 'pptx', label: 'Presentation DG', description: 'PowerPoint cle en main : dashboard occupancy, mix enseigne, alertes, recommandations Proph3t.', icon: Presentation, color: '#f59e0b' },
+const EXPORTS: { id: ExportFormat; label: string; description: string; icon: React.ElementType; color: string }[] = [
+  { id: 'pdf', label: 'Plan Commercial PDF', description: 'Synthèse exécutive + tableau de commercialisation complet. Format A4 paysage.', icon: FileText, color: '#ef4444' },
+  { id: 'xlsx', label: 'Tableau Commercialisation XLSX', description: '3 onglets : Commercialisation, Cellules vacantes, Synthèse par phase. Compatible Excel/Google Sheets.', icon: Table2, color: '#22c55e' },
+  { id: 'dwg', label: 'DXF Annoté', description: 'Plan technique avec calques par statut (occupé/vacant/réservé), labels enseignes et cotes. Compatible AutoCAD/LibreCAD.', icon: FileImage, color: '#38bdf8' },
+  { id: 'pptx', label: 'Présentation DG', description: 'PowerPoint 3 slides : KPIs synthèse, tableau des enseignes, avancement par phase avec barres de progression.', icon: Presentation, color: '#f59e0b' },
 ]
 
 export default function ExportCommercialSection() {
   const tenants = useVol1Store(s => s.tenants)
   const spaces = useVol1Store(s => s.spaces)
   const occupancy = useVol1Store(s => s.occupancy)
+  const phases = useVol1Store(s => s.phases)
   const [exporting, setExporting] = useState<ExportFormat | null>(null)
   const [done, setDone] = useState<ExportFormat | null>(null)
+
+  const mallName = 'Cosmos Angré'
 
   const handleExport = async (format: ExportFormat) => {
     setExporting(format)
     setDone(null)
-    // Simulate export
-    await new Promise(r => setTimeout(r, 1500))
-    setExporting(null)
-    setDone(format)
-    setTimeout(() => setDone(null), 3000)
+    try {
+      switch (format) {
+        case 'xlsx': await exportToXLSX(tenants, spaces, occupancy, phases, mallName); break
+        case 'pdf':  await exportToPDF(tenants, spaces, occupancy, mallName); break
+        case 'pptx': await exportToPPTX(tenants, spaces, occupancy, phases, mallName); break
+        case 'dwg':  exportToDXF(spaces, tenants, mallName); break
+      }
+      setDone(format)
+      toast.success(`${format.toUpperCase()} exporté avec succès`)
+    } catch (err) {
+      console.error('Export error:', err)
+      toast.error(`Erreur lors de l'export ${format.toUpperCase()}`)
+    } finally {
+      setExporting(null)
+      setTimeout(() => setDone(null), 4000)
+    }
   }
 
   return (
@@ -45,7 +53,7 @@ export default function ExportCommercialSection() {
         <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#f59e0b' }}>VOL. 1 — PLAN COMMERCIAL</p>
         <h1 className="text-[28px] font-light text-white mb-2">Exports</h1>
         <p className="text-[13px]" style={{ color: '#4a5568' }}>
-          Generez les livrables du plan commercial — {spaces.length} cellules, {tenants.length} preneurs, {occupancy.occupancyRate}% d'occupation.
+          Générez les livrables du plan commercial — {spaces.length} cellules, {tenants.length} preneurs, {occupancy.occupancyRate}% d'occupation.
         </p>
       </div>
 
@@ -89,7 +97,7 @@ export default function ExportCommercialSection() {
                 }}
               >
                 {isExporting ? <Loader2 size={14} className="animate-spin" /> : isDone ? <CheckCircle size={14} /> : <Download size={14} />}
-                {isExporting ? 'Generation...' : isDone ? 'Telecharge !' : 'Exporter'}
+                {isExporting ? 'Génération...' : isDone ? 'Téléchargé !' : 'Exporter'}
               </button>
             </div>
           )

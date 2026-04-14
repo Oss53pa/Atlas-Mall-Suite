@@ -13,6 +13,7 @@ import { SpaceOverlay } from './SpaceOverlay'
 import { SpaceEditPanel } from './SpaceEditPanel'
 import { PlanMinimap } from './PlanMinimap'
 import { PlanToolbar } from './PlanToolbar'
+import { DxfViewerCanvas } from './DxfViewerCanvas'
 import { ObjectLibraryPanel } from './ObjectLibraryPanel'
 import { PlanSelector } from './PlanSelector'
 
@@ -235,6 +236,17 @@ export function PlanCanvasV2({
     const vp = fitToScreen(plan.bounds.width, plan.bounds.height, containerSize.w, containerSize.h)
     setViewport(vp)
   }, [plan.bounds, containerSize, setViewport])
+
+  // ── WebGL DXF viewer: use dxf-viewer library for full CAD rendering ──
+  if (plan.dxfBlobUrl) {
+    return (
+      <div className={`relative w-full h-full flex overflow-hidden bg-gray-950 ${className}`}>
+        <DxfViewerCanvas dxfUrl={plan.dxfBlobUrl} className="flex-1" />
+        {/* Plan selector dropdown */}
+        <PlanSelector />
+      </div>
+    )
+  }
 
   return (
     <div className={`relative w-full h-full flex overflow-hidden bg-gray-950 ${className}`}>

@@ -1,28 +1,40 @@
 // ═══ VOL.1 — Plan Interactif Commercial (F1.2) ═══
+// Uses PlanCanvasV2 for full vectorial SVG rendering with zoom/pan/LOD,
+// with Vol1-specific overlays (phase status, tenant info, commercial filters).
 
-import React, { useState, useMemo, useCallback, useRef, lazy, Suspense } from 'react'
+import React, { useState, useMemo, useCallback, lazy, Suspense } from 'react'
 import { useVol1Store } from '../store/vol1Store'
-import type { CommercialSpace, SpaceStatus, Sector } from '../store/vol1Types'
-import { Grid3X3, Box, Sparkles, Loader2, CalendarDays } from 'lucide-react'
-import { getSpacePhaseStatus, computePhaseMetrics, PHASE_STATUS_COLORS, type PhaseSpaceStatus } from '../engines/phasingEngine'
+import type { CommercialSpace, SpaceStatus } from '../store/vol1Types'
+import { Grid3X3, Sparkles, Loader2, CalendarDays, Cuboid, Navigation, Map } from 'lucide-react'
+import { getSpacePhaseStatus, computePhaseMetrics, PHASE_STATUS_COLORS } from '../engines/phasingEngine'
 import { SPACE_STATUS_COLORS as statusColors, SPACE_STATUS_LABELS as statusLabels } from '../../shared/constants/statusConfig'
 import { formatFcfa } from '../../shared/utils/formatting'
 import { PlanLayerSelector } from '../../shared/components/PlanLayerSelector'
+import { usePlanEngineStore } from '../../shared/stores/planEngineStore'
+import { PlanCanvasV2 } from '../../shared/components/PlanCanvasV2'
+import type { ParsedPlan, ViewMode, DetectedSpace } from '../../shared/planReader/planEngineTypes'
 
 const View3DSection = lazy(() => import('../../shared/view3d/View3DSection'))
 
-const SCALE = 4
-const PADDING = 20
+// Empty plan placeholder when no import has been done yet
+const EMPTY_PLAN: ParsedPlan = {
+  entities: [],
+  layers: [],
+  spaces: [],
+  bounds: { minX: 0, minY: 0, maxX: 200, maxY: 140, width: 200, height: 140, centerX: 100, centerY: 70 },
+  unitScale: 1,
+  detectedUnit: 'm',
+  wallSegments: [],
+}
 
 export default function PlanCommercialSection() {
   const spaces = useVol1Store(s => s.spaces)
   const tenants = useVol1Store(s => s.tenants)
   const selectedSpaceId = useVol1Store(s => s.selectedSpaceId)
   const selectSpace = useVol1Store(s => s.selectSpace)
-  const filterSector = useVol1Store(s => s.filterSector)
   const filterStatus = useVol1Store(s => s.filterStatus)
+  const filterSector = useVol1Store(s => s.filterSector)
   const searchQuery = useVol1Store(s => s.searchQuery)
-  const setFilterSector = useVol1Store(s => s.setFilterSector)
   const setFilterStatus = useVol1Store(s => s.setFilterStatus)
   const setSearch = useVol1Store(s => s.setSearch)
 
@@ -31,9 +43,20 @@ export default function PlanCommercialSection() {
   const setActivePhase = useVol1Store(s => s.setActivePhase)
   const planImageUrls = useVol1Store(s => s.planImageUrls)
 
+  // Plan engine store (vectorial plan data)
+  const parsedPlan = usePlanEngineStore(s => s.parsedPlan)
+  const viewMode = usePlanEngineStore(s => s.viewMode)
+  const setViewMode = usePlanEngineStore(s => s.setViewMode)
+
   const floors = ['B1', 'RDC', 'R+1']
-  const [activeFloor, setActiveFloor] = React.useState('RDC')
-  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d')
+  const [activeFloor, setActiveFloor] = useState('RDC')
+
+  // Active plan from engine store or empty placeholder
+  const plan = parsedPlan ?? EMPTY_PLAN
+
+  // Plan image URL for current floor (background overlay)
+  const floorId = activeFloor === 'B1' ? 'floor-b1' : activeFloor === 'R+1' ? 'floor-r1' : 'floor-rdc'
+  const planImageUrl = planImageUrls[floorId]
 
   const filteredSpaces = useMemo(() => {
     return spaces.filter(s => {
@@ -76,10 +99,20 @@ export default function PlanCommercialSection() {
     if (!activePhase) return null
     const ps = getSpacePhaseStatus(sp, activePhase)
     return {
-      label: ps === 'confirmed' ? 'Confirmé' : ps === 'projected' ? 'Projeté' : 'Vacant',
+      label: ps === 'confirmed' ? 'Confirme' : ps === 'projected' ? 'Projete' : 'Vacant',
       color: PHASE_STATUS_COLORS[ps],
     }
   }
+
+  // Handle space click from PlanCanvasV2
+  const handleEngineSpaceClick = useCallback((space: DetectedSpace) => {
+    // Try to find matching Vol1 space by ID or label
+    const match = spaces.find(s => s.id === space.id || s.wing === space.label)
+    if (match) selectSpace(match.id)
+  }, [spaces, selectSpace])
+
+  const is2d = viewMode === '2d'
+  const is3d = viewMode === '3d' || viewMode === 'isometric' || viewMode === 'tour'
 
   return (
     <div className="flex h-full" style={{ background: '#080c14' }}>
@@ -122,11 +155,11 @@ export default function PlanCommercialSection() {
             <>
               <div className="flex items-center gap-2 text-[10px] text-slate-400 mb-1">
                 <div className="w-3 h-3 rounded" style={{ background: PHASE_STATUS_COLORS.confirmed, opacity: 0.6 }} />
-                Confirmé
+                Confirme
               </div>
               <div className="flex items-center gap-2 text-[10px] text-slate-400 mb-1">
                 <div className="w-3 h-3 rounded" style={{ background: PHASE_STATUS_COLORS.projected, opacity: 0.6 }} />
-                Projeté
+                Projete
               </div>
               <div className="flex items-center gap-2 text-[10px] text-slate-400 mb-1">
                 <div className="w-3 h-3 rounded" style={{ background: PHASE_STATUS_COLORS.vacant, opacity: 0.6 }} />
@@ -146,14 +179,16 @@ export default function PlanCommercialSection() {
 
       {/* Canvas */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* View mode toggle */}
+        {/* View mode toggle + phase switcher */}
         <div className="flex items-center gap-2 px-4 py-2 border-b" style={{ borderColor: '#1e2a3a', background: '#0b1120' }}>
+          {/* View switcher: 2D / 3D / ISO / Visite */}
           <div className="flex items-center gap-0.5 bg-gray-800 rounded-lg p-0.5">
             <button
               onClick={() => setViewMode('2d')}
               className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
                 viewMode === '2d' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'
               }`}
+              title="Plan interactif 2D (F1)"
             >
               <Grid3X3 className="w-3 h-3" />
               2D
@@ -163,22 +198,44 @@ export default function PlanCommercialSection() {
               className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
                 viewMode === '3d' ? 'bg-purple-700 text-white' : 'text-gray-500 hover:text-gray-300'
               }`}
-              title="Vue 3D : Isométrique, Perspective, Semi-réaliste"
+              title="Vue 3D perspective (F2)"
             >
               <Sparkles className="w-3 h-3" />
               3D
             </button>
+            <button
+              onClick={() => setViewMode('isometric')}
+              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
+                viewMode === 'isometric' ? 'bg-cyan-700 text-white' : 'text-gray-500 hover:text-gray-300'
+              }`}
+              title="Vue isometrique (F3)"
+            >
+              <Cuboid className="w-3 h-3" />
+              ISO
+            </button>
+            <button
+              onClick={() => setViewMode('tour')}
+              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
+                viewMode === 'tour' ? 'bg-emerald-700 text-white' : 'text-gray-500 hover:text-gray-300'
+              }`}
+              title="Visite guidee first-person (F4)"
+            >
+              <Navigation className="w-3 h-3" />
+              Visite
+            </button>
           </div>
           <span className="text-[10px] text-slate-500">
-            {viewMode === '2d' ? 'Plan interactif 2D' : 'Vue 3D isometrique · perspective · realiste'}
+            {viewMode === '2d' ? 'Plan interactif 2D — zoom molette, pan espace+drag'
+              : viewMode === '3d' ? 'Vue 3D perspective libre'
+              : viewMode === 'isometric' ? 'Vue isometrique'
+              : 'Visite guidee first-person'}
           </span>
 
           {/* Plan layer selector */}
-          {viewMode === '2d' && (
+          {is2d && (
             <PlanLayerSelector
-              floorId={activeFloor === 'B1' ? 'floor-b1' : activeFloor === 'R+1' ? 'floor-r1' : 'floor-rdc'}
+              floorId={floorId}
               onPrimaryPlanChange={(url) => {
-                const floorId = activeFloor === 'B1' ? 'floor-b1' : activeFloor === 'R+1' ? 'floor-r1' : 'floor-rdc'
                 useVol1Store.setState(s => ({ planImageUrls: { ...s.planImageUrls, [floorId]: url } }))
               }}
             />
@@ -228,9 +285,9 @@ export default function PlanCommercialSection() {
                 <span className="text-gray-600"> ({phaseMetrics.occupiedSpaces}/{phaseMetrics.totalSpaces})</span>
               </div>
               <div>
-                <span className="text-gray-500">GLA occupée : </span>
-                <span className="text-white font-medium">{phaseMetrics.occupiedGla.toLocaleString('fr-FR')} m²</span>
-                <span className="text-gray-600"> / {phaseMetrics.totalGla.toLocaleString('fr-FR')} m²</span>
+                <span className="text-gray-500">GLA occupee : </span>
+                <span className="text-white font-medium">{phaseMetrics.occupiedGla.toLocaleString('fr-FR')} m2</span>
+                <span className="text-gray-600"> / {phaseMetrics.totalGla.toLocaleString('fr-FR')} m2</span>
               </div>
               <div>
                 <span className="text-gray-500">Revenus : </span>
@@ -255,7 +312,8 @@ export default function PlanCommercialSection() {
           </div>
         )}
 
-        {viewMode === '3d' ? (
+        {/* Main content area */}
+        {is3d ? (
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center" style={{ background: '#080c14' }}>
               <div className="flex items-center gap-2 text-gray-500 text-sm">
@@ -283,92 +341,71 @@ export default function PlanCommercialSection() {
             }} />
           </Suspense>
         ) : (
-          <div className="flex-1 overflow-auto p-6">
-            <svg width={800} height={500} className="mx-auto" style={{ background: '#0a0f1a', borderRadius: 12, border: '1px solid #1e2a3a' }}>
-              {/* Plan background image (from imported plan) */}
-              {planImageUrls[activeFloor === 'B1' ? 'floor-b1' : activeFloor === 'R+1' ? 'floor-r1' : 'floor-rdc'] && (
-                <image
-                  href={planImageUrls[activeFloor === 'B1' ? 'floor-b1' : activeFloor === 'R+1' ? 'floor-r1' : 'floor-rdc']}
-                  x={0} y={0} width={800} height={500}
-                  preserveAspectRatio="xMidYMid meet"
-                  opacity={0.3}
-                />
-              )}
+          /* ═══ PlanCanvasV2 — Full vectorial SVG engine ═══ */
+          /* When a real plan is imported (parsedPlan exists), PlanCanvasV2 renders
+             the actual DWG entities + detected spaces via SpaceOverlay.
+             When NO plan is imported, fall back to showing vol1Store mock spaces. */
+          <PlanCanvasV2
+            plan={plan}
+            planImageUrl={planImageUrl}
+            onSpaceClick={handleEngineSpaceClick}
+          >
+            {/* Only show vol1Store mock overlay when NO real plan has been imported */}
+            {!parsedPlan && filteredSpaces.map(sp => {
+              const t = tenants.find(t2 => t2.id === sp.tenantId)
+              const color = getSpaceColor(sp)
+              const isSelected = sp.id === selectedSpaceId
 
-              {/* Grid lines */}
-              {Array.from({ length: 20 }).map((_, i) => (
-                <React.Fragment key={i}>
-                  <line x1={i * 40} y1={0} x2={i * 40} y2={500} stroke="#1e2a3a" strokeWidth={0.5} />
-                  <line x1={0} y1={i * 25} x2={800} y2={i * 25} stroke="#1e2a3a" strokeWidth={0.5} />
-                </React.Fragment>
-              ))}
+              // Mock spaces use pixel-like coords based on 200x140 default plan size
+              const realW = plan.bounds.width || 200
+              const realH = plan.bounds.height || 140
+              const mx = (sp.x / 200) * realW
+              const my = (sp.y / 140) * realH
+              const mw = (sp.w / 200) * realW
+              const mh = (sp.h / 140) * realH
 
-              {/* Spaces — color changes based on active phase */}
-              {filteredSpaces.map(sp => {
-                const t = tenants.find(t2 => t2.id === sp.tenantId)
-                const color = getSpaceColor(sp)
-                const isSelected = sp.id === selectedSpaceId
-                // Show phase status badge on each cell when a phase is active
-                const phaseStatus = activePhase ? getSpacePhaseStatus(sp, activePhase) : null
-                const phaseTag = phaseStatus === 'confirmed' ? '✓' : phaseStatus === 'projected' ? '~' : phaseStatus === 'vacant' ? '!' : null
-                return (
-                  <g key={sp.id} onClick={() => selectSpace(sp.id)} style={{ cursor: 'pointer' }}>
-                    <rect
-                      x={sp.x * SCALE + PADDING} y={sp.y * SCALE + PADDING}
-                      width={sp.w * SCALE} height={sp.h * SCALE}
-                      fill={`${color}20`} stroke={isSelected ? '#ffffff' : color}
-                      strokeWidth={isSelected ? 2 : 1} rx={4}
-                    />
-                    {/* Phase indicator stripe at top of cell */}
-                    {activePhase && (
-                      <rect
-                        x={sp.x * SCALE + PADDING + 1} y={sp.y * SCALE + PADDING + 1}
-                        width={sp.w * SCALE - 2} height={3}
-                        fill={color} rx={2} opacity={0.8}
-                      />
-                    )}
-                    <text
-                      x={sp.x * SCALE + PADDING + (sp.w * SCALE) / 2}
-                      y={sp.y * SCALE + PADDING + (sp.h * SCALE) / 2 - 6}
-                      textAnchor="middle" fill={color} fontSize={10} fontWeight="bold"
-                    >
-                      {t ? t.brandName : sp.reference}
-                    </text>
-                    <text
-                      x={sp.x * SCALE + PADDING + (sp.w * SCALE) / 2}
-                      y={sp.y * SCALE + PADDING + (sp.h * SCALE) / 2 + 8}
-                      textAnchor="middle" fill="#4a5568" fontSize={8}
-                    >
-                      {sp.areaSqm} m²
-                    </text>
-                    {/* Phase status tag in corner */}
-                    {phaseTag && (
-                      <text
-                        x={sp.x * SCALE + PADDING + sp.w * SCALE - 8}
-                        y={sp.y * SCALE + PADDING + 14}
-                        textAnchor="middle" fill={color} fontSize={9} fontWeight="bold"
-                      >
-                        {phaseTag}
-                      </text>
-                    )}
-                  </g>
-                )
-              })}
-            </svg>
-          </div>
+              return (
+                <g key={sp.id} onClick={() => selectSpace(sp.id)} style={{ cursor: 'pointer' }}>
+                  <rect
+                    x={mx} y={my} width={mw} height={mh}
+                    fill={`${color}20`}
+                    stroke={isSelected ? '#ffffff' : color}
+                    strokeWidth={0.3}
+                    vectorEffect="non-scaling-stroke"
+                    rx={0.5}
+                  />
+                  <text
+                    x={mx + mw / 2} y={my + mh / 2 - 0.8}
+                    textAnchor="middle" fill={color}
+                    fontSize={1.2} fontWeight="bold" fontFamily="system-ui"
+                    pointerEvents="none"
+                  >
+                    {t ? t.brandName : sp.reference}
+                  </text>
+                  <text
+                    x={mx + mw / 2} y={my + mh / 2 + 0.8}
+                    textAnchor="middle" fill="#4a5568"
+                    fontSize={0.8} fontFamily="monospace"
+                    pointerEvents="none"
+                  >
+                    {sp.areaSqm} m2
+                  </text>
+                </g>
+              )
+            })}
+          </PlanCanvasV2>
         )}
       </div>
 
-      {/* Right panel — selected space detail */}
+      {/* Right panel — selected space detail (Vol1-specific) */}
       {selectedSpace && (
         <div className="w-72 flex-shrink-0 border-l p-4 overflow-y-auto" style={{ borderColor: '#1e2a3a', background: '#0b1120' }}>
           <div className="flex items-center justify-between mb-4">
             <span className="text-lg font-bold" style={{ color: statusColors[selectedSpace.status] }}>{selectedSpace.reference}</span>
-            <button onClick={() => selectSpace(null)} className="text-slate-500 hover:text-white text-[12px]">✕</button>
+            <button onClick={() => selectSpace(null)} className="text-slate-500 hover:text-white text-[12px]">X</button>
           </div>
           <div className="space-y-3 text-[12px]">
             <div className="flex justify-between"><span className="text-slate-500">Statut</span><span style={{ color: statusColors[selectedSpace.status] }}>{statusLabels[selectedSpace.status]}</span></div>
-            {/* Phase status */}
             {(() => {
               const pl = getPhaseLabel(selectedSpace)
               return pl ? (
@@ -378,7 +415,7 @@ export default function PlanCommercialSection() {
                 </div>
               ) : null
             })()}
-            <div className="flex justify-between"><span className="text-slate-500">Surface</span><span className="text-white">{selectedSpace.areaSqm} m²</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Surface</span><span className="text-white">{selectedSpace.areaSqm} m2</span></div>
             <div className="flex justify-between"><span className="text-slate-500">Aile</span><span className="text-white">{selectedSpace.wing}</span></div>
             <div className="flex justify-between"><span className="text-slate-500">Niveau</span><span className="text-white">{selectedSpace.floorLevel}</span></div>
 
@@ -390,7 +427,7 @@ export default function PlanCommercialSection() {
                   <p className="text-slate-400 text-[11px]">{selectedTenant.companyName}</p>
                 </div>
                 <div className="flex justify-between"><span className="text-slate-500">Secteur</span><span className="text-white capitalize">{selectedTenant.sector}</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Loyer</span><span className="text-white">{formatFcfa(selectedTenant.baseRentFcfa)} F/m²/an</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Loyer</span><span className="text-white">{formatFcfa(selectedTenant.baseRentFcfa)} F/m2/an</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Loyer total</span><span style={{ color: '#f59e0b' }}>{formatFcfa(selectedTenant.baseRentFcfa * selectedSpace.areaSqm)} F/an</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Bail</span><span className="text-white">{selectedTenant.leaseStart} → {selectedTenant.leaseEnd}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Contact</span><span className="text-white">{selectedTenant.contact.name}</span></div>
