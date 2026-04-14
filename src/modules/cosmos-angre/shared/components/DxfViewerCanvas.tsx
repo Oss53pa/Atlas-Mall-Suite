@@ -27,59 +27,76 @@ export function DxfViewerCanvas({ dxfUrl, className = '' }: DxfViewerCanvasProps
   // Initialize viewer
   useEffect(() => {
     const container = containerRef.current
-    if (!container) return
+    if (!container || !dxfUrl) return
 
     // Clean up previous viewer
     if (viewerRef.current) {
-      viewerRef.current.Destroy()
+      try { viewerRef.current.Destroy() } catch { /* ignore */ }
       viewerRef.current = null
     }
 
-    const viewer = new DxfViewer(container, {
-      clearColor: new THREE.Color('#0a0a0f'),
-      autoResize: true,
-      antialias: true,
-      colorCorrection: true,
-      blackWhiteInversion: true,
-      sceneOptions: {
-        arcTessellationAngle: 6,
-        minArcTessellationSubdivisions: 8,
-      },
-    })
-    viewerRef.current = viewer
+    let viewer: DxfViewer | null = null
+    let cancelled = false
 
-    // Load DXF
-    setLoading(true)
-    setError(null)
+    const init = async () => {
+      try {
+        viewer = new DxfViewer(container, {
+          clearColor: new THREE.Color('#0a0a0f'),
+          autoResize: true,
+          antialias: true,
+          colorCorrection: true,
+          blackWhiteInversion: true,
+          sceneOptions: {
+            arcTessellationAngle: 6,
+            minArcTessellationSubdivisions: 8,
+          },
+        })
+        viewerRef.current = viewer
 
-    viewer.Load({
-      url: dxfUrl,
-      progressCbk: (phase, processedSize, totalSize) => {
-        const percent = totalSize > 0 ? Math.round((processedSize / totalSize) * 100) : 0
-        setProgress({ phase, percent })
-      },
-    }).then(() => {
-      setLoading(false)
-      // Get layers
-      const layerList: LayerInfo[] = []
-      for (const layer of viewer.GetLayers()) {
-        layerList.push(layer)
+        setLoading(true)
+        setError(null)
+
+        await viewer.Load({
+          url: dxfUrl,
+          progressCbk: (phase, processedSize, totalSize) => {
+            if (cancelled) return
+            const percent = totalSize > 0 ? Math.round((processedSize / totalSize) * 100) : 0
+            setProgress({ phase, percent })
+          },
+        })
+
+        if (cancelled) return
+
+        setLoading(false)
+
+        // Get layers
+        const layerList: LayerInfo[] = []
+        for (const layer of viewer.GetLayers()) {
+          layerList.push(layer)
+        }
+        setLayers(layerList)
+
+        // Fit view to content
+        const bounds = viewer.GetBounds()
+        if (bounds) {
+          viewer.FitView(bounds.minX, bounds.maxX, bounds.minY, bounds.maxY, 20)
+        }
+      } catch (err) {
+        if (cancelled) return
+        setLoading(false)
+        const msg = err instanceof Error ? err.message : String(err)
+        setError(msg || 'Erreur de chargement DXF')
+        console.error('[DxfViewer] Error:', err)
       }
-      setLayers(layerList)
+    }
 
-      // Fit view to content
-      const bounds = viewer.GetBounds()
-      if (bounds) {
-        viewer.FitView(bounds.minX, bounds.maxX, bounds.minY, bounds.maxY, 20)
-      }
-    }).catch((err: Error) => {
-      setLoading(false)
-      setError(err.message || 'Erreur de chargement DXF')
-      console.error('[DxfViewer] Load error:', err)
-    })
+    init()
 
     return () => {
-      viewer.Destroy()
+      cancelled = true
+      if (viewer) {
+        try { viewer.Destroy() } catch { /* ignore */ }
+      }
       viewerRef.current = null
     }
   }, [dxfUrl])
