@@ -46,6 +46,7 @@ import {
   ATLAS_STUDIO_DEFAULT_TAB,
 } from '../shared/components/atlasStudioNav'
 import FloorPlanCanvas, { CANVAS_SCALE } from '../shared/components/FloorPlanCanvas'
+import { ConsolidatedReportButton } from '../shared/components/ConsolidatedReportButton'
 import { PlanCanvasV2 } from '../shared/components/PlanCanvasV2'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
@@ -63,6 +64,7 @@ import type { ChatMessage, MomentCle, POI, SignageItem } from '../shared/proph3t
 
 // ── Lazy section imports ─────────────────────────────────────
 const ParcoursSectionLazy = lazy(() => import('./sections/ParcoursSection'))
+const ParcoursClientSectionLazy = lazy(() => import('./sections/ParcoursClientSection'))
 const WayfindingSectionLazy = lazy(() => import('./sections/WayfindingSection'))
 const SignaleticsSectionLazy = lazy(() => import('./sections/SignaleticsSection'))
 const HeatmapSectionLazy = lazy(() => import('./sections/HeatmapSection'))
@@ -1005,6 +1007,71 @@ export default function Vol3Module() {
             className="w-9 h-9 mt-1 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-600/30 flex items-center justify-center text-[10px]"
             title="Exporter nomenclature CSV"
           >📊</button>
+          {/* M10 — Auto-placement signalétique */}
+          <button
+            onClick={async () => {
+              if (!parsedPlan) { alert('Aucun plan chargé'); return }
+              const { optimizeSignage } = await import('../shared/engines/signageOptimizer')
+              const pw = parsedPlan.bounds.width || 200
+              const ph = parsedPlan.bounds.height || 140
+              const circulations = (parsedPlan.spaces ?? [])
+                .filter(s => /circul|couloir|hall|mail|passage/i.test(String(s.type ?? '')))
+                .map(s => ({ id: s.id, polygon: s.polygon as [number, number][], type: String(s.type ?? ''), areaSqm: s.areaSqm }))
+              const poiInputs = floorPois.map(p => ({
+                id: p.id, label: p.label,
+                x: p.x > 1 ? p.x : p.x * pw,
+                y: p.y > 1 ? p.y : p.y * ph,
+                priority: (p.priority ?? 2) as 1 | 2 | 3,
+              }))
+              const res = optimizeSignage({
+                circulations, pois: poiInputs,
+                planBounds: { width: pw, height: ph },
+                targetDensityPer100Sqm: 1,
+                visibilityRadiusM: 15,
+              })
+              alert(`Signalétique: ${res.proposed.length} panneaux proposés · couverture circulation ${res.coveragePct.toFixed(1)}% · ${res.elapsedMs.toFixed(0)}ms`)
+              console.log('[SignageOptim]', res)
+            }}
+            className="w-9 h-9 mt-1 rounded-lg bg-amber-600/20 border border-amber-500/40 text-amber-300 hover:bg-amber-600/30 flex items-center justify-center text-[10px]"
+            title="Auto-placement signalétique (nœuds de décision)"
+          >🪧</button>
+          {/* M25 — Rapport directeur consolidé */}
+          <div className="mt-1">
+            <ConsolidatedReportButton
+              projectName="Cosmos Angré"
+              orgName="Centre commercial · Abidjan"
+              executiveNote="Généré depuis Vol.3 Parcours. Consolide Commercial + Sécurité + Parcours."
+              className="w-full justify-center"
+              buildAnalysisInput={async () => {
+                if (!parsedPlan) return null
+                const pw = parsedPlan.bounds.width || 200
+                const ph = parsedPlan.bounds.height || 140
+                const scaleXY = (x: number, y: number) => ({
+                  x: x > 1 ? x : x * pw,
+                  y: y > 1 ? y : y * ph,
+                })
+                return {
+                  floors: (parsedPlan.detectedFloors ?? [{ id: 'RDC', label: 'Rez-de-chaussée', bounds: { minX: 0, minY: 0, maxX: pw, maxY: ph, width: pw, height: ph }, stackOrder: 0 }]).map(f => ({
+                    id: f.id, label: f.label, bounds: f.bounds, stackOrder: f.stackOrder,
+                  })),
+                  planBounds: { width: pw, height: ph },
+                  cameras: [], doors: [],
+                  commercialSpaces: (parsedPlan.spaces ?? []).map(s => ({
+                    id: s.id, label: s.label, type: s.type, areaSqm: s.areaSqm,
+                    floorId: s.floorId, polygon: s.polygon as [number, number][],
+                  })),
+                  tenants: [],
+                  pois: floorPois.map(p => { const q = scaleXY(p.x, p.y); return { ...p, x: q.x, y: q.y } }),
+                  signage: floorSignage.map(s => { const q = scaleXY(s.x, s.y); return { ...s, x: q.x, y: q.y } }),
+                  moments: floorMoments.map(m => { const q = scaleXY(m.x, m.y); return { ...m, x: q.x, y: q.y } }),
+                  spaces: (parsedPlan.spaces ?? []).map(s => ({
+                    id: s.id, label: s.label, type: s.type, areaSqm: s.areaSqm,
+                    polygon: s.polygon as [number, number][], floorId: s.floorId,
+                  })),
+                }
+              }}
+            />
+          </div>
         </aside>
 
         {/* ── Center: Floor Plan Canvas / 3D ── */}
@@ -1447,7 +1514,7 @@ export default function Vol3Module() {
             <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="w-5 h-5 animate-spin text-gray-500" /></div>}>
               {activeTab === 'intro' && <IntroSectionLazy />}
               {activeTab === 'journeymap' && <JourneyMapSectionLazy />}
-              {activeTab === 'parcoursvisuel' && <SwimlaneSectionLazy />}
+              {activeTab === 'parcoursvisuel' && <ParcoursSectionLazy />}
               {activeTab === 'swimlane' && <SwimlaneSectionLazy />}
               {activeTab === 'personas' && <PersonasGridLazy />}
               {activeTab === 'awa_moussa' && <PersonaDetailLazy personaId="awa_moussa" />}
@@ -1458,7 +1525,7 @@ export default function Vol3Module() {
               {activeTab === 'kpis' && <KpiDashboardLazy />}
               {activeTab === 'action' && <PlanActionLazy />}
               {activeTab === 'signaletique_page' && <SignaletiquePageLazy />}
-              {activeTab === 'parcours' && <ParcoursSectionLazy />}
+              {activeTab === 'parcours' && <ParcoursClientSectionLazy />}
               {activeTab === 'wayfinding' && <WayfindingSectionLazy />}
               {activeTab === 'signaletique' && <SignaleticsSectionLazy />}
               {activeTab === 'heatmap' && <HeatmapSectionLazy />}
