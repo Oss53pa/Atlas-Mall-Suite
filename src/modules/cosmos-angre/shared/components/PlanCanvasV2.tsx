@@ -255,6 +255,7 @@ export function PlanCanvasV2({
           }))}
           planBounds={plan.bounds}
           detectedFloors={plan.detectedFloors}
+          dimensions={plan.dimensions}
           className="flex-1"
         />
         {/* Plan selector dropdown */}

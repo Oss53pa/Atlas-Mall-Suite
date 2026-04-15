@@ -223,6 +223,8 @@ export interface ParsedPlan {
   dxfBlobUrl?: string
   /** Detected floor clusters (B1, RDC, R+1) for multi-level 3D view */
   detectedFloors?: DetectedFloor[]
+  /** Plan dimensions/cotations for 2D and 3D rendering */
+  dimensions?: Dimension3D[]
 }
 
 export interface WallSegment {
@@ -243,6 +245,22 @@ export interface DetectedFloor {
   entityCount: number
   /** Vertical stack order for 3D (0 = ground, 1 = 1st floor, -1 = basement) */
   stackOrder: number
+}
+
+/** A plan dimension/cotation ready for 2D and 3D rendering */
+export interface Dimension3D {
+  id: string
+  /** Start point in normalized metres (Y flipped top-down) */
+  p1: [number, number]
+  p2: [number, number]
+  /** Text anchor */
+  textPos: [number, number]
+  /** Measurement value in metres */
+  valueM: number
+  /** Display text (e.g. "4.25 m") */
+  text: string
+  layer: string
+  floorId?: string
 }
 
 // ─── TOOLS ────────────────────────────────────────────────

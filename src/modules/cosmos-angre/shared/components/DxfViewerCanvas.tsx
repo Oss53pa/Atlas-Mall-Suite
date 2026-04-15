@@ -16,6 +16,15 @@ interface DetectedFloor3D {
   entityCount: number
   stackOrder: number
 }
+interface Dim3DProp {
+  id: string
+  p1: [number, number]
+  p2: [number, number]
+  textPos: [number, number]
+  valueM: number
+  text: string
+  floorId?: string
+}
 
 interface DxfViewerCanvasProps {
   dxfUrl: string
@@ -25,10 +34,11 @@ interface DxfViewerCanvasProps {
   spaces?: Space3D[]
   planBounds?: { width: number; height: number }
   detectedFloors?: DetectedFloor3D[]
+  dimensions?: Dim3DProp[]
   className?: string
 }
 
-export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSegments = [], spaces = [], planBounds, detectedFloors, className = '' }: DxfViewerCanvasProps) {
+export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSegments = [], spaces = [], planBounds, detectedFloors, dimensions, className = '' }: DxfViewerCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<DxfViewer | null>(null)
   const [layers, setLayers] = useState<LayerInfo[]>([])
@@ -152,6 +162,7 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSeg
             planBounds={planBounds}
             mode={viewMode as '3d' | '3d-advanced'}
             detectedFloors={detectedFloors}
+            dimensions={dimensions}
           />
         </div>
       )}

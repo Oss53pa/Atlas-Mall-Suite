@@ -1962,6 +1962,18 @@ export async function importPlan(
             planImageUrl: state.planImageUrl,
             dxfBlobUrl,
             detectedFloors: detectedFloors.length > 1 ? detectedFloors : undefined,
+            dimensions: dims
+              .filter(d => d.value > 0 && d.measuredDistance && d.measuredDistance > 0)
+              .map(d => ({
+                id: d.id,
+                p1: [(d.defPoint1[0] - minX) * unitScale, (maxY - d.defPoint1[1]) * unitScale] as [number, number],
+                p2: [(d.defPoint2[0] - minX) * unitScale, (maxY - d.defPoint2[1]) * unitScale] as [number, number],
+                textPos: [(d.textPosition[0] - minX) * unitScale, (maxY - d.textPosition[1]) * unitScale] as [number, number],
+                valueM: d.value,
+                text: d.valueText || `${d.value.toFixed(2)} m`,
+                layer: d.layer,
+                floorId: assignFloor((d.defPoint1[0] + d.defPoint2[0]) / 2, (d.defPoint1[1] + d.defPoint2[1]) / 2),
+              })),
           }
 
           // Assign floorId to each detected space based on its center position

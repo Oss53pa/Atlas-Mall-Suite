@@ -22,14 +22,23 @@ interface DetectedFloor3D {
   stackOrder: number
 }
 
+interface Dim3D {
+  id: string
+  p1: [number, number]
+  p2: [number, number]
+  textPos: [number, number]
+  valueM: number
+  text: string
+  floorId?: string
+}
+
 interface Plan3DViewProps {
   wallSegments: WallSeg[]
   spaces: Space3D[]
   planBounds: { width: number; height: number }
-  mode: '3d' | '3d-advanced'  // '3d' = perspective, '3d-advanced' = isometric
-  /** Detected floor clusters for multi-level view */
+  mode: '3d' | '3d-advanced'
   detectedFloors?: DetectedFloor3D[]
-  /** Selected floor id ('all' = show all stacked, or specific floor) */
+  dimensions?: Dim3D[]
   activeFloorId?: string | 'all'
   className?: string
 }
@@ -51,13 +60,15 @@ const ZONE_COLORS: Record<string, string> = {
 
 export function Plan3DView({
   wallSegments, spaces, planBounds, mode,
-  detectedFloors = [], activeFloorId = 'all',
+  detectedFloors = [], dimensions = [], activeFloorId = 'all',
   className = '',
 }: Plan3DViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const fitViewRef = useRef<(() => void) | null>(null)
   const [status, setStatus] = useState('Initialisation...')
   const [currentFloor, setCurrentFloor] = useState<string | 'all'>(activeFloorId)
+  const [showDimensions, setShowDimensions] = useState(true)
+  const [showLabels, setShowLabels] = useState(true)
 
   // Filter walls/spaces by selected floor
   const filteredWalls = React.useMemo(() => {
@@ -69,6 +80,12 @@ export function Plan3DView({
     if (currentFloor === 'all' || !detectedFloors.length) return spaces
     return spaces.filter(s => !s.floorId || s.floorId === currentFloor)
   }, [spaces, currentFloor, detectedFloors.length])
+
+  const filteredDims = React.useMemo(() => {
+    if (!showDimensions) return []
+    if (currentFloor === 'all' || !detectedFloors.length) return dimensions
+    return dimensions.filter(d => !d.floorId || d.floorId === currentFloor)
+  }, [dimensions, currentFloor, detectedFloors.length, showDimensions])
 
   // Per-floor bounds (for better framing when a single floor is selected)
   const effectiveBounds = React.useMemo(() => {
@@ -256,8 +273,8 @@ export function Plan3DView({
           scene.add(zone)
           slabCount++
 
-          // Floating label sprite — only if zone is big enough
-          if (sp.label && sp.label !== `Zone ${slabCount}` && sw * sh > pw * ph * 0.0003) {
+          // Floating label sprite — only if labels enabled and zone is big enough
+          if (showLabels && sp.label && sp.label !== `Zone ${slabCount}` && sw * sh > pw * ph * 0.0003) {
             const sprite = makeTextSprite(sp.label, sp.areaSqm, colorHex)
             if (sprite) {
               sprite.position.set(zx, zy, wallHeight + pw * 0.015)
@@ -339,8 +356,86 @@ export function Plan3DView({
           wallCount = 4
         }
 
-        console.log(`[Plan3D] Built scene: ${slabCount} zones, ${wallCount} walls, ${labelCount} labels, ${pw.toFixed(0)}×${ph.toFixed(0)}m, wallH=${wallHeight.toFixed(1)}m`)
-        setStatus(`${wallCount} murs · ${slabCount} zones · ${labelCount} labels`)
+        // ── Dimensions (cotations) ──
+        let dimCount = 0
+        if (filteredDims.length > 0) {
+          const dimZ = wallHeight * 0.55 // Half wall height
+          const dimColor = 0xef4444
+          const dimMat = new THREE.LineBasicMaterial({ color: dimColor, linewidth: 2 })
+
+          const makeDimLabel = (text: string) => {
+            const canvas = document.createElement('canvas')
+            canvas.width = 256
+            canvas.height = 80
+            const ctx = canvas.getContext('2d')
+            if (!ctx) return null
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.9)'
+            ctx.beginPath()
+            const r = 10
+            ctx.roundRect(0, 0, canvas.width, canvas.height, r)
+            ctx.fill()
+            ctx.fillStyle = '#ffffff'
+            ctx.font = 'bold 44px monospace'
+            ctx.textAlign = 'center'
+            ctx.textBaseline = 'middle'
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2)
+            const texture = new THREE.CanvasTexture(canvas)
+            texture.minFilter = THREE.LinearFilter
+            const mat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false })
+            const sprite = new THREE.Sprite(mat)
+            const sw = pw * 0.035
+            sprite.scale.set(sw, sw * (canvas.height / canvas.width), 1)
+            sprite.renderOrder = 1000
+            return sprite
+          }
+
+          for (const dim of filteredDims) {
+            const [x1, y1] = dim.p1
+            const [x2, y2] = dim.p2
+            const [tx, ty] = dim.textPos
+            if (dim.valueM < 0.1 || dim.valueM > Math.max(pw, ph) * 1.5) continue
+
+            // Dimension line between the two points
+            const geo = new THREE.BufferGeometry().setFromPoints([
+              new THREE.Vector3(x1, y1, dimZ),
+              new THREE.Vector3(x2, y2, dimZ),
+            ])
+            const line = new THREE.Line(geo, dimMat)
+            line.renderOrder = 1000
+            scene.add(line)
+
+            // Tick marks at endpoints (small perpendicular lines)
+            const dx = x2 - x1, dy = y2 - y1
+            const len = Math.sqrt(dx * dx + dy * dy)
+            if (len > 0.01) {
+              const nx = -dy / len, ny = dx / len
+              const tick = pw * 0.004
+              const mkTick = (x: number, y: number) => {
+                const g = new THREE.BufferGeometry().setFromPoints([
+                  new THREE.Vector3(x - nx * tick, y - ny * tick, dimZ),
+                  new THREE.Vector3(x + nx * tick, y + ny * tick, dimZ),
+                ])
+                const t = new THREE.Line(g, dimMat)
+                t.renderOrder = 1000
+                scene.add(t)
+              }
+              mkTick(x1, y1)
+              mkTick(x2, y2)
+            }
+
+            // Label sprite at text position
+            const sprite = makeDimLabel(dim.text)
+            if (sprite) {
+              sprite.position.set(tx || (x1 + x2) / 2, ty || (y1 + y2) / 2, dimZ + pw * 0.005)
+              scene.add(sprite)
+            }
+            dimCount++
+            if (dimCount > 500) break // Limit for performance
+          }
+        }
+
+        console.log(`[Plan3D] Built scene: ${slabCount} zones, ${wallCount} walls, ${labelCount} labels, ${dimCount} dims, ${pw.toFixed(0)}×${ph.toFixed(0)}m`)
+        setStatus(`${wallCount} murs · ${slabCount} zones · ${labelCount} labels · ${dimCount} cotes`)
 
         // ── OrbitControls with smooth pan/zoom ──
         const controls = new OrbitControls(camera, renderer.domElement)
@@ -474,7 +569,7 @@ export function Plan3DView({
         try { cleanupFns[i]() } catch { /* ignore */ }
       }
     }
-  }, [filteredWalls, filteredSpaces, effectiveBounds, mode])
+  }, [filteredWalls, filteredSpaces, filteredDims, effectiveBounds, mode, showLabels])
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`} style={{ background: '#0a0a14' }}>
@@ -490,6 +585,22 @@ export function Plan3DView({
           className="px-3 py-1.5 rounded-lg bg-blue-600/80 hover:bg-blue-600 border border-blue-500 text-[10px] text-white font-medium transition-colors"
         >
           Recentrer
+        </button>
+        <button
+          onClick={() => setShowLabels(!showLabels)}
+          className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
+            showLabels ? 'bg-emerald-600/80 hover:bg-emerald-600 border-emerald-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
+          }`}
+        >
+          Labels
+        </button>
+        <button
+          onClick={() => setShowDimensions(!showDimensions)}
+          className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
+            showDimensions ? 'bg-red-600/80 hover:bg-red-600 border-red-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
+          }`}
+        >
+          Cotes
         </button>
       </div>
 
