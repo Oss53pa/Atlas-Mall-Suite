@@ -70,6 +70,44 @@ export interface BlindSpot3D {
   severity?: 'normal' | 'elevee' | 'critique'
 }
 
+// ── Vol.3 Parcours Client 3D entities ──
+export interface POI3D {
+  id: string
+  floorId: string
+  label: string
+  x: number
+  y: number
+  /** icon key: food, shop, info, wc, atm, etc. */
+  icon?: string
+  color: string
+}
+
+export interface Signage3D {
+  id: string
+  floorId: string
+  ref: string
+  x: number
+  y: number
+  type: 'directionnel' | 'identifiant' | 'info' | 'reglementaire'
+  content?: string
+}
+
+export interface Moment3D {
+  id: string
+  floorId: string
+  number: number
+  name: string
+  x: number
+  y: number
+}
+
+export interface JourneyPath3D {
+  id: string
+  floorId: string
+  points: Array<{ x: number; y: number }>
+  color?: string
+}
+
 interface Plan3DViewProps {
   wallSegments: WallSeg[]
   spaces: Space3D[]
@@ -87,6 +125,14 @@ interface Plan3DViewProps {
   blindSpots?: BlindSpot3D[]
   /** Show FOV cones for cameras */
   showFov?: boolean
+  /** Vol.3 Parcours Client — points of interest */
+  pois?: POI3D[]
+  /** Vol.3 — signage items */
+  signage?: Signage3D[]
+  /** Vol.3 — journey key moments */
+  moments?: Moment3D[]
+  /** Vol.3 — journey paths between moments/pois */
+  journeys?: JourneyPath3D[]
   className?: string
 }
 
@@ -110,6 +156,7 @@ export function Plan3DView({
   detectedFloors = [], dimensions = [], activeFloorId = 'all',
   onSpaceClick,
   cameras = [], doors = [], blindSpots = [], showFov: showFovProp,
+  pois = [], signage = [], moments = [], journeys = [],
   className = '',
 }: Plan3DViewProps) {
   const [selectedSpace, setSelectedSpace] = useState<Space3D | null>(null)
@@ -118,6 +165,10 @@ export function Plan3DView({
   const [showFov, setShowFov] = useState(showFovProp ?? true)
   const [showDoors, setShowDoors] = useState(true)
   const [showBlindSpots, setShowBlindSpots] = useState(true)
+  const [showPois, setShowPois] = useState(true)
+  const [showSignage, setShowSignage] = useState(true)
+  const [showMoments, setShowMoments] = useState(true)
+  const [showJourneys, setShowJourneys] = useState(true)
   const containerRef = useRef<HTMLDivElement>(null)
   const fitViewRef = useRef<(() => void) | null>(null)
   const [status, setStatus] = useState('Initialisation...')
@@ -196,6 +247,25 @@ export function Plan3DView({
     }
     return blindSpots
   }, [blindSpots, currentFloor, detectedFloors.length, showBlindSpots, hiddenFloors])
+
+  const filterByFloor = <T extends { floorId: string }>(list: T[], enabled: boolean): T[] => {
+    if (!enabled) return []
+    if (currentFloor === 'all' && detectedFloors.length > 0) {
+      return list.filter(x => !hiddenFloors.has(x.floorId))
+    }
+    if (currentFloor !== 'all' && detectedFloors.length > 0) {
+      return list.filter(x => x.floorId === currentFloor)
+    }
+    return list
+  }
+  const filteredPois = React.useMemo(() => filterByFloor(pois, showPois),
+    [pois, showPois, currentFloor, detectedFloors.length, hiddenFloors])
+  const filteredSignage = React.useMemo(() => filterByFloor(signage, showSignage),
+    [signage, showSignage, currentFloor, detectedFloors.length, hiddenFloors])
+  const filteredMoments = React.useMemo(() => filterByFloor(moments, showMoments),
+    [moments, showMoments, currentFloor, detectedFloors.length, hiddenFloors])
+  const filteredJourneys = React.useMemo(() => filterByFloor(journeys, showJourneys),
+    [journeys, showJourneys, currentFloor, detectedFloors.length, hiddenFloors])
 
   // Per-floor bounds (for better framing when a single floor is selected)
   const effectiveBounds = React.useMemo(() => {
@@ -579,6 +649,165 @@ export function Plan3DView({
         }
 
         console.log(`[Plan3D] Vol2 entities: ${camCount} cameras, ${doorCount} doors, ${blindCount} blind spots`)
+
+        // ── Vol.3 Parcours: POIs (pin markers) ──
+        let poiCount = 0
+        for (const poi of filteredPois) {
+          const t = floorTransform(poi.floorId)
+          const size = Math.max(pw, ph) * 0.005
+          // Inverted cone (pin) + sphere on top
+          const pinGeo = new THREE.ConeGeometry(size, size * 2, 8)
+          const pinMat = new THREE.MeshLambertMaterial({
+            color: new THREE.Color(poi.color || '#10b981'),
+            transparent: true,
+            opacity: 0.95 * t.opacity,
+          })
+          const pin = new THREE.Mesh(pinGeo, pinMat)
+          pin.rotation.x = Math.PI // Point down
+          pin.position.set(poi.x + t.dx, poi.y + t.dy, size + t.dz)
+          scene.add(pin)
+
+          const ballGeo = new THREE.SphereGeometry(size * 0.8, 10, 10)
+          const ball = new THREE.Mesh(ballGeo, pinMat)
+          ball.position.set(poi.x + t.dx, poi.y + t.dy, size * 2.3 + t.dz)
+          scene.add(ball)
+
+          // POI label sprite
+          if (poi.label) {
+            const canvas = document.createElement('canvas')
+            canvas.width = 200
+            canvas.height = 56
+            const ctx = canvas.getContext('2d')
+            if (ctx) {
+              ctx.fillStyle = 'rgba(10,14,26,0.85)'
+              ctx.beginPath()
+              ctx.roundRect(0, 0, canvas.width, canvas.height, 8)
+              ctx.fill()
+              ctx.strokeStyle = poi.color || '#10b981'
+              ctx.lineWidth = 2
+              ctx.stroke()
+              ctx.fillStyle = '#fff'
+              ctx.font = 'bold 30px system-ui'
+              ctx.textAlign = 'center'
+              ctx.textBaseline = 'middle'
+              ctx.fillText(poi.label.slice(0, 18), canvas.width / 2, canvas.height / 2)
+              const tex = new THREE.CanvasTexture(canvas)
+              const sprMat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false })
+              const spr = new THREE.Sprite(sprMat)
+              const ss = pw * 0.025
+              spr.scale.set(ss, ss * (canvas.height / canvas.width), 1)
+              spr.position.set(poi.x + t.dx, poi.y + t.dy, size * 3.5 + pw * 0.005 + t.dz)
+              spr.renderOrder = 800
+              scene.add(spr)
+            }
+          }
+          poiCount++
+        }
+
+        // ── Vol.3 Parcours: Signage (flat panels) ──
+        let sigCount = 0
+        const sigTypeColors: Record<string, string> = {
+          directionnel: '#f59e0b',
+          identifiant: '#3b82f6',
+          info: '#06b6d4',
+          reglementaire: '#ef4444',
+        }
+        for (const sig of filteredSignage) {
+          const t = floorTransform(sig.floorId)
+          const size = Math.max(pw, ph) * 0.006
+          const colorHex = sigTypeColors[sig.type] || '#8b5cf6'
+          const geo = new THREE.BoxGeometry(size * 2, size * 0.2, size * 1.2)
+          const mat = new THREE.MeshLambertMaterial({
+            color: new THREE.Color(colorHex),
+            transparent: true,
+            opacity: 0.9 * t.opacity,
+          })
+          const panel = new THREE.Mesh(geo, mat)
+          panel.position.set(sig.x + t.dx, sig.y + t.dy, wallHeight * 0.7 + t.dz)
+          scene.add(panel)
+
+          // Post
+          const postGeo = new THREE.CylinderGeometry(size * 0.05, size * 0.05, wallHeight * 0.7, 4)
+          const postMat = new THREE.MeshLambertMaterial({ color: 0x666666, transparent: true, opacity: t.opacity })
+          const post = new THREE.Mesh(postGeo, postMat)
+          post.rotation.x = Math.PI / 2
+          post.position.set(sig.x + t.dx, sig.y + t.dy, wallHeight * 0.35 + t.dz)
+          scene.add(post)
+          sigCount++
+        }
+
+        // ── Vol.3 Parcours: Moments (numbered badges on pedestals) ──
+        let momentCount = 0
+        for (const m of filteredMoments) {
+          const t = floorTransform(m.floorId)
+          const size = Math.max(pw, ph) * 0.008
+          // Pedestal
+          const pedestalGeo = new THREE.CylinderGeometry(size, size * 0.8, size * 0.3, 12)
+          const pedestalMat = new THREE.MeshLambertMaterial({
+            color: 0x065f46,
+            transparent: true,
+            opacity: 0.95 * t.opacity,
+          })
+          const pedestal = new THREE.Mesh(pedestalGeo, pedestalMat)
+          pedestal.rotation.x = Math.PI / 2
+          pedestal.position.set(m.x + t.dx, m.y + t.dy, size * 0.15 + t.dz)
+          scene.add(pedestal)
+
+          // Number sprite above
+          const canvas = document.createElement('canvas')
+          canvas.width = 128
+          canvas.height = 128
+          const ctx = canvas.getContext('2d')
+          if (ctx) {
+            ctx.fillStyle = '#059669'
+            ctx.beginPath()
+            ctx.arc(canvas.width / 2, canvas.height / 2, 56, 0, Math.PI * 2)
+            ctx.fill()
+            ctx.strokeStyle = '#34d399'
+            ctx.lineWidth = 4
+            ctx.stroke()
+            ctx.fillStyle = '#fff'
+            ctx.font = 'bold 72px system-ui'
+            ctx.textAlign = 'center'
+            ctx.textBaseline = 'middle'
+            ctx.fillText(String(m.number), canvas.width / 2, canvas.height / 2)
+            const tex = new THREE.CanvasTexture(canvas)
+            const sprMat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false })
+            const spr = new THREE.Sprite(sprMat)
+            const ss = pw * 0.02
+            spr.scale.set(ss, ss, 1)
+            spr.position.set(m.x + t.dx, m.y + t.dy, size * 2 + t.dz)
+            spr.renderOrder = 900
+            scene.add(spr)
+          }
+          momentCount++
+        }
+
+        // ── Vol.3 Parcours: Journey paths (glowing lines) ──
+        let journeyCount = 0
+        for (const j of filteredJourneys) {
+          if (j.points.length < 2) continue
+          const t = floorTransform(j.floorId)
+          const pts: THREE.Vector3[] = j.points.map(p => new THREE.Vector3(
+            p.x + t.dx,
+            p.y + t.dy,
+            wallHeight * 0.05 + t.dz,
+          ))
+          const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal', 0.4)
+          const tubeGeo = new THREE.TubeGeometry(curve, Math.max(16, pts.length * 4), Math.max(pw, ph) * 0.001, 6, false)
+          const tubeMat = new THREE.MeshBasicMaterial({
+            color: new THREE.Color(j.color || '#34d399'),
+            transparent: true,
+            opacity: 0.7 * t.opacity,
+          })
+          const tube = new THREE.Mesh(tubeGeo, tubeMat)
+          scene.add(tube)
+          journeyCount++
+        }
+
+        if (poiCount || sigCount || momentCount || journeyCount) {
+          console.log(`[Plan3D] Vol3 entities: ${poiCount} POIs, ${sigCount} signage, ${momentCount} moments, ${journeyCount} journeys`)
+        }
 
         // ── Walls (use InstancedMesh for performance with many walls) ──
         // Colors by layer type
@@ -976,7 +1205,7 @@ export function Plan3DView({
         try { cleanupFns[i]() } catch { /* ignore */ }
       }
     }
-  }, [filteredWalls, filteredSpaces, filteredDims, filteredCameras, filteredDoors, filteredBlindSpots, effectiveBounds, mode, showLabels, showFov, currentFloor, detectedFloors, floorOpacity])
+  }, [filteredWalls, filteredSpaces, filteredDims, filteredCameras, filteredDoors, filteredBlindSpots, filteredPois, filteredSignage, filteredMoments, filteredJourneys, effectiveBounds, mode, showLabels, showFov, currentFloor, detectedFloors, floorOpacity])
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`} style={{ background: '#0a0a14' }}>
@@ -1051,6 +1280,50 @@ export function Plan3DView({
             title="Angles morts"
           >
             ⚠ Angles morts ({blindSpots.length})
+          </button>
+        )}
+        {pois.length > 0 && (
+          <button
+            onClick={() => setShowPois(!showPois)}
+            className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
+              showPois ? 'bg-emerald-600/80 hover:bg-emerald-600 border-emerald-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
+            }`}
+            title="Points d'interet"
+          >
+            📍 POIs ({pois.length})
+          </button>
+        )}
+        {signage.length > 0 && (
+          <button
+            onClick={() => setShowSignage(!showSignage)}
+            className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
+              showSignage ? 'bg-cyan-600/80 hover:bg-cyan-600 border-cyan-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
+            }`}
+            title="Signaletique"
+          >
+            🪧 Signaletique ({signage.length})
+          </button>
+        )}
+        {moments.length > 0 && (
+          <button
+            onClick={() => setShowMoments(!showMoments)}
+            className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
+              showMoments ? 'bg-teal-600/80 hover:bg-teal-600 border-teal-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
+            }`}
+            title="Moments de parcours"
+          >
+            🎯 Moments ({moments.length})
+          </button>
+        )}
+        {journeys.length > 0 && (
+          <button
+            onClick={() => setShowJourneys(!showJourneys)}
+            className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
+              showJourneys ? 'bg-green-500/80 hover:bg-green-500 border-green-400 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
+            }`}
+            title="Parcours"
+          >
+            🗺 Parcours ({journeys.length})
           </button>
         )}
       </div>

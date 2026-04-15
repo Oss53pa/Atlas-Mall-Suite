@@ -28,6 +28,10 @@ interface Dim3DProp {
 interface Camera3DProp { id: string; floorId: string; label: string; x: number; y: number; angle: number; fov: number; rangeM: number; color: string; priority?: 'normale' | 'haute' | 'critique' }
 interface Door3DProp { id: string; floorId: string; label: string; x: number; y: number; isExit?: boolean; hasBadge?: boolean }
 interface BlindSpot3DProp { id: string; floorId: string; x: number; y: number; w: number; h: number; severity?: 'normal' | 'elevee' | 'critique' }
+interface POI3DProp { id: string; floorId: string; label: string; x: number; y: number; icon?: string; color: string }
+interface Signage3DProp { id: string; floorId: string; ref: string; x: number; y: number; type: 'directionnel' | 'identifiant' | 'info' | 'reglementaire'; content?: string }
+interface Moment3DProp { id: string; floorId: string; number: number; name: string; x: number; y: number }
+interface JourneyPath3DProp { id: string; floorId: string; points: Array<{ x: number; y: number }>; color?: string }
 
 interface DxfViewerCanvasProps {
   dxfUrl: string
@@ -41,10 +45,14 @@ interface DxfViewerCanvasProps {
   cameras?: Camera3DProp[]
   doors?: Door3DProp[]
   blindSpots?: BlindSpot3DProp[]
+  pois?: POI3DProp[]
+  signage?: Signage3DProp[]
+  moments?: Moment3DProp[]
+  journeys?: JourneyPath3DProp[]
   className?: string
 }
 
-export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSegments = [], spaces = [], planBounds, detectedFloors, dimensions, cameras, doors, blindSpots, className = '' }: DxfViewerCanvasProps) {
+export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSegments = [], spaces = [], planBounds, detectedFloors, dimensions, cameras, doors, blindSpots, pois, signage, moments, journeys, className = '' }: DxfViewerCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<DxfViewer | null>(null)
   const [layers, setLayers] = useState<LayerInfo[]>([])
@@ -172,6 +180,10 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSeg
             cameras={cameras}
             doors={doors}
             blindSpots={blindSpots}
+            pois={pois}
+            signage={signage}
+            moments={moments}
+            journeys={journeys}
           />
         </div>
       )}

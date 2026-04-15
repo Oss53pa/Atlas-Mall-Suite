@@ -20,6 +20,10 @@ import { PlanSelector } from './PlanSelector'
 interface Cam3D { id: string; floorId: string; label: string; x: number; y: number; angle: number; fov: number; rangeM: number; color: string; priority?: 'normale' | 'haute' | 'critique' }
 interface Door3DP { id: string; floorId: string; label: string; x: number; y: number; isExit?: boolean; hasBadge?: boolean }
 interface Blind3D { id: string; floorId: string; x: number; y: number; w: number; h: number; severity?: 'normal' | 'elevee' | 'critique' }
+interface POI3DP { id: string; floorId: string; label: string; x: number; y: number; icon?: string; color: string }
+interface Sig3D { id: string; floorId: string; ref: string; x: number; y: number; type: 'directionnel' | 'identifiant' | 'info' | 'reglementaire'; content?: string }
+interface Mom3D { id: string; floorId: string; number: number; name: string; x: number; y: number }
+interface Jour3D { id: string; floorId: string; points: Array<{ x: number; y: number }>; color?: string }
 
 interface PlanCanvasV2Props {
   plan: ParsedPlan
@@ -33,12 +37,18 @@ interface PlanCanvasV2Props {
   cameras?: Cam3D[]
   doors?: Door3DP[]
   blindSpots?: Blind3D[]
+  /** Vol.3 Parcours Client entities */
+  pois?: POI3DP[]
+  signage?: Sig3D[]
+  moments?: Mom3D[]
+  journeys?: Jour3D[]
 }
 
 export function PlanCanvasV2({
   plan, planImageUrl, children, className = '',
   onSpaceClick, onCanvasClick, viewMode = '2d',
   cameras, doors, blindSpots,
+  pois, signage, moments, journeys,
 }: PlanCanvasV2Props) {
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -263,6 +273,10 @@ export function PlanCanvasV2({
           cameras={cameras}
           doors={doors}
           blindSpots={blindSpots}
+          pois={pois}
+          signage={signage}
+          moments={moments}
+          journeys={journeys}
           className="flex-1"
         />
         {/* Plan selector dropdown */}
