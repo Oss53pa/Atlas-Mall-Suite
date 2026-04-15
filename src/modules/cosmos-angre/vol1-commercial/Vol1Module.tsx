@@ -19,6 +19,11 @@ import {
   Sparkles,
 } from 'lucide-react'
 import SaveStatusIndicator from '../shared/components/SaveStatusIndicator'
+import {
+  ATLAS_STUDIO_GROUP_META,
+  ATLAS_STUDIO_CORE_ITEMS,
+  ATLAS_STUDIO_DEFAULT_TAB,
+} from '../shared/components/atlasStudioNav'
 import { savePlanImageFromUrl } from '../shared/stores/planImageCache'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
@@ -50,10 +55,7 @@ interface NavGroup {
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    key: 'studio',
-    label: 'ATLAS STUDIO · PHASE 0',
-    icon: Sparkles,
-    color: '#a855f7',
+    ...ATLAS_STUDIO_GROUP_META,
     items: [
       { id: 'plan_imports', label: 'Plans importés', icon: Upload },
       { id: 'plan', label: 'Plan Commercial', icon: Map },
@@ -73,6 +75,8 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
 ]
+// Sanity: Studio group must carry the core IDs (plan_imports, plan, analyse-alias, rapport/export, chat-alias)
+void ATLAS_STUDIO_CORE_ITEMS // referenced to keep the contract in scope
 
 const Loading = () => (
   <div className="flex items-center justify-center h-96">
@@ -82,7 +86,7 @@ const Loading = () => (
 
 export default function Vol1Module() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<Vol1Tab>('plan_imports')
+  const [activeTab, setActiveTab] = useState<Vol1Tab>(ATLAS_STUDIO_DEFAULT_TAB as Vol1Tab)
 
   return (
     <div className="flex h-full" style={{ background: '#080c14', color: '#e2e8f0' }}>

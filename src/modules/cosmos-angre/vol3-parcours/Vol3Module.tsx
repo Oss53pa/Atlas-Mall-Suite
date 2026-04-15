@@ -41,6 +41,10 @@ import {
 } from 'lucide-react'
 import { useVol3Store } from './store/vol3Store'
 import { usePlanImportStore } from '../shared/stores/planImportStore'
+import {
+  ATLAS_STUDIO_GROUP_META,
+  ATLAS_STUDIO_DEFAULT_TAB,
+} from '../shared/components/atlasStudioNav'
 import FloorPlanCanvas, { CANVAS_SCALE } from '../shared/components/FloorPlanCanvas'
 import { PlanCanvasV2 } from '../shared/components/PlanCanvasV2'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
@@ -137,10 +141,7 @@ interface NavGroup {
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    key: 'studio',
-    label: 'ATLAS STUDIO · PHASE 0',
-    icon: Sparkles,
-    color: '#a855f7',
+    ...ATLAS_STUDIO_GROUP_META,
     items: [
       { id: 'plan_imports', label: 'Plans importés', icon: Upload },
       { id: 'plan', label: 'Plan interactif', icon: Map },
@@ -398,7 +399,7 @@ export default function Vol3Module() {
   } = store
 
   const [chatInput, setChatInput] = useState('')
-  const [activeTab, setActiveTab] = useState<Vol3Tab>('plan_imports')
+  const [activeTab, setActiveTab] = useState<Vol3Tab>(ATLAS_STUDIO_DEFAULT_TAB as Vol3Tab)
   const [heatmapHour, setHeatmapHour] = useState(14) // default 2pm
 
   // ── Sidebar accordion state ─────────────────────────────

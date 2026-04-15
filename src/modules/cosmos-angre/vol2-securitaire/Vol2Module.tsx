@@ -69,6 +69,10 @@ import ScoreGauge from '../shared/components/ScoreGauge'
 import Model3DImportModal from './components/Model3DImportModal'
 import { useCascade } from './hooks/useCascade'
 import SaveStatusIndicator, { type SaveStatus } from '../shared/components/SaveStatusIndicator'
+import {
+  ATLAS_STUDIO_GROUP_META,
+  ATLAS_STUDIO_DEFAULT_TAB,
+} from '../shared/components/atlasStudioNav'
 import { useActiveProjectId } from '../../../hooks/useActiveProject'
 import { savePlanImageFromUrl, loadAllPlanImages, clearAllPlanImages } from '../shared/stores/planImageCache'
 import { cacheImportedZones, getAllCachedZones, hasAnyCachedZones } from '../shared/stores/importedZonesCache'
@@ -124,10 +128,7 @@ interface NavGroup {
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    key: 'studio',
-    label: 'ATLAS STUDIO · PHASE 0',
-    icon: Sparkles,
-    color: '#a855f7',
+    ...ATLAS_STUDIO_GROUP_META,
     items: [
       { id: 'plan_imports', label: 'Plans importés', icon: Upload },
       { id: 'plan', label: 'Plan interactif', icon: Map },
@@ -396,7 +397,7 @@ export default function Vol2Module() {
   // ── View mode state ─────────────────────────────────────
   const [viewMode, setViewMode] = useState<'2d' | '3d' | '3d-advanced'>('2d')
   const [showAllFloors, setShowAllFloors] = useState(false)
-  const [activeTab, setActiveTab] = useState<Vol2Tab>('plan_imports')
+  const [activeTab, setActiveTab] = useState<Vol2Tab>(ATLAS_STUDIO_DEFAULT_TAB as Vol2Tab)
   const [show3DImport, setShow3DImport] = useState(false)
   const [clipping, setClipping] = useState<ClippingConfig>({
     enabled: false,
@@ -789,6 +790,80 @@ export default function Vol2Module() {
             <Box className="w-3 h-3" />
             IFC/3D
           </button>
+        )}
+
+        {/* Exports PDF + CSV — plan tab with a real parsedPlan + compliance */}
+        {activeTab === 'plan' && parsedPlan && complianceReport && (
+          <>
+            <button
+              onClick={async () => {
+                const mod = await import('../shared/engines/pdfReportEngine')
+                const pw = parsedPlan.bounds.width || 200
+                const ph = parsedPlan.bounds.height || 140
+                const mkCameras = () => cameras.filter(c => !c.autoPlaced).map(c => ({
+                  id: c.id, label: c.label, floorId: c.floorId,
+                  floorLabel: floors.find(f => f.id === c.floorId)?.level,
+                  model: c.model,
+                  x: c.x > 1 ? c.x : c.x * pw,
+                  y: c.y > 1 ? c.y : c.y * ph,
+                  angle: c.angle, fov: c.fov, rangeM: c.rangeM || c.range || 10,
+                  priority: c.priority, capexFcfa: c.capexFcfa,
+                }))
+                const mkDoors = () => doors.map(d => ({
+                  id: d.id, label: d.label, floorId: d.floorId,
+                  floorLabel: floors.find(f => f.id === d.floorId)?.level,
+                  x: d.x > 1 ? d.x : d.x * pw,
+                  y: d.y > 1 ? d.y : d.y * ph,
+                  isExit: d.isExit, hasBadge: d.hasBadge, capexFcfa: d.capexFcfa,
+                }))
+                const pdfBlob = await mod.generateSecurityReportPDF({
+                  projectName: 'Cosmos Angre · Plan Securitaire',
+                  orgName: 'Vol.2 Securitaire',
+                  erpType: 'shopping-mall',
+                  compliance: complianceReport,
+                  cameras: mkCameras(),
+                  doors: mkDoors(),
+                })
+                const stamp = new Date().toISOString().slice(0, 10)
+                mod.downloadPDF(pdfBlob, `rapport-securitaire-${stamp}.pdf`)
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-600/20 border border-blue-500/40 text-blue-300 text-[10px] font-medium hover:bg-blue-600/30 transition-colors"
+              title="Exporter le rapport securitaire complet en PDF"
+            >
+              📄 PDF
+            </button>
+            <button
+              onClick={async () => {
+                const mod = await import('../shared/engines/pdfReportEngine')
+                const pw = parsedPlan.bounds.width || 200
+                const ph = parsedPlan.bounds.height || 140
+                const csv = mod.generateEquipmentCSV({
+                  cameras: cameras.filter(c => !c.autoPlaced).map(c => ({
+                    id: c.id, label: c.label, floorId: c.floorId,
+                    floorLabel: floors.find(f => f.id === c.floorId)?.level,
+                    model: c.model,
+                    x: c.x > 1 ? c.x : c.x * pw,
+                    y: c.y > 1 ? c.y : c.y * ph,
+                    angle: c.angle, fov: c.fov, rangeM: c.rangeM || c.range || 10,
+                    priority: c.priority, capexFcfa: c.capexFcfa,
+                  })),
+                  doors: doors.map(d => ({
+                    id: d.id, label: d.label, floorId: d.floorId,
+                    floorLabel: floors.find(f => f.id === d.floorId)?.level,
+                    x: d.x > 1 ? d.x : d.x * pw,
+                    y: d.y > 1 ? d.y : d.y * ph,
+                    isExit: d.isExit, hasBadge: d.hasBadge, capexFcfa: d.capexFcfa,
+                  })),
+                })
+                const stamp = new Date().toISOString().slice(0, 10)
+                mod.downloadCSV(csv, `nomenclature-equipements-${stamp}.csv`)
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-medium hover:bg-emerald-600/30 transition-colors"
+              title="Exporter la nomenclature equipements en CSV"
+            >
+              📊 CSV
+            </button>
+          </>
         )}
 
         {/* Proph3t badge */}
