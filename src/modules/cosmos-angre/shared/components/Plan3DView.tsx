@@ -67,7 +67,7 @@ export function Plan3DView({
   const fitViewRef = useRef<(() => void) | null>(null)
   const [status, setStatus] = useState('Initialisation...')
   const [currentFloor, setCurrentFloor] = useState<string | 'all'>(activeFloorId)
-  const [showDimensions, setShowDimensions] = useState(true)
+  const [showDimensions, setShowDimensions] = useState(false) // OFF by default — dimensions are noisy
   const [showLabels, setShowLabels] = useState(true)
 
   // Filter walls/spaces by selected floor
@@ -356,36 +356,49 @@ export function Plan3DView({
           wallCount = 4
         }
 
-        // ── Dimensions (cotations) ──
+        // ── Dimensions (cotations) — rendered ABOVE walls, discreet + on their own plane ──
         let dimCount = 0
         if (filteredDims.length > 0) {
-          const dimZ = wallHeight * 0.55 // Half wall height
-          const dimColor = 0xef4444
-          const dimMat = new THREE.LineBasicMaterial({ color: dimColor, linewidth: 2 })
+          // Place dimensions well above walls so they don't overlap geometry
+          const dimZ = wallHeight * 1.4
+          const dimColor = 0xfbbf24 // amber (more discreet than red)
+          const dimMat = new THREE.LineBasicMaterial({
+            color: dimColor,
+            transparent: true,
+            opacity: 0.5,
+          })
+
+          // Collect all line points into a single geometry for performance (1 draw call)
+          const linePoints: number[] = []
 
           const makeDimLabel = (text: string) => {
             const canvas = document.createElement('canvas')
             canvas.width = 256
-            canvas.height = 80
+            canvas.height = 64
             const ctx = canvas.getContext('2d')
             if (!ctx) return null
-            ctx.fillStyle = 'rgba(239, 68, 68, 0.9)'
+            // Subtle rounded background
+            ctx.fillStyle = 'rgba(10, 14, 26, 0.75)'
+            const r = 8
             ctx.beginPath()
-            const r = 10
             ctx.roundRect(0, 0, canvas.width, canvas.height, r)
             ctx.fill()
-            ctx.fillStyle = '#ffffff'
-            ctx.font = 'bold 44px monospace'
+            ctx.strokeStyle = 'rgba(251, 191, 36, 0.6)'
+            ctx.lineWidth = 1.5
+            ctx.stroke()
+            // Amber text
+            ctx.fillStyle = '#fbbf24'
+            ctx.font = '500 36px monospace'
             ctx.textAlign = 'center'
             ctx.textBaseline = 'middle'
             ctx.fillText(text, canvas.width / 2, canvas.height / 2)
             const texture = new THREE.CanvasTexture(canvas)
             texture.minFilter = THREE.LinearFilter
-            const mat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false })
+            const mat = new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.85, depthTest: false })
             const sprite = new THREE.Sprite(mat)
-            const sw = pw * 0.035
+            const sw = pw * 0.025 // Smaller labels (was 0.035)
             sprite.scale.set(sw, sw * (canvas.height / canvas.width), 1)
-            sprite.renderOrder = 1000
+            sprite.renderOrder = 1001
             return sprite
           }
 
@@ -395,42 +408,36 @@ export function Plan3DView({
             const [tx, ty] = dim.textPos
             if (dim.valueM < 0.1 || dim.valueM > Math.max(pw, ph) * 1.5) continue
 
-            // Dimension line between the two points
-            const geo = new THREE.BufferGeometry().setFromPoints([
-              new THREE.Vector3(x1, y1, dimZ),
-              new THREE.Vector3(x2, y2, dimZ),
-            ])
-            const line = new THREE.Line(geo, dimMat)
-            line.renderOrder = 1000
-            scene.add(line)
+            // Dimension line
+            linePoints.push(x1, y1, dimZ, x2, y2, dimZ)
 
-            // Tick marks at endpoints (small perpendicular lines)
+            // Tick marks (smaller)
             const dx = x2 - x1, dy = y2 - y1
             const len = Math.sqrt(dx * dx + dy * dy)
             if (len > 0.01) {
               const nx = -dy / len, ny = dx / len
-              const tick = pw * 0.004
-              const mkTick = (x: number, y: number) => {
-                const g = new THREE.BufferGeometry().setFromPoints([
-                  new THREE.Vector3(x - nx * tick, y - ny * tick, dimZ),
-                  new THREE.Vector3(x + nx * tick, y + ny * tick, dimZ),
-                ])
-                const t = new THREE.Line(g, dimMat)
-                t.renderOrder = 1000
-                scene.add(t)
-              }
-              mkTick(x1, y1)
-              mkTick(x2, y2)
+              const tick = pw * 0.0025 // Smaller (was 0.004)
+              linePoints.push(x1 - nx * tick, y1 - ny * tick, dimZ, x1 + nx * tick, y1 + ny * tick, dimZ)
+              linePoints.push(x2 - nx * tick, y2 - ny * tick, dimZ, x2 + nx * tick, y2 + ny * tick, dimZ)
             }
 
-            // Label sprite at text position
+            // Label sprite
             const sprite = makeDimLabel(dim.text)
             if (sprite) {
-              sprite.position.set(tx || (x1 + x2) / 2, ty || (y1 + y2) / 2, dimZ + pw * 0.005)
+              sprite.position.set(tx || (x1 + x2) / 2, ty || (y1 + y2) / 2, dimZ + pw * 0.003)
               scene.add(sprite)
             }
             dimCount++
-            if (dimCount > 500) break // Limit for performance
+            if (dimCount > 500) break
+          }
+
+          // Single LineSegments for all dimension lines (massive perf boost)
+          if (linePoints.length > 0) {
+            const geo = new THREE.BufferGeometry()
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(linePoints, 3))
+            const allLines = new THREE.LineSegments(geo, dimMat)
+            allLines.renderOrder = 1000
+            scene.add(allLines)
           }
         }
 
