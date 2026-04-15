@@ -165,23 +165,48 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSeg
       const WALL_H = Math.max(pw, ph) * 0.02 // Wall height ~2% of plan size
       const WALL_THICK = Math.max(pw, ph) * 0.002 // Wall thickness
 
-      // ── 1. Ground plane with plan texture ──
-      const textureLoader = new THREE.TextureLoader()
+      // ── 1. Ground plane (try texture, fallback to solid color) ──
+      let groundMat: THREE.Material = new THREE.MeshLambertMaterial({ color: 0x1a2035 })
       const imgUrl = planImageUrl || ''
-      let groundMat: THREE.Material
-      if (imgUrl) {
+      if (imgUrl && !imgUrl.startsWith('blob:')) {
+        // Only try loading if not a blob URL (blob URLs may be revoked)
         try {
           const texture = await new Promise<THREE.Texture>((resolve, reject) => {
-            textureLoader.load(imgUrl, resolve, undefined, reject)
+            const loader = new THREE.TextureLoader()
+            const timeout = setTimeout(() => reject(new Error('texture timeout')), 3000)
+            loader.load(imgUrl,
+              (t) => { clearTimeout(timeout); resolve(t) },
+              undefined,
+              (e) => { clearTimeout(timeout); reject(e) }
+            )
           })
           texture.minFilter = THREE.LinearFilter
           texture.magFilter = THREE.LinearFilter
           groundMat = new THREE.MeshLambertMaterial({ map: texture })
-        } catch {
-          groundMat = new THREE.MeshLambertMaterial({ color: 0x1a1a2e })
+          console.log('[3D] Texture loaded successfully')
+        } catch (e) {
+          console.warn('[3D] Texture failed, using solid color:', e)
         }
-      } else {
-        groundMat = new THREE.MeshLambertMaterial({ color: 0x1a1a2e })
+      } else if (imgUrl) {
+        // Blob URL — try loading via Image element instead (more reliable)
+        try {
+          const img = new Image()
+          img.crossOrigin = 'anonymous'
+          await new Promise<void>((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('image timeout')), 3000)
+            img.onload = () => { clearTimeout(timeout); resolve() }
+            img.onerror = (e) => { clearTimeout(timeout); reject(e) }
+            img.src = imgUrl
+          })
+          const texture = new THREE.Texture(img)
+          texture.needsUpdate = true
+          texture.minFilter = THREE.LinearFilter
+          texture.magFilter = THREE.LinearFilter
+          groundMat = new THREE.MeshLambertMaterial({ map: texture })
+          console.log('[3D] Blob texture loaded via Image')
+        } catch (e) {
+          console.warn('[3D] Blob texture failed, using solid color:', e)
+        }
       }
 
       const groundGeo = new THREE.PlaneGeometry(pw, ph)
