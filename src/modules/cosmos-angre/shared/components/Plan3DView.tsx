@@ -362,7 +362,8 @@ export function Plan3DView({
         scene.background = new THREE.Color(0x0a0a14)
 
         // ── Camera ──
-        const camera = new THREE.PerspectiveCamera(50, w / h, 0.1, diag * 10)
+        // Camera with generous near/far range to avoid clipping at any zoom level
+        const camera = new THREE.PerspectiveCamera(50, w / h, diag * 0.0005, diag * 50)
         if (mode === '3d-advanced') {
           // Isometric angle
           const d = diag * 0.7
@@ -530,9 +531,16 @@ export function Plan3DView({
         }
         console.log(`[Plan3D] ${labelCount} labels flottants rendus`)
 
-        // ── Vol.2: Blind spots (red zones below cameras) ──
+        // ── Vol.2: Blind spots (filter out mock/default entities) ──
         let blindCount = 0
+        const planArea = pw * ph
         for (const bs of filteredBlindSpots) {
+          // Skip invalid/mock default blind spots (too big, out of plan, or zero-sized)
+          if (!bs.w || !bs.h || bs.w < 0.5 || bs.h < 0.5) continue
+          if (bs.w * bs.h > planArea * 0.2) continue // Skip if > 20% of plan (not a real spot)
+          if (bs.x < -pw * 0.1 || bs.x > pw * 1.1) continue
+          if (bs.y < -ph * 0.1 || bs.y > ph * 1.1) continue
+
           const t = floorTransform(bs.floorId)
           const color = bs.severity === 'critique' ? 0xef4444
             : bs.severity === 'elevee' ? 0xf59e0b
@@ -545,9 +553,12 @@ export function Plan3DView({
           blindCount++
         }
 
-        // ── Vol.2: Doors (small colored boxes on the floor) ──
+        // ── Vol.2: Doors (filter invalid positions) ──
         let doorCount = 0
         for (const d of filteredDoors) {
+          // Skip if position is outside plan bounds (mock data / misaligned)
+          if (d.x < -pw * 0.1 || d.x > pw * 1.1) continue
+          if (d.y < -ph * 0.1 || d.y > ph * 1.1) continue
           const t = floorTransform(d.floorId)
           const color = d.isExit ? 0x22c55e : d.hasBadge ? 0x3b82f6 : 0x94a3b8
           const size = Math.max(pw, ph) * 0.008
@@ -587,9 +598,11 @@ export function Plan3DView({
           doorCount++
         }
 
-        // ── Vol.2: Cameras (CCTV body + FOV cone) ──
+        // ── Vol.2: Cameras (filter invalid positions) ──
         let camCount = 0
         for (const cam of filteredCameras) {
+          if (cam.x < -pw * 0.1 || cam.x > pw * 1.1) continue
+          if (cam.y < -ph * 0.1 || cam.y > ph * 1.1) continue
           const t = floorTransform(cam.floorId)
           const camZ = wallHeight * 0.85 + t.dz // Mount cameras near top of walls
           const cx2 = cam.x + t.dx
@@ -681,9 +694,11 @@ export function Plan3DView({
 
         console.log(`[Plan3D] Vol2 entities: ${camCount} cameras, ${doorCount} doors, ${blindCount} blind spots`)
 
-        // ── Vol.3 Parcours: POIs (pin markers) ──
+        // ── Vol.3 Parcours: POIs (filter invalid positions) ──
         let poiCount = 0
         for (const poi of filteredPois) {
+          if (poi.x < -pw * 0.1 || poi.x > pw * 1.1) continue
+          if (poi.y < -ph * 0.1 || poi.y > ph * 1.1) continue
           const t = floorTransform(poi.floorId)
           const size = Math.max(pw, ph) * 0.005
           // Inverted cone (pin) + sphere on top
@@ -744,6 +759,8 @@ export function Plan3DView({
           reglementaire: '#ef4444',
         }
         for (const sig of filteredSignage) {
+          if (sig.x < -pw * 0.1 || sig.x > pw * 1.1) continue
+          if (sig.y < -ph * 0.1 || sig.y > ph * 1.1) continue
           const t = floorTransform(sig.floorId)
           const size = Math.max(pw, ph) * 0.006
           const colorHex = sigTypeColors[sig.type] || '#8b5cf6'
@@ -770,6 +787,8 @@ export function Plan3DView({
         // ── Vol.3 Parcours: Moments (numbered badges on pedestals) ──
         let momentCount = 0
         for (const m of filteredMoments) {
+          if (m.x < -pw * 0.1 || m.x > pw * 1.1) continue
+          if (m.y < -ph * 0.1 || m.y > ph * 1.1) continue
           const t = floorTransform(m.floorId)
           const size = Math.max(pw, ph) * 0.008
           // Pedestal
@@ -1114,8 +1133,8 @@ export function Plan3DView({
         controls.enableDamping = true
         controls.dampingFactor = 0.08
         controls.maxPolarAngle = Math.PI / 2.05
-        controls.minDistance = diag * 0.01
-        controls.maxDistance = diag * 10
+        controls.minDistance = diag * 0.005  // Allow much closer zoom without clipping
+        controls.maxDistance = diag * 20
         controls.screenSpacePanning = true  // Pan parallel to screen (more intuitive)
         controls.panSpeed = 1.5
         controls.zoomSpeed = 1.5
