@@ -1037,6 +1037,18 @@ export async function importPlan(
             planImageUrl: state.planImageUrl,
           }
 
+          // ── M01 bridge: hydrate canonical lotsStore ──
+          try {
+            const { useLotsStore } = await import('../stores/lotsStore')
+            const { lotFromDetectedSpace } = await import('../domain/adapters')
+            const { FloorLevel } = await import('../domain/FloorLevel')
+            const lots = planSpaces.map(sp => lotFromDetectedSpace(sp, FloorLevel.RDC))
+            useLotsStore.getState().upsertMany(lots)
+            console.log(`[DWG] ${lots.length} lots hydratés dans lotsStore`)
+          } catch (err) {
+            console.warn('[DWG] lotsStore hydration failed', err)
+          }
+
           console.log(`[DWG] ParsedPlan built: ${normalizedEntities.length} entities, ${planSpaces.length} spaces, ${planWalls.length} walls`)
         } catch (err) {
           console.error('[DWG] ERREUR ParsedPlan:', err)
@@ -1060,9 +1072,18 @@ export async function importPlan(
         state.dxfBlobUrl = dxfBlobUrl
 
         const text = await file.text()
-        const { default: DxfParser } = await import('dxf-parser')
-        const parser = new DxfParser()
-        const dxf = parser.parseSync(text)
+        // M05: off-main-thread parsing via Web Worker (fallback synchrone si indisponible)
+        let dxf: any
+        try {
+          const { parseDxfInWorker } = await import('../workers/dxfParserClient')
+          const result = await parseDxfInWorker(text, { timeoutMs: 120_000 })
+          dxf = result.ast
+          console.log(`[DXF] parsed in worker: ${result.elapsedMs.toFixed(0)}ms`)
+        } catch (err) {
+          console.warn('[DXF] worker parse failed, falling back to main thread', err)
+          const { default: DxfParser } = await import('dxf-parser')
+          dxf = new DxfParser().parseSync(text)
+        }
 
         if (!dxf) {
           state.step = 'error'
@@ -1713,116 +1734,64 @@ export async function importPlan(
         // We try both axes and pick the one that gives the best cluster separation.
         interface FloorCluster {
           label: string
-          axisMin: number; axisMax: number
+          id: string
+          bounds2D: { minX: number; minY: number; maxX: number; maxY: number }
           entityCount: number
-          axis: 'x' | 'y'
+          stackOrder: number
         }
         let floorClusters: FloorCluster[] = []
 
-        // Try clustering on a given axis
-        const findClusters = (axis: 'x' | 'y'): { splits: { start: number; end: number }[]; gapSize: number } => {
-          const vals: number[] = []
-          const maxSample = Math.min(planEntities.length, 50000)
-          const step = Math.max(1, Math.floor(planEntities.length / maxSample))
-          for (let i = 0; i < planEntities.length; i += step) {
-            vals.push(axis === 'x' ? planEntities[i].bounds.centerX : planEntities[i].bounds.centerY)
+        // ── M14: DBSCAN 2D clustering (diagonal/L/T layouts) ──
+        {
+          const { clusterFloors, labelClusters } = await import('./floorClustering')
+          const points = planEntities.map(e => ({ x: e.bounds.centerX, y: e.bounds.centerY, weight: 1 }))
+          const { clusters, noise } = clusterFloors(points, { epsFactor: 1 / 15, minPts: 20, maxSample: 5000 })
+          const labeled = labelClusters(clusters)
+          floorClusters = labeled.map(c => ({
+            label: c.label,
+            id: c.id,
+            bounds2D: { minX: c.minX, minY: c.minY, maxX: c.maxX, maxY: c.maxY },
+            entityCount: c.pointCount,
+            stackOrder: c.stackOrder,
+          }))
+          if (floorClusters.length > 1) {
+            console.log(`[DXF] ${floorClusters.length} etages detectes (DBSCAN 2D, noise=${noise}):`,
+              floorClusters.map(c => `${c.id}: [${c.bounds2D.minX.toFixed(0)}..${c.bounds2D.maxX.toFixed(0)}, ${c.bounds2D.minY.toFixed(0)}..${c.bounds2D.maxY.toFixed(0)}] (${c.entityCount} ent.)`))
           }
-          vals.sort((a, b) => a - b)
-          if (vals.length < 100) return { splits: [], gapSize: 0 }
-
-          const totalRange = vals[vals.length - 1] - vals[0]
-          const gapThreshold = totalRange * 0.08 // 8% gap = floor separation
-
-          let clusterStart = vals[0], prevV = vals[0]
-          const splits: { start: number; end: number }[] = []
-          let maxGap = 0
-
-          for (let i = 1; i < vals.length; i++) {
-            const gap = vals[i] - prevV
-            if (gap > gapThreshold) {
-              splits.push({ start: clusterStart, end: prevV })
-              clusterStart = vals[i]
-              if (gap > maxGap) maxGap = gap
-            }
-            prevV = vals[i]
-          }
-          splits.push({ start: clusterStart, end: prevV })
-          return { splits: splits.length > 1 ? splits : [], gapSize: maxGap }
-        }
-
-        // Try both axes, pick the one with more clusters (or biggest gap)
-        const xResult = findClusters('x')
-        const yResult = findClusters('y')
-
-        const bestAxis = xResult.splits.length >= yResult.splits.length && xResult.splits.length > 1
-          ? 'x' : yResult.splits.length > 1 ? 'y' : null
-
-        const bestSplits = bestAxis === 'x' ? xResult.splits : bestAxis === 'y' ? yResult.splits : []
-
-        if (bestSplits.length > 1 && bestAxis) {
-          const floorLabels = bestSplits.length === 2
-            ? ['RDC', 'R+1']
-            : bestSplits.length === 3
-              ? ['B1', 'RDC', 'R+1']
-              : bestSplits.map((_, i) => `Etage ${i + 1}`)
-
-          for (let i = 0; i < bestSplits.length; i++) {
-            const margin = (bestSplits[i].end - bestSplits[i].start) * 0.05
-            const aMin = bestSplits[i].start - margin
-            const aMax = bestSplits[i].end + margin
-            const count = planEntities.filter(e => {
-              const v = bestAxis === 'x' ? e.bounds.centerX : e.bounds.centerY
-              return v >= aMin && v <= aMax
-            }).length
-            floorClusters.push({ label: floorLabels[i], axisMin: aMin, axisMax: aMax, entityCount: count, axis: bestAxis })
-          }
-
-          console.log(`[DXF] ${floorClusters.length} etages detectes (axe ${bestAxis.toUpperCase()}):`, floorClusters.map(c => `${c.label}: ${c.axis}=${c.axisMin.toFixed(0)}..${c.axisMax.toFixed(0)} (${c.entityCount} entites)`))
         }
 
         // Build DetectedFloor[] for 3D multi-level view
-        const detectedFloors: import('./planEngineTypes').DetectedFloor[] = floorClusters.map((c, i) => {
-          // Compute bounds of entities in this cluster
-          let fMinX = Infinity, fMinY = Infinity, fMaxX = -Infinity, fMaxY = -Infinity
-          for (const e of planEntities) {
-            const v = c.axis === 'x' ? e.bounds.centerX : e.bounds.centerY
-            if (v < c.axisMin || v > c.axisMax) continue
-            if (e.bounds.minX < fMinX) fMinX = e.bounds.minX
-            if (e.bounds.minY < fMinY) fMinY = e.bounds.minY
-            if (e.bounds.maxX > fMaxX) fMaxX = e.bounds.maxX
-            if (e.bounds.maxY > fMaxY) fMaxY = e.bounds.maxY
-          }
-          // Stack order: labels B1=-1, RDC=0, R+1=1, etc. Default to index.
-          const stackOrder = c.label === 'B1' ? -1
-            : c.label === 'RDC' ? 0
-            : /^R\+(\d+)$/.exec(c.label) ? parseInt(/^R\+(\d+)$/.exec(c.label)![1]) : i
-          return {
-            id: c.label,
-            label: c.label,
-            bounds: {
-              minX: (fMinX - minX) * unitScale,
-              minY: (maxY - fMaxY) * unitScale, // Y-flipped for 3D
-              maxX: (fMaxX - minX) * unitScale,
-              maxY: (maxY - fMinY) * unitScale,
-              width: (fMaxX - fMinX) * unitScale,
-              height: (fMaxY - fMinY) * unitScale,
-            },
-            entityCount: c.entityCount,
-            stackOrder,
-          }
-        })
+        const detectedFloors: import('./planEngineTypes').DetectedFloor[] = floorClusters.map(c => ({
+          id: c.id,
+          label: c.label,
+          bounds: {
+            minX: (c.bounds2D.minX - minX) * unitScale,
+            minY: (maxY - c.bounds2D.maxY) * unitScale, // Y-flipped for 3D
+            maxX: (c.bounds2D.maxX - minX) * unitScale,
+            maxY: (maxY - c.bounds2D.minY) * unitScale,
+            width: (c.bounds2D.maxX - c.bounds2D.minX) * unitScale,
+            height: (c.bounds2D.maxY - c.bounds2D.minY) * unitScale,
+          },
+          entityCount: c.entityCount,
+          stackOrder: c.stackOrder,
+        }))
 
         // When multiple floor clusters are detected
         if (floorClusters.length > 1) {
-          state.warnings.push(`${floorClusters.length} etages detectes (axe ${floorClusters[0].axis.toUpperCase()}) — utilisez le panneau Calques pour filtrer`)
+          state.warnings.push(`${floorClusters.length} etages detectes (DBSCAN 2D) — utilisez le panneau Calques pour filtrer`)
         }
 
-        // Helper: assign floorId to a point (x, y) in drawing units
+        // Helper: assign floorId to a point (x, y) in drawing units — point-in-bbox 2D
         const assignFloor = (x: number, y: number): string | undefined => {
           if (floorClusters.length < 2) return undefined
+          // Marge 5% sur les bounds pour tolérer les murs en bordure
           for (const c of floorClusters) {
-            const v = c.axis === 'x' ? x : y
-            if (v >= c.axisMin && v <= c.axisMax) return c.label
+            const bx = c.bounds2D
+            const mx = (bx.maxX - bx.minX) * 0.05
+            const my = (bx.maxY - bx.minY) * 0.05
+            if (x >= bx.minX - mx && x <= bx.maxX + mx && y >= bx.minY - my && y <= bx.maxY + my) {
+              return c.id
+            }
           }
           return undefined
         }
@@ -1988,6 +1957,21 @@ export async function importPlan(
                 }
               }
             }
+          }
+
+          // ── M01 bridge: hydrate canonical lotsStore ──
+          try {
+            const { useLotsStore } = await import('../stores/lotsStore')
+            const { lotFromDetectedSpace } = await import('../domain/adapters')
+            const { parseFloorLevel, FloorLevel } = await import('../domain/FloorLevel')
+            const lots = state.parsedPlan.spaces.map(sp => {
+              const level = parseFloorLevel(sp.floorId) ?? FloorLevel.RDC
+              return lotFromDetectedSpace(sp, level)
+            })
+            useLotsStore.getState().upsertMany(lots)
+            console.log(`[DXF] ${lots.length} lots hydratés dans lotsStore`)
+          } catch (err) {
+            console.warn('[DXF] lotsStore hydration failed', err)
           }
 
           console.log(`[DXF] ParsedPlan: ${normalizedEntities.length} entites, ${planSpaces.length} espaces, ${planLayers.length} calques, ${detectedFloors.length} etages, unite=${detectedUnit}, plan=${normalizedBounds.width.toFixed(1)}x${normalizedBounds.height.toFixed(1)}m`)

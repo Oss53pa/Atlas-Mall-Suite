@@ -4,6 +4,7 @@
 
 import React, { useState, useMemo, useCallback, lazy, Suspense } from 'react'
 import { useVol1Store } from '../store/vol1Store'
+import { ConsolidatedReportButton } from '../../shared/components/ConsolidatedReportButton'
 import type { CommercialSpace, SpaceStatus } from '../store/vol1Types'
 import { Grid3X3, Sparkles, Loader2, CalendarDays, Cuboid, Navigation, Map } from 'lucide-react'
 import { getSpacePhaseStatus, computePhaseMetrics, PHASE_STATUS_COLORS } from '../engines/phasingEngine'
@@ -285,6 +286,63 @@ export default function PlanCommercialSection() {
               className="flex-1 text-[10px] px-2 py-1.5 rounded bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-600/30"
               title="Exporter la nomenclature CSV"
             >📊 CSV</button>
+          </div>
+          {/* M25 — Rapport directeur consolidé */}
+          <div className="mt-1">
+            <ConsolidatedReportButton
+              projectName="Cosmos Angré"
+              orgName="Centre commercial · Abidjan"
+              executiveNote="Généré depuis Vol.1 Commercial. Synthèse directeur (Commercial · Sécurité · Parcours)."
+              className="w-full justify-center"
+              buildAnalysisInput={async () => {
+                if (!plan) return null
+                const pw = plan.bounds.width || 200
+                const ph = plan.bounds.height || 140
+                return {
+                  floors: (plan.detectedFloors ?? [{ id: 'RDC', label: 'Rez-de-chaussée', bounds: { minX: 0, minY: 0, maxX: pw, maxY: ph, width: pw, height: ph }, stackOrder: 0 }]).map(f => ({
+                    id: f.id, label: f.label, bounds: f.bounds, stackOrder: f.stackOrder,
+                  })),
+                  planBounds: { width: pw, height: ph },
+                  cameras: [], doors: [],
+                  commercialSpaces: (plan.spaces ?? []).map(s => {
+                    const ms = spaces.find(sp => sp.id === s.id)
+                    return {
+                      id: s.id, label: s.label, type: s.type, areaSqm: s.areaSqm,
+                      floorId: s.floorId, polygon: s.polygon as [number, number][],
+                      status: (ms?.status ?? 'vacant') as 'vacant' | 'occupied' | 'reserved' | 'works' | 'negotiation',
+                      tenantId: ms?.tenantId ?? null,
+                    }
+                  }),
+                  tenants: tenants.map(t => ({
+                    id: t.id, name: t.name, brand: t.brand, category: t.sector,
+                    anchor: t.anchor, rentFcfaM2: t.rentFcfaM2, monthlyRentFcfa: t.monthlyRentFcfa,
+                  })),
+                  pois: [], signage: [], moments: [],
+                  spaces: (plan.spaces ?? []).map(s => ({
+                    id: s.id, label: s.label, type: s.type, areaSqm: s.areaSqm,
+                    polygon: s.polygon as [number, number][], floorId: s.floorId,
+                  })),
+                }
+              }}
+              buildFinanceInput={async () => {
+                const leases = tenants
+                  .filter(t => t.monthlyRentFcfa && t.monthlyRentFcfa > 0)
+                  .map(t => {
+                    const space = spaces.find(s => s.tenantId === t.id)
+                    return {
+                      id: `lease-${t.id}`,
+                      lotId: space?.id ?? t.id,
+                      areaSqm: space?.areaSqm ?? 0,
+                      startDate: t.leaseStart ?? new Date().toISOString(),
+                      endDate: t.leaseEnd ?? new Date(Date.now() + 3 * 365 * 24 * 3600 * 1000).toISOString(),
+                      annualRentFcfa: (t.monthlyRentFcfa ?? 0) * 12,
+                      tenantId: t.id,
+                    }
+                  })
+                if (leases.length === 0) return null
+                return { leases, vacancyRate: 0.05 }
+              }}
+            />
           </div>
         </div>
 

@@ -948,6 +948,9 @@ export function Plan3DView({
             instancedMesh.setMatrixAt(i, dummy.matrix)
           }
           instancedMesh.instanceMatrix.needsUpdate = true
+          // M23: compute tight bounding sphere for accurate frustum culling
+          instancedMesh.computeBoundingSphere()
+          instancedMesh.frustumCulled = true
           scene.add(instancedMesh)
           wallCount += walls.length
         }
@@ -1357,16 +1360,32 @@ export function Plan3DView({
           window.removeEventListener('keyup', onKeyUp)
         })
 
-        // ── Cleanup scene geometry/materials ──
+        // ── Cleanup scene geometry/materials/textures (M06 — full disposal) ──
         cleanupFns.push(() => {
+          const disposeMaterial = (m: THREE.Material) => {
+            // Dispose textures attached to this material (CanvasTexture sprites, maps...)
+            const anyMat = m as unknown as Record<string, unknown>
+            for (const key of ['map', 'normalMap', 'specularMap', 'emissiveMap', 'roughnessMap', 'metalnessMap', 'alphaMap', 'envMap', 'lightMap', 'aoMap']) {
+              const tex = anyMat[key]
+              if (tex && typeof (tex as THREE.Texture).dispose === 'function') {
+                (tex as THREE.Texture).dispose()
+              }
+            }
+            m.dispose()
+          }
           scene.traverse((obj) => {
-            const mesh = obj as THREE.Mesh
+            const mesh = obj as THREE.Mesh & { material?: THREE.Material | THREE.Material[] }
             if (mesh.geometry) mesh.geometry.dispose()
             if (mesh.material) {
               const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-              for (const m of mats) m.dispose()
+              for (const m of mats) disposeMaterial(m)
             }
+            // Sprite materials (not caught above on some Three versions)
+            const spr = obj as THREE.Sprite
+            if (spr.isSprite && spr.material) disposeMaterial(spr.material)
           })
+          // Clear scene graph to release references
+          while (scene.children.length > 0) scene.remove(scene.children[0])
         })
       } catch (err) {
         console.error('[Plan3D] Error:', err)

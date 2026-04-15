@@ -57,17 +57,24 @@ async function ollamaChat(system: string, prompt: string): Promise<string> {
 
 // ── Claude API fallback (via Supabase Edge Function) ─────────
 
-async function claudeChat(system: string, prompt: string, apiKey?: string): Promise<string> {
-  // Route through Supabase Edge Function — never call Claude directly from client
+async function claudeChat(system: string, prompt: string, _apiKey?: string): Promise<string> {
+  // ⚠️ M08 — JAMAIS de clé API côté client. La clé Anthropic vit exclusivement
+  // dans les variables d'env de l'Edge Function Supabase (ANTHROPIC_API_KEY).
+  // Le paramètre apiKey est ignoré et sera supprimé après migration de tous les appels.
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+
+  if (!supabaseUrl || supabaseUrl.includes('placeholder')) {
+    throw new Error('Claude fallback unavailable in offline mode (no Supabase URL configured)')
+  }
 
   const res = await fetch(`${supabaseUrl}/functions/v1/proph3t-claude`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${supabaseAnonKey}`,
-      ...(apiKey ? { 'x-client-key': apiKey } : {}),
+      // La clé Anthropic n'est PLUS transmise depuis le client — elle est
+      // résolue côté Edge Function via Deno.env.get('ANTHROPIC_API_KEY').
     },
     body: JSON.stringify({
       mode: 'chat',
@@ -86,7 +93,7 @@ async function claudeChat(system: string, prompt: string, apiKey?: string): Prom
 export async function proph3tQuery(
   prompt: string,
   context: ProjectContext,
-  options?: { claudeApiKey?: string }
+  _options?: { claudeApiKey?: string } // @deprecated M08 — clé résolue côté Edge Function
 ): Promise<ChatResponse> {
   const system = buildSystemPrompt(context)
 
@@ -98,9 +105,9 @@ export async function proph3tQuery(
     // Ollama not available — fall through to Claude
   }
 
-  // Priority 2: Claude API via Edge Function
+  // Priority 2: Claude API via Edge Function (server-side API key)
   try {
-    const text = await claudeChat(system, prompt, options?.claudeApiKey)
+    const text = await claudeChat(system, prompt)
     return { text, source: 'claude' }
   } catch {
     // Both unavailable

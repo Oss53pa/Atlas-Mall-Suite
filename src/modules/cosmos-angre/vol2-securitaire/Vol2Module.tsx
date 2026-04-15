@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ConsolidatedReportButton } from '../shared/components/ConsolidatedReportButton'
 import {
   ArrowLeft,
   Eye,
@@ -863,6 +864,80 @@ export default function Vol2Module() {
             >
               📊 CSV
             </button>
+            {/* M09 — Optim couverture caméras (greedy submodulaire) */}
+            <button
+              onClick={async () => {
+                const pw = parsedPlan.bounds.width || 200
+                const ph = parsedPlan.bounds.height || 140
+                const { optimizeCoverage } = await import('../shared/engines/coverageOptimizer')
+                const floorSpaces = (parsedPlan.spaces ?? [])
+                  .filter(s => !activeFloor || !s.floorId || s.floorId === activeFloor)
+                  .map(s => ({ id: s.id, type: s.type ?? 'commerce', polygon: s.polygon as [number, number][] }))
+                const existingCams = cameras
+                  .filter(c => !c.autoPlaced && (!activeFloor || c.floorId === activeFloor))
+                  .map(c => ({
+                    x: c.x > 1 ? c.x : c.x * pw,
+                    y: c.y > 1 ? c.y : c.y * ph,
+                    angle: c.angle, fov: c.fov, rangeM: c.rangeM || c.range || 10,
+                  }))
+                const budget = Math.max(1, Math.round((pw * ph) / 200)) // ~1 caméra / 200 m²
+                const res = optimizeCoverage({
+                  planWidth: pw, planHeight: ph,
+                  spaces: floorSpaces,
+                  budget,
+                  existing: existingCams,
+                  defaultRangeM: 12, defaultFovDeg: 90, gridStepM: 1.0,
+                  priorityByType: { commerce: 2, restauration: 2, circulation: 3, parking: 1 },
+                })
+                alert(`Optim caméras (greedy): +${res.proposed.length} caméras proposées · couverture finale ${res.finalCoveragePct.toFixed(1)}% · ${res.elapsedMs.toFixed(0)}ms`)
+                console.log('[CoverageOptim]', res)
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-600/20 border border-amber-500/40 text-amber-300 text-[10px] font-medium hover:bg-amber-600/30 transition-colors"
+              title="Optimiser placement caméras (greedy submodulaire)"
+            >
+              🎯 Optim
+            </button>
+            {/* M25 — Rapport directeur consolidé (cross-volume) */}
+            <ConsolidatedReportButton
+              projectName="Cosmos Angré"
+              orgName="Centre commercial · Abidjan"
+              executiveNote="Rapport généré depuis Vol.2 Sécuritaire. Consolide les analyses Commercial, Sécurité, Parcours par étage."
+              buildAnalysisInput={async () => {
+                if (!parsedPlan) return null
+                const pw = parsedPlan.bounds.width || 200
+                const ph = parsedPlan.bounds.height || 140
+                const scaleXY = (x: number, y: number) => ({
+                  x: x > 1 ? x : x * pw,
+                  y: y > 1 ? y : y * ph,
+                })
+                return {
+                  floors: (parsedPlan.detectedFloors ?? [{ id: 'RDC', label: 'Rez-de-chaussée', bounds: { minX: 0, minY: 0, maxX: pw, maxY: ph, width: pw, height: ph }, stackOrder: 0 }]).map(f => ({
+                    id: f.id, label: f.label, bounds: f.bounds, stackOrder: f.stackOrder,
+                  })),
+                  planBounds: { width: pw, height: ph },
+                  cameras: cameras.filter(c => !c.autoPlaced).map(c => {
+                    const p = scaleXY(c.x, c.y)
+                    return { id: c.id, floorId: c.floorId, x: p.x, y: p.y, angle: c.angle, fov: c.fov, rangeM: c.rangeM || c.range || 10 }
+                  }),
+                  doors: doors.map(d => {
+                    const p = scaleXY(d.x, d.y)
+                    return { id: d.id, floorId: d.floorId, x: p.x, y: p.y, isExit: d.isExit, hasBadge: d.hasBadge }
+                  }),
+                  commercialSpaces: (parsedPlan.spaces ?? []).map(s => ({
+                    id: s.id, label: s.label, type: s.type, areaSqm: s.areaSqm,
+                    floorId: s.floorId, polygon: s.polygon as [number, number][],
+                  })),
+                  tenants: [],
+                  pois: [],
+                  signage: [],
+                  moments: [],
+                  spaces: (parsedPlan.spaces ?? []).map(s => ({
+                    id: s.id, label: s.label, type: s.type, areaSqm: s.areaSqm,
+                    polygon: s.polygon as [number, number][], floorId: s.floorId,
+                  })),
+                }
+              }}
+            />
           </>
         )}
 

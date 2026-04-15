@@ -1,0 +1,16 @@
+{
+  "name": "Atlas Mall Suite — Cosmos Angré",
+  "short_name": "Atlas Mall",
+  "description": "Suite complète de gestion de centre commercial — Vol.1 Commercial, Vol.2 Sécuritaire, Vol.3 Parcours client",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a14",
+  "theme_color": "#a855f7",
+  "orientation": "any",
+  "scope": "/",
+  "lang": "fr",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "32x32 64x64", "type": "image/x-icon" }
+  ],
+  "categories": ["business", "productivity", "utilities"]
+}
