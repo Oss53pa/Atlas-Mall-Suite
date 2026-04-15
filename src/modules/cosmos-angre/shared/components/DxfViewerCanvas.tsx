@@ -25,6 +25,9 @@ interface Dim3DProp {
   text: string
   floorId?: string
 }
+interface Camera3DProp { id: string; floorId: string; label: string; x: number; y: number; angle: number; fov: number; rangeM: number; color: string; priority?: 'normale' | 'haute' | 'critique' }
+interface Door3DProp { id: string; floorId: string; label: string; x: number; y: number; isExit?: boolean; hasBadge?: boolean }
+interface BlindSpot3DProp { id: string; floorId: string; x: number; y: number; w: number; h: number; severity?: 'normal' | 'elevee' | 'critique' }
 
 interface DxfViewerCanvasProps {
   dxfUrl: string
@@ -35,10 +38,13 @@ interface DxfViewerCanvasProps {
   planBounds?: { width: number; height: number }
   detectedFloors?: DetectedFloor3D[]
   dimensions?: Dim3DProp[]
+  cameras?: Camera3DProp[]
+  doors?: Door3DProp[]
+  blindSpots?: BlindSpot3DProp[]
   className?: string
 }
 
-export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSegments = [], spaces = [], planBounds, detectedFloors, dimensions, className = '' }: DxfViewerCanvasProps) {
+export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSegments = [], spaces = [], planBounds, detectedFloors, dimensions, cameras, doors, blindSpots, className = '' }: DxfViewerCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<DxfViewer | null>(null)
   const [layers, setLayers] = useState<LayerInfo[]>([])
@@ -163,6 +169,9 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSeg
             mode={viewMode as '3d' | '3d-advanced'}
             detectedFloors={detectedFloors}
             dimensions={dimensions}
+            cameras={cameras}
+            doors={doors}
+            blindSpots={blindSpots}
           />
         </div>
       )}

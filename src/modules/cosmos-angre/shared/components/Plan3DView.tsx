@@ -32,6 +32,44 @@ interface Dim3D {
   floorId?: string
 }
 
+// ── Vol.2 Sécuritaire 3D entities ──
+export interface Camera3D {
+  id: string
+  floorId: string
+  label: string
+  /** Position in metres (normalized plan coords) */
+  x: number
+  y: number
+  /** Horizontal heading in degrees (0 = +X) */
+  angle: number
+  /** Field-of-view angle in degrees */
+  fov: number
+  /** FOV depth in metres */
+  rangeM: number
+  color: string
+  priority?: 'normale' | 'haute' | 'critique'
+}
+
+export interface Door3D {
+  id: string
+  floorId: string
+  label: string
+  x: number
+  y: number
+  isExit?: boolean
+  hasBadge?: boolean
+}
+
+export interface BlindSpot3D {
+  id: string
+  floorId: string
+  x: number
+  y: number
+  w: number
+  h: number
+  severity?: 'normal' | 'elevee' | 'critique'
+}
+
 interface Plan3DViewProps {
   wallSegments: WallSeg[]
   spaces: Space3D[]
@@ -41,6 +79,14 @@ interface Plan3DViewProps {
   dimensions?: Dim3D[]
   activeFloorId?: string | 'all'
   onSpaceClick?: (space: Space3D) => void
+  /** Vol.2 Securitaire — cameras with FOV cones */
+  cameras?: Camera3D[]
+  /** Vol.2 Securitaire — doors and exits */
+  doors?: Door3D[]
+  /** Vol.2 Securitaire — blind spots */
+  blindSpots?: BlindSpot3D[]
+  /** Show FOV cones for cameras */
+  showFov?: boolean
   className?: string
 }
 
@@ -63,10 +109,15 @@ export function Plan3DView({
   wallSegments, spaces, planBounds, mode,
   detectedFloors = [], dimensions = [], activeFloorId = 'all',
   onSpaceClick,
+  cameras = [], doors = [], blindSpots = [], showFov: showFovProp,
   className = '',
 }: Plan3DViewProps) {
   const [selectedSpace, setSelectedSpace] = useState<Space3D | null>(null)
   const [hoveredSpace, setHoveredSpace] = useState<Space3D | null>(null)
+  const [showCameras, setShowCameras] = useState(true)
+  const [showFov, setShowFov] = useState(showFovProp ?? true)
+  const [showDoors, setShowDoors] = useState(true)
+  const [showBlindSpots, setShowBlindSpots] = useState(true)
   const containerRef = useRef<HTMLDivElement>(null)
   const fitViewRef = useRef<(() => void) | null>(null)
   const [status, setStatus] = useState('Initialisation...')
@@ -112,6 +163,39 @@ export function Plan3DView({
     if (currentFloor === 'all' || !detectedFloors.length) return dimensions
     return dimensions.filter(d => !d.floorId || d.floorId === currentFloor)
   }, [dimensions, currentFloor, detectedFloors.length, showDimensions])
+
+  const filteredCameras = React.useMemo(() => {
+    if (!showCameras) return []
+    if (currentFloor === 'all' && detectedFloors.length > 0) {
+      return cameras.filter(c => !hiddenFloors.has(c.floorId))
+    }
+    if (currentFloor !== 'all' && detectedFloors.length > 0) {
+      return cameras.filter(c => c.floorId === currentFloor)
+    }
+    return cameras
+  }, [cameras, currentFloor, detectedFloors.length, showCameras, hiddenFloors])
+
+  const filteredDoors = React.useMemo(() => {
+    if (!showDoors) return []
+    if (currentFloor === 'all' && detectedFloors.length > 0) {
+      return doors.filter(d => !hiddenFloors.has(d.floorId))
+    }
+    if (currentFloor !== 'all' && detectedFloors.length > 0) {
+      return doors.filter(d => d.floorId === currentFloor)
+    }
+    return doors
+  }, [doors, currentFloor, detectedFloors.length, showDoors, hiddenFloors])
+
+  const filteredBlindSpots = React.useMemo(() => {
+    if (!showBlindSpots) return []
+    if (currentFloor === 'all' && detectedFloors.length > 0) {
+      return blindSpots.filter(b => !hiddenFloors.has(b.floorId))
+    }
+    if (currentFloor !== 'all' && detectedFloors.length > 0) {
+      return blindSpots.filter(b => b.floorId === currentFloor)
+    }
+    return blindSpots
+  }, [blindSpots, currentFloor, detectedFloors.length, showBlindSpots, hiddenFloors])
 
   // Per-floor bounds (for better framing when a single floor is selected)
   const effectiveBounds = React.useMemo(() => {
@@ -344,6 +428,157 @@ export function Plan3DView({
           }
         }
         console.log(`[Plan3D] ${labelCount} labels flottants rendus`)
+
+        // ── Vol.2: Blind spots (red zones below cameras) ──
+        let blindCount = 0
+        for (const bs of filteredBlindSpots) {
+          const t = floorTransform(bs.floorId)
+          const color = bs.severity === 'critique' ? 0xef4444
+            : bs.severity === 'elevee' ? 0xf59e0b
+            : 0xfb923c
+          const geo = new THREE.BoxGeometry(bs.w, bs.h, 0.05)
+          const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.35 * t.opacity })
+          const mesh = new THREE.Mesh(geo, mat)
+          mesh.position.set(bs.x + bs.w / 2 + t.dx, bs.y + bs.h / 2 + t.dy, 0.12 + t.dz)
+          scene.add(mesh)
+          blindCount++
+        }
+
+        // ── Vol.2: Doors (small colored boxes on the floor) ──
+        let doorCount = 0
+        for (const d of filteredDoors) {
+          const t = floorTransform(d.floorId)
+          const color = d.isExit ? 0x22c55e : d.hasBadge ? 0x3b82f6 : 0x94a3b8
+          const size = Math.max(pw, ph) * 0.008
+          const geo = new THREE.BoxGeometry(size * 1.5, size * 0.5, size)
+          const mat = new THREE.MeshLambertMaterial({ color, transparent: true, opacity: 0.9 * t.opacity })
+          const mesh = new THREE.Mesh(geo, mat)
+          mesh.position.set(d.x + t.dx, d.y + t.dy, size / 2 + t.dz)
+          scene.add(mesh)
+
+          // Small door label
+          if (d.label) {
+            const canvas = document.createElement('canvas')
+            canvas.width = 128
+            canvas.height = 48
+            const ctx = canvas.getContext('2d')
+            if (ctx) {
+              ctx.fillStyle = d.isExit ? 'rgba(34,197,94,0.9)' : 'rgba(59,130,246,0.9)'
+              ctx.beginPath()
+              ctx.roundRect(0, 0, canvas.width, canvas.height, 8)
+              ctx.fill()
+              ctx.fillStyle = '#fff'
+              ctx.font = 'bold 28px system-ui'
+              ctx.textAlign = 'center'
+              ctx.textBaseline = 'middle'
+              ctx.fillText(d.isExit ? 'SORTIE' : 'PORTE', canvas.width / 2, canvas.height / 2)
+              const tex = new THREE.CanvasTexture(canvas)
+              tex.minFilter = THREE.LinearFilter
+              const spriteMat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false })
+              const sprite = new THREE.Sprite(spriteMat)
+              const sw = pw * 0.02
+              sprite.scale.set(sw, sw * (canvas.height / canvas.width), 1)
+              sprite.position.set(d.x + t.dx, d.y + t.dy, size + pw * 0.01 + t.dz)
+              sprite.renderOrder = 500
+              scene.add(sprite)
+            }
+          }
+          doorCount++
+        }
+
+        // ── Vol.2: Cameras (CCTV body + FOV cone) ──
+        let camCount = 0
+        for (const cam of filteredCameras) {
+          const t = floorTransform(cam.floorId)
+          const camZ = wallHeight * 0.85 + t.dz // Mount cameras near top of walls
+          const cx2 = cam.x + t.dx
+          const cy2 = cam.y + t.dy
+
+          // Camera body (small dome/cone)
+          const priorityColor = cam.priority === 'critique' ? 0xef4444
+            : cam.priority === 'haute' ? 0xf97316
+            : 0x3b82f6
+          const bodySize = Math.max(pw, ph) * 0.006
+          const bodyGeo = new THREE.ConeGeometry(bodySize, bodySize * 1.5, 6)
+          const bodyMat = new THREE.MeshLambertMaterial({
+            color: priorityColor,
+            transparent: true,
+            opacity: 0.95 * t.opacity,
+          })
+          const body = new THREE.Mesh(bodyGeo, bodyMat)
+          body.rotation.x = Math.PI // Point down
+          body.position.set(cx2, cy2, camZ)
+          scene.add(body)
+
+          // Mount bracket (small vertical line to ceiling)
+          const mountGeo = new THREE.CylinderGeometry(bodySize * 0.2, bodySize * 0.2, wallHeight - camZ + t.dz + 0.1, 4)
+          const mountMat = new THREE.MeshLambertMaterial({ color: 0x555555 })
+          const mount = new THREE.Mesh(mountGeo, mountMat)
+          mount.rotation.x = Math.PI / 2
+          mount.position.set(cx2, cy2, (wallHeight + camZ) / 2)
+          scene.add(mount)
+
+          // FOV cone (only if enabled)
+          if (showFov) {
+            const fovRad = (cam.fov * Math.PI) / 180
+            const range = cam.rangeM || 10
+            // Build a truncated cone (wedge) from camera position
+            const segments = 12
+            const coneGeo = new THREE.BufferGeometry()
+            const vertices: number[] = []
+            const indices: number[] = []
+
+            // Apex
+            vertices.push(0, 0, 0)
+            // Arc at range
+            for (let i = 0; i <= segments; i++) {
+              const a = -fovRad / 2 + (fovRad * i) / segments
+              vertices.push(Math.cos(a) * range, Math.sin(a) * range, 0)
+            }
+            // Triangles from apex to arc
+            for (let i = 1; i <= segments; i++) {
+              indices.push(0, i, i + 1)
+            }
+            coneGeo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3))
+            coneGeo.setIndex(indices)
+            coneGeo.computeVertexNormals()
+
+            const coneMat = new THREE.MeshBasicMaterial({
+              color: priorityColor,
+              transparent: true,
+              opacity: 0.18 * t.opacity,
+              side: THREE.DoubleSide,
+              depthWrite: false,
+            })
+            const cone = new THREE.Mesh(coneGeo, coneMat)
+            cone.rotation.z = (cam.angle * Math.PI) / 180
+            cone.position.set(cx2, cy2, camZ - bodySize)
+            scene.add(cone)
+
+            // FOV outline
+            const outlinePoints: number[] = []
+            outlinePoints.push(0, 0, 0)
+            for (let i = 0; i <= segments; i++) {
+              const a = -fovRad / 2 + (fovRad * i) / segments
+              outlinePoints.push(Math.cos(a) * range, Math.sin(a) * range, 0)
+            }
+            outlinePoints.push(0, 0, 0)
+            const outlineGeo = new THREE.BufferGeometry()
+            outlineGeo.setAttribute('position', new THREE.Float32BufferAttribute(outlinePoints, 3))
+            const outlineMat = new THREE.LineBasicMaterial({
+              color: priorityColor,
+              transparent: true,
+              opacity: 0.6 * t.opacity,
+            })
+            const outline = new THREE.Line(outlineGeo, outlineMat)
+            outline.rotation.z = (cam.angle * Math.PI) / 180
+            outline.position.set(cx2, cy2, camZ - bodySize)
+            scene.add(outline)
+          }
+          camCount++
+        }
+
+        console.log(`[Plan3D] Vol2 entities: ${camCount} cameras, ${doorCount} doors, ${blindCount} blind spots`)
 
         // ── Walls (use InstancedMesh for performance with many walls) ──
         // Colors by layer type
@@ -741,7 +976,7 @@ export function Plan3DView({
         try { cleanupFns[i]() } catch { /* ignore */ }
       }
     }
-  }, [filteredWalls, filteredSpaces, filteredDims, effectiveBounds, mode, showLabels, currentFloor, detectedFloors, floorOpacity])
+  }, [filteredWalls, filteredSpaces, filteredDims, filteredCameras, filteredDoors, filteredBlindSpots, effectiveBounds, mode, showLabels, showFov, currentFloor, detectedFloors, floorOpacity])
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`} style={{ background: '#0a0a14' }}>
@@ -774,6 +1009,50 @@ export function Plan3DView({
         >
           Cotes
         </button>
+        {cameras.length > 0 && (
+          <>
+            <button
+              onClick={() => setShowCameras(!showCameras)}
+              className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
+                showCameras ? 'bg-indigo-600/80 hover:bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
+              }`}
+              title="Cameras CCTV"
+            >
+              📷 Cameras ({cameras.length})
+            </button>
+            <button
+              onClick={() => setShowFov(!showFov)}
+              className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
+                showFov ? 'bg-indigo-600/50 hover:bg-indigo-600/70 border-indigo-600 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
+              }`}
+              title="Cones de vision (FOV)"
+            >
+              FOV
+            </button>
+          </>
+        )}
+        {doors.length > 0 && (
+          <button
+            onClick={() => setShowDoors(!showDoors)}
+            className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
+              showDoors ? 'bg-green-600/80 hover:bg-green-600 border-green-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
+            }`}
+            title="Portes et sorties"
+          >
+            🚪 Portes ({doors.length})
+          </button>
+        )}
+        {blindSpots.length > 0 && (
+          <button
+            onClick={() => setShowBlindSpots(!showBlindSpots)}
+            className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
+              showBlindSpots ? 'bg-orange-600/80 hover:bg-orange-600 border-orange-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
+            }`}
+            title="Angles morts"
+          >
+            ⚠ Angles morts ({blindSpots.length})
+          </button>
+        )}
       </div>
 
       {/* Floor selector — top right */}

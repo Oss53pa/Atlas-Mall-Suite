@@ -17,24 +17,28 @@ import { DxfViewerCanvas } from './DxfViewerCanvas'
 import { ObjectLibraryPanel } from './ObjectLibraryPanel'
 import { PlanSelector } from './PlanSelector'
 
+interface Cam3D { id: string; floorId: string; label: string; x: number; y: number; angle: number; fov: number; rangeM: number; color: string; priority?: 'normale' | 'haute' | 'critique' }
+interface Door3DP { id: string; floorId: string; label: string; x: number; y: number; isExit?: boolean; hasBadge?: boolean }
+interface Blind3D { id: string; floorId: string; x: number; y: number; w: number; h: number; severity?: 'normal' | 'elevee' | 'critique' }
+
 interface PlanCanvasV2Props {
   plan: ParsedPlan
-  /** Optional plan image URL to render as background (from existing import) */
   planImageUrl?: string
-  /** Children overlays rendered inside the transform group */
   children?: React.ReactNode
   className?: string
-  /** Called when a space is clicked */
   onSpaceClick?: (space: DetectedSpace) => void
-  /** Called on canvas click with world coordinates in metres */
   onCanvasClick?: (x: number, y: number) => void
-  /** View mode for DXF rendering */
   viewMode?: '2d' | '3d' | '3d-advanced'
+  /** Vol.2 Securitaire entities for 3D rendering */
+  cameras?: Cam3D[]
+  doors?: Door3DP[]
+  blindSpots?: Blind3D[]
 }
 
 export function PlanCanvasV2({
   plan, planImageUrl, children, className = '',
   onSpaceClick, onCanvasClick, viewMode = '2d',
+  cameras, doors, blindSpots,
 }: PlanCanvasV2Props) {
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -256,6 +260,9 @@ export function PlanCanvasV2({
           planBounds={plan.bounds}
           detectedFloors={plan.detectedFloors}
           dimensions={plan.dimensions}
+          cameras={cameras}
+          doors={doors}
+          blindSpots={blindSpots}
           className="flex-1"
         />
         {/* Plan selector dropdown */}
