@@ -841,9 +841,50 @@ export default function Vol2Module() {
               plan={parsedPlan}
               planImageUrl={activeFloor ? (planImageUrls[activeFloor.id] || usePlanImportStore.getState().getActivePlanUrl(activeFloor.id)) : undefined}
               viewMode={viewMode === '3d-advanced' ? '3d-advanced' : viewMode === '3d' ? '3d' : '2d'}
-              cameras={[]}
-              doors={[]}
+              cameras={cameras.filter(c => !c.autoPlaced || false).map(c => {
+                const pw = parsedPlan.bounds.width || 200
+                const ph = parsedPlan.bounds.height || 140
+                return {
+                  id: c.id, floorId: c.floorId, label: c.label,
+                  // If coords are already in metres (>1 typically), use as-is; otherwise scale from 0-1
+                  x: c.x > 1 ? c.x : c.x * pw,
+                  y: c.y > 1 ? c.y : c.y * ph,
+                  angle: c.angle, fov: c.fov,
+                  rangeM: c.rangeM || c.range || 10,
+                  color: c.color,
+                  priority: c.priority,
+                }
+              })}
+              doors={doors.map(d => {
+                const pw = parsedPlan.bounds.width || 200
+                const ph = parsedPlan.bounds.height || 140
+                return {
+                  id: d.id, floorId: d.floorId, label: d.label,
+                  x: d.x > 1 ? d.x : d.x * pw,
+                  y: d.y > 1 ? d.y : d.y * ph,
+                  isExit: d.isExit, hasBadge: d.hasBadge,
+                }
+              })}
               blindSpots={[]}
+              placeMode={placeTool === 'camera' ? 'camera' : placeTool === 'door' ? 'door' : null}
+              onPlace={(kind, x, y, floorId) => {
+                const id = `${kind}-${Date.now()}`
+                if (kind === 'camera') {
+                  addCamera({
+                    id, floorId: floorId || activeFloorId, label: `Cam ${cameras.length + 1}`,
+                    model: 'XNV-8080R', x, y, angle: 180, fov: 109, range: 80, rangeM: 12,
+                    color: '#3b82f6', priority: 'normale', capexFcfa: 850_000, autoPlaced: false,
+                  })
+                } else if (kind === 'door') {
+                  addDoor({
+                    id, floorId: floorId || activeFloorId, label: `Porte ${doors.length + 1}`,
+                    x, y, zoneType: 'commerce', isExit: false, hasBadge: false, hasBiometric: false, hasSas: false,
+                    ref: 'DORMA ES200', normRef: 'NF EN 16005', note: '', widthM: 0.9, capexFcfa: 380_000,
+                  })
+                }
+                selectEntity(id, kind)
+                setPlaceTool(null)
+              }}
             />
           ) : viewMode === '3d-advanced' ? (
             <Suspense fallback={

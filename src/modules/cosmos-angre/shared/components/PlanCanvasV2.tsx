@@ -42,6 +42,9 @@ interface PlanCanvasV2Props {
   signage?: Sig3D[]
   moments?: Mom3D[]
   journeys?: Jour3D[]
+  /** 3D placement mode */
+  placeMode?: 'camera' | 'door' | 'poi' | 'signage' | 'moment' | null
+  onPlace?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', x: number, y: number, floorId?: string) => void
 }
 
 export function PlanCanvasV2({
@@ -49,6 +52,7 @@ export function PlanCanvasV2({
   onSpaceClick, onCanvasClick, viewMode = '2d',
   cameras, doors, blindSpots,
   pois, signage, moments, journeys,
+  placeMode, onPlace,
 }: PlanCanvasV2Props) {
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -277,6 +281,8 @@ export function PlanCanvasV2({
           signage={signage}
           moments={moments}
           journeys={journeys}
+          placeMode={placeMode}
+          onPlace={onPlace}
           className="flex-1"
         />
         {/* Plan selector dropdown */}

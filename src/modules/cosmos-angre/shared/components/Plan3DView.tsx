@@ -133,6 +133,10 @@ interface Plan3DViewProps {
   moments?: Moment3D[]
   /** Vol.3 — journey paths between moments/pois */
   journeys?: JourneyPath3D[]
+  /** Placement mode — when set, clicking the ground fires onPlace(x, y, floorId) */
+  placeMode?: 'camera' | 'door' | 'poi' | 'signage' | 'moment' | null
+  /** Callback when user clicks in placement mode — (x, y) in metres, floorId if detected */
+  onPlace?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', x: number, y: number, floorId?: string) => void
   className?: string
 }
 
@@ -157,8 +161,13 @@ export function Plan3DView({
   onSpaceClick,
   cameras = [], doors = [], blindSpots = [], showFov: showFovProp,
   pois = [], signage = [], moments = [], journeys = [],
+  placeMode = null, onPlace,
   className = '',
 }: Plan3DViewProps) {
+  const placeModeRef = useRef<typeof placeMode>(placeMode)
+  placeModeRef.current = placeMode
+  const onPlaceRef = useRef<typeof onPlace>(onPlace)
+  onPlaceRef.current = onPlace
   const [selectedSpace, setSelectedSpace] = useState<Space3D | null>(null)
   const [hoveredSpace, setHoveredSpace] = useState<Space3D | null>(null)
   const [showCameras, setShowCameras] = useState(true)
@@ -1055,12 +1064,36 @@ export function Plan3DView({
         })
         let selectedOutline: THREE.Mesh | null = null
 
+        // Placement ghost (semi-transparent sphere that follows cursor on the plane)
+        const ghostGeo = new THREE.SphereGeometry(Math.max(pw, ph) * 0.006, 12, 8)
+        const ghostMat = new THREE.MeshBasicMaterial({
+          color: 0x22d3ee, transparent: true, opacity: 0.6, depthTest: false,
+        })
+        const placeGhost = new THREE.Mesh(ghostGeo, ghostMat)
+        placeGhost.visible = false
+        placeGhost.renderOrder = 500
+        scene.add(placeGhost)
+
         const onMove = (event: MouseEvent) => {
           if (!container) return
           const rect = renderer.domElement.getBoundingClientRect()
           pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
           pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
           raycaster.setFromCamera(pointer, camera)
+
+          // Placement ghost follows cursor on the ground
+          const pm = placeModeRef.current
+          if (pm) {
+            const planeHits = raycaster.intersectObject(scene.getObjectByName('__pick_plane')!, false)
+            if (planeHits.length) {
+              placeGhost.position.copy(planeHits[0].point)
+              placeGhost.visible = true
+              renderer.domElement.style.cursor = 'crosshair'
+              return
+            }
+          }
+          if (placeGhost.visible) placeGhost.visible = false
+
           const hits = raycaster.intersectObjects(zoneMeshes, false)
 
           // Restore previously hovered
@@ -1087,12 +1120,43 @@ export function Plan3DView({
           }
         }
 
+        // Invisible ground plane for placement raycasting (covers whole plan area)
+        const pickPlaneGeo = new THREE.PlaneGeometry(pw * 1.5, ph * 1.5)
+        const pickPlaneMat = new THREE.MeshBasicMaterial({ visible: false })
+        const pickPlane = new THREE.Mesh(pickPlaneGeo, pickPlaneMat)
+        pickPlane.position.set(cx, cy, 0)
+        pickPlane.name = '__pick_plane'
+        scene.add(pickPlane)
+
         const onClick = (event: MouseEvent) => {
           if (!container) return
           const rect = renderer.domElement.getBoundingClientRect()
           pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
           pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
           raycaster.setFromCamera(pointer, camera)
+
+          // ── Placement mode: raycast against invisible ground plane ──
+          const pm = placeModeRef.current
+          if (pm && onPlaceRef.current) {
+            const planeHits = raycaster.intersectObject(pickPlane, false)
+            if (planeHits.length) {
+              const p = planeHits[0].point
+              // Determine which floor the click is on (for multi-floor stacking)
+              let floorId: string | undefined
+              if (isMultiFloorMode) {
+                // Pick floor by Z (stack order)
+                const approxOrder = Math.round(p.z / FLOOR_SPACING)
+                const f = detectedFloors.find(f => f.stackOrder === approxOrder)
+                floorId = f?.id
+              } else if (currentFloor !== 'all') {
+                floorId = currentFloor
+              }
+              onPlaceRef.current(pm, p.x, p.y, floorId)
+              return
+            }
+          }
+
+          // ── Selection mode: raycast on zone meshes ──
           const hits = raycaster.intersectObjects(zoneMeshes, false)
           if (hits.length) {
             const mesh = hits[0].object as THREE.Mesh
@@ -1544,6 +1608,22 @@ export function Plan3DView({
             {hoveredSpace.type} · {hoveredSpace.areaSqm.toFixed(1)} m²
             {hoveredSpace.floorId && ` · ${hoveredSpace.floorId}`}
           </div>
+        </div>
+      )}
+
+      {/* Placement mode banner (top-center) */}
+      {placeMode && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg bg-cyan-600/90 border border-cyan-400 text-white text-[11px] font-semibold shadow-2xl flex items-center gap-3">
+          <span className="animate-pulse w-2 h-2 rounded-full bg-cyan-200" />
+          <span>
+            Cliquez sur le plan 3D pour placer {
+              placeMode === 'camera' ? 'une camera' :
+              placeMode === 'door' ? 'une porte' :
+              placeMode === 'poi' ? 'un POI' :
+              placeMode === 'signage' ? 'une signaletique' :
+              'un moment'
+            }
+          </span>
         </div>
       )}
 
