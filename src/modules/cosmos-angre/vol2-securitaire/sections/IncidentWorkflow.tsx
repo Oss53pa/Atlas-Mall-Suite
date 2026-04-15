@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { AlertTriangle, Clock, User, CheckCircle, Archive, ChevronRight } from 'lucide-react'
-import { DemoBanner } from '../../shared/components/DemoBanner'
 
 type IncidentState = 'detecte' | 'assigne' | 'en_cours' | 'resolu' | 'cloture'
 
@@ -24,14 +23,6 @@ const STATES: { key: IncidentState; label: string; color: string; icon: React.El
   { key: 'cloture', label: 'Cloture', color: '#6b7280', icon: Archive },
 ]
 
-const MOCK_INCIDENTS: Incident[] = [
-  { id: 'INC-001', title: 'Intrusion zone technique B1', zone: 'B1 - Local TGBT', detectedAt: '2026-03-23T14:32:00', assignee: 'Konate M.', state: 'detecte', severity: 'critique', description: 'Detection mouvement par camera PTZ-B1-03. Aucun badge valide enregistre.', responseTimeSec: 0 },
-  { id: 'INC-002', title: 'Camera CAM-RDC-07 hors ligne', zone: 'RDC - Hall Est', detectedAt: '2026-03-23T13:45:00', assignee: 'Diallo A.', state: 'assigne', severity: 'haute', description: 'Perte de signal camera dome hall est. Derniere image il y a 47 minutes.', responseTimeSec: 180 },
-  { id: 'INC-003', title: 'Issue secours 3 forcee', zone: 'R+1 - Sortie Est', detectedAt: '2026-03-23T12:18:00', assignee: 'Toure I.', state: 'en_cours', severity: 'haute', description: 'Alarme porte issue secours 3. Agent depeche sur place.', responseTimeSec: 120 },
-  { id: 'INC-004', title: 'Mouvement suspect parking P2', zone: 'B1 - Parking P2', detectedAt: '2026-03-23T11:05:00', assignee: 'Bamba K.', state: 'resolu', severity: 'moyenne', description: 'Personne identifiee comme employe technicien CIE. Badge verifie.', responseTimeSec: 240 },
-  { id: 'INC-005', title: 'Alarme incendie test food court', zone: 'R+1 - Food Court', detectedAt: '2026-03-23T09:30:00', assignee: 'Yao P.', state: 'cloture', severity: 'basse', description: 'Test mensuel SSI programme. Aucune anomalie.', responseTimeSec: 60 },
-]
-
 const sevConfig: Record<string, { color: string; bg: string }> = {
   critique: { color: '#ef4444', bg: 'rgba(239,68,68,0.08)' },
   haute: { color: '#f59e0b', bg: 'rgba(245,158,11,0.08)' },
@@ -40,7 +31,7 @@ const sevConfig: Record<string, { color: string; bg: string }> = {
 }
 
 export default function IncidentWorkflow() {
-  const [incidents, setIncidents] = useState<Incident[]>(MOCK_INCIDENTS)
+  const [incidents, setIncidents] = useState<Incident[]>([])
   const [filterState, setFilterState] = useState<IncidentState | 'all'>('all')
   const [selected, setSelected] = useState<Incident | null>(null)
   const [showCreate, setShowCreate] = useState(false)
@@ -87,8 +78,6 @@ export default function IncidentWorkflow() {
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
-      <DemoBanner dataSource="demo" systemName="Supabase (base incidents)" />
-
       <div>
         <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#38bdf8' }}>
           VOL. 2 — PLAN SECURITAIRE
@@ -165,6 +154,15 @@ export default function IncidentWorkflow() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Incident List */}
         <div className="lg:col-span-2 space-y-2">
+          {filtered.length === 0 && (
+            <div className="rounded-lg p-8 text-center" style={{ background: '#141e2e', border: '1px dashed #1e2a3a' }}>
+              <AlertTriangle size={24} className="mx-auto text-slate-600 mb-2" />
+              <p className="text-[13px] text-slate-400">
+                {incidents.length === 0 ? 'Aucun incident enregistré' : 'Aucun incident dans ce statut'}
+              </p>
+              <p className="text-[11px] text-slate-600 mt-1">Utilisez « Déclarer un incident » pour en créer.</p>
+            </div>
+          )}
           {filtered.map(inc => {
             const sev = sevConfig[inc.severity]
             const stateInfo = STATES.find(s => s.key === inc.state)!

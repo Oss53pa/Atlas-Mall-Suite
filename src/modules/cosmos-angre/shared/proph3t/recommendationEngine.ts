@@ -28,33 +28,8 @@ export interface Recommendation {
   poi?: string
 }
 
-export const MOCK_MEMBERS: CosmosClubMember[] = [
-  {
-    id: 'mb-01', name: 'Aissatou Diallo', tier: 'prestige', pointsBalance: 12_400,
-    monthlyVisits: 8, avgSpendFcfa: 85_000, preferredCategories: ['restauration', 'commerce'],
-    joinDate: '2025-06-15', lastVisit: '2026-03-20', churnRisk: 0.05,
-  },
-  {
-    id: 'mb-02', name: 'Kouame Yao', tier: 'privilege', pointsBalance: 5_200,
-    monthlyVisits: 4, avgSpendFcfa: 42_000, preferredCategories: ['loisirs', 'restauration'],
-    joinDate: '2025-09-01', lastVisit: '2026-03-18', churnRisk: 0.12,
-  },
-  {
-    id: 'mb-03', name: 'Fatou Bamba', tier: 'infinite', pointsBalance: 34_000,
-    monthlyVisits: 12, avgSpendFcfa: 180_000, preferredCategories: ['commerce', 'hotel'],
-    joinDate: '2025-03-10', lastVisit: '2026-03-22', churnRisk: 0.02,
-  },
-  {
-    id: 'mb-04', name: 'Ibrahima Kone', tier: 'decouverte', pointsBalance: 800,
-    monthlyVisits: 1, avgSpendFcfa: 15_000, preferredCategories: ['restauration'],
-    joinDate: '2026-02-01', lastVisit: '2026-02-28', churnRisk: 0.45,
-  },
-  {
-    id: 'mb-05', name: 'Marie Coulibaly', tier: 'privilege', pointsBalance: 7_800,
-    monthlyVisits: 6, avgSpendFcfa: 55_000, preferredCategories: ['commerce', 'services'],
-    joinDate: '2025-07-20', lastVisit: '2026-03-15', churnRisk: 0.08,
-  },
-]
+// Pas de membres mockés : les données Cosmos Club sont à alimenter par saisie ou import.
+// La fonction generateRecommendations reste utilisable sur tout CosmosClubMember fourni.
 
 export function generateRecommendations(member: CosmosClubMember, pois: POI[]): Recommendation[] {
   const recs: Recommendation[] = []

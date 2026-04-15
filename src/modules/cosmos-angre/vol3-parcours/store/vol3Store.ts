@@ -1,7 +1,6 @@
 // ═══ VOL.3 PARCOURS CLIENT — Zustand Store ═══
 
 import { create } from 'zustand'
-import { shouldUseMockData } from '../../shared/useMockData'
 import type {
   Floor, Zone, TransitionNode, POI, SignageItem,
   MomentCle, VisitorProfile, NavigationGraph, PathResult,
@@ -122,6 +121,9 @@ interface Vol3State {
 
   // Actions - Profiles
   setActiveProfile: (id: string | null) => void
+  addProfile: (profile: VisitorProfile) => void
+  updateProfile: (id: string, updates: Partial<VisitorProfile>) => void
+  deleteProfile: (id: string) => void
 
   // Actions - Orchestration (PRD)
   autoPlaceSignaletics: (floorId: string) => Promise<void>
@@ -275,6 +277,18 @@ export const useVol3Store = create<Vol3State>()((set) => ({
 
   // ── Profiles ────────────────────────────────────────────
   setActiveProfile: (id) => set({ activeProfileId: id }),
+
+  addProfile: (profile) =>
+    set((s) => ({ visitorProfiles: [...s.visitorProfiles, profile] })),
+  updateProfile: (id, updates) =>
+    set((s) => ({
+      visitorProfiles: s.visitorProfiles.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+    })),
+  deleteProfile: (id) =>
+    set((s) => ({
+      visitorProfiles: s.visitorProfiles.filter((p) => p.id !== id),
+      activeProfileId: s.activeProfileId === id ? null : s.activeProfileId,
+    })),
 
   // ── Orchestration actions (PRD) ───────────────────────
   autoPlaceSignaletics: async (floorId) => {
@@ -553,43 +567,16 @@ export const useVol3Store = create<Vol3State>()((set) => ({
           moments: generateParcours(data.zones, data.pois),
           isHydrating: false,
         })
-      } else if (shouldUseMockData()) {
-        // No data in Supabase — fall back to mock data for demo (dev only)
-        set({
-          projectId: projetId,
-          floors: MOCK_FLOORS,
-          activeFloorId: 'floor-rdc',
-          transitions: MOCK_TRANSITIONS,
-          zones: MOCK_ZONES,
-          pois: MOCK_POIS,
-          signageItems: MOCK_SIGNAGE,
-          moments: MOCK_MOMENTS,
-          isHydrating: false,
-        })
       } else {
-        // Production: start empty — user will import or create data
+        // No remote data — start empty, user populates via forms or DXF import
         set({ projectId: projetId, isHydrating: false })
       }
     } catch (err) {
       console.warn('[Vol3Store] Hydration failed:', err)
-      if (shouldUseMockData()) {
-        set({
-          floors: MOCK_FLOORS,
-          activeFloorId: 'floor-rdc',
-          transitions: MOCK_TRANSITIONS,
-          zones: MOCK_ZONES,
-          pois: MOCK_POIS,
-          signageItems: MOCK_SIGNAGE,
-          moments: MOCK_MOMENTS,
-          isHydrating: false,
-          hydrationError: err instanceof Error ? err.message : 'Erreur de chargement',
-        })
-      } else {
-        set({
-          isHydrating: false,
-          hydrationError: err instanceof Error ? err.message : 'Erreur de chargement',
-        })
-      }
+      set({
+        isHydrating: false,
+        hydrationError: err instanceof Error ? err.message : 'Erreur de chargement',
+      })
     }
   },
 

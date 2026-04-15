@@ -1,9 +1,8 @@
 import React, { useState } from 'react'
-import { Camera, AlertTriangle, Shield, Users, Wifi, WifiOff, Eye } from 'lucide-react'
+import { Camera, AlertTriangle, Shield, Users, WifiOff } from 'lucide-react'
 import { useVol2Store } from '../store/vol2Store'
-import { DemoBanner, ConnectionStatus, type DataSource } from '../../shared/components/DemoBanner'
 
-interface MockIncident {
+interface LiveIncident {
   id: string
   type: string
   zone: string
@@ -12,13 +11,9 @@ interface MockIncident {
   status: 'ouvert' | 'en_cours' | 'resolu'
 }
 
-const MOCK_INCIDENTS: MockIncident[] = [
-  { id: 'inc-01', type: 'Intrusion zone technique', zone: 'B1 - Local TGBT', time: '14:32', severity: 'critique', status: 'ouvert' },
-  { id: 'inc-02', type: 'Camera hors ligne', zone: 'RDC - Hall Est', time: '13:45', severity: 'haute', status: 'en_cours' },
-  { id: 'inc-03', type: 'Porte forcee', zone: 'R+1 - Issue secours 3', time: '12:18', severity: 'haute', status: 'en_cours' },
-  { id: 'inc-04', type: 'Mouvement suspect', zone: 'B1 - Parking P2', time: '11:05', severity: 'moyenne', status: 'resolu' },
-  { id: 'inc-05', type: 'Alarme incendie test', zone: 'R+1 - Food Court', time: '09:30', severity: 'moyenne', status: 'resolu' },
-]
+// Incidents temps réel fournis par une intégration VMS/Supabase non encore connectée.
+// Rester vide tant qu'aucune source réelle n'est branchée.
+const LIVE_INCIDENTS: LiveIncident[] = []
 
 const sevConfig = {
   critique: { color: '#ef4444', bg: 'rgba(239,68,68,0.08)' },
@@ -42,30 +37,23 @@ export default function ControlRoom() {
 
   const kpis = [
     { label: 'Cameras en ligne', value: `${onlineCameras}/${onlineCameras}`, icon: Camera, color: '#22c55e' },
-    { label: 'Incidents ouverts', value: MOCK_INCIDENTS.filter(i => i.status === 'ouvert').length, icon: AlertTriangle, color: '#ef4444' },
+    { label: 'Incidents ouverts', value: LIVE_INCIDENTS.filter(i => i.status === 'ouvert').length, icon: AlertTriangle, color: '#ef4444' },
     { label: 'Couverture', value: `${totalCoverage}%`, icon: Shield, color: '#38bdf8' },
-    { label: 'Equipes actives', value: '3/4', icon: Users, color: '#a855f7' },
+    { label: 'Equipes actives', value: '—', icon: Users, color: '#a855f7' },
   ]
 
-  const filtered = filter === 'all' ? MOCK_INCIDENTS : MOCK_INCIDENTS.filter(i => i.status === filter)
-
-  const dataSource: DataSource = 'demo' // Sera 'live' quand connecte a Supabase/VMS
+  const filtered = filter === 'all' ? LIVE_INCIDENTS : LIVE_INCIDENTS.filter(i => i.status === filter)
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
-      <DemoBanner dataSource={dataSource} systemName="VMS / Supabase" />
-
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#38bdf8' }}>
-            VOL. 2 — PLAN SECURITAIRE
-          </p>
-        <h1 className="text-[28px] font-light text-white mb-3">Salle de Controle</h1>
-        <p className="text-[13px] leading-[1.7]" style={{ color: '#4a5568' }}>
-          Vue temps reel du dispositif de securite — cameras, incidents et equipes.
+      <div>
+        <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#38bdf8' }}>
+          VOL. 2 — PLAN SECURITAIRE
         </p>
-        </div>
-        <ConnectionStatus dataSource={dataSource} />
+        <h1 className="text-[28px] font-light text-white mb-3">Salle de Contrôle</h1>
+        <p className="text-[13px] leading-[1.7]" style={{ color: '#4a5568' }}>
+          Vue temps réel du dispositif de sécurité — caméras, incidents et équipes.
+        </p>
       </div>
 
       {/* KPI Cards */}
@@ -108,6 +96,11 @@ export default function ControlRoom() {
         </div>
 
         <div className="space-y-2">
+          {filtered.length === 0 && (
+            <p className="text-center text-[12px] py-4" style={{ color: '#4a5568' }}>
+              Aucun incident remonté. Les incidents apparaîtront ici une fois l'intégration VMS/Supabase active.
+            </p>
+          )}
           {filtered.map(inc => {
             const sev = sevConfig[inc.severity]
             const stat = statConfig[inc.status]
@@ -131,22 +124,20 @@ export default function ControlRoom() {
       <div className="rounded-xl p-4" style={{ background: '#141e2e', border: '1px solid #1e2a3a' }}>
         <h2 className="text-sm font-semibold text-white mb-3">Etat des cameras</h2>
         <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
-          {cameras.slice(0, 24).map((cam, i) => {
-            const online = true // mock: all online
-            return (
-              <div
-                key={cam.id}
-                className="flex flex-col items-center gap-1 p-2 rounded-lg"
-                style={{ background: online ? 'rgba(34,197,94,0.05)' : 'rgba(239,68,68,0.05)', border: `1px solid ${online ? '#22c55e20' : '#ef444420'}` }}
-              >
-                {online ? <Wifi size={12} style={{ color: '#22c55e' }} /> : <WifiOff size={12} style={{ color: '#ef4444' }} />}
-                <span className="text-[9px] text-center" style={{ color: '#94a3b8' }}>{cam.label.slice(0, 10)}</span>
-              </div>
-            )
-          })}
+          {cameras.slice(0, 24).map((cam) => (
+            <div
+              key={cam.id}
+              className="flex flex-col items-center gap-1 p-2 rounded-lg"
+              style={{ background: 'rgba(148,163,184,0.04)', border: '1px solid #1e2a3a' }}
+              title="Statut temps réel non disponible — intégration VMS requise"
+            >
+              <WifiOff size={12} style={{ color: '#64748b' }} />
+              <span className="text-[9px] text-center" style={{ color: '#94a3b8' }}>{cam.label.slice(0, 10)}</span>
+            </div>
+          ))}
           {cameras.length === 0 && (
             <p className="col-span-8 text-center text-[13px] py-4" style={{ color: '#4a5568' }}>
-              Aucune camera configuree. Ajoutez des cameras sur le plan 2D.
+              Aucune caméra enregistrée. Ajoutez-en via la section Vidéosurveillance.
             </p>
           )}
         </div>
