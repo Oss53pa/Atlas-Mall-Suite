@@ -176,8 +176,64 @@ export function Plan3DView({
         grid.position.set(cx, cy, -0.15)
         scene.add(grid)
 
-        // ── Zone floor slabs (colored by type) ──
+        // ── Zone floor slabs + floating labels ──
+        // Helper: create a text sprite from a label
+        const makeTextSprite = (label: string, surface: number, colorHex: string) => {
+          const canvas = document.createElement('canvas')
+          canvas.width = 512
+          canvas.height = 160
+          const ctx = canvas.getContext('2d')
+          if (!ctx) return null
+
+          // Rounded background
+          ctx.fillStyle = 'rgba(10, 14, 26, 0.92)'
+          const r = 20
+          ctx.beginPath()
+          ctx.moveTo(r, 0)
+          ctx.lineTo(canvas.width - r, 0)
+          ctx.quadraticCurveTo(canvas.width, 0, canvas.width, r)
+          ctx.lineTo(canvas.width, canvas.height - r)
+          ctx.quadraticCurveTo(canvas.width, canvas.height, canvas.width - r, canvas.height)
+          ctx.lineTo(r, canvas.height)
+          ctx.quadraticCurveTo(0, canvas.height, 0, canvas.height - r)
+          ctx.lineTo(0, r)
+          ctx.quadraticCurveTo(0, 0, r, 0)
+          ctx.closePath()
+          ctx.fill()
+
+          // Left colored bar (zone color)
+          ctx.fillStyle = colorHex
+          ctx.fillRect(0, 0, 12, canvas.height)
+
+          // Label text
+          ctx.fillStyle = '#ffffff'
+          ctx.font = 'bold 52px system-ui, sans-serif'
+          ctx.textAlign = 'left'
+          ctx.textBaseline = 'middle'
+          const maxLabelLen = 22
+          const displayLabel = label.length > maxLabelLen ? label.slice(0, maxLabelLen - 1) + '…' : label
+          ctx.fillText(displayLabel, 28, 55)
+
+          // Surface text
+          ctx.fillStyle = '#9ca3af'
+          ctx.font = '500 36px system-ui, sans-serif'
+          ctx.fillText(`${surface.toFixed(0)} m²`, 28, 115)
+
+          const texture = new THREE.CanvasTexture(canvas)
+          texture.minFilter = THREE.LinearFilter
+          texture.magFilter = THREE.LinearFilter
+          const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false, depthWrite: false })
+          const sprite = new THREE.Sprite(material)
+          // Scale sprite: width ≈ 6% of plan width (readable but not overpowering)
+          const sw = pw * 0.06
+          const sh = sw * (canvas.height / canvas.width)
+          sprite.scale.set(sw, sh, 1)
+          sprite.renderOrder = 999 // Always on top
+          return sprite
+        }
+
         let slabCount = 0
+        let labelCount = 0
         for (const sp of filteredSpaces) {
           const sw = sp.bounds.width
           const sh = sp.bounds.height
@@ -190,17 +246,27 @@ export function Plan3DView({
           const zoneMat = new THREE.MeshLambertMaterial({
             color,
             transparent: true,
-            opacity: 0.7,
+            opacity: 0.5,
           })
           const zone = new THREE.Mesh(zoneGeo, zoneMat)
-          zone.position.set(
-            sp.bounds.minX + sw / 2,
-            sp.bounds.minY + sh / 2,
-            0.08,
-          )
+          const zx = sp.bounds.minX + sw / 2
+          const zy = sp.bounds.minY + sh / 2
+          zone.position.set(zx, zy, 0.08)
+          zone.userData = { spaceId: sp.id, spaceLabel: sp.label }
           scene.add(zone)
           slabCount++
+
+          // Floating label sprite — only if zone is big enough
+          if (sp.label && sp.label !== `Zone ${slabCount}` && sw * sh > pw * ph * 0.0003) {
+            const sprite = makeTextSprite(sp.label, sp.areaSqm, colorHex)
+            if (sprite) {
+              sprite.position.set(zx, zy, wallHeight + pw * 0.015)
+              scene.add(sprite)
+              labelCount++
+            }
+          }
         }
+        console.log(`[Plan3D] ${labelCount} labels flottants rendus`)
 
         // ── Walls (use InstancedMesh for performance with many walls) ──
         // Colors by layer type
@@ -273,8 +339,8 @@ export function Plan3DView({
           wallCount = 4
         }
 
-        console.log(`[Plan3D] Built scene: ${slabCount} zones, ${wallCount} walls, ${pw.toFixed(0)}×${ph.toFixed(0)}m, wallH=${wallHeight.toFixed(1)}m`)
-        setStatus(`3D: ${wallCount} murs, ${slabCount} zones`)
+        console.log(`[Plan3D] Built scene: ${slabCount} zones, ${wallCount} walls, ${labelCount} labels, ${pw.toFixed(0)}×${ph.toFixed(0)}m, wallH=${wallHeight.toFixed(1)}m`)
+        setStatus(`${wallCount} murs · ${slabCount} zones · ${labelCount} labels`)
 
         // ── OrbitControls with smooth pan/zoom ──
         const controls = new OrbitControls(camera, renderer.domElement)
