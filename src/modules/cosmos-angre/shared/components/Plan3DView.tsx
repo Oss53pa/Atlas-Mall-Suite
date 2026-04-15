@@ -40,6 +40,7 @@ interface Plan3DViewProps {
   detectedFloors?: DetectedFloor3D[]
   dimensions?: Dim3D[]
   activeFloorId?: string | 'all'
+  onSpaceClick?: (space: Space3D) => void
   className?: string
 }
 
@@ -61,8 +62,11 @@ const ZONE_COLORS: Record<string, string> = {
 export function Plan3DView({
   wallSegments, spaces, planBounds, mode,
   detectedFloors = [], dimensions = [], activeFloorId = 'all',
+  onSpaceClick,
   className = '',
 }: Plan3DViewProps) {
+  const [selectedSpace, setSelectedSpace] = useState<Space3D | null>(null)
+  const [hoveredSpace, setHoveredSpace] = useState<Space3D | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const fitViewRef = useRef<(() => void) | null>(null)
   const [status, setStatus] = useState('Initialisation...')
@@ -512,6 +516,99 @@ export function Plan3DView({
         console.log(`[Plan3D] Built scene: ${slabCount} zones, ${wallCount} walls, ${labelCount} labels, ${dimCount} dims, ${pw.toFixed(0)}×${ph.toFixed(0)}m`)
         setStatus(`${wallCount} murs · ${slabCount} zones · ${labelCount} labels · ${dimCount} cotes`)
 
+        // ── Raycaster for zone selection ──
+        const raycaster = new THREE.Raycaster()
+        const pointer = new THREE.Vector2()
+        // Collect all zone meshes (those with userData.spaceId)
+        const zoneMeshes: THREE.Mesh[] = []
+        scene.traverse(obj => {
+          if ((obj as THREE.Mesh).isMesh && obj.userData?.spaceId) {
+            zoneMeshes.push(obj as THREE.Mesh)
+          }
+        })
+
+        // Hover highlight
+        let hoveredMesh: THREE.Mesh | null = null
+        const highlightMat = new THREE.MeshLambertMaterial({
+          color: 0xfbbf24, transparent: true, opacity: 0.75,
+        })
+        const selectedOutlineMat = new THREE.MeshBasicMaterial({
+          color: 0xffffff, transparent: true, opacity: 0.9, wireframe: true,
+        })
+        let selectedOutline: THREE.Mesh | null = null
+
+        const onMove = (event: MouseEvent) => {
+          if (!container) return
+          const rect = renderer.domElement.getBoundingClientRect()
+          pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+          pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+          raycaster.setFromCamera(pointer, camera)
+          const hits = raycaster.intersectObjects(zoneMeshes, false)
+
+          // Restore previously hovered
+          if (hoveredMesh && (!hits.length || hits[0].object !== hoveredMesh)) {
+            const origMat = hoveredMesh.userData.origMaterial as THREE.Material | undefined
+            if (origMat) hoveredMesh.material = origMat
+            hoveredMesh = null
+            renderer.domElement.style.cursor = 'default'
+            setHoveredSpace(null)
+          }
+
+          // Highlight new
+          if (hits.length) {
+            const mesh = hits[0].object as THREE.Mesh
+            if (mesh !== hoveredMesh) {
+              if (!mesh.userData.origMaterial) mesh.userData.origMaterial = mesh.material
+              mesh.material = highlightMat
+              hoveredMesh = mesh
+              renderer.domElement.style.cursor = 'pointer'
+              const spaceId = mesh.userData.spaceId as string
+              const space = spaces.find(s => s.id === spaceId)
+              if (space) setHoveredSpace(space)
+            }
+          }
+        }
+
+        const onClick = (event: MouseEvent) => {
+          if (!container) return
+          const rect = renderer.domElement.getBoundingClientRect()
+          pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+          pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+          raycaster.setFromCamera(pointer, camera)
+          const hits = raycaster.intersectObjects(zoneMeshes, false)
+          if (hits.length) {
+            const mesh = hits[0].object as THREE.Mesh
+            const spaceId = mesh.userData.spaceId as string
+            const space = spaces.find(s => s.id === spaceId)
+            if (space) {
+              setSelectedSpace(space)
+              onSpaceClick?.(space)
+
+              // Remove previous outline
+              if (selectedOutline) {
+                selectedOutline.geometry.dispose()
+                scene.remove(selectedOutline)
+              }
+              // Create outline around selected mesh
+              const geo = (mesh.geometry as THREE.BoxGeometry).clone()
+              geo.scale(1.03, 1.03, 1.2)
+              selectedOutline = new THREE.Mesh(geo, selectedOutlineMat)
+              selectedOutline.position.copy(mesh.position)
+              selectedOutline.rotation.copy(mesh.rotation)
+              scene.add(selectedOutline)
+            }
+          }
+        }
+
+        renderer.domElement.addEventListener('pointermove', onMove)
+        renderer.domElement.addEventListener('click', onClick)
+        cleanupFns.push(() => {
+          renderer.domElement.removeEventListener('pointermove', onMove)
+          renderer.domElement.removeEventListener('click', onClick)
+          highlightMat.dispose()
+          selectedOutlineMat.dispose()
+        })
+
         // ── OrbitControls with smooth pan/zoom ──
         const controls = new OrbitControls(camera, renderer.domElement)
         controls.target.set(cx, cy, 0)
@@ -803,9 +900,64 @@ export function Plan3DView({
         </div>
       )}
 
+      {/* Hovered space tooltip */}
+      {hoveredSpace && !selectedSpace && (
+        <div className="absolute top-16 left-3 px-3 py-2 rounded-lg bg-amber-900/90 border border-amber-700/40 text-[11px] text-amber-100 pointer-events-none shadow-xl max-w-xs">
+          <div className="font-semibold text-white">{hoveredSpace.label}</div>
+          <div className="text-[10px] text-amber-200/80 mt-0.5">
+            {hoveredSpace.type} · {hoveredSpace.areaSqm.toFixed(1)} m²
+            {hoveredSpace.floorId && ` · ${hoveredSpace.floorId}`}
+          </div>
+        </div>
+      )}
+
+      {/* Selection panel (bottom-center) */}
+      {selectedSpace && (
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[min(420px,calc(100%-24px))] rounded-lg bg-gray-900/95 border border-blue-500/40 shadow-2xl overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between bg-blue-900/40">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full"
+                style={{ background: selectedSpace.color || ZONE_COLORS[selectedSpace.type] || '#3b82f6' }} />
+              <span className="text-[12px] text-white font-semibold truncate">
+                {selectedSpace.label}
+              </span>
+            </div>
+            <button
+              onClick={() => setSelectedSpace(null)}
+              className="text-gray-400 hover:text-white text-sm leading-none p-1"
+            >✕</button>
+          </div>
+          <div className="px-4 py-3 grid grid-cols-3 gap-3 text-[10px]">
+            <div>
+              <span className="text-gray-500 uppercase tracking-wider">Type</span>
+              <p className="text-white capitalize mt-0.5">{selectedSpace.type}</p>
+            </div>
+            <div>
+              <span className="text-gray-500 uppercase tracking-wider">Surface</span>
+              <p className="text-white font-mono mt-0.5">{selectedSpace.areaSqm.toFixed(1)} m²</p>
+            </div>
+            <div>
+              <span className="text-gray-500 uppercase tracking-wider">Etage</span>
+              <p className="text-white mt-0.5">{selectedSpace.floorId ?? '—'}</p>
+            </div>
+          </div>
+          <div className="px-4 py-2 border-t border-white/[0.06] flex items-center justify-between bg-gray-950/50">
+            <span className="text-[9px] text-gray-500">ID: {selectedSpace.id}</span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => onSpaceClick?.(selectedSpace)}
+                className="px-3 py-1 rounded bg-blue-600 hover:bg-blue-500 text-[10px] text-white font-medium transition-colors"
+              >
+                Editer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Navigation hint */}
       <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-lg bg-gray-900/80 border border-white/[0.08] text-[10px] text-gray-500 pointer-events-none">
-        Glisser: rotation · Molette: zoom · Clic droit / Shift+glisser: pan · Fleches: pan
+        Glisser: rotation · Molette: zoom · Clic droit / Shift+glisser: pan · Fleches: pan · Clic zone: selection
       </div>
     </div>
   )
