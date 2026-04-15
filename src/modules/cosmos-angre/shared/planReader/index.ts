@@ -1856,8 +1856,8 @@ export async function importPlan(
             if (entity.type === 'LINE' && entity.startPoint && entity.endPoint) {
               const s = entity.startPoint, e = entity.endPoint
               const len = Math.sqrt((e.x - s.x) ** 2 + (e.y - s.y) ** 2)
-              // Filter: not too tiny (< 0.2% of plan), not too long (> 50% = probably a reference line)
-              if (len < bW * 0.002 || len > bW * 0.5) continue
+              // Filter: not too tiny (< 0.1%), allow long walls (up to 95% of plan)
+              if (len < bW * 0.001 || len > bW * 0.95) continue
               if (!inBounds(s.x, s.y) && !inBounds(e.x, e.y)) continue
               planWalls.push({
                 x1: (s.x - minX) * unitScale, y1: (maxY - s.y) * unitScale,
@@ -1871,7 +1871,7 @@ export async function importPlan(
               for (let vi = 0; vi < verts.length - 1; vi++) {
                 const s = verts[vi], e = verts[vi + 1]
                 const len = Math.sqrt((e.x - s.x) ** 2 + (e.y - s.y) ** 2)
-                if (len < bW * 0.002 || len > bW * 0.5) continue
+                if (len < bW * 0.001 || len > bW * 0.95) continue
                 planWalls.push({
                   x1: (s.x - minX) * unitScale, y1: (maxY - s.y) * unitScale,
                   x2: (e.x - minX) * unitScale, y2: (maxY - e.y) * unitScale,

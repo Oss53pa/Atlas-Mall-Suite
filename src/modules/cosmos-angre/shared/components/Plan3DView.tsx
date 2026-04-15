@@ -39,6 +39,7 @@ const ZONE_COLORS: Record<string, string> = {
 
 export function Plan3DView({ wallSegments, spaces, planBounds, mode, className = '' }: Plan3DViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const fitViewRef = useRef<(() => void) | null>(null)
   const [status, setStatus] = useState('Initialisation...')
 
   useEffect(() => {
@@ -237,17 +238,57 @@ export function Plan3DView({ wallSegments, spaces, planBounds, mode, className =
         console.log(`[Plan3D] Built scene: ${slabCount} zones, ${wallCount} walls, ${pw.toFixed(0)}×${ph.toFixed(0)}m, wallH=${wallHeight.toFixed(1)}m`)
         setStatus(`3D: ${wallCount} murs, ${slabCount} zones`)
 
-        // ── OrbitControls ──
+        // ── OrbitControls with smooth pan/zoom ──
         const controls = new OrbitControls(camera, renderer.domElement)
         controls.target.set(cx, cy, 0)
         controls.enableDamping = true
         controls.dampingFactor = 0.08
         controls.maxPolarAngle = Math.PI / 2.05
-        controls.minDistance = diag * 0.02
-        controls.maxDistance = diag * 5
-        controls.screenSpacePanning = false
+        controls.minDistance = diag * 0.01
+        controls.maxDistance = diag * 10
+        controls.screenSpacePanning = true  // Pan parallel to screen (more intuitive)
+        controls.panSpeed = 1.5
+        controls.zoomSpeed = 1.5
+        controls.rotateSpeed = 0.8
+        controls.enablePan = true
+        controls.enableZoom = true
+        controls.enableRotate = true
+        // Mouse buttons: LEFT = rotate, MIDDLE = zoom, RIGHT = pan
+        controls.mouseButtons = {
+          LEFT: 0, // ROTATE
+          MIDDLE: 1, // DOLLY
+          RIGHT: 2, // PAN
+        }
+        // Touch: ONE = rotate, TWO = pan
+        controls.touches = {
+          ONE: 2, // ROTATE
+          TWO: 1, // DOLLY_PAN
+        }
+        // Keyboard pan
+        controls.keys = {
+          LEFT: 'ArrowLeft',
+          UP: 'ArrowUp',
+          RIGHT: 'ArrowRight',
+          BOTTOM: 'ArrowDown',
+        }
+        controls.keyPanSpeed = 50
+        controls.listenToKeyEvents(window)
         controls.update()
         cleanupFns.push(() => controls.dispose())
+
+        // Fit view function (resets camera + target)
+        const fitView = () => {
+          if (mode === '3d-advanced') {
+            const d = diag * 0.7
+            camera.position.set(cx + d, cy - d, d * 0.9)
+          } else {
+            camera.position.set(cx, cy - ph * 0.8, diag * 0.5)
+          }
+          camera.lookAt(cx, cy, 0)
+          controls.target.set(cx, cy, 0)
+          controls.update()
+        }
+        fitViewRef.current = fitView
 
         // ── Animate ──
         let rafId = 0
@@ -260,22 +301,48 @@ export function Plan3DView({ wallSegments, spaces, planBounds, mode, className =
         animate()
         cleanupFns.push(() => cancelAnimationFrame(rafId))
 
-        // ── Resize ──
+        // ── Resize (robust — uses ResizeObserver + requestAnimationFrame) ──
+        let resizeRaf = 0
         const onResize = () => {
           if (!container || disposed) return
-          const nw = container.clientWidth
-          const nh = container.clientHeight
-          if (nw === 0 || nh === 0) return
-          camera.aspect = nw / nh
-          camera.updateProjectionMatrix()
-          renderer.setSize(nw, nh)
+          cancelAnimationFrame(resizeRaf)
+          resizeRaf = requestAnimationFrame(() => {
+            const nw = container.clientWidth
+            const nh = container.clientHeight
+            if (nw === 0 || nh === 0) return
+            camera.aspect = nw / nh
+            camera.updateProjectionMatrix()
+            renderer.setSize(nw, nh, false)
+            renderer.domElement.style.width = '100%'
+            renderer.domElement.style.height = '100%'
+          })
         }
         window.addEventListener('resize', onResize)
         const resizeObserver = new ResizeObserver(onResize)
         resizeObserver.observe(container)
+        onResize() // Initial sizing
         cleanupFns.push(() => {
+          cancelAnimationFrame(resizeRaf)
           window.removeEventListener('resize', onResize)
           resizeObserver.disconnect()
+        })
+
+        // ── Shift+Left-click for pan (alternative to right-click) ──
+        const onKeyDown = (e: KeyboardEvent) => {
+          if (e.key === 'Shift') {
+            controls.mouseButtons.LEFT = 2 // PAN
+          }
+        }
+        const onKeyUp = (e: KeyboardEvent) => {
+          if (e.key === 'Shift') {
+            controls.mouseButtons.LEFT = 0 // ROTATE
+          }
+        }
+        window.addEventListener('keydown', onKeyDown)
+        window.addEventListener('keyup', onKeyUp)
+        cleanupFns.push(() => {
+          window.removeEventListener('keydown', onKeyDown)
+          window.removeEventListener('keyup', onKeyUp)
         })
 
         // ── Cleanup scene geometry/materials ──
@@ -310,13 +377,21 @@ export function Plan3DView({ wallSegments, spaces, planBounds, mode, className =
       <div ref={containerRef} className="w-full h-full" />
 
       {/* Status overlay */}
-      <div className="absolute top-3 left-3 px-3 py-1.5 rounded-lg bg-gray-900/80 border border-white/[0.08] text-[10px] text-gray-400 pointer-events-none">
-        {mode === '3d' ? 'Perspective 3D' : 'Vue Isométrique'} — {status}
+      <div className="absolute top-3 left-3 flex items-center gap-2">
+        <div className="px-3 py-1.5 rounded-lg bg-gray-900/80 border border-white/[0.08] text-[10px] text-gray-400">
+          {mode === '3d' ? 'Perspective 3D' : 'Vue Isométrique'} — {status}
+        </div>
+        <button
+          onClick={() => fitViewRef.current?.()}
+          className="px-3 py-1.5 rounded-lg bg-blue-600/80 hover:bg-blue-600 border border-blue-500 text-[10px] text-white font-medium transition-colors"
+        >
+          Recentrer
+        </button>
       </div>
 
       {/* Navigation hint */}
       <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-lg bg-gray-900/80 border border-white/[0.08] text-[10px] text-gray-500 pointer-events-none">
-        Glisser: rotation · Molette: zoom · Clic droit: pan
+        Glisser: rotation · Molette: zoom · Clic droit / Shift+glisser: pan · Fleches: pan
       </div>
     </div>
   )
