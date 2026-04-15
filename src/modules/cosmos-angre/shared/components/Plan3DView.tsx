@@ -4,7 +4,7 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 
-interface WallSeg { x1: number; y1: number; x2: number; y2: number; layer: string }
+interface WallSeg { x1: number; y1: number; x2: number; y2: number; layer: string; floorId?: string }
 interface Space3D {
   id: string
   label: string
@@ -12,6 +12,14 @@ interface Space3D {
   bounds: { minX: number; minY: number; width: number; height: number; maxX?: number; maxY?: number; centerX?: number; centerY?: number }
   areaSqm: number
   color: string | null
+  floorId?: string
+}
+interface DetectedFloor3D {
+  id: string
+  label: string
+  bounds: { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number }
+  entityCount: number
+  stackOrder: number
 }
 
 interface Plan3DViewProps {
@@ -19,6 +27,10 @@ interface Plan3DViewProps {
   spaces: Space3D[]
   planBounds: { width: number; height: number }
   mode: '3d' | '3d-advanced'  // '3d' = perspective, '3d-advanced' = isometric
+  /** Detected floor clusters for multi-level view */
+  detectedFloors?: DetectedFloor3D[]
+  /** Selected floor id ('all' = show all stacked, or specific floor) */
+  activeFloorId?: string | 'all'
   className?: string
 }
 
@@ -37,10 +49,34 @@ const ZONE_COLORS: Record<string, string> = {
   exterieur: '#84cc16',
 }
 
-export function Plan3DView({ wallSegments, spaces, planBounds, mode, className = '' }: Plan3DViewProps) {
+export function Plan3DView({
+  wallSegments, spaces, planBounds, mode,
+  detectedFloors = [], activeFloorId = 'all',
+  className = '',
+}: Plan3DViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const fitViewRef = useRef<(() => void) | null>(null)
   const [status, setStatus] = useState('Initialisation...')
+  const [currentFloor, setCurrentFloor] = useState<string | 'all'>(activeFloorId)
+
+  // Filter walls/spaces by selected floor
+  const filteredWalls = React.useMemo(() => {
+    if (currentFloor === 'all' || !detectedFloors.length) return wallSegments
+    return wallSegments.filter(w => !w.floorId || w.floorId === currentFloor)
+  }, [wallSegments, currentFloor, detectedFloors.length])
+
+  const filteredSpaces = React.useMemo(() => {
+    if (currentFloor === 'all' || !detectedFloors.length) return spaces
+    return spaces.filter(s => !s.floorId || s.floorId === currentFloor)
+  }, [spaces, currentFloor, detectedFloors.length])
+
+  // Per-floor bounds (for better framing when a single floor is selected)
+  const effectiveBounds = React.useMemo(() => {
+    if (currentFloor === 'all' || !detectedFloors.length) return planBounds
+    const f = detectedFloors.find(f => f.id === currentFloor)
+    if (!f) return planBounds
+    return { width: f.bounds.width, height: f.bounds.height, offsetX: f.bounds.minX, offsetY: f.bounds.minY }
+  }, [currentFloor, detectedFloors, planBounds])
 
   useEffect(() => {
     const container = containerRef.current
@@ -60,11 +96,13 @@ export function Plan3DView({ wallSegments, spaces, planBounds, mode, className =
         const w = container.clientWidth || 800
         const h = container.clientHeight || 600
 
-        // ── Plan dimensions ──
-        const pw = planBounds.width || 100
-        const ph = planBounds.height || 100
-        const cx = pw / 2
-        const cy = ph / 2
+        // ── Plan dimensions (use effective bounds when floor is filtered) ──
+        const offsetX = (effectiveBounds as { offsetX?: number }).offsetX ?? 0
+        const offsetY = (effectiveBounds as { offsetY?: number }).offsetY ?? 0
+        const pw = effectiveBounds.width || 100
+        const ph = effectiveBounds.height || 100
+        const cx = offsetX + pw / 2
+        const cy = offsetY + ph / 2
         const diag = Math.sqrt(pw * pw + ph * ph)
         const wallHeight = diag * 0.015 // Wall height ~1.5% of diagonal
         const wallThick = Math.max(pw, ph) * 0.003
@@ -140,7 +178,7 @@ export function Plan3DView({ wallSegments, spaces, planBounds, mode, className =
 
         // ── Zone floor slabs (colored by type) ──
         let slabCount = 0
-        for (const sp of spaces) {
+        for (const sp of filteredSpaces) {
           const sw = sp.bounds.width
           const sh = sp.bounds.height
           if (!sw || !sh || sw < 0.5 || sh < 0.5) continue
@@ -177,7 +215,7 @@ export function Plan3DView({ wallSegments, spaces, planBounds, mode, className =
 
         // Group walls by color for instanced rendering
         const wallsByColor = new Map<number, Array<{ x: number; y: number; len: number; angle: number }>>()
-        for (const seg of wallSegments) {
+        for (const seg of filteredWalls) {
           const dx = seg.x2 - seg.x1
           const dy = seg.y2 - seg.y1
           const len = Math.sqrt(dx * dx + dy * dy)
@@ -370,14 +408,14 @@ export function Plan3DView({ wallSegments, spaces, planBounds, mode, className =
         try { cleanupFns[i]() } catch { /* ignore */ }
       }
     }
-  }, [wallSegments, spaces, planBounds, mode])
+  }, [filteredWalls, filteredSpaces, effectiveBounds, mode])
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`} style={{ background: '#0a0a14' }}>
       <div ref={containerRef} className="w-full h-full" />
 
       {/* Status overlay */}
-      <div className="absolute top-3 left-3 flex items-center gap-2">
+      <div className="absolute top-3 left-3 flex items-center gap-2 flex-wrap">
         <div className="px-3 py-1.5 rounded-lg bg-gray-900/80 border border-white/[0.08] text-[10px] text-gray-400">
           {mode === '3d' ? 'Perspective 3D' : 'Vue Isométrique'} — {status}
         </div>
@@ -388,6 +426,33 @@ export function Plan3DView({ wallSegments, spaces, planBounds, mode, className =
           Recentrer
         </button>
       </div>
+
+      {/* Floor selector — top right */}
+      {detectedFloors.length > 1 && (
+        <div className="absolute top-3 right-3 flex items-center gap-1 bg-gray-900/90 border border-white/[0.08] rounded-lg p-1">
+          <span className="text-[9px] text-gray-500 px-2 uppercase tracking-wider">Etage</span>
+          <button
+            onClick={() => setCurrentFloor('all')}
+            className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${
+              currentFloor === 'all' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'
+            }`}
+          >
+            Tous
+          </button>
+          {[...detectedFloors].sort((a, b) => a.stackOrder - b.stackOrder).map(f => (
+            <button
+              key={f.id}
+              onClick={() => setCurrentFloor(f.id)}
+              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${
+                currentFloor === f.id ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              }`}
+            >
+              {f.label}
+              <span className="ml-1 text-[8px] opacity-60">({f.entityCount})</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Navigation hint */}
       <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-lg bg-gray-900/80 border border-white/[0.08] text-[10px] text-gray-500 pointer-events-none">

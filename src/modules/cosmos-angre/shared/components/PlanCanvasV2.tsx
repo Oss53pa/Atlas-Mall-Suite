@@ -251,8 +251,10 @@ export function PlanCanvasV2({
           spaces={plan.spaces.map(s => ({
             id: s.id, label: s.label, type: s.type,
             bounds: s.bounds, areaSqm: s.areaSqm, color: s.color,
+            floorId: s.floorId,
           }))}
           planBounds={plan.bounds}
+          detectedFloors={plan.detectedFloors}
           className="flex-1"
         />
         {/* Plan selector dropdown */}

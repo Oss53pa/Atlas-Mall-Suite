@@ -1780,11 +1780,51 @@ export async function importPlan(
           console.log(`[DXF] ${floorClusters.length} etages detectes (axe ${bestAxis.toUpperCase()}):`, floorClusters.map(c => `${c.label}: ${c.axis}=${c.axisMin.toFixed(0)}..${c.axisMax.toFixed(0)} (${c.entityCount} entites)`))
         }
 
-        // When multiple floor clusters are detected, use SVG preview as background
-        // (it renders the full plan correctly). Don't filter entities — use all of them
-        // with the full bounds so the SVG image aligns properly.
+        // Build DetectedFloor[] for 3D multi-level view
+        const detectedFloors: import('./planEngineTypes').DetectedFloor[] = floorClusters.map((c, i) => {
+          // Compute bounds of entities in this cluster
+          let fMinX = Infinity, fMinY = Infinity, fMaxX = -Infinity, fMaxY = -Infinity
+          for (const e of planEntities) {
+            const v = c.axis === 'x' ? e.bounds.centerX : e.bounds.centerY
+            if (v < c.axisMin || v > c.axisMax) continue
+            if (e.bounds.minX < fMinX) fMinX = e.bounds.minX
+            if (e.bounds.minY < fMinY) fMinY = e.bounds.minY
+            if (e.bounds.maxX > fMaxX) fMaxX = e.bounds.maxX
+            if (e.bounds.maxY > fMaxY) fMaxY = e.bounds.maxY
+          }
+          // Stack order: labels B1=-1, RDC=0, R+1=1, etc. Default to index.
+          const stackOrder = c.label === 'B1' ? -1
+            : c.label === 'RDC' ? 0
+            : /^R\+(\d+)$/.exec(c.label) ? parseInt(/^R\+(\d+)$/.exec(c.label)![1]) : i
+          return {
+            id: c.label,
+            label: c.label,
+            bounds: {
+              minX: (fMinX - minX) * unitScale,
+              minY: (maxY - fMaxY) * unitScale, // Y-flipped for 3D
+              maxX: (fMaxX - minX) * unitScale,
+              maxY: (maxY - fMinY) * unitScale,
+              width: (fMaxX - fMinX) * unitScale,
+              height: (fMaxY - fMinY) * unitScale,
+            },
+            entityCount: c.entityCount,
+            stackOrder,
+          }
+        })
+
+        // When multiple floor clusters are detected
         if (floorClusters.length > 1) {
           state.warnings.push(`${floorClusters.length} etages detectes (axe ${floorClusters[0].axis.toUpperCase()}) — utilisez le panneau Calques pour filtrer`)
+        }
+
+        // Helper: assign floorId to a point (x, y) in drawing units
+        const assignFloor = (x: number, y: number): string | undefined => {
+          if (floorClusters.length < 2) return undefined
+          for (const c of floorClusters) {
+            const v = c.axis === 'x' ? x : y
+            if (v >= c.axisMin && v <= c.axisMax) return c.label
+          }
+          return undefined
         }
 
         state.currentOperation = 'Construction du plan interactif...'
@@ -1856,13 +1896,14 @@ export async function importPlan(
             if (entity.type === 'LINE' && entity.startPoint && entity.endPoint) {
               const s = entity.startPoint, e = entity.endPoint
               const len = Math.sqrt((e.x - s.x) ** 2 + (e.y - s.y) ** 2)
-              // Filter: not too tiny (< 0.1%), allow long walls (up to 95% of plan)
               if (len < bW * 0.001 || len > bW * 0.95) continue
               if (!inBounds(s.x, s.y) && !inBounds(e.x, e.y)) continue
+              const midX = (s.x + e.x) / 2, midY = (s.y + e.y) / 2
               planWalls.push({
                 x1: (s.x - minX) * unitScale, y1: (maxY - s.y) * unitScale,
                 x2: (e.x - minX) * unitScale, y2: (maxY - e.y) * unitScale,
                 layer,
+                floorId: assignFloor(midX, midY),
               })
             }
             if ((entity.type === 'LWPOLYLINE' || entity.type === 'POLYLINE') && entity.vertices && entity.vertices.length >= 2) {
@@ -1872,10 +1913,12 @@ export async function importPlan(
                 const s = verts[vi], e = verts[vi + 1]
                 const len = Math.sqrt((e.x - s.x) ** 2 + (e.y - s.y) ** 2)
                 if (len < bW * 0.001 || len > bW * 0.95) continue
+                const midX = (s.x + e.x) / 2, midY = (s.y + e.y) / 2
                 planWalls.push({
                   x1: (s.x - minX) * unitScale, y1: (maxY - s.y) * unitScale,
                   x2: (e.x - minX) * unitScale, y2: (maxY - e.y) * unitScale,
                   layer,
+                  floorId: assignFloor(midX, midY),
                 })
               }
             }
@@ -1918,9 +1961,24 @@ export async function importPlan(
             wallSegments: planWalls,
             planImageUrl: state.planImageUrl,
             dxfBlobUrl,
+            detectedFloors: detectedFloors.length > 1 ? detectedFloors : undefined,
           }
 
-          console.log(`[DXF] ParsedPlan: ${normalizedEntities.length} entites, ${planSpaces.length} espaces, ${planLayers.length} calques, unite=${detectedUnit}, plan=${normalizedBounds.width.toFixed(1)}x${normalizedBounds.height.toFixed(1)}m`)
+          // Assign floorId to each detected space based on its center position
+          if (detectedFloors.length > 1) {
+            for (const sp of state.parsedPlan.spaces) {
+              const cx = sp.bounds.centerX
+              const cy = sp.bounds.centerY
+              for (const f of detectedFloors) {
+                if (cx >= f.bounds.minX && cx <= f.bounds.maxX && cy >= f.bounds.minY && cy <= f.bounds.maxY) {
+                  sp.floorId = f.id
+                  break
+                }
+              }
+            }
+          }
+
+          console.log(`[DXF] ParsedPlan: ${normalizedEntities.length} entites, ${planSpaces.length} espaces, ${planLayers.length} calques, ${detectedFloors.length} etages, unite=${detectedUnit}, plan=${normalizedBounds.width.toFixed(1)}x${normalizedBounds.height.toFixed(1)}m`)
         } catch (err) {
           console.error('[DXF] ERREUR ParsedPlan:', err)
           // Fallback: generate static SVG preview

@@ -7,23 +7,28 @@ import { DxfViewer } from 'dxf-viewer'
 import type { LayerInfo } from 'dxf-viewer'
 import { Plan3DView } from './Plan3DView'
 
-interface WallSeg { x1: number; y1: number; x2: number; y2: number; layer: string }
-interface Space3D { id: string; label: string; type: string; bounds: { minX: number; minY: number; width: number; height: number }; areaSqm: number; color: string | null }
+interface WallSeg { x1: number; y1: number; x2: number; y2: number; layer: string; floorId?: string }
+interface Space3D { id: string; label: string; type: string; bounds: { minX: number; minY: number; width: number; height: number }; areaSqm: number; color: string | null; floorId?: string }
+interface DetectedFloor3D {
+  id: string
+  label: string
+  bounds: { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number }
+  entityCount: number
+  stackOrder: number
+}
 
 interface DxfViewerCanvasProps {
   dxfUrl: string
   planImageUrl?: string
   viewMode?: '2d' | '3d' | '3d-advanced'
-  /** Wall segments for 3D extrusion (from parsedPlan.wallSegments) */
   wallSegments?: WallSeg[]
-  /** Detected spaces for 3D floor slabs (from parsedPlan.spaces) */
   spaces?: Space3D[]
-  /** Plan bounds in metres */
   planBounds?: { width: number; height: number }
+  detectedFloors?: DetectedFloor3D[]
   className?: string
 }
 
-export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSegments = [], spaces = [], planBounds, className = '' }: DxfViewerCanvasProps) {
+export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSegments = [], spaces = [], planBounds, detectedFloors, className = '' }: DxfViewerCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<DxfViewer | null>(null)
   const [layers, setLayers] = useState<LayerInfo[]>([])
@@ -146,6 +151,7 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSeg
             spaces={spaces}
             planBounds={planBounds}
             mode={viewMode as '3d' | '3d-advanced'}
+            detectedFloors={detectedFloors}
           />
         </div>
       )}

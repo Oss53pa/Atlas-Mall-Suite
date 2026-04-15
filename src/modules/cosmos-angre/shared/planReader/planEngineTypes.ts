@@ -156,6 +156,8 @@ export interface DetectedSpace {
   bounds: Bounds
   color: string | null
   metadata: Record<string, unknown>
+  /** Detected floor cluster id (e.g. 'B1', 'RDC', 'R+1') */
+  floorId?: string
 }
 
 // ─── SPACE STATE (user edits) ─────────────────────────────
@@ -219,6 +221,8 @@ export interface ParsedPlan {
   planImageUrl?: string
   /** Blob URL of raw DXF file for WebGL DxfViewer rendering */
   dxfBlobUrl?: string
+  /** Detected floor clusters (B1, RDC, R+1) for multi-level 3D view */
+  detectedFloors?: DetectedFloor[]
 }
 
 export interface WallSegment {
@@ -226,6 +230,19 @@ export interface WallSegment {
   x2: number; y2: number
   thickness?: number
   layer: string
+  /** Detected floor cluster id (e.g. 'B1', 'RDC', 'R+1') */
+  floorId?: string
+}
+
+export interface DetectedFloor {
+  id: string
+  label: string
+  /** Axis-aligned bounds of this floor cluster in the plan */
+  bounds: { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number }
+  /** Number of entities in this cluster */
+  entityCount: number
+  /** Vertical stack order for 3D (0 = ground, 1 = 1st floor, -1 = basement) */
+  stackOrder: number
 }
 
 // ─── TOOLS ────────────────────────────────────────────────
