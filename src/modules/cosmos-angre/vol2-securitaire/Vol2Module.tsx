@@ -885,6 +885,14 @@ export default function Vol2Module() {
                 selectEntity(id, kind)
                 setPlaceTool(null)
               }}
+              onEntityUpdate={(kind, id, updates) => {
+                if (kind === 'camera') updateCamera(id, updates)
+                else if (kind === 'door') updateDoor(id, updates)
+              }}
+              onEntityDelete={(kind, id) => {
+                if (kind === 'camera') deleteCamera(id)
+                else if (kind === 'door') deleteDoor(id)
+              }}
             />
           ) : viewMode === '3d-advanced' ? (
             <Suspense fallback={

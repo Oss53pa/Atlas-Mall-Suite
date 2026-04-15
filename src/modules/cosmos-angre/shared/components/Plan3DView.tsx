@@ -137,6 +137,10 @@ interface Plan3DViewProps {
   placeMode?: 'camera' | 'door' | 'poi' | 'signage' | 'moment' | null
   /** Callback when user clicks in placement mode — (x, y) in metres, floorId if detected */
   onPlace?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', x: number, y: number, floorId?: string) => void
+  /** Callback to update an existing entity from the 3D edit panel */
+  onEntityUpdate?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', id: string, updates: Record<string, unknown>) => void
+  /** Callback to delete an entity from 3D */
+  onEntityDelete?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', id: string) => void
   className?: string
 }
 
@@ -161,13 +165,19 @@ export function Plan3DView({
   onSpaceClick,
   cameras = [], doors = [], blindSpots = [], showFov: showFovProp,
   pois = [], signage = [], moments = [], journeys = [],
-  placeMode = null, onPlace,
+  placeMode = null, onPlace, onEntityUpdate, onEntityDelete,
   className = '',
 }: Plan3DViewProps) {
   const placeModeRef = useRef<typeof placeMode>(placeMode)
   placeModeRef.current = placeMode
   const onPlaceRef = useRef<typeof onPlace>(onPlace)
   onPlaceRef.current = onPlace
+  const [selectedEntity, setSelectedEntity] = useState<{
+    kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment'
+    id: string
+  } | null>(null)
+  const selectedEntityRef = useRef(selectedEntity)
+  selectedEntityRef.current = selectedEntity
   const [selectedSpace, setSelectedSpace] = useState<Space3D | null>(null)
   const [hoveredSpace, setHoveredSpace] = useState<Space3D | null>(null)
   const [showCameras, setShowCameras] = useState(true)
@@ -575,6 +585,7 @@ export function Plan3DView({
           const mat = new THREE.MeshLambertMaterial({ color, transparent: true, opacity: 0.9 * t.opacity })
           const mesh = new THREE.Mesh(geo, mat)
           mesh.position.set(d.x + t.dx, d.y + t.dy, size / 2 + t.dz)
+          mesh.userData = { entityKind: 'door', entityId: d.id, label: d.label }
           scene.add(mesh)
 
           // Small door label
@@ -631,6 +642,7 @@ export function Plan3DView({
           const body = new THREE.Mesh(bodyGeo, bodyMat)
           body.rotation.x = Math.PI // Point down
           body.position.set(cx2, cy2, camZ)
+          body.userData = { entityKind: 'camera', entityId: cam.id, label: cam.label }
           scene.add(body)
 
           // Mount bracket (small vertical line to ceiling)
@@ -720,6 +732,7 @@ export function Plan3DView({
           const pin = new THREE.Mesh(pinGeo, pinMat)
           pin.rotation.x = Math.PI // Point down
           pin.position.set(poi.x + t.dx, poi.y + t.dy, size + t.dz)
+          pin.userData = { entityKind: 'poi', entityId: poi.id, label: poi.label }
           scene.add(pin)
 
           const ballGeo = new THREE.SphereGeometry(size * 0.8, 10, 10)
@@ -1154,6 +1167,30 @@ export function Plan3DView({
               onPlaceRef.current(pm, p.x, p.y, floorId)
               return
             }
+          }
+
+          // ── Entity selection: raycast on entity meshes (cameras, doors, POIs) ──
+          const entityMeshes: THREE.Mesh[] = []
+          scene.traverse(obj => {
+            if ((obj as THREE.Mesh).isMesh && obj.userData?.entityKind && obj.userData?.entityId) {
+              entityMeshes.push(obj as THREE.Mesh)
+            }
+          })
+          const entityHits = raycaster.intersectObjects(entityMeshes, false)
+          if (entityHits.length) {
+            const m = entityHits[0].object as THREE.Mesh
+            setSelectedEntity({
+              kind: m.userData.entityKind as 'camera' | 'door' | 'poi' | 'signage' | 'moment',
+              id: m.userData.entityId as string,
+            })
+            // Clear zone selection
+            if (selectedOutline) {
+              selectedOutline.geometry.dispose()
+              scene.remove(selectedOutline)
+              selectedOutline = null
+            }
+            setSelectedSpace(null)
+            return
           }
 
           // ── Selection mode: raycast on zone meshes ──
@@ -1670,6 +1707,173 @@ export function Plan3DView({
           </div>
         </div>
       )}
+
+      {/* Entity edit panel (right side) — appears when an entity mesh is clicked */}
+      {selectedEntity && (() => {
+        const kind = selectedEntity.kind
+        const id = selectedEntity.id
+        let entity: Camera3D | Door3D | POI3D | Signage3D | Moment3D | undefined
+        if (kind === 'camera') entity = cameras.find(c => c.id === id)
+        else if (kind === 'door') entity = doors.find(d => d.id === id)
+        else if (kind === 'poi') entity = pois.find(p => p.id === id)
+        else if (kind === 'signage') entity = signage.find(s => s.id === id)
+        else if (kind === 'moment') entity = moments.find(m => m.id === id)
+        if (!entity) return null
+        const accent = kind === 'camera' ? '#6366f1'
+          : kind === 'door' ? '#22c55e'
+          : kind === 'poi' ? '#10b981'
+          : kind === 'signage' ? '#06b6d4'
+          : '#14b8a6'
+        const kindLabel = kind === 'camera' ? 'Camera CCTV'
+          : kind === 'door' ? 'Porte / Sortie'
+          : kind === 'poi' ? 'Point d\'interet'
+          : kind === 'signage' ? 'Signaletique'
+          : 'Moment parcours'
+        return (
+          <div className="absolute top-16 right-3 w-72 rounded-lg shadow-2xl overflow-hidden"
+            style={{ background: '#0e1629', border: `1px solid ${accent}66` }}>
+            <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between"
+              style={{ background: `${accent}22` }}>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full" style={{ background: accent }} />
+                <span className="text-[12px] text-white font-semibold truncate">{kindLabel}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    if (confirm('Supprimer cet element ?')) {
+                      onEntityDelete?.(kind, id)
+                      setSelectedEntity(null)
+                    }
+                  }}
+                  className="text-red-400 hover:text-red-300 text-[10px] px-2"
+                >Suppr.</button>
+                <button
+                  onClick={() => setSelectedEntity(null)}
+                  className="text-gray-400 hover:text-white text-sm leading-none p-1"
+                >✕</button>
+              </div>
+            </div>
+            <div className="px-4 py-3 space-y-2.5">
+              {/* Label */}
+              <div>
+                <label className="text-[9px] uppercase tracking-wider text-gray-500">Nom</label>
+                <input
+                  type="text"
+                  defaultValue={(entity as { label?: string }).label ?? ''}
+                  onBlur={(e) => onEntityUpdate?.(kind, id, { label: e.target.value })}
+                  className="w-full mt-1 px-2 py-1 bg-gray-900 border border-white/[0.06] rounded text-[11px] text-white"
+                />
+              </div>
+
+              {/* Position */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[9px] uppercase tracking-wider text-gray-500">X (m)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    defaultValue={(entity as { x: number }).x.toFixed(1)}
+                    onBlur={(e) => onEntityUpdate?.(kind, id, { x: parseFloat(e.target.value) })}
+                    className="w-full mt-1 px-2 py-1 bg-gray-900 border border-white/[0.06] rounded text-[11px] text-white font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[9px] uppercase tracking-wider text-gray-500">Y (m)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    defaultValue={(entity as { y: number }).y.toFixed(1)}
+                    onBlur={(e) => onEntityUpdate?.(kind, id, { y: parseFloat(e.target.value) })}
+                    className="w-full mt-1 px-2 py-1 bg-gray-900 border border-white/[0.06] rounded text-[11px] text-white font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Camera-specific */}
+              {kind === 'camera' && (() => {
+                const c = entity as Camera3D
+                return (
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[9px] uppercase tracking-wider text-gray-500">Angle (°)</label>
+                        <input
+                          type="number"
+                          step="5"
+                          defaultValue={c.angle}
+                          onBlur={(e) => onEntityUpdate?.(kind, id, { angle: parseFloat(e.target.value) })}
+                          className="w-full mt-1 px-2 py-1 bg-gray-900 border border-white/[0.06] rounded text-[11px] text-white font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] uppercase tracking-wider text-gray-500">FOV (°)</label>
+                        <input
+                          type="number"
+                          step="5"
+                          defaultValue={c.fov}
+                          onBlur={(e) => onEntityUpdate?.(kind, id, { fov: parseFloat(e.target.value) })}
+                          className="w-full mt-1 px-2 py-1 bg-gray-900 border border-white/[0.06] rounded text-[11px] text-white font-mono"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[9px] uppercase tracking-wider text-gray-500">Portee (m)</label>
+                        <input
+                          type="number"
+                          step="1"
+                          defaultValue={c.rangeM}
+                          onBlur={(e) => onEntityUpdate?.(kind, id, { rangeM: parseFloat(e.target.value) })}
+                          className="w-full mt-1 px-2 py-1 bg-gray-900 border border-white/[0.06] rounded text-[11px] text-white font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] uppercase tracking-wider text-gray-500">Priorite</label>
+                        <select
+                          defaultValue={c.priority ?? 'normale'}
+                          onChange={(e) => onEntityUpdate?.(kind, id, { priority: e.target.value })}
+                          className="w-full mt-1 px-1 py-1 bg-gray-900 border border-white/[0.06] rounded text-[11px] text-white"
+                        >
+                          <option value="normale">Normale</option>
+                          <option value="haute">Haute</option>
+                          <option value="critique">Critique</option>
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                )
+              })()}
+
+              {/* Door-specific */}
+              {kind === 'door' && (() => {
+                const d = entity as Door3D
+                return (
+                  <div className="flex gap-3">
+                    <label className="flex items-center gap-1.5 text-[11px] text-gray-300">
+                      <input
+                        type="checkbox"
+                        defaultChecked={!!d.isExit}
+                        onChange={(e) => onEntityUpdate?.(kind, id, { isExit: e.target.checked })}
+                      /> Sortie
+                    </label>
+                    <label className="flex items-center gap-1.5 text-[11px] text-gray-300">
+                      <input
+                        type="checkbox"
+                        defaultChecked={!!d.hasBadge}
+                        onChange={(e) => onEntityUpdate?.(kind, id, { hasBadge: e.target.checked })}
+                      /> Badge
+                    </label>
+                  </div>
+                )
+              })()}
+            </div>
+            <div className="px-4 py-2 border-t border-white/[0.06] bg-gray-950/50 text-[9px] text-gray-500">
+              ID: {id}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Navigation hint */}
       <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-lg bg-gray-900/80 border border-white/[0.08] text-[10px] text-gray-500 pointer-events-none">

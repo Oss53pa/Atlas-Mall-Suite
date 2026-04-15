@@ -45,6 +45,8 @@ interface PlanCanvasV2Props {
   /** 3D placement mode */
   placeMode?: 'camera' | 'door' | 'poi' | 'signage' | 'moment' | null
   onPlace?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', x: number, y: number, floorId?: string) => void
+  onEntityUpdate?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', id: string, updates: Record<string, unknown>) => void
+  onEntityDelete?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', id: string) => void
 }
 
 export function PlanCanvasV2({
@@ -52,7 +54,7 @@ export function PlanCanvasV2({
   onSpaceClick, onCanvasClick, viewMode = '2d',
   cameras, doors, blindSpots,
   pois, signage, moments, journeys,
-  placeMode, onPlace,
+  placeMode, onPlace, onEntityUpdate, onEntityDelete,
 }: PlanCanvasV2Props) {
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -283,6 +285,8 @@ export function PlanCanvasV2({
           journeys={journeys}
           placeMode={placeMode}
           onPlace={onPlace}
+          onEntityUpdate={onEntityUpdate}
+          onEntityDelete={onEntityDelete}
           className="flex-1"
         />
         {/* Plan selector dropdown */}

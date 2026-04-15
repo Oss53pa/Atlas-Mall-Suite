@@ -51,10 +51,12 @@ interface DxfViewerCanvasProps {
   journeys?: JourneyPath3DProp[]
   placeMode?: 'camera' | 'door' | 'poi' | 'signage' | 'moment' | null
   onPlace?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', x: number, y: number, floorId?: string) => void
+  onEntityUpdate?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', id: string, updates: Record<string, unknown>) => void
+  onEntityDelete?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', id: string) => void
   className?: string
 }
 
-export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSegments = [], spaces = [], planBounds, detectedFloors, dimensions, cameras, doors, blindSpots, pois, signage, moments, journeys, placeMode, onPlace, className = '' }: DxfViewerCanvasProps) {
+export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSegments = [], spaces = [], planBounds, detectedFloors, dimensions, cameras, doors, blindSpots, pois, signage, moments, journeys, placeMode, onPlace, onEntityUpdate, onEntityDelete, className = '' }: DxfViewerCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<DxfViewer | null>(null)
   const [layers, setLayers] = useState<LayerInfo[]>([])
@@ -188,6 +190,8 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSeg
             journeys={journeys}
             placeMode={placeMode}
             onPlace={onPlace}
+            onEntityUpdate={onEntityUpdate}
+            onEntityDelete={onEntityDelete}
           />
         </div>
       )}
