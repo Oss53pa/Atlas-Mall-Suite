@@ -9,7 +9,7 @@ import RasterPreview from './RasterPreview'
 interface PlanImportWizardProps {
   floors: Floor[]
   activeFloorId: string
-  onImportComplete: (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string, fileInfo?: { fileName: string; fileSize: number; sourceType: string }, parsedPlan?: ParsedPlan) => void
+  onImportComplete: (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string, fileInfo?: { fileName: string; fileSize: number; sourceType: string }, parsedPlan?: ParsedPlan, rawFile?: File) => void
   onClose: () => void
 }
 
@@ -66,6 +66,7 @@ export default function PlanImportWizard({
   const [imageUrl, setImageUrl] = useState<string>('')
   const [dragOver, setDragOver] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
 
   // ─── STEP 1: UPLOAD ───
 
@@ -85,6 +86,9 @@ export default function PlanImportWizard({
     if (sourceType === 'image_raster') {
       setImageUrl(URL.createObjectURL(file))
     }
+
+    // Keep reference to the uploaded file for persistence at completion
+    setUploadedFile(file)
 
     const result = await importPlan(file, selectedFloorId, {
       onProgress: (s) => setState(s),
@@ -157,8 +161,9 @@ export default function PlanImportWizard({
       state.planImageUrl,
       { fileName: state.fileName || 'Import', fileSize: state.fileSize || 0, sourceType: state.sourceType ?? 'image_raster' },
       state.parsedPlan,
+      uploadedFile ?? undefined,
     )
-  }, [state, selectedFloorId, onImportComplete])
+  }, [state, selectedFloorId, onImportComplete, uploadedFile])
 
   const isReviewing = state.step === 'reviewing'
 

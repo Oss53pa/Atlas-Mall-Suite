@@ -401,7 +401,7 @@ export function PlanCanvasV2({
 
         {/* Layer panel toggle */}
         <LayerPanel
-          layers={plan.layers.length > 0 ? plan.layers : layers}
+          layers={plan.layers}
           onToggle={usePlanEngineStore.getState().toggleLayerVisibility}
         />
 

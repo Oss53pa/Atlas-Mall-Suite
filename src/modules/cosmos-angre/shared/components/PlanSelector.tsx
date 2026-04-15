@@ -26,15 +26,18 @@ const FORMAT_COLOR: Record<PlanSourceType, string> = {
 
 export function PlanSelector() {
   const [open, setOpen] = useState(false)
+  const [reloading, setReloading] = useState<string | null>(null)
   const ref = useRef<HTMLDivElement>(null)
 
   const imports = usePlanImportStore(s => s.imports)
   const parsedPlans = usePlanEngineStore(s => s.parsedPlans)
   const parsedPlan = usePlanEngineStore(s => s.parsedPlan)
   const loadParsedPlan = usePlanEngineStore(s => s.loadParsedPlan)
+  const storeParsedPlan = usePlanEngineStore(s => s.storeParsedPlan)
+  const setParsedPlan = usePlanEngineStore(s => s.setParsedPlan)
 
-  // Only show successful imports that have a parsedPlan stored
-  const available = imports.filter(r => r.status === 'success' && parsedPlans[r.id])
+  // Show all successful imports — parsedPlan presence indicates live, others can be rehydrated
+  const available = imports.filter(r => r.status === 'success')
 
   // Find which import is currently active
   const activeImport = available.find(r => {
@@ -63,9 +66,35 @@ export function PlanSelector() {
     )
   }
 
-  const handleSelect = (importId: string) => {
-    loadParsedPlan(importId)
-    setOpen(false)
+  const handleSelect = async (importId: string) => {
+    // Fast path: already in memory
+    if (parsedPlans[importId]) {
+      loadParsedPlan(importId)
+      setOpen(false)
+      return
+    }
+    // Slow path: rehydrate from IndexedDB (re-parse the saved DXF file)
+    setReloading(importId)
+    try {
+      const cacheMod = await import('../stores/planFileCache')
+      const file = await cacheMod.getPlanFile(importId)
+      if (!file) {
+        console.warn('[PlanSelector] file not found in cache for', importId)
+        return
+      }
+      const record = imports.find(r => r.id === importId)
+      const { importPlan } = await import('../planReader')
+      const result = await importPlan(file, record?.floorId ?? 'floor-rdc')
+      if (result.parsedPlan) {
+        storeParsedPlan(importId, result.parsedPlan)
+        setParsedPlan(result.parsedPlan)
+      }
+    } catch (err) {
+      console.error('[PlanSelector] reload failed:', err)
+    } finally {
+      setReloading(null)
+      setOpen(false)
+    }
   }
 
   const Icon = activeImport ? FORMAT_ICON[activeImport.sourceType] : Map
@@ -99,20 +128,25 @@ export function PlanSelector() {
               const RIcon = FORMAT_ICON[record.sourceType]
               const rColor = FORMAT_COLOR[record.sourceType]
               const isActive = record === activeImport
+              const isLoaded = !!parsedPlans[record.id]
+              const isReloading = reloading === record.id
               return (
                 <button
                   key={record.id}
                   onClick={() => handleSelect(record.id)}
+                  disabled={isReloading}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${
                     isActive
                       ? 'bg-blue-600/15 border-l-2 border-blue-500'
                       : 'hover:bg-gray-800 border-l-2 border-transparent'
-                  }`}
+                  } ${isReloading ? 'opacity-60' : ''}`}
                 >
                   <RIcon size={14} style={{ color: rColor }} className="flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className={`text-[11px] truncate ${isActive ? 'text-white font-semibold' : 'text-gray-300'}`}>
                       {record.fileName}
+                      {!isLoaded && !isReloading && <span className="ml-1 text-[8px] text-amber-500">●</span>}
+                      {isReloading && <span className="ml-1 text-[8px] text-blue-400">recharge…</span>}
                     </p>
                     <p className="text-[9px] text-gray-600">
                       {record.floorLevel} — {record.zonesDetected} zones

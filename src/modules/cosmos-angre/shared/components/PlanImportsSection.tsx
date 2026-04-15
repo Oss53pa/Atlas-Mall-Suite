@@ -21,7 +21,7 @@ interface PlanImportsSectionProps {
   floors: Floor[]
   activeFloorId: string
   /** Callback quand un import est terminé → le parent peut injecter les zones dans son store */
-  onImportComplete: (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string, fileInfo?: { fileName: string; fileSize: number; sourceType: string }, parsedPlan?: ParsedPlan, importId?: string) => void
+  onImportComplete: (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string, fileInfo?: { fileName: string; fileSize: number; sourceType: string }, parsedPlan?: ParsedPlan, importId?: string, rawFile?: File) => void
 }
 
 // ─── Helpers ──────────────────────────────────────────
@@ -78,9 +78,17 @@ export default function PlanImportsSection({
 
   // Handle wizard completion
   const handleImportComplete = useCallback(
-    (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string, fileInfo?: { fileName: string; fileSize: number; sourceType: string }, parsedPlan?: ParsedPlan) => {
+    (zones: Partial<Zone>[], dims: DimEntity[], calibration: CalibrationResult, floorId: string, planImageUrl?: string, fileInfo?: { fileName: string; fileSize: number; sourceType: string }, parsedPlan?: ParsedPlan, rawFile?: File) => {
       const floor = floors.find((f) => f.id === floorId)
       const importId = uid()
+
+      // Persist the raw file to IndexedDB for survival across refresh
+      if (rawFile && fileInfo) {
+        void import('../stores/planFileCache').then(mod => {
+          mod.savePlanFile(importId, rawFile, fileInfo.fileName, fileInfo.sourceType)
+            .catch(err => console.warn('[planFileCache] save failed:', err))
+        })
+      }
       addImport({
         id: importId,
         fileName: fileInfo?.fileName || 'Import',
@@ -100,7 +108,7 @@ export default function PlanImportsSection({
       })
       // Definir automatiquement comme plan actif pour cet etage
       setActivePlan(floorId, importId)
-      onImportComplete(zones, dims, calibration, floorId, planImageUrl, fileInfo, parsedPlan, importId)
+      onImportComplete(zones, dims, calibration, floorId, planImageUrl, fileInfo, parsedPlan, importId, rawFile)
       setShowWizard(false)
     },
     [floors, addImport, setActivePlan, onImportComplete],

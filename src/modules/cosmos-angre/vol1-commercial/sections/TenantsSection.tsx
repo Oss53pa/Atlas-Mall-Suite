@@ -103,7 +103,13 @@ export default function TenantsSection() {
 
           return (
             <div key={t.id} className="rounded-xl overflow-hidden" style={{ background: '#141e2e', border: '1px solid #1e2a3a' }}>
-              <button onClick={() => setExpanded(isOpen ? null : t.id)} className="w-full flex items-center gap-4 p-4 text-left">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setExpanded(isOpen ? null : t.id)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(isOpen ? null : t.id) } }}
+                className="w-full flex items-center gap-4 p-4 text-left cursor-pointer"
+              >
                 <div className="flex items-center justify-center w-10 h-10 rounded-lg text-white font-bold text-[13px]" style={{ background: `${sCfg.color}20`, border: `1px solid ${sCfg.color}40` }}>
                   {t.brandName.slice(0, 2).toUpperCase()}
                 </div>
@@ -125,7 +131,7 @@ export default function TenantsSection() {
                   </button>
                   {isOpen ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
                 </div>
-              </button>
+              </div>
               {isOpen && (
                 <div className="px-4 pb-4 border-t grid grid-cols-2 gap-4" style={{ borderColor: '#1e2a3a' }}>
                   {/* Contact */}
