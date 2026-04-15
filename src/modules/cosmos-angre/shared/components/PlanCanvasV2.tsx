@@ -243,7 +243,18 @@ export function PlanCanvasV2({
   if (plan.dxfBlobUrl) {
     return (
       <div className={`relative w-full h-full flex overflow-hidden bg-gray-950 ${className}`}>
-        <DxfViewerCanvas dxfUrl={plan.dxfBlobUrl} planImageUrl={plan.planImageUrl} viewMode={viewMode} className="flex-1" />
+        <DxfViewerCanvas
+          dxfUrl={plan.dxfBlobUrl}
+          planImageUrl={plan.planImageUrl}
+          viewMode={viewMode}
+          wallSegments={plan.wallSegments}
+          spaces={plan.spaces.map(s => ({
+            id: s.id, label: s.label, type: s.type,
+            bounds: s.bounds, areaSqm: s.areaSqm, color: s.color,
+          }))}
+          planBounds={plan.bounds}
+          className="flex-1"
+        />
         {/* Plan selector dropdown */}
         <PlanSelector />
       </div>

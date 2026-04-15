@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(select:Bash,Edit,Read,Grep)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vite:*)",
+      "Bash(rm -f \"C:/devs/Atlas-Mall-Suite/.git/index.lock\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

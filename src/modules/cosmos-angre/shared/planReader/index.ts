@@ -1843,19 +1843,40 @@ export async function importPlan(
             })
           console.log(`[DXF] Spaces for 3D: ${planSpaces.length} (filtered from ${dedupedZones.length}, removed elongated/oversized)`)
 
-          // Build wall segments (structure layers)
-          const planWalls: WallSegment[] = dxfWallSegs
-            .filter(s => {
-              const len = Math.sqrt((s.x2 - s.x1) ** 2 + (s.y2 - s.y1) ** 2)
-              return len > bW * 0.005 // skip tiny segments
-            })
-            .map(s => ({
-              x1: (s.x1 - minX) * unitScale,
-              y1: (maxY - s.y1) * unitScale,
-              x2: (s.x2 - minX) * unitScale,
-              y2: (maxY - s.y2) * unitScale,
-              layer: 'structure',
-            }))
+          // Build wall segments from STRUCTURE layers only (MUR, WALL, STRUCT, CLOIS, BETON, FACADE)
+          const structureLayerPattern = /mur|wall|struct|beton|facade|maconn|clois|partition/i
+          const planWalls: WallSegment[] = []
+          for (const entity of modelEntities) {
+            const layer = entity.layer ?? '0'
+            if (!structureLayerPattern.test(layer)) continue
+
+            if (entity.type === 'LINE' && entity.startPoint && entity.endPoint) {
+              const s = entity.startPoint, e = entity.endPoint
+              const len = Math.sqrt((e.x - s.x) ** 2 + (e.y - s.y) ** 2)
+              if (len < bW * 0.003 || len > bW * 0.8) continue
+              if (!inBounds(s.x, s.y) && !inBounds(e.x, e.y)) continue
+              planWalls.push({
+                x1: (s.x - minX) * unitScale, y1: (maxY - s.y) * unitScale,
+                x2: (e.x - minX) * unitScale, y2: (maxY - e.y) * unitScale,
+                layer,
+              })
+            }
+            if ((entity.type === 'LWPOLYLINE' || entity.type === 'POLYLINE') && entity.vertices && entity.vertices.length >= 2) {
+              const verts = entity.vertices
+              if (!verts.some(v => inBounds(v.x, v.y))) continue
+              for (let vi = 0; vi < verts.length - 1; vi++) {
+                const s = verts[vi], e = verts[vi + 1]
+                const len = Math.sqrt((e.x - s.x) ** 2 + (e.y - s.y) ** 2)
+                if (len < bW * 0.003 || len > bW * 0.8) continue
+                planWalls.push({
+                  x1: (s.x - minX) * unitScale, y1: (maxY - s.y) * unitScale,
+                  x2: (e.x - minX) * unitScale, y2: (maxY - e.y) * unitScale,
+                  layer,
+                })
+              }
+            }
+          }
+          console.log(`[DXF] ${planWalls.length} wall segments extracted from structure layers`)
 
           // Build layers with default visibility
           const planLayers: PlanLayer[] = Array.from(dxfLayers).map(name => ({
@@ -1872,7 +1893,7 @@ export async function importPlan(
             bounds: normalizedBounds,
             unitScale,
             detectedUnit: detectedUnit as 'mm' | 'cm' | 'm',
-            wallSegments: [],
+            wallSegments: planWalls,
             planImageUrl: state.planImageUrl,
             dxfBlobUrl,
           }

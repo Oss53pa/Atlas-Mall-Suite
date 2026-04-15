@@ -6,15 +6,23 @@ import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { DxfViewer } from 'dxf-viewer'
 import type { LayerInfo } from 'dxf-viewer'
 
+interface WallSeg { x1: number; y1: number; x2: number; y2: number; layer: string }
+interface Space3D { id: string; label: string; type: string; bounds: { minX: number; minY: number; width: number; height: number }; areaSqm: number; color: string | null }
+
 interface DxfViewerCanvasProps {
   dxfUrl: string
-  /** SVG preview blob URL (used as 3D texture — more reliable than canvas capture) */
   planImageUrl?: string
   viewMode?: '2d' | '3d' | '3d-advanced'
+  /** Wall segments for 3D extrusion (from parsedPlan.wallSegments) */
+  wallSegments?: WallSeg[]
+  /** Detected spaces for 3D floor slabs (from parsedPlan.spaces) */
+  spaces?: Space3D[]
+  /** Plan bounds in metres */
+  planBounds?: { width: number; height: number }
   className?: string
 }
 
-export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', className = '' }: DxfViewerCanvasProps) {
+export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSegments = [], spaces = [], planBounds, className = '' }: DxfViewerCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const container3dRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<DxfViewer | null>(null)
@@ -98,14 +106,26 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', classNa
     // Cleanup previous 3D
     if (cleanup3dRef.current) { cleanup3dRef.current(); cleanup3dRef.current = null }
 
-    if (viewMode === '2d' || loading || !viewerRef.current) return
+    if (viewMode === '2d' || loading || !viewerRef.current) {
+      console.log('[3D] Skip:', { viewMode, loading, hasViewer: !!viewerRef.current })
+      return
+    }
 
     const viewer = viewerRef.current
     const container3d = container3dRef.current
-    if (!container3d) return
+    if (!container3d) {
+      console.log('[3D] No container3d ref — retrying in 50ms')
+      const t = setTimeout(() => {}, 50) // dummy to prevent warning
+      clearTimeout(t)
+      return
+    }
 
     const bounds = viewer.GetBounds()
-    if (!bounds) return
+    if (!bounds) {
+      console.log('[3D] No bounds from viewer')
+      return
+    }
+    console.log('[3D] Init:', { viewMode, bounds, wallCount: wallSegments.length, spaceCount: spaces.length, planBounds })
 
     // Dynamic import to use project's Three.js
     import('three').then(async (THREE) => {
@@ -126,81 +146,104 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', classNa
       const diagonal = Math.sqrt(planW * planW + planH * planH)
       const centerX = (bounds.minX + bounds.maxX) / 2
       const centerY = (bounds.minY + bounds.maxY) / 2
-      const WALL_H = planW * 0.015 // wall height proportional to plan
+      const pw2 = planBounds?.width || planW
+      const ph2 = planBounds?.height || planH
+      const cx = pw2 / 2, cy = ph2 / 2
 
       // Camera
       const camera = new THREE.PerspectiveCamera(50, w / h, diagonal * 0.001, diagonal * 10)
       if (viewMode === '3d') {
-        camera.position.set(centerX, centerY - planH * 0.6, diagonal * 0.4)
+        camera.position.set(cx, cy - ph2 * 0.7, diagonal * 0.45)
       } else {
-        const d = diagonal * 0.35
-        camera.position.set(centerX + d, centerY - d, d * 0.9)
+        const d = diagonal * 0.4
+        camera.position.set(cx + d * 0.6, cy - d * 0.6, d * 0.7)
       }
-      camera.lookAt(centerX, centerY, 0)
+      camera.lookAt(cx, cy, 0)
 
-      // ── Load plan image as texture ──
+      const pw = planBounds?.width || planW
+      const ph = planBounds?.height || planH
+      const WALL_H = Math.max(pw, ph) * 0.02 // Wall height ~2% of plan size
+      const WALL_THICK = Math.max(pw, ph) * 0.002 // Wall thickness
+
+      // ── 1. Ground plane with plan texture ──
       const textureLoader = new THREE.TextureLoader()
       const imgUrl = planImageUrl || ''
-      let texture: THREE.Texture
+      let groundMat: THREE.Material
       if (imgUrl) {
-        texture = await new Promise<THREE.Texture>((resolve, reject) => {
-          textureLoader.load(imgUrl, resolve, undefined, reject)
-        })
+        try {
+          const texture = await new Promise<THREE.Texture>((resolve, reject) => {
+            textureLoader.load(imgUrl, resolve, undefined, reject)
+          })
+          texture.minFilter = THREE.LinearFilter
+          texture.magFilter = THREE.LinearFilter
+          groundMat = new THREE.MeshLambertMaterial({ map: texture })
+        } catch {
+          groundMat = new THREE.MeshLambertMaterial({ color: 0x1a1a2e })
+        }
       } else {
-        // Fallback: try canvas capture
-        const canvas2d = viewer.GetCanvas()
-        viewer.Render()
-        texture = canvas2d ? new THREE.CanvasTexture(canvas2d) : new THREE.Texture()
+        groundMat = new THREE.MeshLambertMaterial({ color: 0x1a1a2e })
       }
-      texture.minFilter = THREE.LinearFilter
-      texture.magFilter = THREE.LinearFilter
 
-      // Slight elevation for the plan slab
-      const SLAB_H = diagonal * 0.002
+      const groundGeo = new THREE.PlaneGeometry(pw, ph)
+      const ground = new THREE.Mesh(groundGeo, groundMat)
+      ground.position.set(pw / 2, ph / 2, 0)
+      scene.add(ground)
 
-      // Floor slab (thin box with plan texture on top)
-      const slabGeo = new THREE.BoxGeometry(planW, planH, SLAB_H)
-      const slabTopMat = new THREE.MeshBasicMaterial({ map: texture })
-      const slabSideMat = new THREE.MeshBasicMaterial({ color: 0x2a3a5c })
-      const slabBottomMat = new THREE.MeshBasicMaterial({ color: 0x1a1a2e })
-      const slab = new THREE.Mesh(slabGeo, [
-        slabSideMat, slabSideMat,  // +x, -x
-        slabSideMat, slabSideMat,  // +y, -y
-        slabTopMat, slabBottomMat, // +z (top with texture), -z
-      ])
-      slab.position.set(centerX, centerY, 0)
-      scene.add(slab)
-
-      // Ground grid below the slab
+      // Grid below
       const gridHelper = new THREE.GridHelper(diagonal * 1.5, 30, 0x1a1a3a, 0x111128)
       gridHelper.rotation.x = Math.PI / 2
-      gridHelper.position.set(centerX, centerY, -SLAB_H)
+      gridHelper.position.set(pw / 2, ph / 2, -0.1)
       scene.add(gridHelper)
 
-      // Outer boundary walls (frame around the plan)
-      const FRAME_H = diagonal * 0.008
-      const frameMat = new THREE.MeshBasicMaterial({ color: 0x4a6fa5, transparent: true, opacity: 0.5 })
-      const createFrame = (x1: number, y1: number, x2: number, y2: number) => {
-        const dx = x2 - x1, dy = y2 - y1
+      // ── 2. Extrude wall segments into 3D ──
+      const wallMat = new THREE.MeshLambertMaterial({ color: 0x6b8cba })
+      const wallMatDark = new THREE.MeshLambertMaterial({ color: 0x4a6fa5 })
+      let wallCount = 0
+      for (const seg of wallSegments) {
+        const dx = seg.x2 - seg.x1, dy = seg.y2 - seg.y1
         const len = Math.sqrt(dx * dx + dy * dy)
-        const thick = diagonal * 0.003
-        const geo = new THREE.BoxGeometry(len, thick, FRAME_H)
-        const mesh = new THREE.Mesh(geo, frameMat)
-        mesh.position.set((x1 + x2) / 2, (y1 + y2) / 2, FRAME_H / 2 + SLAB_H / 2)
-        mesh.rotation.z = Math.atan2(dy, dx)
-        scene.add(mesh)
-      }
-      createFrame(bounds.minX, bounds.minY, bounds.maxX, bounds.minY)
-      createFrame(bounds.maxX, bounds.minY, bounds.maxX, bounds.maxY)
-      createFrame(bounds.maxX, bounds.maxY, bounds.minX, bounds.maxY)
-      createFrame(bounds.minX, bounds.maxY, bounds.minX, bounds.minY)
+        if (len < 0.1) continue
 
-      // Lighting
-      scene.add(new THREE.AmbientLight(0xffffff, 1.2))
+        const geo = new THREE.BoxGeometry(len, WALL_THICK, WALL_H)
+        const wall = new THREE.Mesh(geo, wallCount % 2 === 0 ? wallMat : wallMatDark)
+        wall.position.set((seg.x1 + seg.x2) / 2, (seg.y1 + seg.y2) / 2, WALL_H / 2)
+        wall.rotation.z = Math.atan2(dy, dx)
+        scene.add(wall)
+        wallCount++
+      }
+
+      // ── 3. Zone floor slabs (slightly elevated, colored by type) ──
+      const typeColors: Record<string, number> = {
+        commerce: 0x3b82f6, restauration: 0xf59e0b, parking: 0x64748b,
+        technique: 0xef4444, services: 0x14b8a6, circulation: 0x94a3b8,
+        loisirs: 0x06b6d4, backoffice: 0x8b5cf6, sortie_secours: 0x22c55e,
+      }
+      for (const sp of spaces) {
+        const color = sp.color ? parseInt(sp.color.replace('#', ''), 16) : (typeColors[sp.type] ?? 0x3b82f6)
+        const slabGeo = new THREE.BoxGeometry(sp.bounds.width, sp.bounds.height, WALL_H * 0.1)
+        const slabMat = new THREE.MeshLambertMaterial({ color, transparent: true, opacity: 0.4 })
+        const slab = new THREE.Mesh(slabGeo, slabMat)
+        slab.position.set(
+          sp.bounds.minX + sp.bounds.width / 2,
+          sp.bounds.minY + sp.bounds.height / 2,
+          WALL_H * 0.05,
+        )
+        scene.add(slab)
+      }
+
+      // ── 4. Lighting ──
+      scene.add(new THREE.AmbientLight(0x606080, 0.8))
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1.0)
+      dirLight.position.set(pw * 0.5, -ph * 0.3, diagonal * 0.5)
+      scene.add(dirLight)
+      const hemiLight = new THREE.HemisphereLight(0x8899bb, 0x1a1a2e, 0.5)
+      scene.add(hemiLight)
+
+      console.log(`[3D] Scene built: ${wallCount} walls, ${spaces.length} zones, plan=${pw.toFixed(0)}x${ph.toFixed(0)}m`)
 
       // Controls
       const controls = new OrbitControls(camera, renderer.domElement)
-      controls.target.set(centerX, centerY, 0)
+      controls.target.set(cx, cy, 0)
       controls.enableDamping = true
       controls.dampingFactor = 0.08
       controls.maxPolarAngle = Math.PI / 2.1
@@ -284,8 +327,12 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', classNa
       {/* 2D DXF viewer — always mounted and rendered (behind 3D canvas when in 3D mode) */}
       <div ref={containerRef} className="w-full h-full absolute inset-0" style={{ zIndex: is3D ? 0 : 1 }} />
 
-      {/* 3D canvas — above the 2D canvas */}
-      {is3D && <div ref={container3dRef} className="w-full h-full absolute inset-0" style={{ zIndex: 2 }} />}
+      {/* 3D canvas — always mounted, shown only in 3D modes */}
+      <div
+        ref={container3dRef}
+        className="w-full h-full absolute inset-0"
+        style={{ zIndex: 2, display: is3D ? 'block' : 'none' }}
+      />
 
       {/* Loading */}
       {loading && (
