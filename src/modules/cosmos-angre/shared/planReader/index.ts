@@ -1843,17 +1843,21 @@ export async function importPlan(
             })
           console.log(`[DXF] Spaces for 3D: ${planSpaces.length} (filtered from ${dedupedZones.length}, removed elongated/oversized)`)
 
-          // Build wall segments from STRUCTURE layers only (MUR, WALL, STRUCT, CLOIS, BETON, FACADE)
-          const structureLayerPattern = /mur|wall|struct|beton|facade|maconn|clois|partition/i
+          // Build wall segments from ALL significant layers except non-structural ones.
+          // Exclude: dimensions, text, hatches, plants, equipment (NOT walls).
+          const excludeLayerPattern = /^(0|defpoints)$|dim|cote|cotation|annot|text|mtext|hatch|pattern|vegeta|arbre|plant|paysag|mobilier|furni|equip|electro|sanita|lavabo|toilette|poubelle|camion|voiture|car\b|park.?marking|marquage|logo|nord|north|scale|echelle|title|cartouche|border|frame/i
+
           const planWalls: WallSegment[] = []
           for (const entity of modelEntities) {
             const layer = entity.layer ?? '0'
-            if (!structureLayerPattern.test(layer)) continue
+            // Exclude non-wall layers
+            if (excludeLayerPattern.test(layer)) continue
 
             if (entity.type === 'LINE' && entity.startPoint && entity.endPoint) {
               const s = entity.startPoint, e = entity.endPoint
               const len = Math.sqrt((e.x - s.x) ** 2 + (e.y - s.y) ** 2)
-              if (len < bW * 0.003 || len > bW * 0.8) continue
+              // Filter: not too tiny (< 0.2% of plan), not too long (> 50% = probably a reference line)
+              if (len < bW * 0.002 || len > bW * 0.5) continue
               if (!inBounds(s.x, s.y) && !inBounds(e.x, e.y)) continue
               planWalls.push({
                 x1: (s.x - minX) * unitScale, y1: (maxY - s.y) * unitScale,
@@ -1867,7 +1871,7 @@ export async function importPlan(
               for (let vi = 0; vi < verts.length - 1; vi++) {
                 const s = verts[vi], e = verts[vi + 1]
                 const len = Math.sqrt((e.x - s.x) ** 2 + (e.y - s.y) ** 2)
-                if (len < bW * 0.003 || len > bW * 0.8) continue
+                if (len < bW * 0.002 || len > bW * 0.5) continue
                 planWalls.push({
                   x1: (s.x - minX) * unitScale, y1: (maxY - s.y) * unitScale,
                   x2: (e.x - minX) * unitScale, y2: (maxY - e.y) * unitScale,
@@ -1876,7 +1880,25 @@ export async function importPlan(
               }
             }
           }
-          console.log(`[DXF] ${planWalls.length} wall segments extracted from structure layers`)
+
+          // Cap to reasonable number for 3D performance
+          const MAX_WALLS = 15000
+          if (planWalls.length > MAX_WALLS) {
+            // Sort by length (longer = more structural), keep top N
+            planWalls.sort((a, b) => {
+              const la = Math.hypot(a.x2 - a.x1, a.y2 - a.y1)
+              const lb = Math.hypot(b.x2 - b.x1, b.y2 - b.y1)
+              return lb - la
+            })
+            planWalls.length = MAX_WALLS
+          }
+
+          // Log layer distribution for diagnostics
+          const layerCounts = new Map<string, number>()
+          for (const w of planWalls) layerCounts.set(w.layer, (layerCounts.get(w.layer) ?? 0) + 1)
+          const topLayers = Array.from(layerCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10)
+          console.log(`[DXF] ${planWalls.length} wall segments extracted (${layerCounts.size} layers)`)
+          console.log(`[DXF] Top layers:`, Object.fromEntries(topLayers))
 
           // Build layers with default visibility
           const planLayers: PlanLayer[] = Array.from(dxfLayers).map(name => ({

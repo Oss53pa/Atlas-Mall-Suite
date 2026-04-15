@@ -163,28 +163,54 @@ export function Plan3DView({ wallSegments, spaces, planBounds, mode, className =
           slabCount++
         }
 
-        // ── Walls ──
-        const wallMat = new THREE.MeshLambertMaterial({ color: 0xc0c8d8 })
-        const wallMatAlt = new THREE.MeshLambertMaterial({ color: 0x9aa4bb })
+        // ── Walls (use InstancedMesh for performance with many walls) ──
+        // Colors by layer type
+        const wallColorByLayer = (layer: string): number => {
+          const l = layer.toLowerCase()
+          if (/mur|wall|struct|beton|facade|maconn/.test(l)) return 0xd4dae8 // structural = light
+          if (/clois|partition/.test(l)) return 0xaab4cc // partitions = medium
+          if (/porte|door|fenetre|window/.test(l)) return 0x88a8cc // openings = blue-tint
+          if (/escalier|stair|ascens/.test(l)) return 0xb8a088 // stairs = warm
+          return 0xa0a8b8 // default
+        }
 
-        let wallCount = 0
+        // Group walls by color for instanced rendering
+        const wallsByColor = new Map<number, Array<{ x: number; y: number; len: number; angle: number }>>()
         for (const seg of wallSegments) {
           const dx = seg.x2 - seg.x1
           const dy = seg.y2 - seg.y1
           const len = Math.sqrt(dx * dx + dy * dy)
-          if (len < 0.1) continue
+          if (len < 0.05) continue
 
-          const wallGeo = new THREE.BoxGeometry(len, wallThick, wallHeight)
-          const mat = wallCount % 2 === 0 ? wallMat : wallMatAlt
-          const wall = new THREE.Mesh(wallGeo, mat)
-          wall.position.set(
-            (seg.x1 + seg.x2) / 2,
-            (seg.y1 + seg.y2) / 2,
-            wallHeight / 2,
-          )
-          wall.rotation.z = Math.atan2(dy, dx)
-          scene.add(wall)
-          wallCount++
+          const color = wallColorByLayer(seg.layer)
+          if (!wallsByColor.has(color)) wallsByColor.set(color, [])
+          wallsByColor.get(color)!.push({
+            x: (seg.x1 + seg.x2) / 2,
+            y: (seg.y1 + seg.y2) / 2,
+            len,
+            angle: Math.atan2(dy, dx),
+          })
+        }
+
+        let wallCount = 0
+        for (const [color, walls] of wallsByColor.entries()) {
+          const mat = new THREE.MeshLambertMaterial({ color })
+          // Unit box (1x1x1) that we'll scale per instance
+          const baseGeo = new THREE.BoxGeometry(1, 1, 1)
+          const instancedMesh = new THREE.InstancedMesh(baseGeo, mat, walls.length)
+
+          const dummy = new THREE.Object3D()
+          for (let i = 0; i < walls.length; i++) {
+            const w = walls[i]
+            dummy.position.set(w.x, w.y, wallHeight / 2)
+            dummy.rotation.set(0, 0, w.angle)
+            dummy.scale.set(w.len, wallThick, wallHeight)
+            dummy.updateMatrix()
+            instancedMesh.setMatrixAt(i, dummy.matrix)
+          }
+          instancedMesh.instanceMatrix.needsUpdate = true
+          scene.add(instancedMesh)
+          wallCount += walls.length
         }
 
         // ── If no walls, add boundary walls so user sees SOMETHING volumetric ──
