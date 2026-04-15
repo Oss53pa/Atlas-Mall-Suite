@@ -49,6 +49,7 @@ import {
 
 import { useVol2Store } from './store/vol2Store'
 import { usePlanImportStore } from '../shared/stores/planImportStore'
+import { computeCoverage } from '../shared/engines/cameraCoverageEngine'
 import { PlanLayerSelector } from '../shared/components/PlanLayerSelector'
 import type { ChatMessage, Camera, BlindSpot, TransitionNode } from '../shared/proph3t/types'
 import { proph3tAnswer } from '../shared/proph3t/chatEngine'
@@ -422,6 +423,34 @@ export default function Vol2Module() {
     () => floors.find((f) => f.id === activeFloorId) ?? floors[0],
     [floors, activeFloorId],
   )
+
+  // ── Compute real camera coverage + blind spots from placed cameras ──
+  const coverageResult = useMemo(() => {
+    if (!parsedPlan || !parsedPlan.spaces.length || !cameras.length) return null
+    const pw = parsedPlan.bounds.width || 200
+    const ph = parsedPlan.bounds.height || 140
+    return computeCoverage(
+      cameras.filter(c => !c.autoPlaced).map(c => ({
+        id: c.id,
+        floorId: c.floorId,
+        x: c.x > 1 ? c.x : c.x * pw,
+        y: c.y > 1 ? c.y : c.y * ph,
+        angle: c.angle,
+        fov: c.fov,
+        rangeM: c.rangeM || c.range || 10,
+        priority: c.priority,
+      })),
+      parsedPlan.spaces.map(s => ({
+        id: s.id,
+        polygon: s.polygon,
+        areaSqm: s.areaSqm,
+        floorId: s.floorId,
+        type: s.type,
+      })),
+      activeFloorId,
+      { width: pw, height: ph },
+    )
+  }, [cameras, parsedPlan, activeFloorId])
 
   const floorZones = useMemo(
     () => zones.filter((z) => z.floorId === activeFloorId),
@@ -865,7 +894,11 @@ export default function Vol2Module() {
                   isExit: d.isExit, hasBadge: d.hasBadge,
                 }
               })}
-              blindSpots={[]}
+              blindSpots={coverageResult?.blindSpots.map(b => ({
+                id: b.id, floorId: b.floorId,
+                x: b.x, y: b.y, w: b.w, h: b.h,
+                severity: b.severity,
+              })) ?? []}
               placeMode={placeTool === 'camera' ? 'camera' : placeTool === 'door' ? 'door' : null}
               onPlace={(kind, x, y, floorId) => {
                 const id = `${kind}-${Date.now()}`
