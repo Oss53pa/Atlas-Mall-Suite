@@ -943,24 +943,10 @@ export default function Vol3Module() {
                   plan={plan}
                   onCanvasClick={placeTool ? (x, y) => handleCanvasClick(x, y) : undefined}
                   viewMode={viewMode === '2d' ? '2d' : viewMode === '3d' ? '3d' : '3d-advanced'}
-                  pois={floorPois.map(p => ({
-                    id: p.id, floorId: p.floorId, label: p.label,
-                    x: p.x, y: p.y, icon: p.icon, color: p.color,
-                  }))}
-                  signage={floorSignage.map(s => ({
-                    id: s.id, floorId: s.floorId, ref: s.ref,
-                    x: s.x, y: s.y, type: s.type, content: s.content,
-                  }))}
-                  moments={floorMoments.map(m => ({
-                    id: m.id, floorId: m.floorId, number: m.number, name: m.name,
-                    x: m.x, y: m.y,
-                  }))}
-                  journeys={floorMoments.length > 1 ? [{
-                    id: 'journey-default',
-                    floorId: floorMoments[0]?.floorId ?? 'floor-rdc',
-                    points: [...floorMoments].sort((a, b) => a.number - b.number).map(m => ({ x: m.x, y: m.y })),
-                    color: '#34d399',
-                  }] : []}
+                  pois={[]}
+                  signage={[]}
+                  moments={[]}
+                  journeys={[]}
                 />
               )
             })()

@@ -841,29 +841,9 @@ export default function Vol2Module() {
               plan={parsedPlan}
               planImageUrl={activeFloor ? (planImageUrls[activeFloor.id] || usePlanImportStore.getState().getActivePlanUrl(activeFloor.id)) : undefined}
               viewMode={viewMode === '3d-advanced' ? '3d-advanced' : viewMode === '3d' ? '3d' : '2d'}
-              cameras={cameras.map(c => ({
-                id: c.id, floorId: c.floorId, label: c.label,
-                x: c.x * (parsedPlan.bounds.width || 200),
-                y: c.y * (parsedPlan.bounds.height || 140),
-                angle: c.angle, fov: c.fov,
-                rangeM: c.rangeM || c.range || 10,
-                color: c.color,
-                priority: c.priority,
-              }))}
-              doors={doors.map(d => ({
-                id: d.id, floorId: d.floorId, label: d.label,
-                x: d.x * (parsedPlan.bounds.width || 200),
-                y: d.y * (parsedPlan.bounds.height || 140),
-                isExit: d.isExit, hasBadge: d.hasBadge,
-              }))}
-              blindSpots={blindSpots.map(b => ({
-                id: b.id, floorId: b.floorId,
-                x: b.x * (parsedPlan.bounds.width || 200),
-                y: b.y * (parsedPlan.bounds.height || 140),
-                w: b.w * (parsedPlan.bounds.width || 200),
-                h: b.h * (parsedPlan.bounds.height || 140),
-                severity: b.severity,
-              }))}
+              cameras={[]}
+              doors={[]}
+              blindSpots={[]}
             />
           ) : viewMode === '3d-advanced' ? (
             <Suspense fallback={
