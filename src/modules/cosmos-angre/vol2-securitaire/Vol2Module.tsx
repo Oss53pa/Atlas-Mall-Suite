@@ -50,6 +50,7 @@ import {
 import { useVol2Store } from './store/vol2Store'
 import { usePlanImportStore } from '../shared/stores/planImportStore'
 import { computeCoverage } from '../shared/engines/cameraCoverageEngine'
+import { runCompliance } from '../shared/engines/complianceEngine'
 import { PlanLayerSelector } from '../shared/components/PlanLayerSelector'
 import type { ChatMessage, Camera, BlindSpot, TransitionNode } from '../shared/proph3t/types'
 import { proph3tAnswer } from '../shared/proph3t/chatEngine'
@@ -123,10 +124,26 @@ interface NavGroup {
 
 const NAV_GROUPS: NavGroup[] = [
   {
+    key: 'studio',
+    label: 'ATLAS STUDIO · PHASE 0',
+    icon: Sparkles,
+    color: '#a855f7',
+    items: [
+      { id: 'plan_imports', label: 'Plans importés', icon: Upload },
+      { id: 'plan', label: 'Plan interactif', icon: Map },
+      { id: 'analyse', label: 'Analyse Proph3t', icon: BarChart2 },
+      { id: 'simulation', label: 'Simulation', icon: Play },
+      { id: 'budget', label: 'Budget CAPEX', icon: DollarSign },
+      { id: 'rapport', label: 'Rapport', icon: FileText },
+      { id: 'chat', label: 'Proph3t Chat', icon: MessageSquare },
+    ],
+  },
+  {
     key: 'vue',
     label: "VUE D'ENSEMBLE",
     icon: Shield,
     color: '#38bdf8',
+    separator: true,
     items: [
       { id: 'introduction', label: 'Introduction', icon: Info },
       { id: 'kpis', label: 'KPIs', icon: BarChart2 },
@@ -152,22 +169,6 @@ const NAV_GROUPS: NavGroup[] = [
     color: '#38bdf8',
     items: [
       { id: 'organigramme', label: 'Organigramme', icon: Users },
-    ],
-  },
-  {
-    key: 'studio',
-    label: 'ATLAS STUDIO',
-    icon: Sparkles,
-    color: '#a855f7',
-    separator: true,
-    items: [
-      { id: 'plan_imports', label: 'Plans importés', icon: Upload },
-      { id: 'plan', label: 'Plan interactif', icon: Map },
-      { id: 'analyse', label: 'Analyse Proph3t', icon: BarChart2 },
-      { id: 'simulation', label: 'Simulation', icon: Play },
-      { id: 'budget', label: 'Budget CAPEX', icon: DollarSign },
-      { id: 'rapport', label: 'Rapport', icon: FileText },
-      { id: 'chat', label: 'Proph3t Chat', icon: MessageSquare },
     ],
   },
   {
@@ -395,7 +396,7 @@ export default function Vol2Module() {
   // ── View mode state ─────────────────────────────────────
   const [viewMode, setViewMode] = useState<'2d' | '3d' | '3d-advanced'>('2d')
   const [showAllFloors, setShowAllFloors] = useState(false)
-  const [activeTab, setActiveTab] = useState<Vol2Tab>('introduction')
+  const [activeTab, setActiveTab] = useState<Vol2Tab>('plan_imports')
   const [show3DImport, setShow3DImport] = useState(false)
   const [clipping, setClipping] = useState<ClippingConfig>({
     enabled: false,
@@ -451,6 +452,66 @@ export default function Vol2Module() {
       { width: pw, height: ph },
     )
   }, [cameras, parsedPlan, activeFloorId])
+
+  // Compliance report — runs only when cameras/doors/parsedPlan change
+  const complianceReport = useMemo(() => {
+    if (!parsedPlan || !parsedPlan.spaces.length) return null
+    const pw = parsedPlan.bounds.width || 200
+    const ph = parsedPlan.bounds.height || 140
+
+    // Build coverage per detected floor
+    const detFloors = parsedPlan.detectedFloors ?? [{
+      id: activeFloorId,
+      label: activeFloor?.level ?? 'RDC',
+      bounds: { minX: 0, minY: 0, maxX: pw, maxY: ph, width: pw, height: ph },
+      entityCount: 0,
+      stackOrder: 0,
+    }]
+
+    const camerasMetric = cameras.filter(c => !c.autoPlaced).map(c => ({
+      id: c.id,
+      floorId: c.floorId,
+      x: c.x > 1 ? c.x : c.x * pw,
+      y: c.y > 1 ? c.y : c.y * ph,
+      angle: c.angle,
+      fov: c.fov,
+      rangeM: c.rangeM || c.range || 10,
+      priority: c.priority,
+    }))
+    const doorsMetric = doors.map(d => ({
+      id: d.id,
+      floorId: d.floorId,
+      x: d.x > 1 ? d.x : d.x * pw,
+      y: d.y > 1 ? d.y : d.y * ph,
+      isExit: d.isExit,
+      hasBadge: d.hasBadge,
+    }))
+    const spacesForEngine = parsedPlan.spaces.map(s => ({
+      id: s.id,
+      polygon: s.polygon,
+      areaSqm: s.areaSqm,
+      floorId: s.floorId,
+      type: s.type,
+    }))
+
+    const coverage: Record<string, ReturnType<typeof computeCoverage>> = {}
+    for (const f of detFloors) {
+      coverage[f.id] = computeCoverage(camerasMetric, spacesForEngine, f.id, { width: pw, height: ph })
+    }
+
+    return runCompliance({
+      cameras: camerasMetric,
+      doors: doorsMetric,
+      spaces: spacesForEngine,
+      floors: detFloors.map(f => ({
+        id: f.id,
+        label: f.label,
+        totalAreaSqm: f.bounds.width * f.bounds.height,
+      })),
+      coverage,
+      erpType: 'shopping-mall',
+    })
+  }, [cameras, doors, parsedPlan, activeFloorId, activeFloor?.level])
 
   const floorZones = useMemo(
     () => zones.filter((z) => z.floorId === activeFloorId),
@@ -926,6 +987,17 @@ export default function Vol2Module() {
                 if (kind === 'camera') deleteCamera(id)
                 else if (kind === 'door') deleteDoor(id)
               }}
+              compliance={complianceReport ? {
+                scorePct: complianceReport.scorePct,
+                issues: complianceReport.issues.map(i => ({ severity: i.severity, title: i.title })),
+                summary: complianceReport.summary,
+                floorStats: complianceReport.floorStats.map(fs => ({
+                  floorId: fs.floorId,
+                  coveragePct: fs.coveragePct,
+                  camerasCount: fs.camerasCount,
+                  exitsCount: fs.exitsCount,
+                })),
+              } : undefined}
             />
           ) : viewMode === '3d-advanced' ? (
             <Suspense fallback={

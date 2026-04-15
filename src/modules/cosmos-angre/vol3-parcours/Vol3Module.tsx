@@ -137,10 +137,27 @@ interface NavGroup {
 
 const NAV_GROUPS: NavGroup[] = [
   {
+    key: 'studio',
+    label: 'ATLAS STUDIO · PHASE 0',
+    icon: Sparkles,
+    color: '#a855f7',
+    items: [
+      { id: 'plan_imports', label: 'Plans importés', icon: Upload },
+      { id: 'plan', label: 'Plan interactif', icon: Map },
+      { id: 'parcours', label: 'Parcours client', icon: Route },
+      { id: 'wayfinding', label: 'Wayfinding', icon: Navigation },
+      { id: 'signaletique', label: 'Signalétique (plan)', icon: Signpost },
+      { id: 'heatmap', label: 'Heatmap', icon: Flame },
+      { id: 'rapport', label: 'Rapport', icon: FileText },
+      { id: 'chat', label: 'Proph3t Chat', icon: MessageSquare },
+    ],
+  },
+  {
     key: 'vue',
     label: "VUE D'ENSEMBLE",
     icon: LayoutDashboard,
     color: '#34d399',
+    separator: true,
     items: [
       { id: 'intro', label: 'Introduction', icon: Info },
     ],
@@ -203,23 +220,6 @@ const NAV_GROUPS: NavGroup[] = [
     color: '#22c55e',
     items: [
       { id: 'signaletique_page', label: 'Signalétique directionnelle', icon: Signpost },
-    ],
-  },
-  {
-    key: 'studio',
-    label: 'ATLAS STUDIO',
-    icon: Sparkles,
-    color: '#a855f7',
-    separator: true,
-    items: [
-      { id: 'plan_imports', label: 'Plans importés', icon: Upload },
-      { id: 'plan', label: 'Plan interactif', icon: Map },
-      { id: 'parcours', label: 'Parcours client', icon: Route },
-      { id: 'wayfinding', label: 'Wayfinding', icon: Navigation },
-      { id: 'signaletique', label: 'Signalétique (plan)', icon: Signpost },
-      { id: 'heatmap', label: 'Heatmap', icon: Flame },
-      { id: 'rapport', label: 'Rapport', icon: FileText },
-      { id: 'chat', label: 'Proph3t Chat', icon: MessageSquare },
     ],
   },
   {
@@ -398,7 +398,7 @@ export default function Vol3Module() {
   } = store
 
   const [chatInput, setChatInput] = useState('')
-  const [activeTab, setActiveTab] = useState<Vol3Tab>('intro')
+  const [activeTab, setActiveTab] = useState<Vol3Tab>('plan_imports')
   const [heatmapHour, setHeatmapHour] = useState(14) // default 2pm
 
   // ── Sidebar accordion state ─────────────────────────────

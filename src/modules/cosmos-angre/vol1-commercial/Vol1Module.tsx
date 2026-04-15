@@ -37,16 +37,41 @@ interface NavItem {
   id: Vol1Tab
   label: string
   icon: React.ComponentType<{ size?: number; className?: string }>
-  color: string
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard Occupancy', icon: BarChart2, color: '#f59e0b' },
-  { id: 'plan_imports', label: 'Plans importés', icon: Upload, color: '#8b5cf6' },
-  { id: 'plan', label: 'Plan Commercial', icon: Map, color: '#22c55e' },
-  { id: 'tenants', label: 'Preneurs', icon: Users, color: '#38bdf8' },
-  { id: 'proph3t', label: 'Proph3t IA', icon: Brain, color: '#a855f7' },
-  { id: 'exports', label: 'Exports', icon: Download, color: '#6b7280' },
+interface NavGroup {
+  key: string
+  label: string
+  icon: React.ComponentType<{ size?: number; className?: string }>
+  color: string
+  items: NavItem[]
+  separator?: boolean
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    key: 'studio',
+    label: 'ATLAS STUDIO · PHASE 0',
+    icon: Sparkles,
+    color: '#a855f7',
+    items: [
+      { id: 'plan_imports', label: 'Plans importés', icon: Upload },
+      { id: 'plan', label: 'Plan Commercial', icon: Map },
+      { id: 'proph3t', label: 'Analyse Proph3t', icon: Brain },
+      { id: 'exports', label: 'Rapport / Export', icon: Download },
+    ],
+  },
+  {
+    key: 'commercial',
+    label: 'COMMERCIAL',
+    icon: Building2,
+    color: '#f59e0b',
+    separator: true,
+    items: [
+      { id: 'dashboard', label: 'Dashboard Occupancy', icon: BarChart2 },
+      { id: 'tenants', label: 'Preneurs', icon: Users },
+    ],
+  },
 ]
 
 const Loading = () => (
@@ -57,7 +82,7 @@ const Loading = () => (
 
 export default function Vol1Module() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<Vol1Tab>('dashboard')
+  const [activeTab, setActiveTab] = useState<Vol1Tab>('plan_imports')
 
   return (
     <div className="flex h-full" style={{ background: '#080c14', color: '#e2e8f0' }}>
@@ -83,25 +108,47 @@ export default function Vol1Module() {
           <p className="text-[10px] text-slate-500 mt-0.5">Mix enseigne · Occupancy · Preneurs</p>
         </div>
 
-        {/* Nav items */}
-        <nav className="flex-1 p-2 space-y-1">
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon
-            const isActive = activeTab === item.id
+        {/* Nav groups */}
+        <nav className="flex-1 p-2 space-y-3 overflow-y-auto">
+          {NAV_GROUPS.map((group) => {
+            const GroupIcon = group.icon
             return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all"
-                style={{
-                  background: isActive ? `${item.color}12` : 'transparent',
-                  color: isActive ? item.color : '#4a5568',
-                  border: `1px solid ${isActive ? `${item.color}30` : 'transparent'}`,
-                }}
+              <div
+                key={group.key}
+                className={group.separator ? 'pt-3 border-t' : ''}
+                style={group.separator ? { borderColor: '#1e2a3a' } : undefined}
               >
-                <Icon size={15} />
-                {item.label}
-              </button>
+                <div className="flex items-center gap-1.5 px-2 mb-1.5">
+                  <GroupIcon size={11} style={{ color: group.color }} />
+                  <span
+                    className="text-[9px] tracking-[0.15em] font-semibold"
+                    style={{ color: group.color }}
+                  >
+                    {group.label}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  {group.items.map((item) => {
+                    const Icon = item.icon
+                    const isActive = activeTab === item.id
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => setActiveTab(item.id)}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all"
+                        style={{
+                          background: isActive ? `${group.color}12` : 'transparent',
+                          color: isActive ? group.color : '#4a5568',
+                          border: `1px solid ${isActive ? `${group.color}30` : 'transparent'}`,
+                        }}
+                      >
+                        <Icon size={15} />
+                        {item.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             )
           })}
         </nav>

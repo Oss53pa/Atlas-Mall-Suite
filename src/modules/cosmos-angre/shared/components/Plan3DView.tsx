@@ -141,6 +141,13 @@ interface Plan3DViewProps {
   onEntityUpdate?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', id: string, updates: Record<string, unknown>) => void
   /** Callback to delete an entity from 3D */
   onEntityDelete?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', id: string) => void
+  /** Compliance report to display as a badge in the view */
+  compliance?: {
+    scorePct: number
+    issues: Array<{ severity: 'info' | 'warning' | 'critical'; title: string }>
+    summary: { info: number; warning: number; critical: number }
+    floorStats?: Array<{ floorId: string; coveragePct: number; camerasCount: number; exitsCount: number }>
+  }
   className?: string
 }
 
@@ -165,9 +172,10 @@ export function Plan3DView({
   onSpaceClick,
   cameras = [], doors = [], blindSpots = [], showFov: showFovProp,
   pois = [], signage = [], moments = [], journeys = [],
-  placeMode = null, onPlace, onEntityUpdate, onEntityDelete,
+  placeMode = null, onPlace, onEntityUpdate, onEntityDelete, compliance,
   className = '',
 }: Plan3DViewProps) {
+  const [compliancePanelOpen, setCompliancePanelOpen] = useState(false)
   const placeModeRef = useRef<typeof placeMode>(placeMode)
   placeModeRef.current = placeMode
   const onPlaceRef = useRef<typeof onPlace>(onPlace)
@@ -1705,6 +1713,88 @@ export function Plan3DView({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Compliance badge + panel (below floor selector or top-right if no floors) */}
+      {compliance && (
+        <div className={`absolute ${detectedFloors.length > 1 ? 'top-44' : 'top-3'} right-3 w-72`}>
+          <button
+            onClick={() => setCompliancePanelOpen(!compliancePanelOpen)}
+            className={`w-full rounded-lg border shadow-2xl overflow-hidden transition-all ${
+              compliance.scorePct >= 80 ? 'border-emerald-500/40' :
+              compliance.scorePct >= 60 ? 'border-amber-500/40' :
+              'border-red-500/40'
+            }`}
+            style={{ background: '#0e1629' }}
+          >
+            <div className="px-3 py-2 flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[12px] font-bold ${
+                compliance.scorePct >= 80 ? 'bg-emerald-600 text-white' :
+                compliance.scorePct >= 60 ? 'bg-amber-600 text-white' :
+                'bg-red-600 text-white'
+              }`}>
+                {compliance.scorePct.toFixed(0)}
+              </div>
+              <div className="flex-1 text-left">
+                <div className="text-[10px] uppercase tracking-wider text-gray-500">Conformite</div>
+                <div className="flex items-center gap-3 text-[11px] mt-0.5">
+                  {compliance.summary.critical > 0 && (
+                    <span className="text-red-400">● {compliance.summary.critical}</span>
+                  )}
+                  {compliance.summary.warning > 0 && (
+                    <span className="text-amber-400">● {compliance.summary.warning}</span>
+                  )}
+                  {compliance.summary.critical === 0 && compliance.summary.warning === 0 && (
+                    <span className="text-emerald-400">Conforme</span>
+                  )}
+                </div>
+              </div>
+              <span className="text-gray-500 text-[10px]">{compliancePanelOpen ? '▼' : '▶'}</span>
+            </div>
+          </button>
+
+          {compliancePanelOpen && (
+            <div className="mt-1 rounded-lg bg-gray-900/95 border border-white/[0.08] shadow-2xl overflow-hidden">
+              {compliance.floorStats && compliance.floorStats.length > 0 && (
+                <div className="p-2 border-b border-white/[0.06] grid grid-cols-3 gap-1 text-center">
+                  {compliance.floorStats.map(fs => (
+                    <div key={fs.floorId} className="px-2 py-1.5 rounded bg-gray-950/50">
+                      <div className="text-[9px] text-gray-500 uppercase">{fs.floorId}</div>
+                      <div className={`text-[13px] font-bold ${
+                        fs.coveragePct >= 70 ? 'text-emerald-400' :
+                        fs.coveragePct >= 50 ? 'text-amber-400' : 'text-red-400'
+                      }`}>{fs.coveragePct.toFixed(0)}%</div>
+                      <div className="text-[9px] text-gray-600">{fs.camerasCount}cam · {fs.exitsCount}ex</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="max-h-64 overflow-y-auto">
+                {compliance.issues.length === 0 && (
+                  <div className="px-3 py-4 text-center text-emerald-400 text-[11px]">
+                    ✓ Aucun probleme detecte
+                  </div>
+                )}
+                {compliance.issues.map((iss, i) => (
+                  <div key={i} className={`px-3 py-2 border-b border-white/[0.04] ${
+                    iss.severity === 'critical' ? 'bg-red-950/30' :
+                    iss.severity === 'warning' ? 'bg-amber-950/20' : ''
+                  }`}>
+                    <div className="flex items-start gap-2">
+                      <span className={`mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                        iss.severity === 'critical' ? 'bg-red-500' :
+                        iss.severity === 'warning' ? 'bg-amber-500' : 'bg-blue-400'
+                      }`} />
+                      <div className="flex-1">
+                        <div className="text-[11px] text-white font-medium">{iss.title}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

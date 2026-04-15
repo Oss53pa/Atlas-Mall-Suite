@@ -53,10 +53,16 @@ interface DxfViewerCanvasProps {
   onPlace?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', x: number, y: number, floorId?: string) => void
   onEntityUpdate?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', id: string, updates: Record<string, unknown>) => void
   onEntityDelete?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', id: string) => void
+  compliance?: {
+    scorePct: number
+    issues: Array<{ severity: 'info' | 'warning' | 'critical'; title: string }>
+    summary: { info: number; warning: number; critical: number }
+    floorStats?: Array<{ floorId: string; coveragePct: number; camerasCount: number; exitsCount: number }>
+  }
   className?: string
 }
 
-export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSegments = [], spaces = [], planBounds, detectedFloors, dimensions, cameras, doors, blindSpots, pois, signage, moments, journeys, placeMode, onPlace, onEntityUpdate, onEntityDelete, className = '' }: DxfViewerCanvasProps) {
+export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSegments = [], spaces = [], planBounds, detectedFloors, dimensions, cameras, doors, blindSpots, pois, signage, moments, journeys, placeMode, onPlace, onEntityUpdate, onEntityDelete, compliance, className = '' }: DxfViewerCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<DxfViewer | null>(null)
   const [layers, setLayers] = useState<LayerInfo[]>([])
@@ -192,6 +198,7 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSeg
             onPlace={onPlace}
             onEntityUpdate={onEntityUpdate}
             onEntityDelete={onEntityDelete}
+            compliance={compliance}
           />
         </div>
       )}

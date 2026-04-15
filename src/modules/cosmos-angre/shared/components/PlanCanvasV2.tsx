@@ -47,6 +47,12 @@ interface PlanCanvasV2Props {
   onPlace?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', x: number, y: number, floorId?: string) => void
   onEntityUpdate?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', id: string, updates: Record<string, unknown>) => void
   onEntityDelete?: (kind: 'camera' | 'door' | 'poi' | 'signage' | 'moment', id: string) => void
+  compliance?: {
+    scorePct: number
+    issues: Array<{ severity: 'info' | 'warning' | 'critical'; title: string }>
+    summary: { info: number; warning: number; critical: number }
+    floorStats?: Array<{ floorId: string; coveragePct: number; camerasCount: number; exitsCount: number }>
+  }
 }
 
 export function PlanCanvasV2({
@@ -54,7 +60,7 @@ export function PlanCanvasV2({
   onSpaceClick, onCanvasClick, viewMode = '2d',
   cameras, doors, blindSpots,
   pois, signage, moments, journeys,
-  placeMode, onPlace, onEntityUpdate, onEntityDelete,
+  placeMode, onPlace, onEntityUpdate, onEntityDelete, compliance,
 }: PlanCanvasV2Props) {
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -287,6 +293,7 @@ export function PlanCanvasV2({
           onPlace={onPlace}
           onEntityUpdate={onEntityUpdate}
           onEntityDelete={onEntityDelete}
+          compliance={compliance}
           className="flex-1"
         />
         {/* Plan selector dropdown */}
