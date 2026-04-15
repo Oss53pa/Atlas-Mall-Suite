@@ -906,6 +906,105 @@ export default function Vol3Module() {
             onClick={() => store.setLibraryOpen(!libraryOpen)}
             activeColor="text-purple-400"
           />
+
+          {/* Export PDF */}
+          <button
+            onClick={async () => {
+              const parsedPlan = usePlanEngineStore.getState().parsedPlan
+              if (!parsedPlan) {
+                alert('Importer un plan avant d\'exporter.')
+                return
+              }
+              const mod = await import('../shared/engines/parcoursEngine')
+              const pw = parsedPlan.bounds.width || 200
+              const ph = parsedPlan.bounds.height || 140
+              const floorsList = (parsedPlan.detectedFloors ?? [{
+                id: activeFloorId, label: activeFloor?.level ?? 'RDC',
+                bounds: { minX: 0, minY: 0, maxX: pw, maxY: ph, width: pw, height: ph },
+                entityCount: 0, stackOrder: 0,
+              }]).map(f => ({ id: f.id, label: f.label, areaSqm: f.bounds.width * f.bounds.height }))
+
+              const poisMetric = store.pois.map(p => ({
+                id: p.id, floorId: p.floorId, label: p.label,
+                x: p.x > 1 ? p.x : p.x * pw,
+                y: p.y > 1 ? p.y : p.y * ph,
+                category: p.icon, accessible: true,
+              }))
+              const sigsMetric = store.signageItems.map(s => ({
+                id: s.id, floorId: s.floorId, ref: s.ref,
+                x: s.x > 1 ? s.x : s.x * pw,
+                y: s.y > 1 ? s.y : s.y * ph,
+                type: s.type, content: s.content,
+              }))
+              const momentsMetric = store.moments.map(m => ({
+                id: m.id, floorId: m.floorId, number: m.number, name: m.name,
+                x: m.x > 1 ? m.x : m.x * pw,
+                y: m.y > 1 ? m.y : m.y * ph,
+              }))
+              const spacesForEngine = parsedPlan.spaces.map(s => ({
+                id: s.id, floorId: s.floorId, type: s.type,
+                polygon: s.polygon, areaSqm: s.areaSqm, label: s.label,
+              }))
+
+              const report = mod.runParcoursAnalysis({
+                pois: poisMetric, signage: sigsMetric, moments: momentsMetric,
+                spaces: spacesForEngine, floors: floorsList,
+              })
+              const pdf = await mod.generateParcoursReportPDF({
+                projectName: 'Cosmos Angre · Parcours Client',
+                pois: poisMetric, signage: sigsMetric, moments: momentsMetric,
+                floors: floorsList, report,
+              })
+              const url = URL.createObjectURL(pdf)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `parcours-client-${new Date().toISOString().slice(0, 10)}.pdf`
+              a.click()
+              setTimeout(() => URL.revokeObjectURL(url), 1000)
+            }}
+            className="w-9 h-9 mt-1 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-600/30 flex items-center justify-center text-[10px]"
+            title="Exporter rapport parcours PDF"
+          >📄</button>
+          <button
+            onClick={async () => {
+              const parsedPlan = usePlanEngineStore.getState().parsedPlan
+              if (!parsedPlan) {
+                alert('Importer un plan avant d\'exporter.')
+                return
+              }
+              const mod = await import('../shared/engines/parcoursEngine')
+              const pw = parsedPlan.bounds.width || 200
+              const ph = parsedPlan.bounds.height || 140
+              const csv = mod.generateParcoursCSV({
+                pois: store.pois.map(p => ({
+                  id: p.id, floorId: p.floorId, label: p.label,
+                  x: p.x > 1 ? p.x : p.x * pw,
+                  y: p.y > 1 ? p.y : p.y * ph,
+                  category: p.icon, accessible: true,
+                })),
+                signage: store.signageItems.map(s => ({
+                  id: s.id, floorId: s.floorId, ref: s.ref,
+                  x: s.x > 1 ? s.x : s.x * pw,
+                  y: s.y > 1 ? s.y : s.y * ph,
+                  type: s.type, content: s.content,
+                })),
+                moments: store.moments.map(m => ({
+                  id: m.id, floorId: m.floorId, number: m.number, name: m.name,
+                  x: m.x > 1 ? m.x : m.x * pw,
+                  y: m.y > 1 ? m.y : m.y * ph,
+                })),
+              })
+              const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `parcours-client-${new Date().toISOString().slice(0, 10)}.csv`
+              a.click()
+              setTimeout(() => URL.revokeObjectURL(url), 1000)
+            }}
+            className="w-9 h-9 mt-1 rounded-lg bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-600/30 flex items-center justify-center text-[10px]"
+            title="Exporter nomenclature CSV"
+          >📊</button>
         </aside>
 
         {/* ── Center: Floor Plan Canvas / 3D ── */}
@@ -939,15 +1038,84 @@ export default function Vol3Module() {
               const plan = usePlanEngineStore.getState().parsedPlan!
               const pw = plan.bounds.width || 200
               const ph = plan.bounds.height || 140
+              const placeMode3D: 'poi' | 'signage' | 'moment' | null =
+                placeTool === 'poi' ? 'poi' :
+                placeTool === 'signage' ? 'signage' :
+                placeTool === 'moment' ? 'moment' :
+                null
               return (
                 <PlanCanvasV2
                   plan={plan}
                   onCanvasClick={placeTool ? (x, y) => handleCanvasClick(x, y) : undefined}
                   viewMode={viewMode === '2d' ? '2d' : viewMode === '3d' ? '3d' : '3d-advanced'}
-                  pois={[]}
-                  signage={[]}
-                  moments={[]}
-                  journeys={[]}
+                  pois={floorPois.map(p => ({
+                    id: p.id, floorId: p.floorId, label: p.label,
+                    x: p.x > 1 ? p.x : p.x * pw,
+                    y: p.y > 1 ? p.y : p.y * ph,
+                    icon: p.icon, color: p.color,
+                  }))}
+                  signage={floorSignage.map(s => ({
+                    id: s.id, floorId: s.floorId, ref: s.ref,
+                    x: s.x > 1 ? s.x : s.x * pw,
+                    y: s.y > 1 ? s.y : s.y * ph,
+                    type: s.type, content: s.content,
+                  }))}
+                  moments={floorMoments.map(m => ({
+                    id: m.id, floorId: m.floorId, number: m.number, name: m.name,
+                    x: m.x > 1 ? m.x : m.x * pw,
+                    y: m.y > 1 ? m.y : m.y * ph,
+                  }))}
+                  journeys={floorMoments.length > 1 ? [{
+                    id: 'journey-default',
+                    floorId: floorMoments[0]?.floorId ?? activeFloorId,
+                    points: [...floorMoments].sort((a, b) => a.number - b.number).map(m => ({
+                      x: m.x > 1 ? m.x : m.x * pw,
+                      y: m.y > 1 ? m.y : m.y * ph,
+                    })),
+                    color: '#34d399',
+                  }] : []}
+                  placeMode={placeMode3D}
+                  onPlace={(kind, x, y, floorId) => {
+                    const id = `${kind}-${Date.now()}`
+                    if (kind === 'poi') {
+                      store.addPoi({
+                        id, floorId: floorId || activeFloorId,
+                        label: `POI ${store.pois.length + 1}`,
+                        x, y,
+                        icon: 'info',
+                        color: '#10b981',
+                      } as unknown as Parameters<typeof store.addPoi>[0])
+                    } else if (kind === 'signage') {
+                      store.addSignageItem({
+                        id, floorId: floorId || activeFloorId,
+                        ref: `SIG-${store.signageItems.length + 1}`,
+                        x, y, type: 'directionnel', content: '',
+                      } as unknown as Parameters<typeof store.addSignageItem>[0])
+                    } else if (kind === 'moment') {
+                      const newMoment = {
+                        id, floorId: floorId || activeFloorId,
+                        number: store.moments.length + 1,
+                        name: `Moment ${store.moments.length + 1}`,
+                        x, y,
+                      }
+                      store.setMoments([...store.moments, newMoment as unknown as (typeof store.moments)[number]])
+                    }
+                    setPlaceTool(null)
+                  }}
+                  onEntityUpdate={(kind, id, updates) => {
+                    if (kind === 'poi') store.updatePoi(id, updates as Parameters<typeof store.updatePoi>[1])
+                    else if (kind === 'signage') store.updateSignageItem(id, updates as Parameters<typeof store.updateSignageItem>[1])
+                    else if (kind === 'moment') {
+                      store.setMoments(store.moments.map(m => m.id === id ? { ...m, ...updates } as typeof m : m))
+                    }
+                  }}
+                  onEntityDelete={(kind, id) => {
+                    if (kind === 'poi') store.deletePoi(id)
+                    else if (kind === 'signage') store.deleteSignageItem(id)
+                    else if (kind === 'moment') {
+                      store.setMoments(store.moments.filter(m => m.id !== id))
+                    }
+                  }}
                 />
               )
             })()

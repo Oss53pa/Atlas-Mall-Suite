@@ -14,6 +14,8 @@ import { usePlanEngineStore } from '../../shared/stores/planEngineStore'
 import { PlanCanvasV2 } from '../../shared/components/PlanCanvasV2'
 import type { ParsedPlan, ViewMode, DetectedSpace } from '../../shared/planReader/planEngineTypes'
 import { runCommercialAnalysis } from '../../shared/engines/commercialEngine'
+import SpaceFormModal from '../components/SpaceFormModal'
+import { Plus, Pencil } from 'lucide-react'
 
 const View3DSection = lazy(() => import('../../shared/view3d/View3DSection'))
 
@@ -51,6 +53,7 @@ export default function PlanCommercialSection() {
 
   const floors = ['B1', 'RDC', 'R+1']
   const [activeFloor, setActiveFloor] = useState('RDC')
+  const [spaceFormMode, setSpaceFormMode] = useState<'create' | 'edit' | null>(null)
 
   // Active plan from engine store or empty placeholder
   const plan = parsedPlan ?? EMPTY_PLAN
@@ -157,6 +160,28 @@ export default function PlanCommercialSection() {
               {f}
             </button>
           ))}
+        </div>
+
+        {/* Add/edit cellule CTA */}
+        <div className="pt-3 border-t space-y-1" style={{ borderColor: '#1e2a3a' }}>
+          <p className="text-[10px] text-slate-500 mb-1">CELLULES</p>
+          <button
+            onClick={() => setSpaceFormMode('create')}
+            className="w-full flex items-center justify-center gap-1.5 text-[12px] px-3 py-2 rounded-md bg-amber-600 hover:bg-amber-500 text-white transition-colors"
+          >
+            <Plus size={13} /> Ajouter
+          </button>
+          {selectedSpaceId && (
+            <button
+              onClick={() => setSpaceFormMode('edit')}
+              className="w-full flex items-center justify-center gap-1.5 text-[11px] px-3 py-1.5 rounded-md border border-white/[0.08] text-slate-300 hover:text-white hover:border-white/[0.15] transition-colors"
+            >
+              <Pencil size={11} /> Modifier la sélection
+            </button>
+          )}
+          <p className="text-[9px] text-slate-600 pt-1">
+            {spaces.length} cellule{spaces.length > 1 ? 's' : ''} enregistrée{spaces.length > 1 ? 's' : ''}
+          </p>
         </div>
 
         {/* Commercial analysis score + exports */}
@@ -575,6 +600,16 @@ export default function PlanCommercialSection() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Space CRUD modal */}
+      {spaceFormMode && (
+        <SpaceFormModal
+          mode={spaceFormMode}
+          space={spaceFormMode === 'edit' ? selectedSpace : undefined}
+          defaultFloorId={floorId}
+          onClose={() => setSpaceFormMode(null)}
+        />
       )}
     </div>
   )

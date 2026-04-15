@@ -531,11 +531,7 @@ const initialState = {
   blindSpots: [] as BlindSpot[],
 
   score: null as SecurityScore | null,
-  coverageByFloor: {
-    'floor-b1': 0,
-    'floor-rdc': 68,
-    'floor-r1': 0,
-  } as Record<string, number>,
+  coverageByFloor: {} as Record<string, number>,
 
   evacResult: null as EvacuationResult | null,
   monteCarloResults: [] as MonteCarloResult[],
@@ -1036,11 +1032,7 @@ export const useVol2Store = create<Vol2State>()((set) => ({
     const hasImportedData = currentZones.length > 0 && currentZones.some(z => z.id.startsWith('import-') || z.id.startsWith('dwg-') || z.id.startsWith('dxf-') || z.id.startsWith('proph3t-') || z.id.startsWith('txt-zone-'))
 
     if (hasImportedData) {
-      // Already have imported zones — only load floors/transitions if needed, keep zones intact
-      const s = useVol2Store.getState()
-      if (s.floors.length === 0) {
-        set({ floors: MOCK_FLOORS, activeFloorId: s.activeFloorId || 'floor-rdc', transitions: MOCK_TRANSITIONS })
-      }
+      // Already have imported zones — keep them intact, do not inject seed data
       set({ isHydrating: false, projectId: projetId })
       return
     }
@@ -1060,28 +1052,13 @@ export const useVol2Store = create<Vol2State>()((set) => ({
           signageItems: data.signageItems,
           isHydrating: false,
         })
-      } else if (shouldUseMockData()) {
-        // No data in Supabase — fall back to mock data for demo (dev only)
-        set({
-          projectId: projetId,
-          floors: MOCK_FLOORS,
-          activeFloorId: 'floor-rdc',
-          transitions: MOCK_TRANSITIONS,
-          zones: MOCK_ZONES,
-          cameras: MOCK_CAMERAS,
-          isHydrating: false,
-        })
       } else {
-        // Production: start empty — user will import or create data
+        // No remote data: start empty — user populates via forms or DXF import
         set({ projectId: projetId, isHydrating: false })
       }
     } catch (err) {
       console.warn('[Vol2Store] Hydration failed:', err)
-      const fallback = shouldUseMockData()
-        ? { floors: MOCK_FLOORS, activeFloorId: 'floor-rdc', transitions: MOCK_TRANSITIONS, zones: MOCK_ZONES, cameras: MOCK_CAMERAS }
-        : {}
       set({
-        ...fallback,
         isHydrating: false,
         hydrationError: err instanceof Error ? err.message : 'Erreur de chargement',
       })
