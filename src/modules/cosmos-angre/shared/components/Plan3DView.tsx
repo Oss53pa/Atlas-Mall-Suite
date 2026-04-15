@@ -169,8 +169,10 @@ export function Plan3DView({
   const [showSignage, setShowSignage] = useState(true)
   const [showMoments, setShowMoments] = useState(true)
   const [showJourneys, setShowJourneys] = useState(true)
+  const [shadowsEnabled, setShadowsEnabled] = useState(true)
   const containerRef = useRef<HTMLDivElement>(null)
   const fitViewRef = useRef<(() => void) | null>(null)
+  const exportRef = useRef<(() => void) | null>(null)
   const [status, setStatus] = useState('Initialisation...')
   const [currentFloor, setCurrentFloor] = useState<string | 'all'>(activeFloorId)
   const [showDimensions, setShowDimensions] = useState(false)
@@ -338,10 +340,15 @@ export function Plan3DView({
         setStatus(`Rendu 3D: ${pw.toFixed(0)}×${ph.toFixed(0)}m, ${wallSegments.length} murs, ${spaces.length} zones`)
 
         // ── Renderer ──
-        const renderer = new THREE.WebGLRenderer({ antialias: true })
+        const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true })
         renderer.setSize(w, h)
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
         renderer.setClearColor(0x0a0a14, 1)
+        renderer.shadowMap.enabled = shadowsEnabled
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap
+        renderer.outputColorSpace = THREE.SRGBColorSpace
+        renderer.toneMapping = THREE.ACESFilmicToneMapping
+        renderer.toneMappingExposure = 1.1
         container.appendChild(renderer.domElement)
         cleanupFns.push(() => {
           if (renderer.domElement.parentElement) {
@@ -367,33 +374,57 @@ export function Plan3DView({
         camera.up.set(0, 0, 1) // Z-up (architectural convention)
         camera.lookAt(cx, cy, 0)
 
-        // ── Lighting ──
-        const ambient = new THREE.AmbientLight(0xffffff, 0.7)
+        // ── Lighting (with shadows) ──
+        const ambient = new THREE.AmbientLight(0xffffff, 0.55)
         scene.add(ambient)
 
-        const dir1 = new THREE.DirectionalLight(0xffffff, 0.8)
-        dir1.position.set(pw, -ph, diag * 0.8)
+        // Main sunlight — casts shadows
+        const dir1 = new THREE.DirectionalLight(0xfff5e0, 1.1)
+        dir1.position.set(cx + pw * 0.6, cy - ph * 0.7, diag * 0.9)
+        dir1.castShadow = shadowsEnabled
+        if (shadowsEnabled) {
+          dir1.shadow.mapSize.width = 2048
+          dir1.shadow.mapSize.height = 2048
+          dir1.shadow.camera.left = -pw * 0.8
+          dir1.shadow.camera.right = pw * 0.8
+          dir1.shadow.camera.top = ph * 0.8
+          dir1.shadow.camera.bottom = -ph * 0.8
+          dir1.shadow.camera.near = 0.1
+          dir1.shadow.camera.far = diag * 3
+          dir1.shadow.bias = -0.0005
+          dir1.shadow.normalBias = 0.02
+        }
+        dir1.target.position.set(cx, cy, 0)
         scene.add(dir1)
+        scene.add(dir1.target)
 
-        const dir2 = new THREE.DirectionalLight(0xaabbcc, 0.4)
-        dir2.position.set(-pw * 0.5, ph * 0.8, diag * 0.5)
+        // Fill light (cool, no shadows)
+        const dir2 = new THREE.DirectionalLight(0xaabbdd, 0.35)
+        dir2.position.set(cx - pw * 0.5, cy + ph * 0.8, diag * 0.5)
         scene.add(dir2)
 
-        const hemi = new THREE.HemisphereLight(0xe0e8ff, 0x202030, 0.3)
+        // Sky / ground hemisphere
+        const hemi = new THREE.HemisphereLight(0xc8d8f0, 0x202030, 0.35)
         scene.add(hemi)
 
         // ── Ground plane ──
-        const groundGeo = new THREE.PlaneGeometry(pw * 1.2, ph * 1.2)
-        const groundMat = new THREE.MeshLambertMaterial({ color: 0x1a1f2e })
+        const groundGeo = new THREE.PlaneGeometry(pw * 1.4, ph * 1.4)
+        const groundMat = new THREE.MeshStandardMaterial({
+          color: 0x151a2a, roughness: 0.85, metalness: 0.0,
+        })
         const ground = new THREE.Mesh(groundGeo, groundMat)
         ground.position.set(cx, cy, -0.2)
+        ground.receiveShadow = shadowsEnabled
         scene.add(ground)
 
         // ── Plan base (slab showing the plan outline) ──
         const slabGeo = new THREE.BoxGeometry(pw, ph, 0.1)
-        const slabMat = new THREE.MeshLambertMaterial({ color: 0x2a3044 })
+        const slabMat = new THREE.MeshStandardMaterial({
+          color: 0x2a3550, roughness: 0.75, metalness: 0.05,
+        })
         const slab = new THREE.Mesh(slabGeo, slabMat)
         slab.position.set(cx, cy, -0.05)
+        slab.receiveShadow = shadowsEnabled
         scene.add(slab)
 
         // ── Grid helper ──
@@ -846,13 +877,17 @@ export function Plan3DView({
         let wallCount = 0
         for (const { color, walls } of wallsByGroup.values()) {
           const op = walls[0]?.opacity ?? 1
-          const mat = new THREE.MeshLambertMaterial({
+          const mat = new THREE.MeshStandardMaterial({
             color,
+            roughness: 0.7,
+            metalness: 0.05,
             transparent: op < 1,
             opacity: op,
           })
           const baseGeo = new THREE.BoxGeometry(1, 1, 1)
           const instancedMesh = new THREE.InstancedMesh(baseGeo, mat, walls.length)
+          instancedMesh.castShadow = shadowsEnabled && op >= 1
+          instancedMesh.receiveShadow = shadowsEnabled
 
           const dummy = new THREE.Object3D()
           for (let i = 0; i < walls.length; i++) {
@@ -1125,6 +1160,20 @@ export function Plan3DView({
         }
         fitViewRef.current = fitView
 
+        // ── Export screenshot ──
+        const exportScreenshot = () => {
+          renderer.render(scene, camera)
+          const url = renderer.domElement.toDataURL('image/png')
+          const a = document.createElement('a')
+          a.href = url
+          const stamp = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 16)
+          a.download = `plan-3d-${mode}-${stamp}.png`
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+        }
+        exportRef.current = exportScreenshot
+
         // ── Animate ──
         let rafId = 0
         const animate = () => {
@@ -1205,7 +1254,7 @@ export function Plan3DView({
         try { cleanupFns[i]() } catch { /* ignore */ }
       }
     }
-  }, [filteredWalls, filteredSpaces, filteredDims, filteredCameras, filteredDoors, filteredBlindSpots, filteredPois, filteredSignage, filteredMoments, filteredJourneys, effectiveBounds, mode, showLabels, showFov, currentFloor, detectedFloors, floorOpacity])
+  }, [filteredWalls, filteredSpaces, filteredDims, filteredCameras, filteredDoors, filteredBlindSpots, filteredPois, filteredSignage, filteredMoments, filteredJourneys, effectiveBounds, mode, showLabels, showFov, currentFloor, detectedFloors, floorOpacity, shadowsEnabled])
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`} style={{ background: '#0a0a14' }}>
@@ -1221,6 +1270,22 @@ export function Plan3DView({
           className="px-3 py-1.5 rounded-lg bg-blue-600/80 hover:bg-blue-600 border border-blue-500 text-[10px] text-white font-medium transition-colors"
         >
           Recentrer
+        </button>
+        <button
+          onClick={() => setShadowsEnabled(!shadowsEnabled)}
+          className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
+            shadowsEnabled ? 'bg-slate-600/80 hover:bg-slate-600 border-slate-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
+          }`}
+          title="Ombres portees"
+        >
+          Ombres
+        </button>
+        <button
+          onClick={() => exportRef.current?.()}
+          className="px-3 py-1.5 rounded-lg bg-purple-600/80 hover:bg-purple-600 border border-purple-500 text-[10px] text-white font-medium transition-colors"
+          title="Exporter la vue 3D en PNG"
+        >
+          📷 Export
         </button>
         <button
           onClick={() => setShowLabels(!showLabels)}
