@@ -67,19 +67,41 @@ export function Plan3DView({
   const fitViewRef = useRef<(() => void) | null>(null)
   const [status, setStatus] = useState('Initialisation...')
   const [currentFloor, setCurrentFloor] = useState<string | 'all'>(activeFloorId)
-  const [showDimensions, setShowDimensions] = useState(false) // OFF by default — dimensions are noisy
+  const [showDimensions, setShowDimensions] = useState(false)
   const [showLabels, setShowLabels] = useState(true)
+  const [floorOpacity, setFloorOpacity] = useState<Record<string, number>>({})
+  const [hiddenFloors, setHiddenFloors] = useState<Set<string>>(new Set())
+  const [hiddenLayers, setHiddenLayers] = useState<Set<string>>(new Set())
+  const [layerPanelOpen, setLayerPanelOpen] = useState(false)
 
-  // Filter walls/spaces by selected floor
+  // Discover unique layer names from wall segments
+  const allLayers = React.useMemo(() => {
+    const set = new Set<string>()
+    for (const w of wallSegments) set.add(w.layer)
+    return Array.from(set).sort()
+  }, [wallSegments])
+
+  // Filter walls/spaces by selected floor + hidden floors + hidden layers
   const filteredWalls = React.useMemo(() => {
-    if (currentFloor === 'all' || !detectedFloors.length) return wallSegments
-    return wallSegments.filter(w => !w.floorId || w.floorId === currentFloor)
-  }, [wallSegments, currentFloor, detectedFloors.length])
+    let ws = wallSegments
+    if (hiddenLayers.size > 0) ws = ws.filter(w => !hiddenLayers.has(w.layer))
+    if (currentFloor === 'all' && detectedFloors.length > 0) {
+      ws = ws.filter(w => !w.floorId || !hiddenFloors.has(w.floorId))
+    } else if (currentFloor !== 'all' && detectedFloors.length > 0) {
+      ws = ws.filter(w => !w.floorId || w.floorId === currentFloor)
+    }
+    return ws
+  }, [wallSegments, currentFloor, detectedFloors.length, hiddenFloors, hiddenLayers])
 
   const filteredSpaces = React.useMemo(() => {
-    if (currentFloor === 'all' || !detectedFloors.length) return spaces
-    return spaces.filter(s => !s.floorId || s.floorId === currentFloor)
-  }, [spaces, currentFloor, detectedFloors.length])
+    let sp = spaces
+    if (currentFloor === 'all' && detectedFloors.length > 0) {
+      sp = sp.filter(s => !s.floorId || !hiddenFloors.has(s.floorId))
+    } else if (currentFloor !== 'all' && detectedFloors.length > 0) {
+      sp = sp.filter(s => !s.floorId || s.floorId === currentFloor)
+    }
+    return sp
+  }, [spaces, currentFloor, detectedFloors.length, hiddenFloors])
 
   const filteredDims = React.useMemo(() => {
     if (!showDimensions) return []
@@ -113,16 +135,47 @@ export function Plan3DView({
         const w = container.clientWidth || 800
         const h = container.clientHeight || 600
 
-        // ── Plan dimensions (use effective bounds when floor is filtered) ──
+        // ── Plan dimensions & stacking parameters ──
+        const isMultiFloorMode = currentFloor === 'all' && detectedFloors.length > 1
         const offsetX = (effectiveBounds as { offsetX?: number }).offsetX ?? 0
         const offsetY = (effectiveBounds as { offsetY?: number }).offsetY ?? 0
-        const pw = effectiveBounds.width || 100
-        const ph = effectiveBounds.height || 100
-        const cx = offsetX + pw / 2
-        const cy = offsetY + ph / 2
+
+        // When showing all floors stacked, recenter each floor and use average single-floor size
+        let pw: number, ph: number, cx: number, cy: number
+        if (isMultiFloorMode) {
+          // Use the largest floor's dimensions as reference
+          const maxFloor = detectedFloors.reduce((a, b) => a.bounds.width * a.bounds.height > b.bounds.width * b.bounds.height ? a : b)
+          pw = maxFloor.bounds.width
+          ph = maxFloor.bounds.height
+          cx = pw / 2
+          cy = ph / 2
+        } else {
+          pw = effectiveBounds.width || 100
+          ph = effectiveBounds.height || 100
+          cx = offsetX + pw / 2
+          cy = offsetY + ph / 2
+        }
         const diag = Math.sqrt(pw * pw + ph * ph)
         const wallHeight = diag * 0.015 // Wall height ~1.5% of diagonal
         const wallThick = Math.max(pw, ph) * 0.003
+        // Stack spacing: wall height + small gap
+        const FLOOR_SPACING = wallHeight * 1.5
+
+        // Per-floor coordinate transform: recenter floor and lift to stack position
+        const floorTransform = (floorId?: string): { dx: number; dy: number; dz: number; opacity: number } => {
+          if (!isMultiFloorMode || !floorId) return { dx: 0, dy: 0, dz: 0, opacity: 1 }
+          const f = detectedFloors.find(f => f.id === floorId)
+          if (!f) return { dx: 0, dy: 0, dz: 0, opacity: 1 }
+          // Translate floor so its center matches (cx, cy)
+          const fCx = (f.bounds.minX + f.bounds.maxX) / 2
+          const fCy = (f.bounds.minY + f.bounds.maxY) / 2
+          return {
+            dx: cx - fCx,
+            dy: cy - fCy,
+            dz: f.stackOrder * FLOOR_SPACING,
+            opacity: floorOpacity[floorId] ?? 1,
+          }
+        }
 
         setStatus(`Rendu 3D: ${pw.toFixed(0)}×${ph.toFixed(0)}m, ${wallSegments.length} murs, ${spaces.length} zones`)
 
@@ -258,26 +311,29 @@ export function Plan3DView({
 
           const colorHex = sp.color || ZONE_COLORS[sp.type] || '#3b82f6'
           const color = new THREE.Color(colorHex)
+          const t = floorTransform(sp.floorId)
 
           const zoneGeo = new THREE.BoxGeometry(sw, sh, 0.15)
           const zoneMat = new THREE.MeshLambertMaterial({
             color,
             transparent: true,
-            opacity: 0.5,
+            opacity: 0.5 * t.opacity,
           })
           const zone = new THREE.Mesh(zoneGeo, zoneMat)
-          const zx = sp.bounds.minX + sw / 2
-          const zy = sp.bounds.minY + sh / 2
-          zone.position.set(zx, zy, 0.08)
-          zone.userData = { spaceId: sp.id, spaceLabel: sp.label }
+          const zx = sp.bounds.minX + sw / 2 + t.dx
+          const zy = sp.bounds.minY + sh / 2 + t.dy
+          zone.position.set(zx, zy, 0.08 + t.dz)
+          zone.userData = { spaceId: sp.id, spaceLabel: sp.label, floorId: sp.floorId }
           scene.add(zone)
           slabCount++
 
-          // Floating label sprite — only if labels enabled and zone is big enough
           if (showLabels && sp.label && sp.label !== `Zone ${slabCount}` && sw * sh > pw * ph * 0.0003) {
             const sprite = makeTextSprite(sp.label, sp.areaSqm, colorHex)
             if (sprite) {
-              sprite.position.set(zx, zy, wallHeight + pw * 0.015)
+              sprite.position.set(zx, zy, wallHeight + pw * 0.015 + t.dz)
+              if (t.opacity < 1 && sprite.material) {
+                (sprite.material as THREE.SpriteMaterial).opacity = t.opacity
+              }
               scene.add(sprite)
               labelCount++
             }
@@ -296,8 +352,9 @@ export function Plan3DView({
           return 0xa0a8b8 // default
         }
 
-        // Group walls by color for instanced rendering
-        const wallsByColor = new Map<number, Array<{ x: number; y: number; len: number; angle: number }>>()
+        // Group walls by color AND floor for instanced rendering with stacking
+        type WallInstance = { x: number; y: number; z: number; len: number; angle: number; opacity: number }
+        const wallsByGroup = new Map<string, { color: number; walls: WallInstance[] }>()
         for (const seg of filteredWalls) {
           const dx = seg.x2 - seg.x1
           const dy = seg.y2 - seg.y1
@@ -305,26 +362,34 @@ export function Plan3DView({
           if (len < 0.05) continue
 
           const color = wallColorByLayer(seg.layer)
-          if (!wallsByColor.has(color)) wallsByColor.set(color, [])
-          wallsByColor.get(color)!.push({
-            x: (seg.x1 + seg.x2) / 2,
-            y: (seg.y1 + seg.y2) / 2,
+          const t = floorTransform(seg.floorId)
+          const key = `${color}:${t.dz.toFixed(2)}:${t.opacity}`
+          if (!wallsByGroup.has(key)) wallsByGroup.set(key, { color, walls: [] })
+          wallsByGroup.get(key)!.walls.push({
+            x: (seg.x1 + seg.x2) / 2 + t.dx,
+            y: (seg.y1 + seg.y2) / 2 + t.dy,
+            z: wallHeight / 2 + t.dz,
             len,
             angle: Math.atan2(dy, dx),
+            opacity: t.opacity,
           })
         }
 
         let wallCount = 0
-        for (const [color, walls] of wallsByColor.entries()) {
-          const mat = new THREE.MeshLambertMaterial({ color })
-          // Unit box (1x1x1) that we'll scale per instance
+        for (const { color, walls } of wallsByGroup.values()) {
+          const op = walls[0]?.opacity ?? 1
+          const mat = new THREE.MeshLambertMaterial({
+            color,
+            transparent: op < 1,
+            opacity: op,
+          })
           const baseGeo = new THREE.BoxGeometry(1, 1, 1)
           const instancedMesh = new THREE.InstancedMesh(baseGeo, mat, walls.length)
 
           const dummy = new THREE.Object3D()
           for (let i = 0; i < walls.length; i++) {
             const w = walls[i]
-            dummy.position.set(w.x, w.y, wallHeight / 2)
+            dummy.position.set(w.x, w.y, w.z)
             dummy.rotation.set(0, 0, w.angle)
             dummy.scale.set(w.len, wallThick, wallHeight)
             dummy.updateMatrix()
@@ -403,28 +468,31 @@ export function Plan3DView({
           }
 
           for (const dim of filteredDims) {
-            const [x1, y1] = dim.p1
-            const [x2, y2] = dim.p2
-            const [tx, ty] = dim.textPos
+            const t = floorTransform(dim.floorId)
+            const [ox1, oy1] = dim.p1
+            const [ox2, oy2] = dim.p2
+            const [otx, oty] = dim.textPos
+            const x1 = ox1 + t.dx, y1 = oy1 + t.dy
+            const x2 = ox2 + t.dx, y2 = oy2 + t.dy
+            const tx = (otx || (ox1 + ox2) / 2) + t.dx
+            const ty = (oty || (oy1 + oy2) / 2) + t.dy
+            const z = dimZ + t.dz
             if (dim.valueM < 0.1 || dim.valueM > Math.max(pw, ph) * 1.5) continue
 
-            // Dimension line
-            linePoints.push(x1, y1, dimZ, x2, y2, dimZ)
+            linePoints.push(x1, y1, z, x2, y2, z)
 
-            // Tick marks (smaller)
             const dx = x2 - x1, dy = y2 - y1
             const len = Math.sqrt(dx * dx + dy * dy)
             if (len > 0.01) {
               const nx = -dy / len, ny = dx / len
-              const tick = pw * 0.0025 // Smaller (was 0.004)
-              linePoints.push(x1 - nx * tick, y1 - ny * tick, dimZ, x1 + nx * tick, y1 + ny * tick, dimZ)
-              linePoints.push(x2 - nx * tick, y2 - ny * tick, dimZ, x2 + nx * tick, y2 + ny * tick, dimZ)
+              const tick = pw * 0.0025
+              linePoints.push(x1 - nx * tick, y1 - ny * tick, z, x1 + nx * tick, y1 + ny * tick, z)
+              linePoints.push(x2 - nx * tick, y2 - ny * tick, z, x2 + nx * tick, y2 + ny * tick, z)
             }
 
-            // Label sprite
             const sprite = makeDimLabel(dim.text)
             if (sprite) {
-              sprite.position.set(tx || (x1 + x2) / 2, ty || (y1 + y2) / 2, dimZ + pw * 0.003)
+              sprite.position.set(tx, ty, z + pw * 0.003)
               scene.add(sprite)
             }
             dimCount++
@@ -576,7 +644,7 @@ export function Plan3DView({
         try { cleanupFns[i]() } catch { /* ignore */ }
       }
     }
-  }, [filteredWalls, filteredSpaces, filteredDims, effectiveBounds, mode, showLabels])
+  }, [filteredWalls, filteredSpaces, filteredDims, effectiveBounds, mode, showLabels, currentFloor, detectedFloors, floorOpacity])
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`} style={{ background: '#0a0a14' }}>
@@ -635,6 +703,103 @@ export function Plan3DView({
               <span className="ml-1 text-[8px] opacity-60">({f.entityCount})</span>
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Right-side panels: floor controls (if multi-floor view) + layer panel */}
+      {detectedFloors.length > 1 && currentFloor === 'all' && (
+        <div className="absolute top-16 right-3 w-56 rounded-lg bg-gray-900/90 border border-white/[0.08] shadow-xl overflow-hidden">
+          <div className="px-3 py-2 border-b border-white/[0.06]">
+            <span className="text-[9px] uppercase tracking-wider text-gray-500 font-medium">Etages superposes</span>
+          </div>
+          <div className="p-2 space-y-2">
+            {[...detectedFloors].sort((a, b) => b.stackOrder - a.stackOrder).map(f => {
+              const isHidden = hiddenFloors.has(f.id)
+              const opacity = floorOpacity[f.id] ?? 1
+              return (
+                <div key={f.id} className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setHiddenFloors(prev => {
+                          const next = new Set(prev)
+                          if (next.has(f.id)) next.delete(f.id)
+                          else next.add(f.id)
+                          return next
+                        })
+                      }}
+                      className={`w-4 h-4 rounded border flex items-center justify-center ${
+                        !isHidden ? 'bg-blue-500 border-blue-400' : 'bg-transparent border-gray-600'
+                      }`}
+                    >
+                      {!isHidden && <span className="text-[8px] text-white">✓</span>}
+                    </button>
+                    <span className={`text-[11px] font-medium ${isHidden ? 'text-gray-600' : 'text-gray-200'}`}>
+                      {f.label}
+                    </span>
+                    <span className="text-[9px] text-gray-500 ml-auto">{Math.round(opacity * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={opacity}
+                    onChange={(e) => setFloorOpacity(prev => ({ ...prev, [f.id]: parseFloat(e.target.value) }))}
+                    disabled={isHidden}
+                    className="w-full h-1 accent-blue-500"
+                  />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Layer panel toggle (bottom left) */}
+      {allLayers.length > 0 && (
+        <div className="absolute bottom-10 left-3 z-20">
+          <button
+            onClick={() => setLayerPanelOpen(!layerPanelOpen)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-800/90 border border-white/[0.08] hover:bg-gray-700/90 text-[10px] text-gray-300"
+          >
+            Calques ({allLayers.length - hiddenLayers.size}/{allLayers.length})
+          </button>
+          {layerPanelOpen && (
+            <div className="absolute bottom-10 left-0 w-64 max-h-80 overflow-y-auto rounded-lg bg-gray-900 border border-white/[0.08] shadow-xl">
+              <div className="px-3 py-2 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-gray-900">
+                <span className="text-[9px] uppercase tracking-wider text-gray-500 font-medium">Calques DXF</span>
+                <div className="flex gap-1">
+                  <button onClick={() => setHiddenLayers(new Set())} className="text-[9px] text-blue-400 hover:text-blue-300 px-1">Tout</button>
+                  <button onClick={() => setHiddenLayers(new Set(allLayers))} className="text-[9px] text-gray-500 hover:text-gray-300 px-1">Rien</button>
+                </div>
+              </div>
+              {allLayers.map(layer => {
+                const isHidden = hiddenLayers.has(layer)
+                return (
+                  <button
+                    key={layer}
+                    onClick={() => {
+                      setHiddenLayers(prev => {
+                        const next = new Set(prev)
+                        if (next.has(layer)) next.delete(layer)
+                        else next.add(layer)
+                        return next
+                      })
+                    }}
+                    className={`w-full flex items-center gap-2 px-3 py-1 text-left text-[10px] transition-colors hover:bg-gray-800 ${
+                      isHidden ? 'text-gray-600' : 'text-gray-200'
+                    }`}
+                  >
+                    <span className={`w-2.5 h-2.5 rounded-sm border flex-shrink-0 ${
+                      isHidden ? 'bg-transparent border-gray-600' : 'bg-blue-500 border-blue-400'
+                    }`} />
+                    <span className="truncate">{layer}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 
