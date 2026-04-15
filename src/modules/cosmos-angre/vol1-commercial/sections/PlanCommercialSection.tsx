@@ -13,6 +13,7 @@ import { PlanLayerSelector } from '../../shared/components/PlanLayerSelector'
 import { usePlanEngineStore } from '../../shared/stores/planEngineStore'
 import { PlanCanvasV2 } from '../../shared/components/PlanCanvasV2'
 import type { ParsedPlan, ViewMode, DetectedSpace } from '../../shared/planReader/planEngineTypes'
+import { runCommercialAnalysis } from '../../shared/engines/commercialEngine'
 
 const View3DSection = lazy(() => import('../../shared/view3d/View3DSection'))
 
@@ -53,6 +54,34 @@ export default function PlanCommercialSection() {
 
   // Active plan from engine store or empty placeholder
   const plan = parsedPlan ?? EMPTY_PLAN
+
+  // ── Commercial analysis — always runs, updates live ──
+  const commercialReport = useMemo(() => {
+    const commSpaces = plan.spaces.length > 0
+      ? plan.spaces.map(ps => {
+          const mockSp = spaces.find(s => s.id === ps.id || s.reference === ps.label)
+          const tenant = mockSp ? tenants.find(t => t.id === mockSp.tenantId) : null
+          return {
+            id: ps.id, label: ps.label, type: ps.type,
+            areaSqm: ps.areaSqm, floorId: ps.floorId,
+            polygon: ps.polygon,
+            status: mockSp?.status ?? 'vacant' as const,
+            tenantId: mockSp?.tenantId,
+          }
+        })
+      : spaces.map(sp => ({
+          id: sp.id, label: sp.reference, type: sp.wing ?? 'commerce',
+          areaSqm: sp.areaSqm, floorId: sp.floorId,
+          status: sp.status, tenantId: sp.tenantId,
+        }))
+    const commTenants = tenants.map(t => ({
+      id: t.id, name: t.name, brand: t.brand, category: t.sector,
+      anchor: t.anchor, rentFcfaM2: t.rentFcfaM2,
+      monthlyRentFcfa: t.monthlyRentFcfa,
+      leaseStart: t.leaseStart, leaseEnd: t.leaseEnd,
+    }))
+    return runCommercialAnalysis(commSpaces, commTenants)
+  }, [plan.spaces, spaces, tenants])
 
   // Plan image URL for current floor (background overlay)
   const floorId = activeFloor === 'B1' ? 'floor-b1' : activeFloor === 'R+1' ? 'floor-r1' : 'floor-rdc'
@@ -128,6 +157,110 @@ export default function PlanCommercialSection() {
               {f}
             </button>
           ))}
+        </div>
+
+        {/* Commercial analysis score + exports */}
+        <div className="space-y-2 pt-3 border-t" style={{ borderColor: '#1e2a3a' }}>
+          <p className="text-[10px] text-slate-500 mb-1">ANALYSE COMMERCIALE</p>
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold ${
+              commercialReport.scorePct >= 70 ? 'bg-emerald-600 text-white' :
+              commercialReport.scorePct >= 50 ? 'bg-amber-600 text-white' :
+              'bg-red-600 text-white'
+            }`}>
+              {commercialReport.scorePct}
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] text-slate-500 uppercase">Score</p>
+              <p className="text-[10px] text-slate-300">
+                Occupation {commercialReport.occupancy.occupiedPct.toFixed(0)}%
+              </p>
+            </div>
+          </div>
+          <div className="text-[9px] text-slate-500 space-y-0.5">
+            <div className="flex justify-between"><span>GLA totale</span><span className="text-slate-300 font-mono">{commercialReport.totalSurfaceSqm.toFixed(0)} m²</span></div>
+            <div className="flex justify-between"><span>Locaux</span><span className="text-slate-300 font-mono">{commercialReport.occupancy.totalCount}</span></div>
+            <div className="flex justify-between"><span>Vacants</span><span className="text-amber-400 font-mono">{commercialReport.occupancy.vacant}</span></div>
+            <div className="flex justify-between"><span>Locomotives</span><span className="text-slate-300 font-mono">{commercialReport.anchors.count}</span></div>
+            <div className="flex justify-between"><span>Revenu/mois</span><span className="text-emerald-400 font-mono">{Math.round(commercialReport.monthlyRevenueFcfa / 1e6)} M FCFA</span></div>
+          </div>
+          <div className="flex gap-1 pt-2">
+            <button
+              onClick={async () => {
+                const mod = await import('../../shared/engines/commercialEngine')
+                const pdf = await mod.generateCommercialReportPDF({
+                  projectName: 'Cosmos Angre · Plan Commercial',
+                  spaces: commercialReport.surfaceByType ? Object.keys(commercialReport.surfaceByType).flatMap(() => []) : [],
+                  tenants: tenants.map(t => ({ id: t.id, name: t.name, brand: t.brand, category: t.sector, anchor: t.anchor, rentFcfaM2: t.rentFcfaM2, monthlyRentFcfa: t.monthlyRentFcfa })),
+                  report: commercialReport,
+                })
+                // Actually rebuild spaces for PDF
+                const pdfSpaces = plan.spaces.length > 0
+                  ? plan.spaces.map(ps => {
+                      const ms = spaces.find(s => s.id === ps.id)
+                      return {
+                        id: ps.id, label: ps.label, type: ps.type,
+                        areaSqm: ps.areaSqm, floorId: ps.floorId,
+                        status: ms?.status ?? 'vacant' as const,
+                        tenantId: ms?.tenantId ?? null,
+                      }
+                    })
+                  : spaces.map(sp => ({
+                      id: sp.id, label: sp.reference, type: 'commerce',
+                      areaSqm: sp.areaSqm, floorId: sp.floorId,
+                      status: sp.status, tenantId: sp.tenantId,
+                    }))
+                const pdf2 = await mod.generateCommercialReportPDF({
+                  projectName: 'Cosmos Angre · Plan Commercial',
+                  spaces: pdfSpaces,
+                  tenants: tenants.map(t => ({ id: t.id, name: t.name, brand: t.brand, category: t.sector, anchor: t.anchor, rentFcfaM2: t.rentFcfaM2, monthlyRentFcfa: t.monthlyRentFcfa })),
+                  report: commercialReport,
+                })
+                const url = URL.createObjectURL(pdf2)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `plan-commercial-${new Date().toISOString().slice(0, 10)}.pdf`
+                a.click()
+                setTimeout(() => URL.revokeObjectURL(url), 1000)
+                void pdf // unused but computed above
+              }}
+              className="flex-1 text-[10px] px-2 py-1.5 rounded bg-amber-600/20 border border-amber-500/40 text-amber-300 hover:bg-amber-600/30"
+              title="Exporter le rapport commercial PDF"
+            >📄 PDF</button>
+            <button
+              onClick={async () => {
+                const mod = await import('../../shared/engines/commercialEngine')
+                const pdfSpaces = plan.spaces.length > 0
+                  ? plan.spaces.map(ps => {
+                      const ms = spaces.find(s => s.id === ps.id)
+                      return {
+                        id: ps.id, label: ps.label, type: ps.type,
+                        areaSqm: ps.areaSqm, floorId: ps.floorId,
+                        status: ms?.status ?? 'vacant' as const,
+                        tenantId: ms?.tenantId ?? null,
+                      }
+                    })
+                  : spaces.map(sp => ({
+                      id: sp.id, label: sp.reference, type: 'commerce',
+                      areaSqm: sp.areaSqm, floorId: sp.floorId,
+                      status: sp.status, tenantId: sp.tenantId,
+                    }))
+                const csv = mod.generateCommercialCSV({
+                  spaces: pdfSpaces,
+                  tenants: tenants.map(t => ({ id: t.id, name: t.name, brand: t.brand, category: t.sector, anchor: t.anchor, rentFcfaM2: t.rentFcfaM2, monthlyRentFcfa: t.monthlyRentFcfa })),
+                })
+                const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `nomenclature-commerciale-${new Date().toISOString().slice(0, 10)}.csv`
+                a.click()
+                setTimeout(() => URL.revokeObjectURL(url), 1000)
+              }}
+              className="flex-1 text-[10px] px-2 py-1.5 rounded bg-emerald-600/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-600/30"
+              title="Exporter la nomenclature CSV"
+            >📊 CSV</button>
+          </div>
         </div>
 
         {/* Status filter */}
