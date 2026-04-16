@@ -18,11 +18,13 @@ import { ObjectLibraryPanel } from './ObjectLibraryPanel'
 import { PlanSelector } from './PlanSelector'
 import { Proph3tImportModal } from '../proph3t/components/Proph3tImportModal'
 
-// Mount inline pour piloter la modal depuis le store
+// Mount inline pour piloter la modal depuis le store.
+// Le composant utilise createPortal donc il rend HORS du DOM tree de PlanCanvasV2,
+// ce qui évite tout conflit de stacking context / pointer-events.
 function Proph3tImportModalMount({ plan }: { plan: ParsedPlan }) {
   const open = usePlanEngineStore(s => s.proph3tModalOpen)
   const close = usePlanEngineStore(s => s.closeProph3tModal)
-  const buildSecurityInput = () => {
+  const buildSecurityInput = useCallback(() => {
     if (!plan) return null
     return {
       planWidth: plan.bounds.width || 200,
@@ -38,8 +40,8 @@ function Proph3tImportModalMount({ plan }: { plan: ParsedPlan }) {
         id: f.id, label: f.label, bounds: { width: f.bounds.width, height: f.bounds.height },
       })),
     }
-  }
-  const buildParcoursInput = () => {
+  }, [plan])
+  const buildParcoursInput = useCallback(() => {
     if (!plan) return null
     return {
       planWidth: plan.bounds.width || 200,
@@ -50,12 +52,39 @@ function Proph3tImportModalMount({ plan }: { plan: ParsedPlan }) {
       })),
       pois: [],
     }
-  }
-  const buildCommercialInput = () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const lots = (require('../stores/lotsStore') as typeof import('../stores/lotsStore')).useLotsStore.getState().all()
+  }, [plan])
+  const buildCommercialInput = useCallback(async () => {
+    const mod = await import('../stores/lotsStore')
+    const lots = mod.useLotsStore.getState().all()
     return { lots, horizonMonths: 12 }
-  }
+  }, [])
+
+  // Capture screenshot : utilise html2canvas si dispo, sinon dxf-viewer canvas
+  const captureScreenshot = useCallback(async (): Promise<string | null> => {
+    try {
+      // Essaie de capturer le canvas DXF/3D le plus visible
+      const canvases = Array.from(document.querySelectorAll('canvas')) as HTMLCanvasElement[]
+      const visibleCanvas = canvases.find(c => {
+        const r = c.getBoundingClientRect()
+        return r.width > 100 && r.height > 100 && c.offsetParent !== null
+      })
+      if (visibleCanvas) {
+        try { return visibleCanvas.toDataURL('image/png') }
+        catch { /* tainted canvas — fallback sur html2canvas */ }
+      }
+      // Fallback : html2canvas
+      const h2c = (await import('html2canvas')).default
+      // Cherche le wrapper principal du plan
+      const target = document.querySelector('.relative.w-full.h-full.flex.overflow-hidden') as HTMLElement
+        ?? document.body
+      const canvas = await h2c(target, { useCORS: true, logging: false, scale: 1 })
+      return canvas.toDataURL('image/png')
+    } catch (err) {
+      console.warn('[Proph3tCapture] failed', err)
+      return null
+    }
+  }, [])
+
   return (
     <Proph3tImportModal
       open={open}
@@ -64,7 +93,8 @@ function Proph3tImportModalMount({ plan }: { plan: ParsedPlan }) {
       orgName="Centre commercial · Abidjan"
       buildSecurityInput={buildSecurityInput}
       buildParcoursInput={buildParcoursInput}
-      buildCommercialInput={buildCommercialInput}
+      buildCommercialInput={buildCommercialInput as any}
+      captureScreenshot={captureScreenshot}
     />
   )
 }

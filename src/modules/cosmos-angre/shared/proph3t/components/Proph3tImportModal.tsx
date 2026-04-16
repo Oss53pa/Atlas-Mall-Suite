@@ -3,7 +3,8 @@
 // + bouton "Télécharger rapport détaillé PDF".
 
 import React, { useState, useEffect } from 'react'
-import { X, Sparkles, FileText, Play, CheckCircle2 } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { X, Sparkles, FileText, Play, CheckCircle2, Camera } from 'lucide-react'
 import { Proph3tResultPanel } from './Proph3tResultPanel'
 import { runSkill, getLastResult, onProph3tResult } from '../orchestrator'
 import { downloadProph3tReport } from '../proph3tReportEngine'
@@ -23,18 +24,22 @@ interface Props {
   buildParcoursInput?: () => unknown | null
   /** Builder pour analyse commerciale (si dispo). */
   buildCommercialInput?: () => unknown | null
-  /** Capture de plan (PNG dataURL) pour PDF. */
+  /** Capture de plan (PNG dataURL) pour PDF — passé directement OU généré au clic via captureFn. */
   planScreenshotDataUrl?: string
+  /** Si fourni, bouton "📸 Capturer le plan" dans la modal qui appellera cette fn. */
+  captureScreenshot?: () => Promise<string | null>
 }
 
 export function Proph3tImportModal({
   open, onClose, projectName, orgName,
   onApplyAction, buildSecurityInput, buildParcoursInput, buildCommercialInput,
-  planScreenshotDataUrl,
+  planScreenshotDataUrl, captureScreenshot,
 }: Props) {
   const [results, setResults] = useState<Record<string, Proph3tResult<unknown>>>({})
   const [running, setRunning] = useState<string | null>(null)
   const [generatingPdf, setGeneratingPdf] = useState(false)
+  const [capturedScreenshot, setCapturedScreenshot] = useState<string | null>(planScreenshotDataUrl ?? null)
+  const [capturing, setCapturing] = useState(false)
 
   // Charge les résultats existants au montage
   useEffect(() => {
@@ -81,15 +86,31 @@ export function Proph3tImportModal({
     await downloadPdf()
   }
 
+  const handleCapture = async () => {
+    if (!captureScreenshot) { alert('Capture indisponible'); return }
+    setCapturing(true)
+    try {
+      const url = await captureScreenshot()
+      if (url) setCapturedScreenshot(url)
+      else alert('Capture échouée')
+    } finally { setCapturing(false) }
+  }
+
   const downloadPdf = async () => {
     setGeneratingPdf(true)
     try {
+      // Capture auto si pas encore fait et fonction dispo
+      let shot = capturedScreenshot
+      if (!shot && captureScreenshot) {
+        try { shot = await captureScreenshot() } catch { /* ignore */ }
+        if (shot) setCapturedScreenshot(shot)
+      }
       downloadProph3tReport({
         projectName,
         orgName,
         results,
-        planScreenshots: planScreenshotDataUrl ? [{ label: 'Plan principal', dataUrl: planScreenshotDataUrl }] : undefined,
-        executiveNote: `Rapport généré automatiquement par PROPH3T après import du plan. ${Object.keys(results).length} skill(s) exécutée(s). Toutes les recommandations citent leurs sources et incluent score de confiance, budget et délai estimés.`,
+        planScreenshots: shot ? [{ label: 'Plan principal — référence visuelle', dataUrl: shot }] : undefined,
+        executiveNote: `Rapport généré automatiquement par PROPH3T après import du plan. ${Object.keys(results).length} skill(s) exécutée(s). Toutes les recommandations citent leurs sources et incluent score de confiance, budget et délai estimés.${shot ? ' Plan joint en référence visuelle.' : ''}`,
       })
     } finally { setGeneratingPdf(false) }
   }
@@ -99,9 +120,19 @@ export function Proph3tImportModal({
   const skillsRun = Object.keys(results)
   const totalActions = Object.values(results).reduce((s, r) => s + r.actions.length, 0)
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-5xl h-[92vh] rounded-xl bg-slate-950 border border-purple-500/30 flex flex-col overflow-hidden">
+  // Render via createPortal au document.body pour échapper TOUT stacking context
+  // (sinon des parents avec transform/filter/overflow peuvent bloquer les clics)
+  if (typeof document === 'undefined') return null
+  return createPortal(
+    <div
+      className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+      style={{ zIndex: 99999 }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div
+        className="w-full max-w-5xl h-[92vh] rounded-xl bg-slate-950 border border-purple-500/30 flex flex-col overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] bg-gradient-to-r from-purple-950/40 to-slate-950">
           <div className="flex items-center gap-3">
@@ -138,6 +169,18 @@ export function Proph3tImportModal({
             {running === 'analyzeCommercialMix' ? 'Commercial…' : 'Mix commercial (Vol.1)'}
           </button>
           <div className="flex-1" />
+          {captureScreenshot && (
+            <button onClick={handleCapture} disabled={capturing}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded text-[11px] font-medium border disabled:opacity-40 ${
+                capturedScreenshot
+                  ? 'bg-emerald-600/20 border-emerald-500/40 text-emerald-300'
+                  : 'bg-cyan-600/20 border-cyan-500/40 text-cyan-300 hover:bg-cyan-600/30'
+              }`}
+              title="Capturer le plan pour l'inclure en pièce jointe du PDF">
+              <Camera size={12} />
+              {capturing ? 'Capture…' : capturedScreenshot ? 'Plan capturé ✓' : 'Capturer plan'}
+            </button>
+          )}
           <button onClick={runAllAndExport} disabled={running !== null}
             className="flex items-center gap-1 px-3 py-1.5 rounded text-[11px] font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:opacity-90 disabled:opacity-50">
             <Sparkles size={12} />
@@ -168,9 +211,10 @@ export function Proph3tImportModal({
         {/* Footer */}
         <div className="px-5 py-2 border-t border-white/[0.06] text-[10px] text-slate-500 flex items-center justify-between">
           <span>PROPH3T · Ollama priorité · Fallback transparent · {Object.keys(results).length} skill(s)</span>
-          <span>Toutes recommandations citent leurs sources</span>
+          <span>Toutes recommandations citent leurs sources {capturedScreenshot && '· Plan joint ✓'}</span>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
