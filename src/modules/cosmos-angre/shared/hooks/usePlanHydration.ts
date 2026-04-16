@@ -23,13 +23,17 @@ export function usePlanHydration(): void {
       }
       if (!plan) return
 
-      // Régénère un blob URL frais si dxfBlobUrl est mort
+      // Régénère un blob URL frais si dxfBlobUrl est mort (HEAD sur blob → ERR_METHOD,
+      // donc on fait GET). Si mort → chercher dans planFileCache, sinon dropper dxfBlobUrl.
       if (plan.dxfBlobUrl) {
+        let alive = false
         try {
-          const res = await fetch(plan.dxfBlobUrl, { method: 'HEAD' }).catch(() => null)
-          const alive = res && res.ok
-          if (!alive) {
-            // Cherche dans planFileCache un fichier DXF à re-blober
+          const res = await fetch(plan.dxfBlobUrl).catch(() => null)
+          alive = !!(res && res.ok)
+        } catch { alive = false }
+
+        if (!alive) {
+          try {
             const { listPlanFiles, getPlanFileUrl } = await import('../stores/planFileCache')
             const files = await listPlanFiles()
             const dxfFiles = files
@@ -41,17 +45,31 @@ export function usePlanHydration(): void {
                 plan = { ...plan, dxfBlobUrl: freshUrl }
                 console.log(`[PlanHydration] blob DXF régénéré depuis IDB : ${dxfFiles[0].fileName}`)
               } else {
-                // Pas de fichier DXF en IDB → on retire le dxfBlobUrl pour éviter "Chargement..." éternel
                 plan = { ...plan, dxfBlobUrl: undefined }
-                console.warn('[PlanHydration] aucun DXF en IDB, rendu fallback SVG/zones')
+                console.warn('[PlanHydration] aucun DXF en IDB → fallback SVG')
               }
             } else {
+              // Aucun fichier DXF disponible → retire dxfBlobUrl pour éviter ERR_FILE_NOT_FOUND
               plan = { ...plan, dxfBlobUrl: undefined }
-              console.warn('[PlanHydration] aucun DXF en IDB (listPlanFiles vide)')
+              console.warn('[PlanHydration] planFileCache vide — dxfBlobUrl retiré')
             }
+          } catch (err) {
+            console.warn('[PlanHydration] erreur lookup IDB', err)
+            plan = { ...plan, dxfBlobUrl: undefined }
           }
-        } catch (err) {
-          console.warn('[PlanHydration] erreur check blob', err)
+        }
+      }
+
+      // Purge planImageUrl si mort aussi (svg/png preview peut être un blob mort)
+      if (plan.planImageUrl) {
+        try {
+          const res = await fetch(plan.planImageUrl).catch(() => null)
+          if (!res || !res.ok) {
+            plan = { ...plan, planImageUrl: undefined }
+            console.warn('[PlanHydration] planImageUrl mort → retiré')
+          }
+        } catch {
+          plan = { ...plan, planImageUrl: undefined }
         }
       }
 

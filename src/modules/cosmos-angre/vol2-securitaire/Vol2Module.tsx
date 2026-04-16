@@ -281,8 +281,11 @@ export default function Vol2Module() {
   }, [hydrateFromSupabase, projectId])
 
   // Restore plan images from IndexedDB on mount
+  // Purge les blob URLs potentiellement morts puis recharge depuis IDB
   const setPlanImageUrl = useVol2Store((s) => s.setPlanImageUrl)
   useEffect(() => {
+    // Reset l'état des URLs pour éviter blob URLs morts des sessions précédentes
+    useVol2Store.setState({ planImageUrls: {} })
     void loadAllPlanImages().then(urls => {
       for (const [floorId, url] of Object.entries(urls)) {
         setPlanImageUrl(floorId, url)
