@@ -467,6 +467,17 @@ export default function Vol2Module() {
     if (!parsedPlan || !parsedPlan.spaces.length || !cameras.length) return null
     const pw = parsedPlan.bounds.width || 200
     const ph = parsedPlan.bounds.height || 140
+    // Guard : plan corrompu (trop petit ou bounds invalides) → skip coverage
+    // pour éviter la rasterisation infinie qui fait freezer
+    if (pw < 5 || ph < 5 || pw > 10000 || ph > 10000) {
+      console.warn(`[Vol2] plan dimensions anormales (${pw.toFixed(1)}×${ph.toFixed(1)}m), skip coverage compute`)
+      return null
+    }
+    // Guard : trop de spaces → skip (évite rasterisation lente)
+    if (parsedPlan.spaces.length > 500) {
+      console.warn(`[Vol2] trop de spaces (${parsedPlan.spaces.length}), skip coverage compute`)
+      return null
+    }
     return computeCoverage(
       cameras.filter(c => !c.autoPlaced).map(c => ({
         id: c.id,
@@ -495,6 +506,9 @@ export default function Vol2Module() {
     if (!parsedPlan || !parsedPlan.spaces.length) return null
     const pw = parsedPlan.bounds.width || 200
     const ph = parsedPlan.bounds.height || 140
+    // Guard plan dimensions anormales ou trop de spaces
+    if (pw < 5 || ph < 5 || pw > 10000 || ph > 10000) return null
+    if (parsedPlan.spaces.length > 500) return null
 
     // Build coverage per detected floor
     const detFloors = parsedPlan.detectedFloors ?? [{
