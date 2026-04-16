@@ -46,10 +46,19 @@ export async function savePlanImageFromUrl(floorId: string, blobUrl: string, fil
 
 /**
  * Get the blob URL for a floor's plan image. Recreates from IndexedDB if needed.
+ * Vérifie que le blob URL est vivant — sinon le regénère.
  */
 export async function getPlanImageUrl(floorId: string): Promise<string | undefined> {
-  // Check memory cache first
-  if (blobUrlCache.has(floorId)) return blobUrlCache.get(floorId)
+  // Check memory cache first — mais vérifie que le blob est vivant
+  const cached = blobUrlCache.get(floorId)
+  if (cached) {
+    try {
+      const res = await fetch(cached, { method: 'HEAD' }).catch(() => null)
+      if (res && res.ok) return cached
+      // Blob mort → purge et regénère
+      blobUrlCache.delete(floorId)
+    } catch { blobUrlCache.delete(floorId) }
+  }
 
   // Load from IndexedDB
   const record = await db.planImages.get(floorId)

@@ -446,6 +446,10 @@ export default function FloorPlanCanvas({
             x={0} y={0}
             width={canvasW} height={canvasH}
             preserveAspectRatio="none"
+            onError={(e) => {
+              // Blob URL mort → cache l'image pour éviter erreur visuelle
+              (e.target as SVGImageElement).style.display = 'none'
+            }}
           />
         )}
 
@@ -457,6 +461,7 @@ export default function FloorPlanCanvas({
             x={0} y={0}
             width={canvasW} height={canvasH}
             preserveAspectRatio="none"
+            onError={(e) => { (e.target as SVGImageElement).style.display = 'none' }}
             opacity={layer.opacity}
             style={{ mixBlendMode: 'screen' }}
           />

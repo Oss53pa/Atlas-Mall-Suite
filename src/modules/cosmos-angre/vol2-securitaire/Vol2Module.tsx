@@ -426,9 +426,40 @@ export default function Vol2Module() {
 
   // ── Derived data ─────────────────────────────────────────
 
+  // Si vol2Store.floors est vide MAIS parsedPlan a détecté des étages → synthétise
+  const effectiveFloors = useMemo(() => {
+    if (floors.length > 0) return floors
+    if (parsedPlan?.detectedFloors && parsedPlan.detectedFloors.length > 0) {
+      return parsedPlan.detectedFloors.map(f => ({
+        id: f.id,
+        projectId: 'cosmos-angre',
+        level: f.label as any,
+        order: f.stackOrder,
+        widthM: f.bounds.width,
+        heightM: f.bounds.height,
+        zones: [],
+        transitions: [],
+      }))
+    }
+    // Fallback : un seul étage RDC basé sur le parsedPlan
+    if (parsedPlan) {
+      return [{
+        id: 'RDC',
+        projectId: 'cosmos-angre',
+        level: 'RDC' as any,
+        order: 0,
+        widthM: parsedPlan.bounds.width || 200,
+        heightM: parsedPlan.bounds.height || 140,
+        zones: [],
+        transitions: [],
+      }]
+    }
+    return floors
+  }, [floors, parsedPlan])
+
   const activeFloor = useMemo(
-    () => floors.find((f) => f.id === activeFloorId) ?? floors[0],
-    [floors, activeFloorId],
+    () => effectiveFloors.find((f) => f.id === activeFloorId) ?? effectiveFloors[0],
+    [effectiveFloors, activeFloorId],
   )
 
   // ── Compute real camera coverage + blind spots from placed cameras ──
