@@ -200,6 +200,11 @@ export function Plan3DView({
   const containerRef = useRef<HTMLDivElement>(null)
   const fitViewRef = useRef<(() => void) | null>(null)
   const exportRef = useRef<(() => void) | null>(null)
+  const zoomToSpaceRef = useRef<((space: Space3D, opts?: { mode?: 'top' | 'oblique' | 'firstPerson' }) => void) | null>(null)
+  const startTourRef = useRef<((spaces?: Space3D[]) => void) | null>(null)
+  const stopTourRef = useRef<(() => void) | null>(null)
+  const [tourActive, setTourActive] = useState(false)
+  const [tourStep, setTourStep] = useState<{ index: number; total: number; label: string } | null>(null)
   const [status, setStatus] = useState('Initialisation...')
   const [currentFloor, setCurrentFloor] = useState<string | 'all'>(activeFloorId)
   const [showDimensions, setShowDimensions] = useState(false)
@@ -1230,11 +1235,30 @@ export function Plan3DView({
           }
         }
 
+        // Double-clic = zoom-to-space sur la zone cliquée
+        const onDblClick = (ev: MouseEvent) => {
+          const rect = renderer.domElement.getBoundingClientRect()
+          mouse.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1
+          mouse.y = -((ev.clientY - rect.top) / rect.height) * 2 + 1
+          raycaster.setFromCamera(mouse, camera)
+          const hits = raycaster.intersectObjects(zoneMeshes, false)
+          if (hits.length) {
+            const mesh = hits[0].object as THREE.Mesh
+            const spaceId = mesh.userData.spaceId as string
+            const space = spaces.find(s => s.id === spaceId)
+            if (space && zoomToSpaceRef.current) {
+              zoomToSpaceRef.current(space, { mode: 'oblique' })
+            }
+          }
+        }
+
         renderer.domElement.addEventListener('pointermove', onMove)
         renderer.domElement.addEventListener('click', onClick)
+        renderer.domElement.addEventListener('dblclick', onDblClick)
         cleanupFns.push(() => {
           renderer.domElement.removeEventListener('pointermove', onMove)
           renderer.domElement.removeEventListener('click', onClick)
+          renderer.domElement.removeEventListener('dblclick', onDblClick)
           highlightMat.dispose()
           selectedOutlineMat.dispose()
         })
@@ -1290,6 +1314,116 @@ export function Plan3DView({
           controls.update()
         }
         fitViewRef.current = fitView
+
+        // ── Zoom-to-space (smooth animated camera move) ──
+        let zoomAnimationId: number | null = null
+        let tourTimeoutId: ReturnType<typeof setTimeout> | null = null
+        let tourCancelled = false
+
+        const easeInOutCubic = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+
+        const animateCamera = (
+          targetPos: THREE.Vector3,
+          targetLookAt: THREE.Vector3,
+          durationMs = 900,
+          onDone?: () => void,
+        ): Promise<void> => {
+          return new Promise(resolve => {
+            if (zoomAnimationId !== null) cancelAnimationFrame(zoomAnimationId)
+            const startPos = camera.position.clone()
+            const startTarget = controls.target.clone()
+            const t0 = performance.now()
+            const step = () => {
+              const t = Math.min(1, (performance.now() - t0) / durationMs)
+              const e = easeInOutCubic(t)
+              camera.position.lerpVectors(startPos, targetPos, e)
+              controls.target.lerpVectors(startTarget, targetLookAt, e)
+              controls.update()
+              if (t < 1) {
+                zoomAnimationId = requestAnimationFrame(step)
+              } else {
+                zoomAnimationId = null
+                onDone?.()
+                resolve()
+              }
+            }
+            zoomAnimationId = requestAnimationFrame(step)
+          })
+        }
+
+        const zoomToSpace = (space: Space3D, opts?: { mode?: 'top' | 'oblique' | 'firstPerson' }) => {
+          const mode = opts?.mode ?? 'oblique'
+          const sx = space.bounds.minX + space.bounds.width / 2
+          const sy = space.bounds.minY + space.bounds.height / 2
+          const spaceFloor = detectedFloors.find(f => f.id === space.floorId)
+          const sz = spaceFloor ? spaceFloor.stackOrder * 4 : 0
+          // Marge pour tenir tout le space dans le frustum
+          const radius = Math.max(space.bounds.width, space.bounds.height) * 0.8 + 3
+          let camPos: THREE.Vector3
+          if (mode === 'top') {
+            camPos = new THREE.Vector3(sx, sy, sz + radius * 1.5)
+          } else if (mode === 'firstPerson') {
+            camPos = new THREE.Vector3(sx - radius * 0.3, sy - radius * 0.3, sz + 2)
+          } else {
+            // oblique : 45° bird-eye
+            camPos = new THREE.Vector3(sx + radius * 0.7, sy - radius * 0.7, sz + radius * 0.9)
+          }
+          const lookAt = new THREE.Vector3(sx, sy, sz + 1.5)
+          void animateCamera(camPos, lookAt, 800)
+          // Highlight visuel de la zone
+          setSelectedSpace(space)
+        }
+        zoomToSpaceRef.current = zoomToSpace
+
+        // ── Visite guidée (tour) — parcourt les espaces clés ──
+        const buildTourSequence = (custom?: Space3D[]): Space3D[] => {
+          if (custom && custom.length > 0) return custom
+          // Heuristique : commerces les plus grands + restauration + circulation principale
+          const sorted = [...spaces].sort((a, b) => b.areaSqm - a.areaSqm)
+          const commerce = sorted.filter(s => /commerce|restaur|services|loisir/i.test(String(s.type ?? ''))).slice(0, 6)
+          const circ = sorted.filter(s => /circul|hall|mail/i.test(String(s.type ?? ''))).slice(0, 1)
+          const seq = [...circ, ...commerce]
+          return seq.length > 0 ? seq : sorted.slice(0, 5)
+        }
+
+        const startTour = async (custom?: Space3D[]) => {
+          const sequence = buildTourSequence(custom)
+          if (sequence.length === 0) return
+          tourCancelled = false
+          setTourActive(true)
+          for (let i = 0; i < sequence.length; i++) {
+            if (tourCancelled) break
+            const sp = sequence[i]
+            setTourStep({ index: i + 1, total: sequence.length, label: sp.label })
+            zoomToSpace(sp, { mode: 'oblique' })
+            // Pause à chaque arrêt
+            await new Promise<void>(resolve => {
+              tourTimeoutId = setTimeout(() => resolve(), 3500)
+            })
+          }
+          setTourActive(false)
+          setTourStep(null)
+          if (!tourCancelled) {
+            // Retour vue globale
+            fitView()
+          }
+        }
+        startTourRef.current = startTour
+
+        const stopTour = () => {
+          tourCancelled = true
+          if (tourTimeoutId) clearTimeout(tourTimeoutId)
+          if (zoomAnimationId !== null) cancelAnimationFrame(zoomAnimationId)
+          setTourActive(false)
+          setTourStep(null)
+        }
+        stopTourRef.current = stopTour
+
+        cleanupFns.push(() => {
+          tourCancelled = true
+          if (tourTimeoutId) clearTimeout(tourTimeoutId)
+          if (zoomAnimationId !== null) cancelAnimationFrame(zoomAnimationId)
+        })
 
         // ── Export screenshot ──
         const exportScreenshot = () => {
@@ -1407,6 +1541,26 @@ export function Plan3DView({
     <div className={`relative w-full h-full overflow-hidden ${className}`} style={{ background: '#0a0a14' }}>
       <div ref={containerRef} className="w-full h-full" />
 
+      {/* Banner visite guidée */}
+      {tourActive && tourStep && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30">
+          <div className="px-6 py-3 rounded-2xl bg-black/70 backdrop-blur-md border border-emerald-500/40 shadow-2xl">
+            <div className="text-[10px] uppercase tracking-widest text-emerald-300 mb-1">
+              Visite guidée · arrêt {tourStep.index} / {tourStep.total}
+            </div>
+            <div className="text-[18px] font-bold text-white text-center">
+              {tourStep.label}
+            </div>
+            <div className="mt-2 h-0.5 bg-white/[0.08] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-emerald-400 transition-all duration-[3500ms] ease-linear"
+                style={{ width: `${(tourStep.index / tourStep.total) * 100}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Status overlay */}
       <div className="absolute top-3 left-3 flex items-center gap-2 flex-wrap">
         <div className="px-3 py-1.5 rounded-lg bg-gray-900/80 border border-white/[0.08] text-[10px] text-gray-400">
@@ -1417,6 +1571,21 @@ export function Plan3DView({
           className="px-3 py-1.5 rounded-lg bg-blue-600/80 hover:bg-blue-600 border border-blue-500 text-[10px] text-white font-medium transition-colors"
         >
           Recentrer
+        </button>
+        {/* Visite guidée */}
+        <button
+          onClick={() => {
+            if (tourActive) stopTourRef.current?.()
+            else startTourRef.current?.()
+          }}
+          className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
+            tourActive
+              ? 'bg-rose-600/80 hover:bg-rose-600 border-rose-500 text-white animate-pulse'
+              : 'bg-emerald-600/80 hover:bg-emerald-600 border-emerald-500 text-white'
+          }`}
+          title="Visite guidée — survole automatiquement les espaces clés"
+        >
+          {tourActive ? '⏹ Arrêter' : '▶ Visite guidée'}
         </button>
         <button
           onClick={() => setShadowsEnabled(!shadowsEnabled)}
@@ -1724,6 +1893,20 @@ export function Plan3DView({
           <div className="px-4 py-2 border-t border-white/[0.06] flex items-center justify-between bg-gray-950/50">
             <span className="text-[9px] text-gray-500">ID: {selectedSpace.id}</span>
             <div className="flex gap-2">
+              <button
+                onClick={() => zoomToSpaceRef.current?.(selectedSpace, { mode: 'oblique' })}
+                className="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-[10px] text-white font-medium transition-colors"
+                title="Zoomer sur cet espace (vue oblique)"
+              >
+                🔍 Zoom
+              </button>
+              <button
+                onClick={() => zoomToSpaceRef.current?.(selectedSpace, { mode: 'firstPerson' })}
+                className="px-3 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-[10px] text-white font-medium transition-colors"
+                title="Vue première personne (à hauteur d'œil)"
+              >
+                👁 Entrer
+              </button>
               <button
                 onClick={() => onSpaceClick?.(selectedSpace)}
                 className="px-3 py-1 rounded bg-blue-600 hover:bg-blue-500 text-[10px] text-white font-medium transition-colors"
