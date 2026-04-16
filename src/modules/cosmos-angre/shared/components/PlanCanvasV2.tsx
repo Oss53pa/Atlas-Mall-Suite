@@ -479,49 +479,93 @@ export function PlanCanvasV2({
   useEffect(() => {
     const targetUrl = plan.dxfBlobUrl
     if (!targetUrl) { setRehydratedDxfUrl(null); rehydratedForUrlRef.current = null; return }
-    // Si on a déjà rehydraté pour cette URL, ne rien faire (évite le remount)
     if (rehydratedForUrlRef.current === targetUrl && rehydratedDxfUrl) return
 
     let cancelled = false
     setRehydrateError(null)
+
+    // Helper : timeout global pour ne pas rester bloqué sur "Chargement..." indéfiniment
+    const bailoutTimer = setTimeout(() => {
+      if (!cancelled && !rehydratedForUrlRef.current) {
+        console.warn('[PlanCanvasV2] rehydration timeout, using URL as-is')
+        rehydratedForUrlRef.current = targetUrl
+        setRehydratedDxfUrl(targetUrl)
+      }
+    }, 4000)
+
     ;(async () => {
       try {
-        // Trouve l'importId qui correspond à ce plan dans le store
-        const parsedPlans = usePlanEngineStore.getState().parsedPlans
+        // 1. Essai direct : l'URL actuelle est-elle encore vivante ? (cas : même session)
+        try {
+          const res = await fetch(targetUrl, { method: 'HEAD' }).catch(() => null)
+            || await fetch(targetUrl).catch(() => null)
+          if (res && res.ok) {
+            if (!cancelled) {
+              clearTimeout(bailoutTimer)
+              rehydratedForUrlRef.current = targetUrl
+              setRehydratedDxfUrl(targetUrl)
+            }
+            return
+          }
+        } catch { /* continue to IndexedDB */ }
+
+        // 2. URL morte → cherche un importId dans le store parsedPlans
+        const parsedPlans = usePlanEngineStore.getState().parsedPlans ?? {}
         let importId: string | null = null
         for (const [k, v] of Object.entries(parsedPlans)) {
           if (v?.dxfBlobUrl === targetUrl) { importId = k; break }
         }
-        if (!importId) {
-          // Pas d'importId trouvé → l'URL actuelle est-elle encore vivante ?
-          try {
-            const res = await fetch(targetUrl)
-            if (!res.ok) throw new Error(`Blob dead: ${res.status}`)
-            if (!cancelled) {
-              rehydratedForUrlRef.current = targetUrl
-              setRehydratedDxfUrl(targetUrl)
-            }
-          } catch {
-            if (!cancelled) setRehydrateError('Fichier DXF introuvable — réimporter le plan')
-          }
-          return
-        }
-        const { getPlanFileUrl } = await import('../stores/planFileCache')
-        const fresh = await getPlanFileUrl(importId)
-        if (!cancelled) {
-          if (fresh) {
+
+        // 3. Si trouvé → régénère URL depuis IndexedDB
+        if (importId) {
+          const { getPlanFileUrl } = await import('../stores/planFileCache')
+          const fresh = await getPlanFileUrl(importId)
+          if (fresh && !cancelled) {
+            clearTimeout(bailoutTimer)
             rehydratedForUrlRef.current = targetUrl
             setRehydratedDxfUrl(fresh)
-          } else {
-            setRehydrateError('Cache IndexedDB vide — réimporter le plan')
+            return
           }
+        }
+
+        // 4. Sinon → cherche dans la bibliothèque de plans via IndexedDB (fallback large)
+        try {
+          const { listPlanFiles, getPlanFileUrl } = await import('../stores/planFileCache')
+          const files = await listPlanFiles()
+          // Prend le plus récent DXF stocké
+          const dxfFiles = files
+            .filter(f => f.sourceType === 'dxf' || f.sourceType === 'dwg')
+            .sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime())
+          if (dxfFiles.length > 0) {
+            const fresh = await getPlanFileUrl(dxfFiles[0].importId)
+            if (fresh && !cancelled) {
+              console.log(`[PlanCanvasV2] fallback sur DXF IndexedDB le plus récent : ${dxfFiles[0].fileName}`)
+              clearTimeout(bailoutTimer)
+              rehydratedForUrlRef.current = targetUrl
+              setRehydratedDxfUrl(fresh)
+              return
+            }
+          }
+        } catch { /* */ }
+
+        // 5. Dernier recours → garde l'URL telle quelle et laisse le viewer échouer proprement
+        if (!cancelled) {
+          clearTimeout(bailoutTimer)
+          console.warn('[PlanCanvasV2] aucune URL viable — fallback sur l\'URL originale')
+          rehydratedForUrlRef.current = targetUrl
+          setRehydratedDxfUrl(targetUrl)
         }
       } catch (err) {
         console.warn('[PlanCanvasV2] DXF rehydration failed', err)
-        if (!cancelled) setRehydrateError(err instanceof Error ? err.message : String(err))
+        if (!cancelled) {
+          clearTimeout(bailoutTimer)
+          // Même en erreur, on laisse le viewer essayer avec l'URL originale
+          rehydratedForUrlRef.current = targetUrl
+          setRehydratedDxfUrl(targetUrl)
+        }
       }
     })()
-    return () => { cancelled = true }
+    return () => { cancelled = true; clearTimeout(bailoutTimer) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan.dxfBlobUrl])
 
@@ -538,9 +582,23 @@ export function PlanCanvasV2({
     if (!rehydratedDxfUrl && !rehydrateError) {
       return (
         <div className={`relative w-full h-full flex items-center justify-center bg-gray-950 ${className}`}>
-          <div className="text-gray-400 text-sm flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-gray-600 border-t-purple-500 rounded-full animate-spin" />
-            Chargement du plan DXF depuis le cache…
+          <div className="text-center">
+            <div className="text-gray-400 text-sm flex items-center gap-2 justify-center">
+              <div className="w-4 h-4 border-2 border-gray-600 border-t-purple-500 rounded-full animate-spin" />
+              Chargement du plan DXF depuis le cache…
+            </div>
+            <button
+              onClick={() => {
+                // Force l'URL originale même si le cache IndexedDB n'a pas répondu
+                if (plan.dxfBlobUrl) {
+                  rehydratedForUrlRef.current = plan.dxfBlobUrl
+                  setRehydratedDxfUrl(plan.dxfBlobUrl)
+                }
+              }}
+              className="mt-4 text-[10px] text-slate-500 hover:text-purple-400 underline"
+            >
+              Continuer sans attendre
+            </button>
           </div>
         </div>
       )
