@@ -1982,6 +1982,22 @@ export async function importPlan(
             console.warn('[DXF] lotsStore hydration failed', err)
           }
 
+          // ── Phase A : PROPH3T analyse automatique à l'import ──
+          try {
+            const { bootstrapProph3t } = await import('../proph3t/bootstrap')
+            const { runSkill } = await import('../proph3t/orchestrator')
+            await bootstrapProph3t()
+            const t0 = performance.now()
+            const result = await runSkill('analyzePlanAtImport', {
+              plan: state.parsedPlan,
+              importId: file.name + '-' + Date.now(),
+              fileName: file.name,
+            })
+            console.log(`[PROPH3T] analyse import: ${(performance.now() - t0).toFixed(0)}ms · score ${result.qualityScore} · ${result.actions.length} actions · ${result.findings.length} findings`)
+          } catch (err) {
+            console.warn('[PROPH3T] analyse import failed', err)
+          }
+
           console.log(`[DXF] ParsedPlan: ${normalizedEntities.length} entites, ${planSpaces.length} espaces, ${planLayers.length} calques, ${detectedFloors.length} etages, unite=${detectedUnit}, plan=${normalizedBounds.width.toFixed(1)}x${normalizedBounds.height.toFixed(1)}m`)
         } catch (err) {
           console.error('[DXF] ERREUR ParsedPlan:', err)
