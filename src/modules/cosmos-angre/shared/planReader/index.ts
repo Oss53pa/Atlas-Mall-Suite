@@ -1983,30 +1983,37 @@ export async function importPlan(
           }
 
           // ── Phase A : PROPH3T analyse automatique à l'import ──
-          try {
-            const { bootstrapProph3t } = await import('../proph3t/bootstrap')
-            const { runSkill } = await import('../proph3t/orchestrator')
-            const { usePlanEngineStore } = await import('../stores/planEngineStore')
-            await bootstrapProph3t()
-            const t0 = performance.now()
-            const result = await runSkill('analyzePlanAtImport', {
-              plan: state.parsedPlan,
-              importId: file.name + '-' + Date.now(),
-              fileName: file.name,
-            })
-            console.log(`[PROPH3T] analyse import: ${(performance.now() - t0).toFixed(0)}ms · score ${result.qualityScore} · ${result.actions.length} actions · ${result.findings.length} findings`)
+          // Kill switch : si PROPH3T désactivé, skip complètement
+          const proph3tDisabled = (() => {
+            try { return localStorage.getItem('atlas-proph3t-disabled') === '1' }
+            catch { return false }
+          })()
+          if (proph3tDisabled) {
+            console.warn('[PROPH3T] désactivé (kill switch) — skip analyse import')
+          } else {
+            try {
+              const { bootstrapProph3t } = await import('../proph3t/bootstrap')
+              const { runSkill } = await import('../proph3t/orchestrator')
+              const { usePlanEngineStore } = await import('../stores/planEngineStore')
+              await bootstrapProph3t()
+              const t0 = performance.now()
+              const result = await runSkill('analyzePlanAtImport', {
+                plan: state.parsedPlan,
+                importId: file.name + '-' + Date.now(),
+                fileName: file.name,
+              })
+              console.log(`[PROPH3T] analyse import: ${(performance.now() - t0).toFixed(0)}ms · score ${result.qualityScore} · ${result.actions.length} actions · ${result.findings.length} findings`)
 
-            // Si plusieurs étages détectés → ouvre d'abord la modal d'attribution (hybride strict)
-            // Sinon → directement la modal PROPH3T
-            const detectedCount = state.parsedPlan?.detectedFloors?.length ?? 0
-            if (detectedCount > 1) {
-              usePlanEngineStore.getState().openFloorAttribution()
-              console.log(`[DXF] ${detectedCount} étages détectés — ouverture modal d'attribution`)
-            } else {
-              usePlanEngineStore.getState().openProph3tModal()
+              const detectedCount = state.parsedPlan?.detectedFloors?.length ?? 0
+              if (detectedCount > 1) {
+                usePlanEngineStore.getState().openFloorAttribution()
+                console.log(`[DXF] ${detectedCount} étages détectés — ouverture modal d'attribution`)
+              } else {
+                usePlanEngineStore.getState().openProph3tModal()
+              }
+            } catch (err) {
+              console.warn('[PROPH3T] analyse import failed', err)
             }
-          } catch (err) {
-            console.warn('[PROPH3T] analyse import failed', err)
           }
 
           console.log(`[DXF] ParsedPlan: ${normalizedEntities.length} entites, ${planSpaces.length} espaces, ${planLayers.length} calques, ${detectedFloors.length} etages, unite=${detectedUnit}, plan=${normalizedBounds.width.toFixed(1)}x${normalizedBounds.height.toFixed(1)}m`)
