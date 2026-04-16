@@ -225,7 +225,9 @@ export function Plan3DView({
   const [showSignage, setShowSignage] = useState(true)
   const [showMoments, setShowMoments] = useState(true)
   const [showJourneys, setShowJourneys] = useState(true)
-  const [shadowsEnabled, setShadowsEnabled] = useState(true)
+  // Ombres DÉSACTIVÉES par défaut — consomment énormément de GPU sur plans denses
+  // (Shadow Map 2048² + cast/receive sur 400+ InstancedMesh → freeze navigateur)
+  const [shadowsEnabled, setShadowsEnabled] = useState(false)
   const [colorBy, setColorBy] = useState<'category' | 'floor'>('category')
   const [displayMenuOpen, setDisplayMenuOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)

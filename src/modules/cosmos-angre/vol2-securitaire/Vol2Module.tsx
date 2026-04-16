@@ -1538,35 +1538,43 @@ export default function Vol2Module() {
       <Model3DImportModal open={show3DImport} onClose={() => setShow3DImport(false)} />
 
       {/* Panneau PROPH3T dockable — présent en permanence pour suggestions / évaluations / audit */}
-      {parsedPlan && (
-        <Proph3tVolumePanel
-          volume="security"
-          buildInput={() => ({
-            planWidth: parsedPlan.bounds.width || 200,
-            planHeight: parsedPlan.bounds.height || 140,
-            spaces: (parsedPlan.spaces ?? []).map(s => ({
-              id: s.id, type: s.type as string | undefined, areaSqm: s.areaSqm,
-              polygon: s.polygon as [number, number][], floorId: s.floorId,
-              label: s.label,
-            })),
-            cameras: cameras.filter(c => !c.autoPlaced).map(c => ({
-              id: c.id, floorId: c.floorId,
-              x: c.x > 1 ? c.x : c.x * (parsedPlan.bounds.width || 200),
-              y: c.y > 1 ? c.y : c.y * (parsedPlan.bounds.height || 140),
-              angle: c.angle, fov: c.fov, rangeM: c.rangeM || c.range || 10,
-            })),
-            doors: doors.map(d => ({
-              id: d.id, floorId: d.floorId,
-              x: d.x > 1 ? d.x : d.x * (parsedPlan.bounds.width || 200),
-              y: d.y > 1 ? d.y : d.y * (parsedPlan.bounds.height || 140),
-              isExit: d.isExit, hasBadge: d.hasBadge,
-            })),
-            floors: (parsedPlan.detectedFloors ?? [{ id: 'RDC', label: 'RDC', bounds: { width: parsedPlan.bounds.width, height: parsedPlan.bounds.height } }]).map(f => ({
-              id: f.id, label: f.label, bounds: { width: f.bounds.width, height: f.bounds.height },
-            })),
-          })}
-        />
-      )}
+      {parsedPlan && <Vol2Proph3tPanel parsedPlan={parsedPlan} cameras={cameras} doors={doors} />}
     </div>
   )
 }
+
+// Panneau isolé → callback buildInput stable (évite re-render infini du VolumePanel)
+const Vol2Proph3tPanel = React.memo(function Vol2Proph3tPanel({
+  parsedPlan, cameras, doors,
+}: {
+  parsedPlan: NonNullable<ReturnType<typeof usePlanEngineStore.getState>['parsedPlan']>
+  cameras: ReturnType<typeof useVol2Store.getState>['cameras']
+  doors: ReturnType<typeof useVol2Store.getState>['doors']
+}) {
+  const buildInput = useCallback(() => ({
+    planWidth: parsedPlan.bounds.width || 200,
+    planHeight: parsedPlan.bounds.height || 140,
+    spaces: (parsedPlan.spaces ?? []).map(s => ({
+      id: s.id, type: s.type as string | undefined, areaSqm: s.areaSqm,
+      polygon: s.polygon as [number, number][], floorId: s.floorId,
+      label: s.label,
+    })),
+    cameras: cameras.filter(c => !c.autoPlaced).map(c => ({
+      id: c.id, floorId: c.floorId,
+      x: c.x > 1 ? c.x : c.x * (parsedPlan.bounds.width || 200),
+      y: c.y > 1 ? c.y : c.y * (parsedPlan.bounds.height || 140),
+      angle: c.angle, fov: c.fov, rangeM: c.rangeM || c.range || 10,
+    })),
+    doors: doors.map(d => ({
+      id: d.id, floorId: d.floorId,
+      x: d.x > 1 ? d.x : d.x * (parsedPlan.bounds.width || 200),
+      y: d.y > 1 ? d.y : d.y * (parsedPlan.bounds.height || 140),
+      isExit: d.isExit, hasBadge: d.hasBadge,
+    })),
+    floors: (parsedPlan.detectedFloors ?? [{ id: 'RDC', label: 'RDC', bounds: { width: parsedPlan.bounds.width, height: parsedPlan.bounds.height } }]).map(f => ({
+      id: f.id, label: f.label, bounds: { width: f.bounds.width, height: f.bounds.height },
+    })),
+  }), [parsedPlan, cameras, doors])
+
+  return <Proph3tVolumePanel volume="security" buildInput={buildInput} />
+})

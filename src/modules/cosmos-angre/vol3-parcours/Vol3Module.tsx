@@ -48,6 +48,31 @@ import {
 import FloorPlanCanvas, { CANVAS_SCALE } from '../shared/components/FloorPlanCanvas'
 import { ConsolidatedReportButton } from '../shared/components/ConsolidatedReportButton'
 import { Proph3tVolumePanel } from '../shared/proph3t/components/Proph3tVolumePanel'
+
+// Panneau isolé → évite re-render infini quand le state parent change
+const Vol3Proph3tPanel = React.memo(function Vol3Proph3tPanel({
+  parsedPlan, floorPois,
+}: { parsedPlan: any; floorPois: any[] }) {
+  const buildInput = React.useCallback(() => {
+    const pw = parsedPlan.bounds.width || 200
+    const ph = parsedPlan.bounds.height || 140
+    return {
+      planWidth: pw,
+      planHeight: ph,
+      spaces: (parsedPlan.spaces ?? []).map((s: any) => ({
+        id: s.id, label: s.label, type: s.type as string | undefined,
+        areaSqm: s.areaSqm, polygon: s.polygon as [number, number][], floorId: s.floorId,
+      })),
+      pois: floorPois.map((p: any) => ({
+        id: p.id, label: p.label,
+        x: p.x > 1 ? p.x : p.x * pw,
+        y: p.y > 1 ? p.y : p.y * ph,
+        floorId: p.floorId, priority: p.priority,
+      })),
+    }
+  }, [parsedPlan, floorPois])
+  return <Proph3tVolumePanel volume="parcours" buildInput={buildInput} />
+})
 import { PlanCanvasV2 } from '../shared/components/PlanCanvasV2'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
@@ -1631,29 +1656,7 @@ export default function Vol3Module() {
       </footer>
 
       {/* Panneau PROPH3T Vol.3 — suggestions parcours / signalétique / audit */}
-      {parsedPlan && (
-        <Proph3tVolumePanel
-          volume="parcours"
-          buildInput={() => {
-            const pw = parsedPlan.bounds.width || 200
-            const ph = parsedPlan.bounds.height || 140
-            return {
-              planWidth: pw,
-              planHeight: ph,
-              spaces: (parsedPlan.spaces ?? []).map(s => ({
-                id: s.id, label: s.label, type: s.type as string | undefined,
-                areaSqm: s.areaSqm, polygon: s.polygon as [number, number][], floorId: s.floorId,
-              })),
-              pois: floorPois.map(p => ({
-                id: p.id, label: p.label,
-                x: p.x > 1 ? p.x : p.x * pw,
-                y: p.y > 1 ? p.y : p.y * ph,
-                floorId: p.floorId, priority: p.priority,
-              })),
-            }
-          }}
-        />
-      )}
+      {parsedPlan && <Vol3Proph3tPanel parsedPlan={parsedPlan} floorPois={floorPois} />}
     </div>
   )
 }
