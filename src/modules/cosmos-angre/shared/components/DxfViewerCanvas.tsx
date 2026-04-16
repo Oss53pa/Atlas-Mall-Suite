@@ -6,6 +6,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { DxfViewer } from 'dxf-viewer'
 import type { LayerInfo } from 'dxf-viewer'
 import { Plan3DView } from './Plan3DView'
+import { useExcludedLayersStore } from '../stores/excludedLayersStore'
 
 interface WallSeg { x1: number; y1: number; x2: number; y2: number; layer: string; floorId?: string }
 interface Space3D { id: string; label: string; type: string; bounds: { minX: number; minY: number; width: number; height: number }; areaSqm: number; color: string | null; floorId?: string }
@@ -71,14 +72,24 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSeg
   const [error, setError] = useState<string | null>(null)
   const [layerPanelOpen, setLayerPanelOpen] = useState(false)
   const [hiddenLayers, setHiddenLayers] = useState<Set<string>>(new Set())
-  const [excludedLayers, setExcludedLayers] = useState<Set<string>>(() => {
-    try { return new Set(JSON.parse(localStorage.getItem('cosmos-excluded-layers') ?? '[]')) }
-    catch { return new Set() }
-  })
-  // Persiste les exclusions par DXF (clé stable par dxfUrl)
+  // Source unique des exclusions : Zustand store (synchronise PROPH3T ↔ UI ↔ persistance)
+  const excludedArr = useExcludedLayersStore(s => s.excluded)
+  const excludedVersion = useExcludedLayersStore(s => s.version)
+  const excludeStoreFn = useExcludedLayersStore(s => s.exclude)
+  const restoreStoreFn = useExcludedLayersStore(s => s.restore)
+  const excludedLayers = React.useMemo(() => new Set(excludedArr), [excludedArr])
+
+  // Réagit aux mutations du store (PROPH3T peut exclure depuis l'extérieur)
   useEffect(() => {
-    localStorage.setItem('cosmos-excluded-layers', JSON.stringify(Array.from(excludedLayers)))
-  }, [excludedLayers])
+    const viewer = viewerRef.current
+    if (!viewer || layers.length === 0) return
+    for (const l of layers) {
+      const shouldHide = excludedLayers.has(l.name) || hiddenLayers.has(l.name)
+      try { viewer.ShowLayer(l.name, !shouldHide) } catch { /* */ }
+    }
+    viewer.Render()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [excludedVersion, layers.length])
 
   // Initialize 2D viewer
   useEffect(() => {
@@ -128,11 +139,12 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSeg
         const layerList: LayerInfo[] = []
         for (const layer of viewer.GetLayers()) layerList.push(layer)
         setLayers(layerList)
-        // Applique les exclusions persistées
-        for (const name of excludedLayers) {
+        // Applique les exclusions persistées (depuis store global)
+        const currentExcluded = useExcludedLayersStore.getState().excluded
+        for (const name of currentExcluded) {
           try { viewer.ShowLayer(name, false) } catch { /* layer absent */ }
         }
-        if (excludedLayers.size > 0) viewer.Render()
+        if (currentExcluded.length > 0) viewer.Render()
 
         const bounds = viewer.GetBounds()
         if (bounds) viewer.FitView(bounds.minX, bounds.maxX, bounds.minY, bounds.maxY, 20)
@@ -183,40 +195,20 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSeg
     setHiddenLayers(new Set(layers.map(l => l.name)))
   }, [layers])
 
-  /** Exclusion permanente d'un calque (persiste en localStorage). */
+  /** Exclusion permanente d'un calque (via store global, synchronisé partout). */
   const excludeLayer = useCallback((name: string) => {
+    excludeStoreFn(name)
+    setHiddenLayers(prev => { const next = new Set(prev); next.add(name); return next })
     const viewer = viewerRef.current
-    if (!viewer) return
-    setExcludedLayers(prev => {
-      const next = new Set(prev)
-      next.add(name)
-      return next
-    })
-    setHiddenLayers(prev => {
-      const next = new Set(prev)
-      next.add(name)
-      return next
-    })
-    try { viewer.ShowLayer(name, false) } catch { /* */ }
-    viewer.Render()
-  }, [])
+    if (viewer) { try { viewer.ShowLayer(name, false) } catch { /* */ }; viewer.Render() }
+  }, [excludeStoreFn])
 
   const restoreLayer = useCallback((name: string) => {
+    restoreStoreFn(name)
+    setHiddenLayers(prev => { const next = new Set(prev); next.delete(name); return next })
     const viewer = viewerRef.current
-    if (!viewer) return
-    setExcludedLayers(prev => {
-      const next = new Set(prev)
-      next.delete(name)
-      return next
-    })
-    setHiddenLayers(prev => {
-      const next = new Set(prev)
-      next.delete(name)
-      return next
-    })
-    try { viewer.ShowLayer(name, true) } catch { /* */ }
-    viewer.Render()
-  }, [])
+    if (viewer) { try { viewer.ShowLayer(name, true) } catch { /* */ }; viewer.Render() }
+  }, [restoreStoreFn])
 
   const is3D = viewMode !== '2d'
 

@@ -59,6 +59,53 @@ function Proph3tImportModalMount({ plan }: { plan: ParsedPlan }) {
     return { lots, horizonMonths: 12 }
   }, [])
 
+  // Application réelle des actions PROPH3T (le ✓ doit DÉCLENCHER quelque chose)
+  const onApplyAction = useCallback(async (action: import('../proph3t/orchestrator.types').Proph3tAction) => {
+    switch (action.verb) {
+      case 'exclude-layer': {
+        const layerName = (action.payload?.layerName as string) ?? action.targetId
+        if (!layerName) return
+        const { useExcludedLayersStore } = await import('../stores/excludedLayersStore')
+        useExcludedLayersStore.getState().exclude(layerName)
+        console.log(`[PROPH3T action] Calque "${layerName}" exclu du plan`)
+        return
+      }
+      case 'reclassify-zone': {
+        const spaceId = (action.payload?.spaceId as string) ?? action.targetId
+        if (!spaceId) return
+        // Sélectionne la zone — l'utilisateur peut alors la renommer
+        const { usePlanEngineStore } = await import('../stores/planEngineStore')
+        usePlanEngineStore.getState().selectSpace?.(spaceId)
+        console.log(`[PROPH3T action] Zone "${spaceId}" sélectionnée pour reclassification`)
+        return
+      }
+      case 'flag-anomaly': {
+        const spaceId = (action.payload?.spaceId as string) ?? action.targetId
+        if (!spaceId) return
+        const { usePlanEngineStore } = await import('../stores/planEngineStore')
+        usePlanEngineStore.getState().selectSpace?.(spaceId)
+        console.log(`[PROPH3T action] Anomalie zone "${spaceId}" — surlignée`)
+        return
+      }
+      case 'place-camera':
+      case 'add-exit':
+      case 'add-signage':
+      case 'fix-compliance':
+      case 'reposition-tenant':
+      case 'adjust-rent':
+      case 'renew-lease':
+      case 'send-notice':
+      case 'merge-zones':
+      case 'split-zone':
+      case 'note':
+      default:
+        // Acceptation enregistrée dans RLHF, application manuelle requise
+        // (ces actions nécessitent UI dédiée dans Vol2/Vol3 — TODO)
+        console.log(`[PROPH3T action] ${action.verb} acceptée (RLHF) — application manuelle requise`)
+        return
+    }
+  }, [])
+
   // Capture screenshot : utilise html2canvas si dispo, sinon dxf-viewer canvas
   const captureScreenshot = useCallback(async (): Promise<string | null> => {
     try {
@@ -95,6 +142,7 @@ function Proph3tImportModalMount({ plan }: { plan: ParsedPlan }) {
       buildParcoursInput={buildParcoursInput}
       buildCommercialInput={buildCommercialInput as any}
       captureScreenshot={captureScreenshot}
+      onApplyAction={onApplyAction}
     />
   )
 }
