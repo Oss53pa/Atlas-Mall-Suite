@@ -496,9 +496,9 @@ export function PlanCanvasV2({
     ;(async () => {
       try {
         // 1. Essai direct : l'URL actuelle est-elle encore vivante ? (cas : même session)
+        // NB : les blob URLs ne supportent PAS HEAD → on fait GET direct
         try {
-          const res = await fetch(targetUrl, { method: 'HEAD' }).catch(() => null)
-            || await fetch(targetUrl).catch(() => null)
+          const res = await fetch(targetUrl).catch(() => null)
           if (res && res.ok) {
             if (!cancelled) {
               clearTimeout(bailoutTimer)

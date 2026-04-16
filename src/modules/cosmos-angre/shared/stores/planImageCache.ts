@@ -49,13 +49,12 @@ export async function savePlanImageFromUrl(floorId: string, blobUrl: string, fil
  * Vérifie que le blob URL est vivant — sinon le regénère.
  */
 export async function getPlanImageUrl(floorId: string): Promise<string | undefined> {
-  // Check memory cache first — mais vérifie que le blob est vivant
+  // Check memory cache first — vérifie que le blob est vivant (GET, pas HEAD)
   const cached = blobUrlCache.get(floorId)
   if (cached) {
     try {
-      const res = await fetch(cached, { method: 'HEAD' }).catch(() => null)
+      const res = await fetch(cached).catch(() => null)
       if (res && res.ok) return cached
-      // Blob mort → purge et regénère
       blobUrlCache.delete(floorId)
     } catch { blobUrlCache.delete(floorId) }
   }

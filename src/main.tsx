@@ -67,6 +67,21 @@ window.history.pushState = function (...args: Parameters<typeof originalPushStat
       console.log('[Atlas] Toutes les modales fermées.')
     })
 }
+
+// Purge le cache parsedPlan corrompu (bounds 2.4×2.4m au lieu de 239×239m)
+;(window as any).clearPlanCache = async () => {
+  const m1 = await import('./modules/cosmos-angre/shared/stores/parsedPlanCache')
+  await m1.clearPlanCache()
+  const m2 = await import('./modules/cosmos-angre/shared/stores/planImageCache')
+  await m2.clearAllPlanImages()
+  const m3 = await import('./modules/cosmos-angre/shared/stores/planFileCache')
+  await m3.clearAllPlanFiles()
+  const m4 = await import('./modules/cosmos-angre/shared/stores/planEngineStore')
+  m4.usePlanEngineStore.getState().setParsedPlan(null)
+  // Et vide localStorage si des bounds y sont persistées
+  try { localStorage.removeItem('atlas-plan-engine') } catch {}
+  console.log('[Atlas] Cache plan vidé. Rechargez puis réimportez un DXF.')
+}
 ;(window as any).disableProph3t = () => {
   localStorage.setItem('atlas-proph3t-disabled', '1')
   console.log('[Atlas] PROPH3T désactivé. Rechargez la page.')
@@ -92,6 +107,7 @@ if (import.meta.env.PROD) {
         console.log('[Atlas] Build', __BUILD_ID__ ?? 'dev')
         console.log('[Atlas] Commandes d\'urgence :')
         console.log('  • window.closeAllModals()   — ferme les modales coincées')
+        console.log('  • window.clearPlanCache()   — vide le cache DXF/plan en IndexedDB')
         console.log('  • window.disableProph3t()   — désactive totalement PROPH3T')
         console.log('  • window.enableProph3t()    — réactive PROPH3T')
         console.log('  • window.nuclearReset()     — reset complet SW + caches')
