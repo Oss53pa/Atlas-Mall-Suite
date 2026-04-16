@@ -17,7 +17,12 @@ createRoot(document.getElementById('root')!).render(
 if (import.meta.env.PROD) {
   window.addEventListener('load', () => {
     import('./modules/cosmos-angre/shared/offline/serviceWorkerClient')
-      .then(mod => mod.registerServiceWorker())
+      .then(mod => {
+        mod.registerServiceWorker()
+        // Expose une commande globale d'urgence : window.nuclearReset()
+        ;(window as any).nuclearReset = mod.nuclearReset
+        console.log('[Atlas] Build', __BUILD_ID__ ?? 'dev', '· tapez window.nuclearReset() dans la console pour reset complet')
+      })
       .catch(() => { /* silent */ })
   })
 }
