@@ -48,6 +48,52 @@ import {
 import FloorPlanCanvas, { CANVAS_SCALE } from '../shared/components/FloorPlanCanvas'
 import { ConsolidatedReportButton } from '../shared/components/ConsolidatedReportButton'
 import { Proph3tVolumePanel } from '../shared/proph3t/components/Proph3tVolumePanel'
+import { DetailedJourneysOverlay } from '../shared/components/DetailedJourneysOverlay'
+import type { DetailedJourney } from '../shared/proph3t/engines/detailedJourneyEngine'
+
+// Monte l'overlay des parcours PROPH3T au-dessus du canvas Vol.3
+// Utilise ResizeObserver pour suivre la taille du canvas et scale les coords mètres → pixels
+function Vol3ProphJourneysMount({
+  journeys, planWidth, planHeight,
+}: { journeys: DetailedJourney[]; planWidth: number; planHeight: number }) {
+  const containerRef = React.useRef<HTMLDivElement>(null)
+  const [size, setSize] = React.useState({ w: 0, h: 0 })
+
+  React.useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    // Trouve le parent main qui contient le canvas
+    const parent = el.parentElement
+    if (!parent) return
+    const update = () => setSize({ w: parent.clientWidth, h: parent.clientHeight })
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(parent)
+    return () => ro.disconnect()
+  }, [])
+
+  // Scale : fit le plan dans la viewport avec marge 10%
+  const scale = size.w > 0 && size.h > 0
+    ? Math.min(size.w / planWidth, size.h / planHeight) * 0.9
+    : 1
+  const offsetX = (size.w - planWidth * scale) / 2
+  const offsetY = (size.h - planHeight * scale) / 2
+  const worldToScreen = (x: number, y: number) => ({
+    x: x * scale + offsetX,
+    y: y * scale + offsetY,
+  })
+
+  return (
+    <div ref={containerRef} className="absolute inset-0 pointer-events-none" style={{ zIndex: 15 }}>
+      <DetailedJourneysOverlay
+        journeys={journeys}
+        worldToScreen={worldToScreen}
+        width={size.w}
+        height={size.h}
+      />
+    </div>
+  )
+}
 
 // Panneau isolé → évite re-render infini quand le state parent change
 const Vol3Proph3tPanel = React.memo(function Vol3Proph3tPanel({
@@ -465,6 +511,10 @@ export default function Vol3Module() {
   // ── View mode ──
   const [viewMode, setViewMode] = useState<'2d' | '3d' | '3d-advanced'>('2d')
 
+  // ── PROPH3T parcours détaillés (calculés à la demande) ──
+  const [proph3tJourneys, setProph3tJourneys] = useState<import('../shared/proph3t/engines/detailedJourneyEngine').DetailedJourney[] | null>(null)
+  const [computingJourneys, setComputingJourneys] = useState(false)
+
   // ── Placement tools ──
   type PlaceTool = null | 'poi' | 'signage'
   const [placeTool, setPlaceTool] = useState<PlaceTool>(null)
@@ -817,6 +867,49 @@ export default function Vol3Module() {
               3D+
             </button>
           </div>
+        )}
+
+        {/* Bouton PROPH3T Parcours — calcule les parcours détaillés sur le plan */}
+        {activeTab === 'plan' && parsedPlan && (
+          <button
+            onClick={async () => {
+              if (computingJourneys) return
+              setComputingJourneys(true)
+              try {
+                const { computeDetailedJourneys } = await import('../shared/proph3t/engines/detailedJourneyEngine')
+                const result = computeDetailedJourneys({
+                  spaces: (parsedPlan.spaces ?? []).map(s => ({
+                    id: s.id, label: s.label, type: s.type,
+                    areaSqm: s.areaSqm, polygon: s.polygon as [number, number][],
+                    floorId: s.floorId,
+                  })),
+                  planWidth: parsedPlan.bounds.width || 200,
+                  planHeight: parsedPlan.bounds.height || 140,
+                  floorId: activeFloorId,
+                })
+                setProph3tJourneys(result.journeys)
+                console.log(`[PROPH3T Parcours] ${result.journeys.length} parcours calculés`, result)
+              } catch (err) {
+                console.error('[PROPH3T Parcours] failed', err)
+              } finally {
+                setComputingJourneys(false)
+              }
+            }}
+            disabled={computingJourneys}
+            className="ml-2 flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-medium bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:opacity-90 disabled:opacity-50"
+            title="Calculer les parcours client détaillés (PROPH3T A* sur plan réel)"
+          >
+            {computingJourneys ? '⏳ Calcul…' : proph3tJourneys ? `✨ ${proph3tJourneys.length} parcours` : '✨ Calculer parcours'}
+          </button>
+        )}
+        {proph3tJourneys && activeTab === 'plan' && (
+          <button
+            onClick={() => setProph3tJourneys(null)}
+            className="ml-1 flex items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-medium bg-slate-800 text-slate-400 hover:text-white"
+            title="Masquer les parcours PROPH3T"
+          >
+            ✕
+          </button>
         )}
 
         {/* Profile selector — only shown when plan is active */}
@@ -1185,16 +1278,20 @@ export default function Vol3Module() {
             </div>
           )}
 
-          {/* DIAGNOSTIC : affiche l'état du rendu pour debug */}
+          {/* DIAGNOSTIC plan non chargé */}
           {!parsedPlan && (
             <div className="absolute top-3 right-3 z-20 px-3 py-2 rounded-lg bg-amber-900/80 border border-amber-500/40 text-amber-200 text-[10px]">
               ⚠ parsedPlan null — importez un DXF
             </div>
           )}
-          {parsedPlan && (
-            <div className="absolute top-3 right-3 z-20 px-3 py-2 rounded-lg bg-emerald-900/80 border border-emerald-500/40 text-emerald-200 text-[10px]">
-              ✓ Plan {parsedPlan.bounds.width.toFixed(0)}×{parsedPlan.bounds.height.toFixed(0)}m · viewMode={viewMode}
-            </div>
+
+          {/* Overlay PROPH3T parcours détaillés (rendu au-dessus du canvas) */}
+          {parsedPlan && proph3tJourneys && proph3tJourneys.length > 0 && (
+            <Vol3ProphJourneysMount
+              journeys={proph3tJourneys}
+              planWidth={parsedPlan.bounds.width || 200}
+              planHeight={parsedPlan.bounds.height || 140}
+            />
           )}
 
           {/* When a real plan is imported (parsedPlan exists), use PlanCanvasV2

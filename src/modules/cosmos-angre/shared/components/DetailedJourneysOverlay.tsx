@@ -116,7 +116,7 @@ export function DetailedJourneysOverlay({ journeys, worldToScreen, width, height
       </svg>
 
       {/* Légende interactive */}
-      <div className="absolute bottom-3 left-3 z-20 rounded-lg bg-slate-950/90 border border-white/[0.08] p-2 max-w-xs">
+      <div className="absolute bottom-3 left-3 z-20 rounded-lg bg-slate-950/90 border border-white/[0.08] p-2 max-w-xs pointer-events-auto">
         <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1.5">
           Parcours personas (PROPH3T)
         </div>
