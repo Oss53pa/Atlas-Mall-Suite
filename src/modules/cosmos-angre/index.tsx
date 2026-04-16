@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useOnboardingStore } from './shared/stores/onboardingStore'
 import type { OnboardingResult } from './shared/components/OnboardingWizard'
 import { ErrorBoundary } from './shared/components/ErrorBoundary'
+import { usePlanHydration } from './shared/hooks/usePlanHydration'
 
 const OnboardingWizard = React.lazy(() => import('./shared/components/OnboardingWizard'))
 const Vol1Module = React.lazy(() => import('./vol1-commercial'))
@@ -25,6 +26,9 @@ const LoadingFallback = () => (
 )
 
 export default function CosmosAngre() {
+  // Recharge le parsedPlan depuis IndexedDB si besoin (après refresh / navigation)
+  usePlanHydration()
+
   const onboardingCompleted = useOnboardingStore((s) => s.completed)
   const markComplete = useOnboardingStore((s) => s.markComplete)
 

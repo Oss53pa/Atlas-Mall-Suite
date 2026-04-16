@@ -6,11 +6,14 @@ import React, { useCallback } from 'react'
 import { Proph3tImportModal } from './Proph3tImportModal'
 import { FloorAttributionModal, type FloorAttribution } from '../../components/FloorAttributionModal'
 import { usePlanEngineStore } from '../../stores/planEngineStore'
+import { usePlanHydration } from '../../hooks/usePlanHydration'
 import { FloorLevel, FLOOR_LABEL_FR, FLOOR_STACK_ORDER } from '../../domain/FloorLevel'
 import type { ParsedPlan } from '../../planReader/planEngineTypes'
 import type { Proph3tAction } from '../orchestrator.types'
 
 export function Proph3tGlobalMount() {
+  // Hydrate le parsedPlan depuis IndexedDB si pas encore en mémoire
+  usePlanHydration()
   const plan = usePlanEngineStore(s => s.parsedPlan)
   const setParsedPlan = usePlanEngineStore(s => s.setParsedPlan)
   const proph3tModalOpen = usePlanEngineStore(s => s.proph3tModalOpen)

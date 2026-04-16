@@ -119,7 +119,15 @@ export const usePlanEngineStore = create<PlanEngineState>()(
 
       // Parsed plan
       parsedPlan: null,
-      setParsedPlan: (plan) => set({ parsedPlan: plan }),
+      setParsedPlan: (plan) => {
+        set({ parsedPlan: plan })
+        // Persiste en IndexedDB pour survivre aux refreshes/navigations
+        if (plan) {
+          void import('./parsedPlanCache').then(m => m.savePlanToCache(plan)).catch(() => {})
+        } else {
+          void import('./parsedPlanCache').then(m => m.clearPlanCache()).catch(() => {})
+        }
+      },
 
       // PROPH3T modal auto-open
       proph3tModalOpen: false,
