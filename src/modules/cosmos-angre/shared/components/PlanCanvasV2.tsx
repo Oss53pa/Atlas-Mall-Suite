@@ -30,6 +30,14 @@ function FloorAttributionModalMount({ plan }: { plan: ParsedPlan }) {
 
   const clusters = plan.detectedFloors ?? []
 
+  // Auto-close si la modal est ouverte mais qu'il n'y a plus assez de clusters
+  // (évite un état bloqué au rechargement d'un plan mono-étage)
+  useEffect(() => {
+    if (open && clusters.length <= 1) {
+      close()
+    }
+  }, [open, clusters.length, close])
+
   const handleConfirm = async (attributions: Array<FloorAttribution & { level: FloorLevel }>) => {
     if (!plan) { close(); return }
 

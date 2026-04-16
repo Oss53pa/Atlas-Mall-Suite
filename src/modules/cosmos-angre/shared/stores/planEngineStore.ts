@@ -37,6 +37,9 @@ interface PlanEngineState {
   floorAttributionOpen: boolean
   openFloorAttribution: () => void
   closeFloorAttribution: () => void
+
+  /** Escape hatch — ferme toutes les modales d'un coup. */
+  closeAllModals: () => void
   /** All parsed plans keyed by importId (in-memory only, not persisted) */
   parsedPlans: Record<string, ParsedPlan>
   /** Store a parsed plan associated with an import */
@@ -133,6 +136,9 @@ export const usePlanEngineStore = create<PlanEngineState>()(
       floorAttributionOpen: false,
       openFloorAttribution: () => set({ floorAttributionOpen: true }),
       closeFloorAttribution: () => set({ floorAttributionOpen: false }),
+
+      // Ferme toutes les modales d'un coup (escape hatch)
+      closeAllModals: () => set({ proph3tModalOpen: false, floorAttributionOpen: false }),
 
       parsedPlans: {},
       storeParsedPlan: (importId, plan) => set(s => ({
