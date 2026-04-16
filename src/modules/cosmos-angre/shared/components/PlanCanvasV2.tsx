@@ -577,12 +577,53 @@ export function PlanCanvasV2({
   })), [plan.spaces])
 
   // ── WebGL DXF viewer: DÉSACTIVÉ PAR DÉFAUT (freeze sur gros DXF) ──
-  // L'utilisateur doit explicitement opt-in via localStorage OU URL ?heavy=true
-  // car le DxfViewer génère des milliers d'erreurs HATCH/ATTDEF qui font freezer
   const dxfViewerEnabled = (() => {
     try { return localStorage.getItem('atlas-dxf-viewer-enabled') === '1' }
     catch { return false }
   })()
+
+  // ── Mode 3D en LITE : utilise Plan3DView DIRECTEMENT sans DxfViewer ──
+  // Plan3DView ne dépend que des wallSegments/spaces déjà parsés → léger + fiable
+  const is3DMode = viewMode === '3d' || viewMode === '3d-advanced'
+  if (is3DMode && plan.wallSegments && plan.wallSegments.length > 0) {
+    const Plan3DViewLazy = React.lazy(() =>
+      import('./Plan3DView').then(m => ({ default: m.Plan3DView }))
+    )
+    return (
+      <div className={`relative w-full h-full flex overflow-hidden bg-gray-950 ${className}`}>
+        <React.Suspense fallback={
+          <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
+            <div className="w-4 h-4 border-2 border-gray-600 border-t-purple-500 rounded-full animate-spin mr-2" />
+            Chargement vue 3D…
+          </div>
+        }>
+          <Plan3DViewLazy
+            wallSegments={plan.wallSegments}
+            spaces={memoSpaces}
+            planBounds={plan.bounds}
+            mode={viewMode === '3d-advanced' ? '3d-advanced' : '3d'}
+            detectedFloors={plan.detectedFloors}
+            dimensions={plan.dimensions}
+            cameras={cameras}
+            doors={doors}
+            blindSpots={blindSpots}
+            pois={pois}
+            signage={signage}
+            moments={moments}
+            journeys={journeys}
+            placeMode={placeMode}
+            onPlace={onPlace}
+            onEntityUpdate={onEntityUpdate}
+            onEntityDelete={onEntityDelete}
+            compliance={compliance}
+            className="flex-1"
+          />
+        </React.Suspense>
+        <PlanSelector />
+        <FloorManagerPanel />
+      </div>
+    )
+  }
 
   if (plan.dxfBlobUrl && dxfViewerEnabled) {
     // Attend la rehydratation avant de rendre DxfViewerCanvas
