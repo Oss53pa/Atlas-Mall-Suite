@@ -1,11 +1,34 @@
 // ═══ usePlanHydration — Recharge parsedPlan depuis IndexedDB au montage ═══
-// + régénère un blob URL frais pour dxfBlobUrl (les anciens blobs meurent au refresh)
+// Principe : les blob URLs créées dans la session courante sont reconnaissables
+// par leur préfixe (blob:<origin>/...). Si le parsedPlan restauré contient un
+// blob URL d'une session précédente, il est FORCÉMENT mort → on le purge
+// SANS essayer de fetch (ce qui générait ERR_FILE_NOT_FOUND dans la console).
 
 import { useEffect } from 'react'
 import { usePlanEngineStore } from '../stores/planEngineStore'
 import { loadPlanFromCache } from '../stores/parsedPlanCache'
 
 let hydrated = false
+
+/** Set en mémoire des blob URLs créés DANS cette session.
+ *  Un blob URL qui n'y figure pas = blob d'une session précédente = MORT. */
+const sessionBlobUrls = new Set<string>()
+
+/** À appeler chaque fois qu'on crée un nouveau blob URL pour qu'il soit
+ *  reconnu comme vivant par la prochaine hydratation. */
+export function registerSessionBlob(url: string): void {
+  sessionBlobUrls.add(url)
+}
+
+// Wrap URL.createObjectURL pour tracker tous les blobs de la session
+if (typeof URL !== 'undefined' && URL.createObjectURL) {
+  const original = URL.createObjectURL.bind(URL)
+  URL.createObjectURL = function (obj: Blob | MediaSource): string {
+    const url = original(obj)
+    sessionBlobUrls.add(url)
+    return url
+  }
+}
 
 /** À appeler dans chaque volume (Vol1/Vol2/Vol3) pour s'assurer que parsedPlan
  *  est chargé depuis le cache IndexedDB s'il n'est pas en mémoire. */
@@ -23,57 +46,36 @@ export function usePlanHydration(): void {
       }
       if (!plan) return
 
-      // Régénère un blob URL frais si dxfBlobUrl est mort (HEAD sur blob → ERR_METHOD,
-      // donc on fait GET). Si mort → chercher dans planFileCache, sinon dropper dxfBlobUrl.
-      if (plan.dxfBlobUrl) {
-        let alive = false
+      // Si dxfBlobUrl n'est pas dans la session courante → c'est un blob mort (session précédente)
+      // On le remplace directement SANS fetch (évite ERR_FILE_NOT_FOUND bruyant)
+      if (plan.dxfBlobUrl && !sessionBlobUrls.has(plan.dxfBlobUrl)) {
         try {
-          const res = await fetch(plan.dxfBlobUrl).catch(() => null)
-          alive = !!(res && res.ok)
-        } catch { alive = false }
-
-        if (!alive) {
-          try {
-            const { listPlanFiles, getPlanFileUrl } = await import('../stores/planFileCache')
-            const files = await listPlanFiles()
-            const dxfFiles = files
-              .filter(f => f.sourceType === 'dxf' || f.sourceType === 'dwg')
-              .sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime())
-            if (dxfFiles.length > 0) {
-              const freshUrl = await getPlanFileUrl(dxfFiles[0].importId)
-              if (freshUrl) {
-                plan = { ...plan, dxfBlobUrl: freshUrl }
-                console.log(`[PlanHydration] blob DXF régénéré depuis IDB : ${dxfFiles[0].fileName}`)
-              } else {
-                plan = { ...plan, dxfBlobUrl: undefined }
-                console.warn('[PlanHydration] aucun DXF en IDB → fallback SVG')
-              }
+          const { listPlanFiles, getPlanFileUrl } = await import('../stores/planFileCache')
+          const files = await listPlanFiles()
+          const dxfFiles = files
+            .filter(f => f.sourceType === 'dxf' || f.sourceType === 'dwg')
+            .sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime())
+          if (dxfFiles.length > 0) {
+            const freshUrl = await getPlanFileUrl(dxfFiles[0].importId)
+            if (freshUrl) {
+              plan = { ...plan, dxfBlobUrl: freshUrl }
+              console.log(`[PlanHydration] blob DXF régénéré depuis IDB : ${dxfFiles[0].fileName}`)
             } else {
-              // Aucun fichier DXF disponible → retire dxfBlobUrl pour éviter ERR_FILE_NOT_FOUND
               plan = { ...plan, dxfBlobUrl: undefined }
-              console.warn('[PlanHydration] planFileCache vide — dxfBlobUrl retiré')
             }
-          } catch (err) {
-            console.warn('[PlanHydration] erreur lookup IDB', err)
+          } else {
             plan = { ...plan, dxfBlobUrl: undefined }
           }
-        }
-      }
-
-      // Purge planImageUrl si mort aussi (svg/png preview peut être un blob mort)
-      if (plan.planImageUrl) {
-        try {
-          const res = await fetch(plan.planImageUrl).catch(() => null)
-          if (!res || !res.ok) {
-            plan = { ...plan, planImageUrl: undefined }
-            console.warn('[PlanHydration] planImageUrl mort → retiré')
-          }
         } catch {
-          plan = { ...plan, planImageUrl: undefined }
+          plan = { ...plan, dxfBlobUrl: undefined }
         }
       }
 
-      // Set direct pour éviter la boucle save→load
+      // planImageUrl : pareil, pas de fetch, juste check session set
+      if (plan.planImageUrl && !sessionBlobUrls.has(plan.planImageUrl)) {
+        plan = { ...plan, planImageUrl: undefined }
+      }
+
       if (!current || current !== plan) {
         usePlanEngineStore.setState({ parsedPlan: plan })
       }
