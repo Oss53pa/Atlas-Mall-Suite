@@ -1,4 +1,5 @@
 // ═══ usePlanHydration — Recharge parsedPlan depuis IndexedDB au montage ═══
+// + régénère un blob URL frais pour dxfBlobUrl (les anciens blobs meurent au refresh)
 
 import { useEffect } from 'react'
 import { usePlanEngineStore } from '../stores/planEngineStore'
@@ -13,13 +14,51 @@ export function usePlanHydration(): void {
     if (hydrated) return
     hydrated = true
     const current = usePlanEngineStore.getState().parsedPlan
-    if (current) return // déjà hydraté
-    loadPlanFromCache().then(plan => {
-      if (plan) {
-        // On appelle set direct (pas setParsedPlan) pour éviter d'écrire en boucle
-        usePlanEngineStore.setState({ parsedPlan: plan })
-        console.log('[PlanHydration] parsedPlan restauré depuis IndexedDB')
+
+    ;(async () => {
+      let plan = current
+      if (!plan) {
+        plan = await loadPlanFromCache().catch(() => null)
+        if (plan) console.log('[PlanHydration] parsedPlan restauré depuis IndexedDB')
       }
-    }).catch(() => {})
+      if (!plan) return
+
+      // Régénère un blob URL frais si dxfBlobUrl est mort
+      if (plan.dxfBlobUrl) {
+        try {
+          const res = await fetch(plan.dxfBlobUrl, { method: 'HEAD' }).catch(() => null)
+          const alive = res && res.ok
+          if (!alive) {
+            // Cherche dans planFileCache un fichier DXF à re-blober
+            const { listPlanFiles, getPlanFileUrl } = await import('../stores/planFileCache')
+            const files = await listPlanFiles()
+            const dxfFiles = files
+              .filter(f => f.sourceType === 'dxf' || f.sourceType === 'dwg')
+              .sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime())
+            if (dxfFiles.length > 0) {
+              const freshUrl = await getPlanFileUrl(dxfFiles[0].importId)
+              if (freshUrl) {
+                plan = { ...plan, dxfBlobUrl: freshUrl }
+                console.log(`[PlanHydration] blob DXF régénéré depuis IDB : ${dxfFiles[0].fileName}`)
+              } else {
+                // Pas de fichier DXF en IDB → on retire le dxfBlobUrl pour éviter "Chargement..." éternel
+                plan = { ...plan, dxfBlobUrl: undefined }
+                console.warn('[PlanHydration] aucun DXF en IDB, rendu fallback SVG/zones')
+              }
+            } else {
+              plan = { ...plan, dxfBlobUrl: undefined }
+              console.warn('[PlanHydration] aucun DXF en IDB (listPlanFiles vide)')
+            }
+          }
+        } catch (err) {
+          console.warn('[PlanHydration] erreur check blob', err)
+        }
+      }
+
+      // Set direct pour éviter la boucle save→load
+      if (!current || current !== plan) {
+        usePlanEngineStore.setState({ parsedPlan: plan })
+      }
+    })()
   }, [])
 }

@@ -275,8 +275,12 @@ export default function FloorPlanCanvas({
   // ── Guard ──────────────────────────────────────────────
   if (!floor) {
     return (
-      <div className={`flex items-center justify-center bg-gray-950 text-gray-600 text-sm ${className}`}>
-        Chargement du plan...
+      <div className={`flex flex-col items-center justify-center bg-gray-950 text-center p-8 ${className}`}>
+        <div className="text-gray-300 text-sm mb-2 font-medium">Aucun plan chargé</div>
+        <div className="text-gray-500 text-xs max-w-md leading-relaxed">
+          Importez un plan DXF ou DWG depuis l'onglet <strong className="text-purple-400">Plans importés</strong>.
+          Le plan sera ensuite disponible dans tous les volumes (Commercial, Sécurité, Parcours).
+        </div>
       </div>
     )
   }
