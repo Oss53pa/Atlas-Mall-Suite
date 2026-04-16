@@ -1,7 +1,7 @@
 // ═══ PROPH3T BOOTSTRAP — Enregistre les skills + branche triggers ═══
 // À appeler une fois au démarrage de l'app (idempotent).
 
-import { registerSkill, wireDomainTriggers, bindTrigger, listSkills } from './orchestrator'
+import { registerSkill, wireDomainTriggers, listSkills } from './orchestrator'
 import { analyzePlanAtImport, type AnalyzePlanInput } from './skills/analyzePlanAtImport'
 import { analyzeCommercialMix, type CommercialAnalysisInput } from './skills/analyzeCommercialMix'
 import { auditSecurity, type SecurityAuditInput } from './skills/auditSecurity'
@@ -27,18 +27,14 @@ export async function bootstrapProph3t(): Promise<void> {
     'analyzeParcours', analyzeParcours,
   )
 
-  // Branche le bus d'événements de domaine
+  // Branche le bus d'événements de domaine (logging uniquement, pas d'auto-run)
   await wireDomainTriggers()
 
-  // Binding triggers → skills
-  // Phase A : analyse auto à l'import (le moteur va appeler runSkill avec les bonnes données)
-  // Vol.1 : analyse mix auto sur modification de lot/tenant
-  bindTrigger('lot-modified', 'analyzeCommercialMix', () => {
-    return getCommercialInputFromStore()
-  })
-  bindTrigger('tenant-modified', 'analyzeCommercialMix', () => {
-    return getCommercialInputFromStore()
-  })
+  // Les bindings auto sur lot-modified / tenant-modified ont été RETIRÉS
+  // → causaient des runSkill en cascade quand upsertMany hydratait 400 lots
+  // → freeze du main thread
+  // Les skills Vol.1 Commercial s'exécutent maintenant SEULEMENT via le
+  // panneau Proph3tVolumePanel (boutons Évaluer / Suggérer / Auditer manuels)
 
   console.log(`[PROPH3T] bootstrapped — skills: ${listSkills().join(', ')}`)
 }

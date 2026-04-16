@@ -64,10 +64,11 @@ export const useLotsStore = create<LotsState>()(
       upsertMany: (incoming) => set(state => {
         const next = { ...state.lots }
         for (const lot of incoming) {
-          const prev = next[lot.id as string]
           next[lot.id as string] = lot
-          if (prev) emitLotUpdated(lot, prev); else emitLotCreated(lot)
         }
+        // Pas d'emit par lot (serait 400+ events synchrones → freeze).
+        // Les consommateurs qui ont besoin d'être notifiés en bulk peuvent écouter
+        // le re-render Zustand ou appeler explicitement un emit batch après.
         return { lots: next }
       }),
 
