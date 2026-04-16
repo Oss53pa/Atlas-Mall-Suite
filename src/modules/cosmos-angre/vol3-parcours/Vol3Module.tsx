@@ -1174,6 +1174,18 @@ export default function Vol3Module() {
             </div>
           )}
 
+          {/* DIAGNOSTIC : affiche l'état du rendu pour debug */}
+          {!parsedPlan && (
+            <div className="absolute top-3 right-3 z-20 px-3 py-2 rounded-lg bg-amber-900/80 border border-amber-500/40 text-amber-200 text-[10px]">
+              ⚠ parsedPlan null — importez un DXF
+            </div>
+          )}
+          {parsedPlan && (
+            <div className="absolute top-3 right-3 z-20 px-3 py-2 rounded-lg bg-emerald-900/80 border border-emerald-500/40 text-emerald-200 text-[10px]">
+              ✓ Plan {parsedPlan.bounds.width.toFixed(0)}×{parsedPlan.bounds.height.toFixed(0)}m · viewMode={viewMode}
+            </div>
+          )}
+
           {/* When a real plan is imported (parsedPlan exists), use PlanCanvasV2
               (abonnement réactif pour se re-render quand le plan arrive) */}
           {parsedPlan ? (
