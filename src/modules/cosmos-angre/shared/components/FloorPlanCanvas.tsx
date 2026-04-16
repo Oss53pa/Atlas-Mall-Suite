@@ -85,10 +85,24 @@ export default function FloorPlanCanvas({
   // ── Image dimensions (detected from loaded image) ──────
   const [imgSize, setImgSize] = useState<{ w: number; h: number } | null>(null)
 
+  // État local : URL effective (vidée si blob mort, pour éviter erreurs GET répétées)
+  const [effectiveImageUrl, setEffectiveImageUrl] = useState<string | undefined>(planImageUrl)
+
   useEffect(() => {
-    if (!planImageUrl) { setImgSize(null); return }
+    if (!planImageUrl) {
+      setImgSize(null)
+      setEffectiveImageUrl(undefined)
+      return
+    }
+    setEffectiveImageUrl(planImageUrl)
     const img = new Image()
     img.onload = () => setImgSize({ w: img.naturalWidth, h: img.naturalHeight })
+    img.onerror = () => {
+      // Blob mort ou URL invalide → purge pour éviter ré-utilisation dans <image href>
+      console.warn('[FloorPlanCanvas] planImageUrl invalide (blob mort ?) — purge')
+      setImgSize(null)
+      setEffectiveImageUrl(undefined)
+    }
     img.src = planImageUrl
   }, [planImageUrl])
 
@@ -107,7 +121,7 @@ export default function FloorPlanCanvas({
   // ── Canvas dimensions ──────────────────────────────────
   // When plan image exists: viewBox = image dimensions (pixel-perfect)
   // When no image: viewBox = floor metres × SCALE (legacy behavior)
-  const hasImage = !!planImageUrl && !!imgSize
+  const hasImage = !!effectiveImageUrl && !!imgSize
   const canvasW = hasImage ? imgSize!.w : (floor?.widthM ?? 200) * CANVAS_SCALE
   const canvasH = hasImage ? imgSize!.h : (floor?.heightM ?? 140) * CANVAS_SCALE
 
@@ -442,13 +456,13 @@ export default function FloorPlanCanvas({
         {/* Plan image principal (full size, pixel-perfect) */}
         {hasImage && (
           <image
-            href={planImageUrl}
+            href={effectiveImageUrl}
             x={0} y={0}
             width={canvasW} height={canvasH}
             preserveAspectRatio="none"
             onError={(e) => {
-              // Blob URL mort → cache l'image pour éviter erreur visuelle
               (e.target as SVGImageElement).style.display = 'none'
+              setEffectiveImageUrl(undefined)
             }}
           />
         )}
