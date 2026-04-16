@@ -4,12 +4,14 @@
 
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+// Direct imports (bypass the ../domain barrel to avoid the
+// lotsStore ↔ domain/hooks circular dependency).
 import {
   type Lot, type LotId, type CommercialExtension, type SecurityExtension,
   type ParcoursExtension, type LotStatus, touchLot,
-  emitLotCreated, emitLotUpdated, emitLotDeleted,
-  FloorLevel,
-} from '../domain'
+} from '../domain/LotEntity'
+import { emitLotCreated, emitLotUpdated, emitLotDeleted } from '../domain/events'
+import { FloorLevel } from '../domain/FloorLevel'
 
 interface LotsState {
   /** Map lotId → Lot. Plus rapide que array pour les mutations. */

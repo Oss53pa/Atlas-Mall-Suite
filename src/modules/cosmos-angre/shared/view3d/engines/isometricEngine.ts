@@ -9,16 +9,10 @@ import { renderSymbolsSVG } from './isoSymbolRenderer'
 import { generateFloorTilesSVG } from './isoFloorRenderer'
 import { autoGenerateAnnotations, generateAnnotationsSVG } from './isoAnnotations'
 import { facadeSign } from './isoSymbolLibrary'
+import { worldToIso } from './isoCoords'
 
-const COS_ISO = Math.cos(Math.PI / 6)
-const SIN_ISO = Math.sin(Math.PI / 6)
-
-export function worldToIso(wX: number, wY: number, wZ: number, scale: number): [number, number] {
-  return [
-    (wX - wZ) * COS_ISO * scale,
-    (wX + wZ) * SIN_ISO * scale - wY * scale,
-  ]
-}
+// Re-export for backwards compatibility with any external consumer.
+export { worldToIso }
 
 const NEUTRAL_COLORS: Record<string, ExtrudedZone['colors']> = {
   parking:       { top: '#1e3a5f', left: '#0f1d2e', right: '#2a5080', front: '#162c48' },

@@ -8,10 +8,13 @@ import type { DimEntity, CalibrationResult, CotationSpec } from '../planReader/p
 import DimOverlay from './DimOverlay'
 import CotationLayer from './CotationLayer'
 import { useCadStore, CadRenderer, CadToolbar, useCadInteraction } from '../cad'
+import { CANVAS_SCALE } from './canvasConstants'
+
+// Re-export for backwards compatibility with external consumers
+// (e.g. Vol3Module imports CANVAS_SCALE from this file).
+export { CANVAS_SCALE }
 
 const View3DSection = lazy(() => import('../view3d/View3DSection'))
-
-export const CANVAS_SCALE = 4
 
 interface FloorPlanCanvasProps {
   floor: Floor

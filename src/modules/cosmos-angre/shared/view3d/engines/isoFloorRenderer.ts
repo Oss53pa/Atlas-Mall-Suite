@@ -2,7 +2,7 @@
 
 import type { Floor } from '../../../proph3t/types'
 import type { FloorStackConfig } from '../types/view3dTypes'
-import { worldToIso } from './isometricEngine'
+import { worldToIso } from './isoCoords'
 
 export function generateFloorTilesSVG(
   floor: Floor,

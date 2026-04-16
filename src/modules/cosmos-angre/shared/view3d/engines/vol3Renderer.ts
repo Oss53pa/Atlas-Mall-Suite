@@ -1,6 +1,6 @@
 import type { POI, Floor } from '../../proph3t/types'
 import type { IsoEntity, FloorStackConfig, View3DConfig } from '../types/view3dTypes'
-import { worldToIso } from './isometricEngine'
+import { worldToIso } from './isoCoords'
 
 export function buildPOIEntities(
   pois: POI[], floors: Floor[],

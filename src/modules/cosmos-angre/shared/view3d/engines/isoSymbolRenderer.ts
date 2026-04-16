@@ -6,7 +6,7 @@ import type { Zone, Floor } from '../../../proph3t/types'
 import type { FloorStackConfig } from '../types/view3dTypes'
 import type { SymbolInstance } from './isoSymbolLibrary'
 import { renderSymbolSVG } from './isoSymbolLibrary'
-import { worldToIso } from './isometricEngine'
+import { worldToIso } from './isoCoords'
 
 export function renderSymbolsSVG(
   instances: SymbolInstance[],

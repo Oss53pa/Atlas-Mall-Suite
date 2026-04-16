@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import type { DimEntity, CalibrationResult } from '../planReader/planReaderTypes'
-import { CANVAS_SCALE } from './FloorPlanCanvas'
+import { CANVAS_SCALE } from './canvasConstants'
 
 interface DimOverlayProps {
   dims: DimEntity[]

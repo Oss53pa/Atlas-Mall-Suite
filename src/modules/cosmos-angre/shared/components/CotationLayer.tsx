@@ -1,6 +1,6 @@
 import React from 'react'
 import type { CotationSpec } from '../planReader/planReaderTypes'
-import { CANVAS_SCALE } from './FloorPlanCanvas'
+import { CANVAS_SCALE } from './canvasConstants'
 
 interface CotationLayerProps {
   specs: CotationSpec[]
