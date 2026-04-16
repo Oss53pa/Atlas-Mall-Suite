@@ -1995,8 +1995,16 @@ export async function importPlan(
               fileName: file.name,
             })
             console.log(`[PROPH3T] analyse import: ${(performance.now() - t0).toFixed(0)}ms · score ${result.qualityScore} · ${result.actions.length} actions · ${result.findings.length} findings`)
-            // Auto-ouvre la modal PROPH3T (l'utilisateur voit immédiatement le résultat)
-            usePlanEngineStore.getState().openProph3tModal()
+
+            // Si plusieurs étages détectés → ouvre d'abord la modal d'attribution (hybride strict)
+            // Sinon → directement la modal PROPH3T
+            const detectedCount = state.parsedPlan?.detectedFloors?.length ?? 0
+            if (detectedCount > 1) {
+              usePlanEngineStore.getState().openFloorAttribution()
+              console.log(`[DXF] ${detectedCount} étages détectés — ouverture modal d'attribution`)
+            } else {
+              usePlanEngineStore.getState().openProph3tModal()
+            }
           } catch (err) {
             console.warn('[PROPH3T] analyse import failed', err)
           }

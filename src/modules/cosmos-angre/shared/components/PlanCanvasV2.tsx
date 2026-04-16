@@ -18,6 +18,94 @@ import { ObjectLibraryPanel } from './ObjectLibraryPanel'
 import { PlanSelector } from './PlanSelector'
 import { Proph3tImportModal } from '../proph3t/components/Proph3tImportModal'
 import { FloorManagerPanel } from './FloorManagerPanel'
+import { FloorAttributionModal, type FloorAttribution } from './FloorAttributionModal'
+import { FloorLevel, FLOOR_LABEL_FR, FLOOR_STACK_ORDER } from '../domain/FloorLevel'
+
+// Mount modal d'attribution — applique les choix user au parsedPlan
+function FloorAttributionModalMount({ plan }: { plan: ParsedPlan }) {
+  const open = usePlanEngineStore(s => s.floorAttributionOpen)
+  const close = usePlanEngineStore(s => s.closeFloorAttribution)
+  const setParsedPlan = usePlanEngineStore(s => s.setParsedPlan)
+  const openProph3tModal = usePlanEngineStore(s => s.openProph3tModal)
+
+  const clusters = plan.detectedFloors ?? []
+
+  const handleConfirm = async (attributions: Array<FloorAttribution & { level: FloorLevel }>) => {
+    if (!plan) { close(); return }
+
+    // 1. Détermine les clusters à ignorer (ceux qui ne sont pas dans attributions)
+    const ignoredIds = new Set(
+      clusters.filter(c => !attributions.some(a => a.clusterId === c.id)).map(c => c.id),
+    )
+
+    // 2. Si certains clusters sont ignorés → retire-les du plan
+    let workingPlan = { ...plan }
+    if (ignoredIds.size > 0) {
+      const { removeFloorFromPlan } = await import('../stores/plansLibraryStore')
+      for (const id of ignoredIds) {
+        workingPlan = removeFloorFromPlan(workingPlan, id)
+      }
+    }
+
+    // 3. Renomme les étages restants avec les FloorLevel canoniques
+    const newFloors = attributions.map(a => ({
+      id: a.level, // id = FloorLevel canonique
+      label: FLOOR_LABEL_FR[a.level],
+      bounds: a.bounds,
+      entityCount: a.entityCount,
+      stackOrder: FLOOR_STACK_ORDER[a.level],
+    }))
+
+    // 4. Re-tagge tous les spaces / walls / dims avec le nouveau FloorLevel
+    //    Utilise le point-in-bbox du cluster d'origine
+    const clusterById = new Map(clusters.map(c => [c.id, c]))
+    const levelByClusterId = new Map(attributions.map(a => [a.clusterId, a.level]))
+    const retag = <T extends { floorId?: string }>(item: T, centerX: number, centerY: number): T => {
+      if (item.floorId && levelByClusterId.has(item.floorId)) {
+        return { ...item, floorId: levelByClusterId.get(item.floorId) }
+      }
+      // Fallback : cherche le cluster qui contient ce point
+      for (const a of attributions) {
+        const b = a.bounds
+        if (centerX >= b.minX && centerX <= b.maxX && centerY >= b.minY && centerY <= b.maxY) {
+          return { ...item, floorId: a.level }
+        }
+      }
+      return item
+    }
+
+    const retaggedSpaces = workingPlan.spaces.map(sp => retag(sp, sp.bounds.centerX, sp.bounds.centerY))
+    const retaggedWalls = workingPlan.wallSegments.map(w => retag(w, (w.x1 + w.x2) / 2, (w.y1 + w.y2) / 2))
+    const retaggedDims = (workingPlan.dimensions ?? []).map(d => retag(d, (d.p1[0] + d.p2[0]) / 2, (d.p1[1] + d.p2[1]) / 2))
+
+    const updatedPlan: ParsedPlan = {
+      ...workingPlan,
+      detectedFloors: newFloors,
+      spaces: retaggedSpaces,
+      wallSegments: retaggedWalls,
+      dimensions: retaggedDims,
+    }
+
+    setParsedPlan(updatedPlan)
+    close()
+    // Enchaîne avec la modal PROPH3T Phase A
+    openProph3tModal()
+  }
+
+  if (clusters.length <= 1) return null
+
+  return (
+    <FloorAttributionModal
+      open={open}
+      detectedClusters={clusters}
+      onConfirm={handleConfirm}
+      onCancel={() => {
+        close()
+        openProph3tModal()
+      }}
+    />
+  )
+}
 
 // Mount inline pour piloter la modal depuis le store.
 // Le composant utilise createPortal donc il rend HORS du DOM tree de PlanCanvasV2,
@@ -487,7 +575,9 @@ export function PlanCanvasV2({
         <PlanSelector />
         {/* Gestionnaire étages + bibliothèque de plans */}
         <FloorManagerPanel />
-        {/* PROPH3T modal auto-ouvert après import */}
+        {/* Modal d'attribution des étages (hybride strict) — avant PROPH3T */}
+        <FloorAttributionModalMount plan={plan} />
+        {/* PROPH3T modal auto-ouvert après validation étages */}
         <Proph3tImportModalMount plan={plan} />
       </div>
     )

@@ -166,6 +166,23 @@ const ZONE_COLORS: Record<string, string> = {
   exterieur: '#84cc16',
 }
 
+// Helper UI : toggle dans le menu déroulant Affichage
+function MenuToggle({ label, on, onClick, icon }: { label: string; on: boolean; onClick: () => void; icon?: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full text-left px-3 py-1.5 text-[11px] text-slate-200 hover:bg-slate-900 flex items-center justify-between"
+    >
+      <span className="flex items-center gap-1.5">{icon && <span>{icon}</span>}{label}</span>
+      {icon !== '🎨' && (
+        <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-[8px] ${on ? 'bg-emerald-500 border-emerald-400 text-white' : 'bg-slate-800 border-slate-600 text-transparent'}`}>
+          ✓
+        </span>
+      )}
+    </button>
+  )
+}
+
 // Stable empty defaults (module-level) — évite la recréation d'arrays à chaque
 // render parent qui causerait un useMemo invalidate → useEffect re-run → flicker.
 const EMPTY_FLOORS: DetectedFloor3D[] = []
@@ -210,6 +227,7 @@ export function Plan3DView({
   const [showJourneys, setShowJourneys] = useState(true)
   const [shadowsEnabled, setShadowsEnabled] = useState(true)
   const [colorBy, setColorBy] = useState<'category' | 'floor'>('category')
+  const [displayMenuOpen, setDisplayMenuOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const fitViewRef = useRef<(() => void) | null>(null)
   const exportRef = useRef<(() => void) | null>(null)
@@ -1608,45 +1626,41 @@ export function Plan3DView({
         >
           {tourActive ? '⏹ Arrêter' : '▶ Visite guidée'}
         </button>
-        <button
-          onClick={() => setShadowsEnabled(!shadowsEnabled)}
-          className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
-            shadowsEnabled ? 'bg-slate-600/80 hover:bg-slate-600 border-slate-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
-          }`}
-          title="Ombres portees"
-        >
-          Ombres
-        </button>
-        <button
-          onClick={() => setColorBy(c => c === 'category' ? 'floor' : 'category')}
-          className="px-3 py-1.5 rounded-lg border border-amber-500/40 bg-amber-600/20 text-amber-200 text-[10px] font-medium hover:bg-amber-600/30 transition-colors"
-          title="Bascule code couleur : catégorie / étage"
-        >
-          🎨 {colorBy === 'category' ? 'par cat.' : 'par étage'}
-        </button>
-        <button
-          onClick={() => exportRef.current?.()}
-          className="px-3 py-1.5 rounded-lg bg-purple-600/80 hover:bg-purple-600 border border-purple-500 text-[10px] text-white font-medium transition-colors"
-          title="Exporter la vue 3D en PNG"
-        >
-          📷 Export
-        </button>
-        <button
-          onClick={() => setShowLabels(!showLabels)}
-          className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
-            showLabels ? 'bg-emerald-600/80 hover:bg-emerald-600 border-emerald-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
-          }`}
-        >
-          Labels
-        </button>
-        <button
-          onClick={() => setShowDimensions(!showDimensions)}
-          className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
-            showDimensions ? 'bg-red-600/80 hover:bg-red-600 border-red-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
-          }`}
-        >
-          Cotes
-        </button>
+        {/* Menu Affichage — regroupe Ombres/Couleur/Labels/Cotes/Export */}
+        <div className="relative">
+          <button
+            onClick={() => setDisplayMenuOpen(v => !v)}
+            className="px-3 py-1.5 rounded-lg border border-white/[0.1] bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-200 font-medium transition-colors flex items-center gap-1"
+            title="Options d'affichage"
+          >
+            ⚙ Affichage
+            <span className="text-[8px] opacity-60">▾</span>
+          </button>
+          {displayMenuOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setDisplayMenuOpen(false)} />
+              <div className="absolute top-full left-0 mt-1 w-56 bg-slate-950 border border-white/[0.1] rounded-lg shadow-2xl z-50 py-1.5">
+                <MenuToggle label="Labels des zones" on={showLabels} onClick={() => setShowLabels(!showLabels)} />
+                <MenuToggle label="Cotes / dimensions" on={showDimensions} onClick={() => setShowDimensions(!showDimensions)} />
+                <MenuToggle label="Ombres portées" on={shadowsEnabled} onClick={() => setShadowsEnabled(!shadowsEnabled)} />
+                <div className="border-t border-white/[0.06] my-1" />
+                <MenuToggle
+                  label={`Couleur : ${colorBy === 'category' ? 'par catégorie' : 'par étage'}`}
+                  on={false}
+                  onClick={() => setColorBy(c => c === 'category' ? 'floor' : 'category')}
+                  icon="🎨"
+                />
+                <div className="border-t border-white/[0.06] my-1" />
+                <button
+                  onClick={() => { exportRef.current?.(); setDisplayMenuOpen(false) }}
+                  className="w-full text-left px-3 py-1.5 text-[11px] text-purple-300 hover:bg-slate-900"
+                >
+                  📷 Exporter la vue PNG
+                </button>
+              </div>
+            </>
+          )}
+        </div>
         {cameras.length > 0 && (
           <>
             <button

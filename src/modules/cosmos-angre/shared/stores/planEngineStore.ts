@@ -31,6 +31,12 @@ interface PlanEngineState {
   planValidatedAt: string | null
   validatePlan: () => void
   invalidatePlan: () => void
+
+  // ── Floor attribution modal ──
+  /** Modal d'attribution des étages ouverte (après import). */
+  floorAttributionOpen: boolean
+  openFloorAttribution: () => void
+  closeFloorAttribution: () => void
   /** All parsed plans keyed by importId (in-memory only, not persisted) */
   parsedPlans: Record<string, ParsedPlan>
   /** Store a parsed plan associated with an import */
@@ -122,6 +128,11 @@ export const usePlanEngineStore = create<PlanEngineState>()(
       planValidatedAt: null,
       validatePlan: () => set({ planValidated: true, planValidatedAt: new Date().toISOString() }),
       invalidatePlan: () => set({ planValidated: false, planValidatedAt: null }),
+
+      // Floor attribution
+      floorAttributionOpen: false,
+      openFloorAttribution: () => set({ floorAttributionOpen: true }),
+      closeFloorAttribution: () => set({ floorAttributionOpen: false }),
 
       parsedPlans: {},
       storeParsedPlan: (importId, plan) => set(s => ({
