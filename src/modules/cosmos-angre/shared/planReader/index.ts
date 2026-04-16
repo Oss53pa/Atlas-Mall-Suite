@@ -1986,6 +1986,7 @@ export async function importPlan(
           try {
             const { bootstrapProph3t } = await import('../proph3t/bootstrap')
             const { runSkill } = await import('../proph3t/orchestrator')
+            const { usePlanEngineStore } = await import('../stores/planEngineStore')
             await bootstrapProph3t()
             const t0 = performance.now()
             const result = await runSkill('analyzePlanAtImport', {
@@ -1994,6 +1995,8 @@ export async function importPlan(
               fileName: file.name,
             })
             console.log(`[PROPH3T] analyse import: ${(performance.now() - t0).toFixed(0)}ms · score ${result.qualityScore} · ${result.actions.length} actions · ${result.findings.length} findings`)
+            // Auto-ouvre la modal PROPH3T (l'utilisateur voit immédiatement le résultat)
+            usePlanEngineStore.getState().openProph3tModal()
           } catch (err) {
             console.warn('[PROPH3T] analyse import failed', err)
           }

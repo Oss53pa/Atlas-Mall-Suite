@@ -4,6 +4,8 @@
 import { registerSkill, wireDomainTriggers, bindTrigger, listSkills } from './orchestrator'
 import { analyzePlanAtImport, type AnalyzePlanInput } from './skills/analyzePlanAtImport'
 import { analyzeCommercialMix, type CommercialAnalysisInput } from './skills/analyzeCommercialMix'
+import { auditSecurity, type SecurityAuditInput } from './skills/auditSecurity'
+import { analyzeParcours, type ParcoursAnalysisInput } from './skills/analyzeParcours'
 
 let bootstrapped = false
 
@@ -17,6 +19,12 @@ export async function bootstrapProph3t(): Promise<void> {
   )
   registerSkill<CommercialAnalysisInput, ReturnType<typeof analyzeCommercialMix>>(
     'analyzeCommercialMix', analyzeCommercialMix,
+  )
+  registerSkill<SecurityAuditInput, ReturnType<typeof auditSecurity>>(
+    'auditSecurity', auditSecurity,
+  )
+  registerSkill<ParcoursAnalysisInput, ReturnType<typeof analyzeParcours>>(
+    'analyzeParcours', analyzeParcours,
   )
 
   // Branche le bus d'événements de domaine

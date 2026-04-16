@@ -18,6 +18,11 @@ interface PlanEngineState {
   // ── Parsed plan data ──
   parsedPlan: ParsedPlan | null
   setParsedPlan: (plan: ParsedPlan | null) => void
+
+  // ── PROPH3T modal auto-open après import ──
+  proph3tModalOpen: boolean
+  openProph3tModal: () => void
+  closeProph3tModal: () => void
   /** All parsed plans keyed by importId (in-memory only, not persisted) */
   parsedPlans: Record<string, ParsedPlan>
   /** Store a parsed plan associated with an import */
@@ -98,6 +103,12 @@ export const usePlanEngineStore = create<PlanEngineState>()(
       // Parsed plan
       parsedPlan: null,
       setParsedPlan: (plan) => set({ parsedPlan: plan }),
+
+      // PROPH3T modal auto-open
+      proph3tModalOpen: false,
+      openProph3tModal: () => set({ proph3tModalOpen: true }),
+      closeProph3tModal: () => set({ proph3tModalOpen: false }),
+
       parsedPlans: {},
       storeParsedPlan: (importId, plan) => set(s => ({
         parsedPlans: { ...s.parsedPlans, [importId]: plan },

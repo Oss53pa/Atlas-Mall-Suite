@@ -16,6 +16,58 @@ import { PlanToolbar } from './PlanToolbar'
 import { DxfViewerCanvas } from './DxfViewerCanvas'
 import { ObjectLibraryPanel } from './ObjectLibraryPanel'
 import { PlanSelector } from './PlanSelector'
+import { Proph3tImportModal } from '../proph3t/components/Proph3tImportModal'
+
+// Mount inline pour piloter la modal depuis le store
+function Proph3tImportModalMount({ plan }: { plan: ParsedPlan }) {
+  const open = usePlanEngineStore(s => s.proph3tModalOpen)
+  const close = usePlanEngineStore(s => s.closeProph3tModal)
+  const buildSecurityInput = () => {
+    if (!plan) return null
+    return {
+      planWidth: plan.bounds.width || 200,
+      planHeight: plan.bounds.height || 140,
+      spaces: (plan.spaces ?? []).map(s => ({
+        id: s.id, type: s.type as string | undefined, areaSqm: s.areaSqm,
+        polygon: s.polygon as [number, number][], floorId: s.floorId,
+        label: s.label,
+      })),
+      cameras: [],
+      doors: [],
+      floors: (plan.detectedFloors ?? [{ id: 'RDC', label: 'RDC', bounds: { width: plan.bounds.width, height: plan.bounds.height } }]).map(f => ({
+        id: f.id, label: f.label, bounds: { width: f.bounds.width, height: f.bounds.height },
+      })),
+    }
+  }
+  const buildParcoursInput = () => {
+    if (!plan) return null
+    return {
+      planWidth: plan.bounds.width || 200,
+      planHeight: plan.bounds.height || 140,
+      spaces: (plan.spaces ?? []).map(s => ({
+        id: s.id, label: s.label, type: s.type as string | undefined,
+        areaSqm: s.areaSqm, polygon: s.polygon as [number, number][], floorId: s.floorId,
+      })),
+      pois: [],
+    }
+  }
+  const buildCommercialInput = () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const lots = (require('../stores/lotsStore') as typeof import('../stores/lotsStore')).useLotsStore.getState().all()
+    return { lots, horizonMonths: 12 }
+  }
+  return (
+    <Proph3tImportModal
+      open={open}
+      onClose={close}
+      projectName="Cosmos Angré"
+      orgName="Centre commercial · Abidjan"
+      buildSecurityInput={buildSecurityInput}
+      buildParcoursInput={buildParcoursInput}
+      buildCommercialInput={buildCommercialInput}
+    />
+  )
+}
 
 interface Cam3D { id: string; floorId: string; label: string; x: number; y: number; angle: number; fov: number; rangeM: number; color: string; priority?: 'normale' | 'haute' | 'critique' }
 interface Door3DP { id: string; floorId: string; label: string; x: number; y: number; isExit?: boolean; hasBadge?: boolean }
@@ -377,6 +429,8 @@ export function PlanCanvasV2({
         />
         {/* Plan selector dropdown */}
         <PlanSelector />
+        {/* PROPH3T modal auto-ouvert après import */}
+        <Proph3tImportModalMount plan={plan} />
       </div>
     )
   }
