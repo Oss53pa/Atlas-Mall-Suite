@@ -91,24 +91,25 @@ window.history.pushState = function (...args: Parameters<typeof originalPushStat
   console.log('[Atlas] PROPH3T réactivé. Rechargez la page.')
 }
 ;(window as any).disableDxfViewer = () => {
-  localStorage.setItem('atlas-dxf-viewer-disabled', '1')
+  localStorage.removeItem('atlas-dxf-viewer-enabled')
   console.log('[Atlas] DXF viewer désactivé → fallback SVG léger. Rechargez.')
 }
 ;(window as any).enableDxfViewer = () => {
-  localStorage.removeItem('atlas-dxf-viewer-disabled')
-  console.log('[Atlas] DXF viewer réactivé. Rechargez.')
+  localStorage.setItem('atlas-dxf-viewer-enabled', '1')
+  console.log('[Atlas] DXF viewer WebGL réactivé. Rechargez.')
 }
 
-// URL ?lite=true → active le mode léger (SVG only, pas de DXF WebGL)
+// URL ?heavy=true → active le DXF WebGL (mode lourd)
+// Par défaut le mode LITE (SVG) est actif pour éviter les freezes
 try {
   const url = new URL(window.location.href)
-  if (url.searchParams.get('lite') === 'true') {
-    localStorage.setItem('atlas-dxf-viewer-disabled', '1')
-    console.warn('[Atlas] Mode LITE activé (DXF viewer désactivé)')
-  }
   if (url.searchParams.get('heavy') === 'true') {
-    localStorage.removeItem('atlas-dxf-viewer-disabled')
-    console.log('[Atlas] Mode HEAVY (DXF WebGL)')
+    localStorage.setItem('atlas-dxf-viewer-enabled', '1')
+    console.warn('[Atlas] Mode HEAVY (DXF WebGL) activé')
+  }
+  if (url.searchParams.get('lite') === 'true') {
+    localStorage.removeItem('atlas-dxf-viewer-enabled')
+    console.log('[Atlas] Mode LITE activé (SVG léger)')
   }
 } catch { /* */ }
 
