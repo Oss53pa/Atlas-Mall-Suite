@@ -166,12 +166,24 @@ const ZONE_COLORS: Record<string, string> = {
   exterieur: '#84cc16',
 }
 
+// Stable empty defaults (module-level) — évite la recréation d'arrays à chaque
+// render parent qui causerait un useMemo invalidate → useEffect re-run → flicker.
+const EMPTY_FLOORS: DetectedFloor3D[] = []
+const EMPTY_DIMS: Dim3D[] = []
+const EMPTY_CAMERAS: Camera3D[] = []
+const EMPTY_DOORS: Door3D[] = []
+const EMPTY_BLINDS: BlindSpot3D[] = []
+const EMPTY_POIS: POI3D[] = []
+const EMPTY_SIGNAGE: Signage3D[] = []
+const EMPTY_MOMENTS: Moment3D[] = []
+const EMPTY_JOURNEYS: JourneyPath3D[] = []
+
 export function Plan3DView({
   wallSegments, spaces, planBounds, mode,
-  detectedFloors = [], dimensions = [], activeFloorId = 'all',
+  detectedFloors = EMPTY_FLOORS, dimensions = EMPTY_DIMS, activeFloorId = 'all',
   onSpaceClick,
-  cameras = [], doors = [], blindSpots = [], showFov: showFovProp,
-  pois = [], signage = [], moments = [], journeys = [],
+  cameras = EMPTY_CAMERAS, doors = EMPTY_DOORS, blindSpots = EMPTY_BLINDS, showFov: showFovProp,
+  pois = EMPTY_POIS, signage = EMPTY_SIGNAGE, moments = EMPTY_MOMENTS, journeys = EMPTY_JOURNEYS,
   placeMode = null, onPlace, onEntityUpdate, onEntityDelete, compliance,
   className = '',
 }: Plan3DViewProps) {
@@ -197,6 +209,7 @@ export function Plan3DView({
   const [showMoments, setShowMoments] = useState(true)
   const [showJourneys, setShowJourneys] = useState(true)
   const [shadowsEnabled, setShadowsEnabled] = useState(true)
+  const [colorBy, setColorBy] = useState<'category' | 'floor'>('category')
   const containerRef = useRef<HTMLDivElement>(null)
   const fitViewRef = useRef<(() => void) | null>(null)
   const exportRef = useRef<(() => void) | null>(null)
@@ -395,7 +408,7 @@ export function Plan3DView({
 
         // ── Camera ──
         // Camera with generous near/far range to avoid clipping at any zoom level
-        const camera = new THREE.PerspectiveCamera(50, w / h, diag * 0.0005, diag * 50)
+        const camera = new THREE.PerspectiveCamera(55, w / h, 0.1, Math.max(1000, diag * 60))
         if (mode === '3d-advanced') {
           // Isometric angle
           const d = diag * 0.7
@@ -531,7 +544,15 @@ export function Plan3DView({
           const sh = sp.bounds.height
           if (!sw || !sh || sw < 0.5 || sh < 0.5) continue
 
-          const colorHex = sp.color || ZONE_COLORS[sp.type] || '#3b82f6'
+          // Couleur : par catégorie (défaut) ou par étage
+          let colorHex: string
+          if (colorBy === 'floor') {
+            const floorPalette = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#a855f7', '#06b6d4', '#84cc16', '#f97316']
+            const idx = detectedFloors.findIndex(f => f.id === sp.floorId)
+            colorHex = floorPalette[(idx >= 0 ? idx : 0) % floorPalette.length]
+          } else {
+            colorHex = sp.color || ZONE_COLORS[sp.type] || '#3b82f6'
+          }
           const color = new THREE.Color(colorHex)
           const t = floorTransform(sp.floorId)
 
@@ -1269,11 +1290,11 @@ export function Plan3DView({
         controls.enableDamping = true
         controls.dampingFactor = 0.08
         controls.maxPolarAngle = Math.PI / 2.05
-        controls.minDistance = diag * 0.005  // Allow much closer zoom without clipping
-        controls.maxDistance = diag * 20
+        controls.minDistance = Math.max(0.5, diag * 0.0005)  // ~0.5m mini → permet d'entrer dans une pièce
+        controls.maxDistance = diag * 30
         controls.screenSpacePanning = true  // Pan parallel to screen (more intuitive)
         controls.panSpeed = 1.5
-        controls.zoomSpeed = 1.5
+        controls.zoomSpeed = 2.5  // Zoom plus rapide à la molette
         controls.rotateSpeed = 0.8
         controls.enablePan = true
         controls.enableZoom = true
@@ -1535,7 +1556,7 @@ export function Plan3DView({
         try { cleanupFns[i]() } catch { /* ignore */ }
       }
     }
-  }, [filteredWalls, filteredSpaces, filteredDims, filteredCameras, filteredDoors, filteredBlindSpots, filteredPois, filteredSignage, filteredMoments, filteredJourneys, effectiveBounds, mode, showLabels, showFov, currentFloor, detectedFloors, floorOpacity, shadowsEnabled])
+  }, [filteredWalls, filteredSpaces, filteredDims, filteredCameras, filteredDoors, filteredBlindSpots, filteredPois, filteredSignage, filteredMoments, filteredJourneys, effectiveBounds, mode, showLabels, showFov, currentFloor, detectedFloors, floorOpacity, shadowsEnabled, colorBy])
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`} style={{ background: '#0a0a14' }}>
@@ -1595,6 +1616,13 @@ export function Plan3DView({
           title="Ombres portees"
         >
           Ombres
+        </button>
+        <button
+          onClick={() => setColorBy(c => c === 'category' ? 'floor' : 'category')}
+          className="px-3 py-1.5 rounded-lg border border-amber-500/40 bg-amber-600/20 text-amber-200 text-[10px] font-medium hover:bg-amber-600/30 transition-colors"
+          title="Bascule code couleur : catégorie / étage"
+        >
+          🎨 {colorBy === 'category' ? 'par cat.' : 'par étage'}
         </button>
         <button
           onClick={() => exportRef.current?.()}

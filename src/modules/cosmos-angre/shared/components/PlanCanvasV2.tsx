@@ -265,16 +265,20 @@ export function PlanCanvasV2({
     setViewport(vp)
   }, [plan.bounds, containerSize, setViewport])
 
-  // ── DXF blob URL rehydration: after refresh, the original blob URL is dead.
-  //    On régénère TOUJOURS une URL fraîche depuis IndexedDB avant de rendre
-  //    DxfViewerCanvas (l'ancienne dxfBlobUrl n'est jamais utilisée directement
-  //    car elle peut avoir été révoquée entre deux montages).
+  // ── DXF blob URL rehydration ──
+  //    Dépend UNIQUEMENT de plan.dxfBlobUrl (string). Pas du `plan` reference
+  //    qui change à chaque re-render parent (sinon : flicker permanent du viewer).
+  //    On garde l'URL précédente pendant la rehydratation pour éviter un remount.
   const [rehydratedDxfUrl, setRehydratedDxfUrl] = useState<string | null>(null)
   const [rehydrateError, setRehydrateError] = useState<string | null>(null)
+  const rehydratedForUrlRef = useRef<string | null>(null)
   useEffect(() => {
-    if (!plan.dxfBlobUrl) { setRehydratedDxfUrl(null); return }
+    const targetUrl = plan.dxfBlobUrl
+    if (!targetUrl) { setRehydratedDxfUrl(null); rehydratedForUrlRef.current = null; return }
+    // Si on a déjà rehydraté pour cette URL, ne rien faire (évite le remount)
+    if (rehydratedForUrlRef.current === targetUrl && rehydratedDxfUrl) return
+
     let cancelled = false
-    setRehydratedDxfUrl(null) // reset pour forcer le loading state
     setRehydrateError(null)
     ;(async () => {
       try {
@@ -282,14 +286,17 @@ export function PlanCanvasV2({
         const parsedPlans = usePlanEngineStore.getState().parsedPlans
         let importId: string | null = null
         for (const [k, v] of Object.entries(parsedPlans)) {
-          if (v === plan || v?.dxfBlobUrl === plan.dxfBlobUrl) { importId = k; break }
+          if (v?.dxfBlobUrl === targetUrl) { importId = k; break }
         }
         if (!importId) {
           // Pas d'importId trouvé → l'URL actuelle est-elle encore vivante ?
           try {
-            const res = await fetch(plan.dxfBlobUrl)
+            const res = await fetch(targetUrl)
             if (!res.ok) throw new Error(`Blob dead: ${res.status}`)
-            if (!cancelled) setRehydratedDxfUrl(plan.dxfBlobUrl)
+            if (!cancelled) {
+              rehydratedForUrlRef.current = targetUrl
+              setRehydratedDxfUrl(targetUrl)
+            }
           } catch {
             if (!cancelled) setRehydrateError('Fichier DXF introuvable — réimporter le plan')
           }
@@ -298,8 +305,12 @@ export function PlanCanvasV2({
         const { getPlanFileUrl } = await import('../stores/planFileCache')
         const fresh = await getPlanFileUrl(importId)
         if (!cancelled) {
-          if (fresh) setRehydratedDxfUrl(fresh)
-          else setRehydrateError('Cache IndexedDB vide — réimporter le plan')
+          if (fresh) {
+            rehydratedForUrlRef.current = targetUrl
+            setRehydratedDxfUrl(fresh)
+          } else {
+            setRehydrateError('Cache IndexedDB vide — réimporter le plan')
+          }
         }
       } catch (err) {
         console.warn('[PlanCanvasV2] DXF rehydration failed', err)
@@ -307,7 +318,15 @@ export function PlanCanvasV2({
       }
     })()
     return () => { cancelled = true }
-  }, [plan.dxfBlobUrl, plan])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan.dxfBlobUrl])
+
+  // Memoize spaces mapping to prevent DxfViewerCanvas re-mount on each render
+  const memoSpaces = useMemo(() => plan.spaces.map(s => ({
+    id: s.id, label: s.label, type: s.type,
+    bounds: s.bounds, areaSqm: s.areaSqm, color: s.color,
+    floorId: s.floorId,
+  })), [plan.spaces])
 
   // ── WebGL DXF viewer: use dxf-viewer library for full CAD rendering ──
   if (plan.dxfBlobUrl) {
@@ -338,11 +357,7 @@ export function PlanCanvasV2({
           planImageUrl={plan.planImageUrl}
           viewMode={viewMode}
           wallSegments={plan.wallSegments}
-          spaces={plan.spaces.map(s => ({
-            id: s.id, label: s.label, type: s.type,
-            bounds: s.bounds, areaSqm: s.areaSqm, color: s.color,
-            floorId: s.floorId,
-          }))}
+          spaces={memoSpaces}
           planBounds={plan.bounds}
           detectedFloors={plan.detectedFloors}
           dimensions={plan.dimensions}

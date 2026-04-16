@@ -62,6 +62,8 @@ export function MultiPlanOverlay({ floorId, className = '', onConsolidated }: Mu
   const [showConsolidate, setShowConsolidate] = useState(false)
   const [consolidating, setConsolidating] = useState(false)
   const [consolidatedUrl, setConsolidatedUrl] = useState<string | null>(null)
+  const [consolidatedSvg, setConsolidatedSvg] = useState<string | null>(null)
+  const [exportFormat, setExportFormat] = useState<'png' | 'svg'>('png')
 
   const onDragStart = (i: number) => setDragIndex(i)
   const onDragOver = (e: React.DragEvent, i: number) => { e.preventDefault(); setHoverIndex(i) }
@@ -73,58 +75,118 @@ export function MultiPlanOverlay({ floorId, className = '', onConsolidated }: Mu
     setDragIndex(null); setHoverIndex(null)
   }
 
-  // ─── Consolidation : composite tous les visibles en 1 PNG ───
+  // ─── Consolidation PNG : composite raster ───
+  const consolidatePng = useCallback(async () => {
+    const visibleLayers = layers.filter(l => l.visible && l.record.planImageUrl)
+    if (visibleLayers.length === 0) {
+      alert('Aucun calque visible à consolider')
+      return
+    }
+    const images = await Promise.all(visibleLayers.map(l => loadImage(l.record.planImageUrl!)))
+    const maxW = Math.max(...images.map(i => i.naturalWidth))
+    const maxH = Math.max(...images.map(i => i.naturalHeight))
+    const canvas = document.createElement('canvas')
+    canvas.width = maxW
+    canvas.height = maxH
+    const ctx = canvas.getContext('2d')!
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, maxW, maxH)
+    for (let i = visibleLayers.length - 1; i >= 0; i--) {
+      const layer = visibleLayers[i]
+      const img = images[i]
+      ctx.globalAlpha = Math.max(0, Math.min(1, layer.opacity))
+      const x = (maxW - img.naturalWidth) / 2
+      const y = (maxH - img.naturalHeight) / 2
+      ctx.drawImage(img, x, y)
+    }
+    ctx.globalAlpha = 1
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'
+    ctx.font = '14px sans-serif'
+    ctx.fillText(`Atlas Mall Suite — ${new Date().toLocaleDateString('fr-FR')} — ${visibleLayers.length} niveau(x) consolidés`, 12, maxH - 14)
+    return canvas.toDataURL('image/png')
+  }, [layers])
+
+  // ─── Consolidation SVG : vector empilé (préserve qualité infinie) ───
+  const consolidateSvg = useCallback(async (): Promise<string> => {
+    const visibleLayers = layers.filter(l => l.visible && l.record.planImageUrl)
+    if (visibleLayers.length === 0) throw new Error('Aucun calque visible')
+    // On charge chaque image pour récupérer dimensions, puis on empile en SVG
+    const images = await Promise.all(visibleLayers.map(l => loadImage(l.record.planImageUrl!)))
+    const maxW = Math.max(...images.map(i => i.naturalWidth))
+    const maxH = Math.max(...images.map(i => i.naturalHeight))
+    // Pour chaque image, on l'embarque en base64 dans une <image> SVG
+    const layersXml: string[] = []
+    for (let i = visibleLayers.length - 1; i >= 0; i--) {
+      const layer = visibleLayers[i]
+      const img = images[i]
+      const x = (maxW - img.naturalWidth) / 2
+      const y = (maxH - img.naturalHeight) / 2
+      // Si l'image est déjà SVG, on l'inline ; sinon on embed via xlink:href
+      const url = layer.record.planImageUrl!
+      let href = url
+      // Tente fetch + inline si même origine ou data URL
+      try {
+        const res = await fetch(url)
+        const ct = res.headers.get('content-type') ?? ''
+        if (ct.includes('image/svg')) {
+          const svgText = await res.text()
+          // Extrait le <svg> intérieur
+          const inner = svgText.replace(/^[\s\S]*<svg[^>]*>/i, '').replace(/<\/svg>[\s\S]*$/i, '')
+          layersXml.push(`<g transform="translate(${x} ${y})" opacity="${layer.opacity.toFixed(2)}"><svg viewBox="0 0 ${img.naturalWidth} ${img.naturalHeight}" width="${img.naturalWidth}" height="${img.naturalHeight}">${inner}</svg></g>`)
+          continue
+        } else {
+          // Convertit en base64
+          const blob = await res.blob()
+          href = await blobToDataUrl(blob)
+        }
+      } catch { /* fallback href tel quel */ }
+      layersXml.push(`<image x="${x}" y="${y}" width="${img.naturalWidth}" height="${img.naturalHeight}" opacity="${layer.opacity.toFixed(2)}" href="${href}" preserveAspectRatio="xMidYMid meet"/>`)
+    }
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${maxW} ${maxH}" width="${maxW}" height="${maxH}">
+  <rect width="${maxW}" height="${maxH}" fill="#ffffff"/>
+  ${layersXml.join('\n  ')}
+  <text x="12" y="${maxH - 14}" font-family="sans-serif" font-size="14" fill="rgba(0,0,0,0.5)">Atlas Mall Suite — ${new Date().toLocaleDateString('fr-FR')} — ${visibleLayers.length} niveau(x) consolidés</text>
+</svg>`
+  }, [layers])
+
   const consolidate = useCallback(async () => {
     setConsolidating(true)
     setConsolidatedUrl(null)
+    setConsolidatedSvg(null)
     try {
-      const visibleLayers = layers.filter(l => l.visible && l.record.planImageUrl)
-      if (visibleLayers.length === 0) {
-        alert('Aucun calque visible à consolider')
-        return
+      if (exportFormat === 'svg') {
+        const svg = await consolidateSvg()
+        setConsolidatedSvg(svg)
+      } else {
+        const png = await consolidatePng()
+        if (png) {
+          setConsolidatedUrl(png)
+          onConsolidated?.(png)
+        }
       }
-      // Charger toutes les images
-      const images = await Promise.all(visibleLayers.map(l => loadImage(l.record.planImageUrl!)))
-      // Calc bbox max
-      const maxW = Math.max(...images.map(i => i.naturalWidth))
-      const maxH = Math.max(...images.map(i => i.naturalHeight))
-      const canvas = document.createElement('canvas')
-      canvas.width = maxW
-      canvas.height = maxH
-      const ctx = canvas.getContext('2d')!
-      ctx.fillStyle = '#ffffff'
-      ctx.fillRect(0, 0, maxW, maxH)
-      // Draw bottom-up (premier de la liste = arrière-plan)
-      for (let i = visibleLayers.length - 1; i >= 0; i--) {
-        const layer = visibleLayers[i]
-        const img = images[i]
-        ctx.globalAlpha = Math.max(0, Math.min(1, layer.opacity))
-        // Centrage
-        const x = (maxW - img.naturalWidth) / 2
-        const y = (maxH - img.naturalHeight) / 2
-        ctx.drawImage(img, x, y)
-      }
-      ctx.globalAlpha = 1
-      // Watermark
-      ctx.fillStyle = 'rgba(0,0,0,0.5)'
-      ctx.font = '14px sans-serif'
-      ctx.fillText(`Atlas Mall Suite — ${new Date().toLocaleDateString('fr-FR')} — ${visibleLayers.length} niveau(x) consolidés`, 12, maxH - 14)
-      const dataUrl = canvas.toDataURL('image/png')
-      setConsolidatedUrl(dataUrl)
-      onConsolidated?.(dataUrl)
     } catch (err) {
       console.error('[Consolidate] failed', err)
       alert(`Erreur consolidation: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setConsolidating(false)
     }
-  }, [layers, onConsolidated])
+  }, [exportFormat, consolidatePng, consolidateSvg, onConsolidated])
 
   const downloadConsolidated = (dataUrl: string) => {
     const a = document.createElement('a')
     a.href = dataUrl
     a.download = `plan-consolide-${new Date().toISOString().slice(0, 10)}.png`
     a.click()
+  }
+  const downloadSvg = (svg: string) => {
+    const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `plan-consolide-${new Date().toISOString().slice(0, 10)}.svg`
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
   const visibleCount = layers.filter(l => l.visible).length
@@ -141,6 +203,15 @@ export function MultiPlanOverlay({ floorId, className = '', onConsolidated }: Mu
           </span>
         </div>
         <div className="flex items-center gap-1">
+          <select
+            value={exportFormat}
+            onChange={e => setExportFormat(e.target.value as 'png' | 'svg')}
+            className="px-1.5 py-1 rounded text-[10px] bg-slate-800 border border-white/[0.06] text-slate-300"
+            title="Format de sortie consolidé"
+          >
+            <option value="png">PNG (raster)</option>
+            <option value="svg">SVG (vector)</option>
+          </select>
           <button
             onClick={consolidate}
             disabled={consolidating || visibleCount === 0}
@@ -239,28 +310,39 @@ export function MultiPlanOverlay({ floorId, className = '', onConsolidated }: Mu
         </div>
       )}
 
-      {/* Consolidation result modal */}
-      {consolidatedUrl && (
+      {/* Consolidation result modal (PNG ou SVG) */}
+      {(consolidatedUrl || consolidatedSvg) && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-5xl rounded-xl bg-slate-950 border border-cyan-500/40 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
               <div>
-                <h3 className="text-[14px] font-semibold text-white">Plan consolidé</h3>
+                <h3 className="text-[14px] font-semibold text-white">
+                  Plan consolidé · {consolidatedSvg ? 'SVG (vector)' : 'PNG (raster)'}
+                </h3>
                 <p className="text-[10px] text-slate-500">{visibleCount} niveau(x) fusionnés</p>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => downloadConsolidated(consolidatedUrl)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded bg-cyan-600/30 border border-cyan-500/50 text-cyan-200 text-[11px]">
-                  <Download size={12} /> Télécharger PNG
-                </button>
-                <button onClick={() => setConsolidatedUrl(null)}
+                {consolidatedUrl && (
+                  <button onClick={() => downloadConsolidated(consolidatedUrl)}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded bg-cyan-600/30 border border-cyan-500/50 text-cyan-200 text-[11px]">
+                    <Download size={12} /> Télécharger PNG
+                  </button>
+                )}
+                {consolidatedSvg && (
+                  <button onClick={() => downloadSvg(consolidatedSvg)}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded bg-emerald-600/30 border border-emerald-500/50 text-emerald-200 text-[11px]">
+                    <Download size={12} /> Télécharger SVG
+                  </button>
+                )}
+                <button onClick={() => { setConsolidatedUrl(null); setConsolidatedSvg(null) }}
                   className="p-1.5 hover:bg-white/[0.05] rounded text-slate-400">
                   <X size={16} />
                 </button>
               </div>
             </div>
             <div className="p-4 max-h-[80vh] overflow-auto bg-slate-900">
-              <img src={consolidatedUrl} alt="Plan consolidé" className="max-w-full" />
+              {consolidatedUrl && <img src={consolidatedUrl} alt="Plan consolidé" className="max-w-full" />}
+              {consolidatedSvg && <div dangerouslySetInnerHTML={{ __html: consolidatedSvg }} />}
             </div>
           </div>
         </div>
@@ -278,5 +360,14 @@ function loadImage(url: string): Promise<HTMLImageElement> {
     img.onload = () => resolve(img)
     img.onerror = reject
     img.src = url
+  })
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader()
+    r.onload = () => resolve(String(r.result))
+    r.onerror = reject
+    r.readAsDataURL(blob)
   })
 }
