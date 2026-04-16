@@ -7,6 +7,8 @@ import { citeAlgo, citeBenchmark, confidence } from '../orchestrator.types'
 import { kmeans } from '../algorithms/kmeans'
 import { quickRiskScore } from '../algorithms/bayesianRisk'
 import type { ParsedPlan } from '../../planReader/planEngineTypes'
+import { enrichActionsWithRag, enrichFindingsWithRag } from '../ragHelper'
+import { enrichWithNarrative } from '../narrativeEnricher'
 
 export interface AnalyzePlanInput {
   plan: ParsedPlan
@@ -269,13 +271,17 @@ export async function analyzePlanAtImport(input: AnalyzePlanInput): Promise<Prop
   // Résumé exécutif
   const summary = buildSummary(payload, plan)
 
-  return {
+  // Enrichissement RAG : citations sources réglementaires
+  const findingsWithRag = await enrichFindingsWithRag(findings, 2)
+  const actionsWithRag = await enrichActionsWithRag(actions, 1)
+
+  const baseResult: Proph3tResult<AnalyzePlanPayload> = {
     skill: 'analyzePlanAtImport',
     timestamp: new Date().toISOString(),
     qualityScore: payload.qualityScore,
     executiveSummary: summary,
-    findings,
-    actions,
+    findings: findingsWithRag,
+    actions: actionsWithRag,
     overlays: anomalies.slice(0, 20).map(a => ({
       kind: 'badge' as const,
       targetId: a.spaceId,
@@ -287,6 +293,9 @@ export async function analyzePlanAtImport(input: AnalyzePlanInput): Promise<Prop
     confidence: confidence(0.85, 'Analyse algorithmique déterministe (DBSCAN re-cluster + IQR + pattern-matching)'),
     elapsedMs: performance.now() - t0,
   }
+
+  // Enrichissement narratif via Ollama (silent fallback si indispo)
+  return await enrichWithNarrative(baseResult, { audience: 'director' })
 }
 
 function buildSummary(payload: AnalyzePlanPayload, plan: ParsedPlan): string {

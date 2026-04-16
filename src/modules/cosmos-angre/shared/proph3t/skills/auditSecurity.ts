@@ -4,6 +4,8 @@
 
 import type { Proph3tResult, Proph3tAction, Proph3tFinding } from '../orchestrator.types'
 import { citeAlgo, citeErp, confidence } from '../orchestrator.types'
+import { enrichActionsWithRag, enrichFindingsWithRag } from '../ragHelper'
+import { enrichWithNarrative } from '../narrativeEnricher'
 import { runCompliance, type ComplianceReport } from '../../engines/complianceEngine'
 import { computeCoverage, type Camera as CovCamera, type Space as CovSpace } from '../../engines/cameraCoverageEngine'
 import { optimizeCoverage } from '../../engines/coverageOptimizer'
@@ -260,13 +262,17 @@ export async function auditSecurity(input: SecurityAuditInput): Promise<Proph3tR
 
   const summary = `Conformité ${complianceReport.scorePct}/100 · Couverture ${coveragePctGlobal.toFixed(0)}% · ${complianceReport.summary.critical} critique(s) · ${recommendedCameras} caméras à ajouter · budget estimé ${(totalEstimatedBudget / 1_000_000).toFixed(1)} M FCFA.`
 
-  return {
+  // RAG : citations APSAD/ERP/Loi CI sur findings & actions
+  const findingsWithRag = await enrichFindingsWithRag(findings, 2)
+  const actionsWithRag = await enrichActionsWithRag(actions, 2)
+
+  const baseResult: Proph3tResult<SecurityAuditPayload> = {
     skill: 'auditSecurity',
     timestamp: new Date().toISOString(),
     qualityScore: complianceReport.scorePct,
     executiveSummary: summary,
-    findings,
-    actions,
+    findings: findingsWithRag,
+    actions: actionsWithRag,
     overlays: [
       ...riskByZone.filter(r => r.level === 'high').slice(0, 10).map(r => ({
         kind: 'highlight' as const, targetId: r.spaceId, color: '#ef4444', intensity: r.riskScore, label: 'Risque élevé',
@@ -280,6 +286,8 @@ export async function auditSecurity(input: SecurityAuditInput): Promise<Proph3tR
     confidence: confidence(0.85, 'Compliance + Coverage + Dijkstra + Bayes'),
     elapsedMs: performance.now() - t0,
   }
+
+  return await enrichWithNarrative(baseResult, { audience: 'security-officer' })
 }
 
 function centerX(sp: { polygon: [number, number][] }): number {

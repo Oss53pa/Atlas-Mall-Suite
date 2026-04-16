@@ -2,6 +2,8 @@
 
 import type { Proph3tResult, Proph3tAction, Proph3tFinding } from '../orchestrator.types'
 import { citeAlgo, citeBenchmark, confidence } from '../orchestrator.types'
+import { enrichActionsWithRag, enrichFindingsWithRag } from '../ragHelper'
+import { enrichWithNarrative } from '../narrativeEnricher'
 import { geneticOptimize } from '../algorithms/geneticOptimizer'
 import { fitHedonic, predictHedonic, type HedonicSample } from '../algorithms/hedonicRegression'
 import { fitCox, vacancyProb, type SurvivalSample } from '../algorithms/coxSurvival'
@@ -240,16 +242,21 @@ export async function analyzeCommercialMix(input: CommercialAnalysisInput): Prom
     benchmarkGaps,
   }
 
-  return {
+  const findingsWithRag = await enrichFindingsWithRag(findings, 2)
+  const actionsWithRag = await enrichActionsWithRag(actions, 2)
+
+  const baseResult: Proph3tResult<CommercialPayload> = {
     skill: 'analyzeCommercialMix',
     timestamp: new Date().toISOString(),
     qualityScore: mixScore,
     executiveSummary: summary,
-    findings,
-    actions,
+    findings: findingsWithRag,
+    actions: actionsWithRag,
     payload,
     source: 'algo',
     confidence: confidence(0.75, 'Genetic/Cox/Hedonic + benchmarks'),
     elapsedMs: performance.now() - t0,
   }
+
+  return await enrichWithNarrative(baseResult, { audience: 'leasing-manager' })
 }

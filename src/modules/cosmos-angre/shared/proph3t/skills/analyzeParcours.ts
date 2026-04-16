@@ -2,6 +2,8 @@
 
 import type { Proph3tResult, Proph3tAction, Proph3tFinding } from '../orchestrator.types'
 import { citeAlgo, citeBenchmark, confidence } from '../orchestrator.types'
+import { enrichActionsWithRag, enrichFindingsWithRag } from '../ragHelper'
+import { enrichWithNarrative } from '../narrativeEnricher'
 import { kmeans } from '../algorithms/kmeans'
 import { simulateABM } from '../algorithms/socialForceABM'
 import { compareAB, monteCarloPercentiles, randomNormal } from '../algorithms/monteCarlo'
@@ -196,13 +198,16 @@ export async function analyzeParcours(input: ParcoursAnalysisInput): Promise<Pro
 
   const summary = `${personas.length} personas (K-Means) · ABM : flux ${abm.metrics.arrived}/${abm.metrics.totalAgents} arrivés en ${abm.metrics.avgTravelTimeS.toFixed(0)}s · signalétique ${signageRes.coveragePct.toFixed(0)}% · variante recommandée : ${ab.recommendation}.`
 
-  return {
+  const findingsWithRag = await enrichFindingsWithRag(findings, 2)
+  const actionsWithRag = await enrichActionsWithRag(actions, 1)
+
+  const baseResult: Proph3tResult<ParcoursPayload> = {
     skill: 'analyzeParcours',
     timestamp: new Date().toISOString(),
     qualityScore: Math.round((abm.metrics.arrived / Math.max(1, abm.metrics.totalAgents)) * 100 * 0.5 + signageRes.coveragePct * 0.5),
     executiveSummary: summary,
-    findings,
-    actions,
+    findings: findingsWithRag,
+    actions: actionsWithRag,
     overlays: [
       ...abm.metrics.bottlenecks.slice(0, 5).map(b => ({
         kind: 'heatmap' as const, coords: [b.x, b.y] as [number, number], color: '#ef4444', intensity: b.intensity, label: 'Bottleneck',
@@ -216,6 +221,8 @@ export async function analyzeParcours(input: ParcoursAnalysisInput): Promise<Pro
     confidence: confidence(0.78, 'KMeans + ABM + Monte Carlo'),
     elapsedMs: performance.now() - t0,
   }
+
+  return await enrichWithNarrative(baseResult, { audience: 'operations' })
 }
 
 function deducePreferences(profile: number[]): string[] {
