@@ -1,6 +1,6 @@
 // ═══ VOL.1 PLAN COMMERCIAL — Main Module Component ═══
 
-import React, { useMemo, useState, lazy, Suspense } from 'react'
+import React, { useMemo, useState, useEffect, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useVol1Store } from './store/vol1Store'
 import {
@@ -24,7 +24,7 @@ import {
   ATLAS_STUDIO_CORE_ITEMS,
   ATLAS_STUDIO_DEFAULT_TAB,
 } from '../shared/components/atlasStudioNav'
-import { savePlanImageFromUrl } from '../shared/stores/planImageCache'
+import { savePlanImageFromUrl, loadAllPlanImages } from '../shared/stores/planImageCache'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
 
@@ -90,6 +90,17 @@ export default function Vol1Module() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<Vol1Tab>(ATLAS_STUDIO_DEFAULT_TAB as Vol1Tab)
   const NAV_GROUPS = useMemo(() => buildNavGroups(), [])
+
+  // Rehydrate plan image backgrounds from IndexedDB on mount — blob URLs in localStorage are dead after refresh.
+  useEffect(() => {
+    void loadAllPlanImages().then((urls) => {
+      if (Object.keys(urls).length === 0) return
+      useVol1Store.setState((s: Record<string, unknown>) => ({
+        ...s,
+        planImageUrls: { ...(s.planImageUrls as Record<string, string> ?? {}), ...urls },
+      }))
+    })
+  }, [])
 
   return (
     <div className="flex h-full" style={{ background: '#080c14', color: '#e2e8f0' }}>

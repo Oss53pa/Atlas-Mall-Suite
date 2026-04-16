@@ -50,6 +50,7 @@ import { ConsolidatedReportButton } from '../shared/components/ConsolidatedRepor
 import { PlanCanvasV2 } from '../shared/components/PlanCanvasV2'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
+import { savePlanImageFromUrl, loadAllPlanImages } from '../shared/stores/planImageCache'
 const Vol3DModuleEmbed = lazy(() => import('../vol-3d/Vol3DModule'))
 import Proph3tChat from '../shared/components/Proph3tChat'
 import EntityPanel from '../shared/components/EntityPanel'
@@ -382,6 +383,15 @@ export default function Vol3Module() {
     void store.hydrateFromSupabase(projectId)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId])
+
+  // Rehydrate plan image backgrounds from IndexedDB on mount — blob URLs in localStorage die on refresh.
+  useEffect(() => {
+    void loadAllPlanImages().then((urls) => {
+      for (const [floorId, url] of Object.entries(urls)) {
+        useVol3Store.getState().setPlanImageUrl(floorId, url)
+      }
+    })
+  }, [])
 
   const saveStatus: SaveStatus = store.isHydrating ? 'saving' : store.hydrationError ? 'offline' : 'saved'
 
@@ -1552,7 +1562,7 @@ export default function Vol3Module() {
                   volumeLabel="VOL. 3 — PARCOURS CLIENT"
                   floors={floors}
                   activeFloorId={activeFloorId}
-                  onImportComplete={(importedZones, dims, calibration, floorId, _planImageUrl, _fileInfo, parsedPlan, importId) => {
+                  onImportComplete={(importedZones, dims, calibration, floorId, planImageUrl, _fileInfo, parsedPlan, importId) => {
                     const current = useVol3Store.getState().zones
                     const newZones = importedZones.map((z, i) => ({
                       id: z.id ?? `import-${Date.now()}-${i}`,
@@ -1564,6 +1574,11 @@ export default function Vol3Module() {
                       color: z.color ?? '#0a2a15',
                     }))
                     useVol3Store.setState({ zones: [...current, ...newZones] })
+                    // Store plan image as background for the floor canvas + persist to IndexedDB
+                    if (planImageUrl) {
+                      useVol3Store.getState().setPlanImageUrl(floorId, planImageUrl)
+                      void savePlanImageFromUrl(floorId, planImageUrl, 'plan-import.png')
+                    }
                     // Store ParsedPlan in engine store for vectorial rendering
                     const plan = parsedPlan ?? buildParsedPlanFromImport(importedZones, dims, calibration)
                     usePlanEngineStore.getState().setParsedPlan(plan)
