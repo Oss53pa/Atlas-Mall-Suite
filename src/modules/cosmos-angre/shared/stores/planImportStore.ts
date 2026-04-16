@@ -54,6 +54,8 @@ interface PlanImportStoreState {
   setLayerOpacity: (floorId: string, importId: string, opacity: number) => void
   /** Basculer la visibilite d'une couche */
   toggleLayerVisibility: (floorId: string, importId: string) => void
+  /** Réordonne les couches (pour drag&drop) */
+  reorderLayers: (floorId: string, fromIndex: number, toIndex: number) => void
   /** Obtenir toutes les couches visibles pour un etage */
   getVisibleLayers: (floorId: string) => Array<{ importId: string; planImageUrl: string; opacity: number }>
 }
@@ -136,6 +138,16 @@ export const usePlanImportStore = create<PlanImportStoreState>()(
             ),
           },
         })),
+
+      /** Réordonne les couches d'un étage (drag&drop). */
+      reorderLayers: (floorId: string, fromIndex: number, toIndex: number) =>
+        set((s) => {
+          const current = [...(s.layersPerFloor[floorId] ?? [])]
+          if (fromIndex < 0 || fromIndex >= current.length || toIndex < 0 || toIndex >= current.length) return s
+          const [moved] = current.splice(fromIndex, 1)
+          current.splice(toIndex, 0, moved)
+          return { layersPerFloor: { ...s.layersPerFloor, [floorId]: current } }
+        }),
 
       getVisibleLayers: (floorId) => {
         const s = get()

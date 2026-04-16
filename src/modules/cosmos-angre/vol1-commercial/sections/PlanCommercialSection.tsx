@@ -7,6 +7,7 @@ import { useVol1Store } from '../store/vol1Store'
 import { ConsolidatedReportButton } from '../../shared/components/ConsolidatedReportButton'
 import { WayfinderPanel } from '../../shared/components/WayfinderPanel'
 import type { WayfinderSpace } from '../../shared/components/WayfinderRenderer'
+import { MultiPlanOverlay } from '../../shared/components/MultiPlanOverlay'
 import type { CommercialSpace, SpaceStatus } from '../store/vol1Types'
 import { Grid3X3, Sparkles, Loader2, CalendarDays, Cuboid, Navigation, Map } from 'lucide-react'
 import { getSpacePhaseStatus, computePhaseMetrics, PHASE_STATUS_COLORS } from '../engines/phasingEngine'
@@ -150,6 +151,7 @@ export default function PlanCommercialSection() {
   const is3d = viewMode === '3d' || viewMode === 'isometric' || viewMode === 'tour'
 
   const [showWayfinder, setShowWayfinder] = useState(false)
+  const [showOverlayPanel, setShowOverlayPanel] = useState(false)
 
   // Construit l'input wayfinder en fusionnant DetectedSpace + tenants
   const wayfinderSpaces = useMemo<WayfinderSpace[]>(() => {
@@ -316,6 +318,11 @@ export default function PlanCommercialSection() {
             className="w-full mt-1 text-[10px] px-2 py-1.5 rounded bg-cyan-600/20 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-600/30"
             title="Aperçu et export du plan style wayfinder (borne / web)"
           >🗺 Wayfinder export</button>
+          <button
+            onClick={() => setShowOverlayPanel(v => !v)}
+            className="w-full mt-1 text-[10px] px-2 py-1.5 rounded bg-purple-600/20 border border-purple-500/40 text-purple-300 hover:bg-purple-600/30"
+            title="Superposer plusieurs plans (RDC, R+1...) + consolidation"
+          >📚 {showOverlayPanel ? 'Masquer' : 'Superposer'} plans</button>
           {/* M25 — Rapport directeur consolidé */}
           <div className="mt-1">
             <ConsolidatedReportButton
@@ -707,6 +714,11 @@ export default function PlanCommercialSection() {
           title="Cosmos Angré · Plan du centre"
           subtitle={floorId ? `Étage ${floorId}` : undefined}
         />
+      )}
+      {showOverlayPanel && (
+        <div className="fixed top-20 right-4 w-96 z-40 shadow-2xl">
+          <MultiPlanOverlay floorId={floorId} />
+        </div>
       )}
     </div>
   )
