@@ -513,13 +513,43 @@ export default function Vol3Module() {
 
   // ── Derived data ──────────────────────────────────────────
 
-  const activeFloor = useMemo(
-    () => floors.find((f) => f.id === activeFloorId) ?? floors[0],
-    [floors, activeFloorId],
-  )
-
-  // Plan courant pour le panneau PROPH3T
+  // Plan courant pour le panneau PROPH3T (abonnement réactif)
   const parsedPlan = usePlanEngineStore(s => s.parsedPlan)
+
+  // Synthétise des floors depuis parsedPlan si vol3Store.floors est vide
+  const effectiveFloors = useMemo(() => {
+    if (floors.length > 0) return floors
+    if (parsedPlan?.detectedFloors && parsedPlan.detectedFloors.length > 0) {
+      return parsedPlan.detectedFloors.map(f => ({
+        id: f.id,
+        projectId: 'cosmos-angre',
+        level: f.label as any,
+        order: f.stackOrder,
+        widthM: f.bounds.width,
+        heightM: f.bounds.height,
+        zones: [],
+        transitions: [],
+      }))
+    }
+    if (parsedPlan) {
+      return [{
+        id: 'RDC',
+        projectId: 'cosmos-angre',
+        level: 'RDC' as any,
+        order: 0,
+        widthM: parsedPlan.bounds.width || 200,
+        heightM: parsedPlan.bounds.height || 140,
+        zones: [],
+        transitions: [],
+      }]
+    }
+    return floors
+  }, [floors, parsedPlan])
+
+  const activeFloor = useMemo(
+    () => effectiveFloors.find((f) => f.id === activeFloorId) ?? effectiveFloors[0],
+    [effectiveFloors, activeFloorId],
+  )
 
   const floorPois = useMemo(() => {
     let filtered = pois.filter((p) => p.floorId === activeFloorId)
@@ -1144,10 +1174,11 @@ export default function Vol3Module() {
             </div>
           )}
 
-          {/* When a real plan is imported (parsedPlan exists), use PlanCanvasV2 */}
-          {usePlanEngineStore.getState().parsedPlan ? (
+          {/* When a real plan is imported (parsedPlan exists), use PlanCanvasV2
+              (abonnement réactif pour se re-render quand le plan arrive) */}
+          {parsedPlan ? (
             (() => {
-              const plan = usePlanEngineStore.getState().parsedPlan!
+              const plan = parsedPlan
               const pw = plan.bounds.width || 200
               const ph = plan.bounds.height || 140
               const placeMode3D: 'poi' | 'signage' | 'moment' | null =
