@@ -265,12 +265,76 @@ export function PlanCanvasV2({
     setViewport(vp)
   }, [plan.bounds, containerSize, setViewport])
 
+  // ── DXF blob URL rehydration: after refresh, the original blob URL is dead.
+  //    On régénère TOUJOURS une URL fraîche depuis IndexedDB avant de rendre
+  //    DxfViewerCanvas (l'ancienne dxfBlobUrl n'est jamais utilisée directement
+  //    car elle peut avoir été révoquée entre deux montages).
+  const [rehydratedDxfUrl, setRehydratedDxfUrl] = useState<string | null>(null)
+  const [rehydrateError, setRehydrateError] = useState<string | null>(null)
+  useEffect(() => {
+    if (!plan.dxfBlobUrl) { setRehydratedDxfUrl(null); return }
+    let cancelled = false
+    setRehydratedDxfUrl(null) // reset pour forcer le loading state
+    setRehydrateError(null)
+    ;(async () => {
+      try {
+        // Trouve l'importId qui correspond à ce plan dans le store
+        const parsedPlans = usePlanEngineStore.getState().parsedPlans
+        let importId: string | null = null
+        for (const [k, v] of Object.entries(parsedPlans)) {
+          if (v === plan || v?.dxfBlobUrl === plan.dxfBlobUrl) { importId = k; break }
+        }
+        if (!importId) {
+          // Pas d'importId trouvé → l'URL actuelle est-elle encore vivante ?
+          try {
+            const res = await fetch(plan.dxfBlobUrl)
+            if (!res.ok) throw new Error(`Blob dead: ${res.status}`)
+            if (!cancelled) setRehydratedDxfUrl(plan.dxfBlobUrl)
+          } catch {
+            if (!cancelled) setRehydrateError('Fichier DXF introuvable — réimporter le plan')
+          }
+          return
+        }
+        const { getPlanFileUrl } = await import('../stores/planFileCache')
+        const fresh = await getPlanFileUrl(importId)
+        if (!cancelled) {
+          if (fresh) setRehydratedDxfUrl(fresh)
+          else setRehydrateError('Cache IndexedDB vide — réimporter le plan')
+        }
+      } catch (err) {
+        console.warn('[PlanCanvasV2] DXF rehydration failed', err)
+        if (!cancelled) setRehydrateError(err instanceof Error ? err.message : String(err))
+      }
+    })()
+    return () => { cancelled = true }
+  }, [plan.dxfBlobUrl, plan])
+
   // ── WebGL DXF viewer: use dxf-viewer library for full CAD rendering ──
   if (plan.dxfBlobUrl) {
+    // Attend la rehydratation avant de rendre DxfViewerCanvas
+    if (!rehydratedDxfUrl && !rehydrateError) {
+      return (
+        <div className={`relative w-full h-full flex items-center justify-center bg-gray-950 ${className}`}>
+          <div className="text-gray-400 text-sm flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-gray-600 border-t-purple-500 rounded-full animate-spin" />
+            Chargement du plan DXF depuis le cache…
+          </div>
+        </div>
+      )
+    }
+    if (rehydrateError) {
+      return (
+        <div className={`relative w-full h-full flex items-center justify-center bg-gray-950 ${className}`}>
+          <div className="text-red-400 text-sm max-w-md text-center">
+            ⚠ {rehydrateError}
+          </div>
+        </div>
+      )
+    }
     return (
       <div className={`relative w-full h-full flex overflow-hidden bg-gray-950 ${className}`}>
         <DxfViewerCanvas
-          dxfUrl={plan.dxfBlobUrl}
+          dxfUrl={rehydratedDxfUrl!}
           planImageUrl={plan.planImageUrl}
           viewMode={viewMode}
           wallSegments={plan.wallSegments}

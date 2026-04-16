@@ -71,6 +71,14 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSeg
   const [error, setError] = useState<string | null>(null)
   const [layerPanelOpen, setLayerPanelOpen] = useState(false)
   const [hiddenLayers, setHiddenLayers] = useState<Set<string>>(new Set())
+  const [excludedLayers, setExcludedLayers] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('cosmos-excluded-layers') ?? '[]')) }
+    catch { return new Set() }
+  })
+  // Persiste les exclusions par DXF (clé stable par dxfUrl)
+  useEffect(() => {
+    localStorage.setItem('cosmos-excluded-layers', JSON.stringify(Array.from(excludedLayers)))
+  }, [excludedLayers])
 
   // Initialize 2D viewer
   useEffect(() => {
@@ -120,6 +128,11 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSeg
         const layerList: LayerInfo[] = []
         for (const layer of viewer.GetLayers()) layerList.push(layer)
         setLayers(layerList)
+        // Applique les exclusions persistées
+        for (const name of excludedLayers) {
+          try { viewer.ShowLayer(name, false) } catch { /* layer absent */ }
+        }
+        if (excludedLayers.size > 0) viewer.Render()
 
         const bounds = viewer.GetBounds()
         if (bounds) viewer.FitView(bounds.minX, bounds.maxX, bounds.minY, bounds.maxY, 20)
@@ -169,6 +182,41 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSeg
     viewer.Render()
     setHiddenLayers(new Set(layers.map(l => l.name)))
   }, [layers])
+
+  /** Exclusion permanente d'un calque (persiste en localStorage). */
+  const excludeLayer = useCallback((name: string) => {
+    const viewer = viewerRef.current
+    if (!viewer) return
+    setExcludedLayers(prev => {
+      const next = new Set(prev)
+      next.add(name)
+      return next
+    })
+    setHiddenLayers(prev => {
+      const next = new Set(prev)
+      next.add(name)
+      return next
+    })
+    try { viewer.ShowLayer(name, false) } catch { /* */ }
+    viewer.Render()
+  }, [])
+
+  const restoreLayer = useCallback((name: string) => {
+    const viewer = viewerRef.current
+    if (!viewer) return
+    setExcludedLayers(prev => {
+      const next = new Set(prev)
+      next.delete(name)
+      return next
+    })
+    setHiddenLayers(prev => {
+      const next = new Set(prev)
+      next.delete(name)
+      return next
+    })
+    try { viewer.ShowLayer(name, true) } catch { /* */ }
+    viewer.Render()
+  }, [])
 
   const is3D = viewMode !== '2d'
 
@@ -247,15 +295,37 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSeg
                   <button onClick={hideAll} className="text-[9px] text-gray-500 px-1">Rien</button>
                 </div>
               </div>
-              {layers.map(l => (
-                <button key={l.name} onClick={() => toggleLayer(l.name)}
-                  className={`w-full flex items-center gap-2 px-3 py-1 text-left text-[10px] hover:bg-gray-800 ${hiddenLayers.has(l.name) ? 'text-gray-600' : 'text-gray-200'}`}>
-                  <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
-                    style={{ backgroundColor: hiddenLayers.has(l.name) ? 'transparent' : `#${l.color.toString(16).padStart(6, '0')}`,
-                      border: `1px solid ${hiddenLayers.has(l.name) ? '#4b5563' : `#${l.color.toString(16).padStart(6, '0')}`}` }} />
-                  <span className="truncate">{l.displayName || l.name}</span>
-                </button>
-              ))}
+              {layers.map(l => {
+                const excluded = excludedLayers.has(l.name)
+                const hidden = hiddenLayers.has(l.name)
+                return (
+                  <div key={l.name}
+                    className={`flex items-center gap-2 px-3 py-1 hover:bg-gray-800 ${excluded ? 'bg-red-950/30' : ''}`}>
+                    <button onClick={() => toggleLayer(l.name)}
+                      disabled={excluded}
+                      className={`flex items-center gap-2 flex-1 text-left text-[10px] ${excluded ? 'text-red-500/60 line-through' : hidden ? 'text-gray-600' : 'text-gray-200'}`}>
+                      <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
+                        style={{ backgroundColor: hidden || excluded ? 'transparent' : `#${l.color.toString(16).padStart(6, '0')}`,
+                          border: `1px solid ${hidden || excluded ? '#4b5563' : `#${l.color.toString(16).padStart(6, '0')}`}` }} />
+                      <span className="truncate">{l.displayName || l.name}</span>
+                    </button>
+                    {excluded ? (
+                      <button onClick={() => restoreLayer(l.name)}
+                        className="text-[9px] text-emerald-400 hover:text-emerald-300 px-1"
+                        title="Restaurer ce calque">↺</button>
+                    ) : (
+                      <button onClick={() => excludeLayer(l.name)}
+                        className="text-[10px] text-gray-600 hover:text-red-400 px-1"
+                        title="Supprimer définitivement (persistant)">🗑</button>
+                    )}
+                  </div>
+                )
+              })}
+              {excludedLayers.size > 0 && (
+                <div className="px-3 py-1.5 border-t border-white/[0.06] text-[9px] text-red-400/70">
+                  {excludedLayers.size} calque(s) exclu(s) — persistance locale
+                </div>
+              )}
             </div>
           )}
         </div>

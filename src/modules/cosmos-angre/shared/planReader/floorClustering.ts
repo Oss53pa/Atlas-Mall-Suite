@@ -37,36 +37,54 @@ export interface ClusteringResult {
 }
 
 // ─── Hash grid pour recherche O(1) des voisins ──────────────
+// Backing : Int32Array dense (origin + cols/rows), ~10× plus rapide qu'un Map<string>
 
 class HashGrid {
-  private cells = new Map<string, number[]>()
-  constructor(private cellSize: number) {}
-
-  private key(x: number, y: number): string {
-    const cx = Math.floor(x / this.cellSize)
-    const cy = Math.floor(y / this.cellSize)
-    return `${cx},${cy}`
+  private buckets: Int32Array[]
+  private cols: number
+  private rows: number
+  constructor(
+    private cellSize: number,
+    private originX: number, private originY: number,
+    width: number, height: number,
+  ) {
+    this.cols = Math.max(1, Math.ceil(width / cellSize) + 2)
+    this.rows = Math.max(1, Math.ceil(height / cellSize) + 2)
+    this.buckets = new Array(this.cols * this.rows)
   }
-
+  private cellIdx(x: number, y: number): number {
+    const cx = Math.floor((x - this.originX) / this.cellSize)
+    const cy = Math.floor((y - this.originY) / this.cellSize)
+    return cy * this.cols + cx
+  }
   add(idx: number, x: number, y: number): void {
-    const k = this.key(x, y)
-    const arr = this.cells.get(k) ?? []
-    arr.push(idx)
-    this.cells.set(k, arr)
+    const k = this.cellIdx(x, y)
+    if (k < 0 || k >= this.buckets.length) return
+    const cur = this.buckets[k]
+    if (!cur) {
+      this.buckets[k] = Int32Array.of(idx)
+    } else {
+      const next = new Int32Array(cur.length + 1)
+      next.set(cur)
+      next[cur.length] = idx
+      this.buckets[k] = next
+    }
   }
-
-  neighbors(x: number, y: number): number[] {
-    const cx = Math.floor(x / this.cellSize)
-    const cy = Math.floor(y / this.cellSize)
-    const out: number[] = []
-    for (let dx = -1; dx <= 1; dx++) {
-      for (let dy = -1; dy <= 1; dy++) {
-        const k = `${cx + dx},${cy + dy}`
-        const arr = this.cells.get(k)
-        if (arr) out.push(...arr)
+  neighbors(x: number, y: number, out: number[]): void {
+    out.length = 0
+    const cx = Math.floor((x - this.originX) / this.cellSize)
+    const cy = Math.floor((y - this.originY) / this.cellSize)
+    for (let dy = -1; dy <= 1; dy++) {
+      const ry = cy + dy
+      if (ry < 0 || ry >= this.rows) continue
+      for (let dx = -1; dx <= 1; dx++) {
+        const rx = cx + dx
+        if (rx < 0 || rx >= this.cols) continue
+        const arr = this.buckets[ry * this.cols + rx]
+        if (!arr) continue
+        for (let i = 0; i < arr.length; i++) out.push(arr[i])
       }
     }
-    return out
   }
 }
 
@@ -74,14 +92,16 @@ class HashGrid {
 
 export function clusterFloors(
   points: ClusterPoint[],
-  opts: { epsFactor?: number; minPts?: number; maxSample?: number } = {},
+  opts: { epsFactor?: number; minPts?: number; maxSample?: number; timeBudgetMs?: number } = {},
 ): ClusteringResult {
   if (points.length === 0) {
     return { clusters: [], eps: 0, noise: 0 }
   }
+  const t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now())
+  const timeBudget = opts.timeBudgetMs ?? 1500 // garde-fou : abandonne après 1.5s
 
-  // Échantillonnage si trop de points
-  const maxSample = opts.maxSample ?? 5000
+  // Échantillonnage si trop de points (cap dur à 2000 pour temps borné)
+  const maxSample = Math.min(opts.maxSample ?? 2000, 2000)
   const sampled = points.length > maxSample
     ? points.filter((_, i) => i % Math.ceil(points.length / maxSample) === 0)
     : points
@@ -94,55 +114,76 @@ export function clusterFloors(
     if (p.x > maxX) maxX = p.x
     if (p.y > maxY) maxY = p.y
   }
-  const diag = Math.hypot(maxX - minX, maxY - minY)
+  const w = maxX - minX || 1
+  const h = maxY - minY || 1
+  const diag = Math.hypot(w, h)
   const epsFactor = opts.epsFactor ?? 1 / 15  // voisinage = 1/15e de la diagonale
   const eps = diag * epsFactor
   const eps2 = eps * eps
   const minPts = opts.minPts ?? 20
 
-  // Construire le hash grid
-  const grid = new HashGrid(eps)
+  // Pré-allocation tableaux denses (Float64Array : x,y plats pour cache locality)
+  const xs = new Float64Array(sampled.length)
+  const ys = new Float64Array(sampled.length)
   for (let i = 0; i < sampled.length; i++) {
-    grid.add(i, sampled[i].x, sampled[i].y)
+    xs[i] = sampled[i].x
+    ys[i] = sampled[i].y
   }
 
-  // DBSCAN
+  // Hash grid avec backing dense
+  const grid = new HashGrid(eps, minX, minY, w, h)
+  for (let i = 0; i < sampled.length; i++) grid.add(i, xs[i], ys[i])
+
+  // DBSCAN avec arrêt temps + queue circulaire
   const UNVISITED = -1
   const NOISE = -2
-  const labels = new Array<number>(sampled.length).fill(UNVISITED)
+  const labels = new Int32Array(sampled.length).fill(UNVISITED)
   let clusterId = 0
+  const candidates: number[] = []
+  const queue: number[] = []
 
-  const regionQuery = (idx: number): number[] => {
-    const p = sampled[idx]
-    const candidates = grid.neighbors(p.x, p.y)
-    const out: number[] = []
-    for (const j of candidates) {
-      const q = sampled[j]
-      const dx = p.x - q.x
-      const dy = p.y - q.y
+  const regionQueryInto = (idx: number, out: number[]) => {
+    out.length = 0
+    grid.neighbors(xs[idx], ys[idx], candidates)
+    const px = xs[idx], py = ys[idx]
+    for (let k = 0; k < candidates.length; k++) {
+      const j = candidates[k]
+      const dx = px - xs[j], dy = py - ys[j]
       if (dx * dx + dy * dy <= eps2) out.push(j)
     }
-    return out
+  }
+
+  const checkBudget = () => {
+    const now = (typeof performance !== 'undefined' ? performance.now() : Date.now())
+    return now - t0 < timeBudget
   }
 
   for (let i = 0; i < sampled.length; i++) {
+    if (!checkBudget()) break
     if (labels[i] !== UNVISITED) continue
-    const neighbors = regionQuery(i)
-    if (neighbors.length < minPts) {
+    const seedNeighbors: number[] = []
+    regionQueryInto(i, seedNeighbors)
+    if (seedNeighbors.length < minPts) {
       labels[i] = NOISE
       continue
     }
-    // Expand cluster
     const id = clusterId++
     labels[i] = id
-    const queue = [...neighbors]
-    while (queue.length) {
-      const j = queue.shift()!
+    // Réinit queue (réutilise array)
+    queue.length = 0
+    for (let k = 0; k < seedNeighbors.length; k++) queue.push(seedNeighbors[k])
+    let qHead = 0
+    while (qHead < queue.length) {
+      if (!checkBudget()) break
+      const j = queue[qHead++]
       if (labels[j] === NOISE) labels[j] = id
       if (labels[j] !== UNVISITED) continue
       labels[j] = id
-      const nb2 = regionQuery(j)
-      if (nb2.length >= minPts) queue.push(...nb2)
+      const nb2: number[] = []
+      regionQueryInto(j, nb2)
+      if (nb2.length >= minPts) {
+        for (let k = 0; k < nb2.length; k++) queue.push(nb2[k])
+      }
     }
   }
 

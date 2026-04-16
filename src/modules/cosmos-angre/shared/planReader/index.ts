@@ -1742,11 +1742,19 @@ export async function importPlan(
         let floorClusters: FloorCluster[] = []
 
         // ── M14: DBSCAN 2D clustering (diagonal/L/T layouts) ──
+        // Garde-fou : maxSample=2000 + timeBudget=1500ms — n'altère pas l'UX sur gros plans
         {
+          const tCluster0 = performance.now()
           const { clusterFloors, labelClusters } = await import('./floorClustering')
           const points = planEntities.map(e => ({ x: e.bounds.centerX, y: e.bounds.centerY, weight: 1 }))
-          const { clusters, noise } = clusterFloors(points, { epsFactor: 1 / 15, minPts: 20, maxSample: 5000 })
+          const { clusters, noise } = clusterFloors(points, {
+            epsFactor: 1 / 15,
+            minPts: Math.min(20, Math.max(5, Math.floor(points.length / 200))),
+            maxSample: 2000,
+            timeBudgetMs: 1500,
+          })
           const labeled = labelClusters(clusters)
+          console.log(`[DXF] clustering: ${(performance.now() - tCluster0).toFixed(0)}ms · ${clusters.length} cluster(s) · ${noise} noise`)
           floorClusters = labeled.map(c => ({
             label: c.label,
             id: c.id,

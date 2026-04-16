@@ -5,6 +5,8 @@
 import React, { useState, useMemo, useCallback, lazy, Suspense } from 'react'
 import { useVol1Store } from '../store/vol1Store'
 import { ConsolidatedReportButton } from '../../shared/components/ConsolidatedReportButton'
+import { WayfinderPanel } from '../../shared/components/WayfinderPanel'
+import type { WayfinderSpace } from '../../shared/components/WayfinderRenderer'
 import type { CommercialSpace, SpaceStatus } from '../store/vol1Types'
 import { Grid3X3, Sparkles, Loader2, CalendarDays, Cuboid, Navigation, Map } from 'lucide-react'
 import { getSpacePhaseStatus, computePhaseMetrics, PHASE_STATUS_COLORS } from '../engines/phasingEngine'
@@ -147,6 +149,27 @@ export default function PlanCommercialSection() {
   const is2d = viewMode === '2d'
   const is3d = viewMode === '3d' || viewMode === 'isometric' || viewMode === 'tour'
 
+  const [showWayfinder, setShowWayfinder] = useState(false)
+
+  // Construit l'input wayfinder en fusionnant DetectedSpace + tenants
+  const wayfinderSpaces = useMemo<WayfinderSpace[]>(() => {
+    if (!plan?.spaces) return []
+    return plan.spaces
+      .filter(s => Array.isArray(s.polygon) && s.polygon.length >= 3)
+      .map(s => {
+        const ms = spaces.find(sp => sp.id === s.id)
+        const tenant = ms?.tenantId ? tenants.find(t => t.id === ms.tenantId) : undefined
+        return {
+          id: s.id,
+          label: s.label,
+          category: tenant?.sector ?? (s.type as string | undefined),
+          status: ms?.status as WayfinderSpace['status'],
+          tenantName: tenant?.brand ?? tenant?.name,
+          polygon: s.polygon as [number, number][],
+        }
+      })
+  }, [plan, spaces, tenants])
+
   return (
     <div className="flex h-full" style={{ background: '#080c14' }}>
       {/* Left sidebar — filters */}
@@ -287,6 +310,12 @@ export default function PlanCommercialSection() {
               title="Exporter la nomenclature CSV"
             >📊 CSV</button>
           </div>
+          {/* Vue Wayfinder exportable (PNG/SVG/HTML standalone) */}
+          <button
+            onClick={() => setShowWayfinder(true)}
+            className="w-full mt-1 text-[10px] px-2 py-1.5 rounded bg-cyan-600/20 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-600/30"
+            title="Aperçu et export du plan style wayfinder (borne / web)"
+          >🗺 Wayfinder export</button>
           {/* M25 — Rapport directeur consolidé */}
           <div className="mt-1">
             <ConsolidatedReportButton
@@ -667,6 +696,16 @@ export default function PlanCommercialSection() {
           space={spaceFormMode === 'edit' ? selectedSpace : undefined}
           defaultFloorId={floorId}
           onClose={() => setSpaceFormMode(null)}
+        />
+      )}
+      {showWayfinder && plan && (
+        <WayfinderPanel
+          open={showWayfinder}
+          onClose={() => setShowWayfinder(false)}
+          spaces={wayfinderSpaces}
+          planBounds={plan.bounds}
+          title="Cosmos Angré · Plan du centre"
+          subtitle={floorId ? `Étage ${floorId}` : undefined}
         />
       )}
     </div>
