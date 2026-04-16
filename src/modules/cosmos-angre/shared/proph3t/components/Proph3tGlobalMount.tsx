@@ -1,19 +1,18 @@
 // ═══ PROPH3T GLOBAL MOUNT — Monté UNE SEULE FOIS au niveau racine ═══
-// Évite que la modal soit instanciée N fois (1 par PlanCanvasV2 dans Vol1/Vol2/Vol3).
-// Lit le parsedPlan depuis le store, construit les inputs à la demande.
 
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { Proph3tImportModal } from './Proph3tImportModal'
 import { FloorAttributionModal, type FloorAttribution } from '../../components/FloorAttributionModal'
 import { usePlanEngineStore } from '../../stores/planEngineStore'
 import { usePlanHydration } from '../../hooks/usePlanHydration'
 import { FloorLevel, FLOOR_LABEL_FR, FLOOR_STACK_ORDER } from '../../domain/FloorLevel'
-import type { ParsedPlan } from '../../planReader/planEngineTypes'
 import type { Proph3tAction } from '../orchestrator.types'
 
 export function Proph3tGlobalMount() {
-  // Hydrate le parsedPlan depuis IndexedDB si pas encore en mémoire
+  // ⚠ RÈGLE D'OR : TOUS les hooks dans le même ordre, à CHAQUE render.
+  // Aucun early return avant, aucun hook conditionnel.
   usePlanHydration()
+
   const plan = usePlanEngineStore(s => s.parsedPlan)
   const setParsedPlan = usePlanEngineStore(s => s.setParsedPlan)
   const proph3tModalOpen = usePlanEngineStore(s => s.proph3tModalOpen)
@@ -23,8 +22,13 @@ export function Proph3tGlobalMount() {
   const closeFloorAttribution = usePlanEngineStore(s => s.closeFloorAttribution)
   const validatePlan = usePlanEngineStore(s => s.validatePlan)
 
-  // ⚠ IMPORTANT : TOUS les hooks doivent être appelés AVANT tout return conditionnel
-  // (règles des hooks React). useCallback ici DOIT rester avant les early returns.
+  const disabled = useMemo(() => {
+    try { return localStorage.getItem('atlas-proph3t-disabled') === '1' }
+    catch { return false }
+  }, [])
+
+  const clusters = useMemo(() => plan?.detectedFloors ?? [], [plan])
+
   const onApplyAction = useCallback(async (action: Proph3tAction) => {
     switch (action.verb) {
       case 'exclude-layer': {
@@ -46,20 +50,8 @@ export function Proph3tGlobalMount() {
     }
   }, [])
 
-  // Kill switch : si PROPH3T désactivé, ne monte rien
-  const disabled = (() => {
-    try { return localStorage.getItem('atlas-proph3t-disabled') === '1' }
-    catch { return false }
-  })()
-  if (disabled) return null
-
-  // Rien à monter si pas de plan
-  if (!plan) return null
-
-  // ── Attribution ────────────────────────────────────────
-  const clusters = plan.detectedFloors ?? []
-
-  const handleAttributionConfirm = async (attributions: Array<FloorAttribution & { level: FloorLevel }>) => {
+  const handleAttributionConfirm = useCallback(async (attributions: Array<FloorAttribution & { level: FloorLevel }>) => {
+    if (!plan) return
     const ignoredIds = new Set(
       clusters.filter(c => !attributions.some(a => a.clusterId === c.id)).map(c => c.id),
     )
@@ -97,34 +89,49 @@ export function Proph3tGlobalMount() {
     })
     closeFloorAttribution()
     openProph3tModal()
-  }
+  }, [plan, clusters, setParsedPlan, closeFloorAttribution, openProph3tModal])
+
+  const onRefresh = useCallback(async () => {
+    if (!plan) return
+    const { runSkill } = await import('../orchestrator')
+    await runSkill('analyzePlanAtImport', {
+      plan,
+      importId: `refresh-${Date.now()}`,
+      fileName: 'plan courant',
+    })
+  }, [plan])
+
+  const onCancelAttribution = useCallback(() => {
+    closeFloorAttribution()
+    openProph3tModal()
+  }, [closeFloorAttribution, openProph3tModal])
+
+  // ═══ AUCUN EARLY RETURN AVANT ICI — tous les hooks sont définis ═══
+  // Tout le rendu conditionnel se fait via les flags dans le JSX.
+
+  const shouldRender = !disabled && !!plan
 
   return (
     <>
-      {clusters.length > 1 && (
+      {shouldRender && clusters.length > 1 && (
         <FloorAttributionModal
           open={floorAttributionOpen}
           detectedClusters={clusters}
           onConfirm={handleAttributionConfirm}
-          onCancel={() => { closeFloorAttribution(); openProph3tModal() }}
+          onCancel={onCancelAttribution}
         />
       )}
-      <Proph3tImportModal
-        open={proph3tModalOpen}
-        onClose={closeProph3tModal}
-        projectName="Cosmos Angré"
-        orgName="Centre commercial · Abidjan"
-        onApplyAction={onApplyAction}
-        onValidatePlan={validatePlan}
-        onRefresh={async () => {
-          const { runSkill } = await import('../orchestrator')
-          await runSkill('analyzePlanAtImport', {
-            plan,
-            importId: `refresh-${Date.now()}`,
-            fileName: 'plan courant',
-          })
-        }}
-      />
+      {shouldRender && (
+        <Proph3tImportModal
+          open={proph3tModalOpen}
+          onClose={closeProph3tModal}
+          projectName="Cosmos Angré"
+          orgName="Centre commercial · Abidjan"
+          onApplyAction={onApplyAction}
+          onValidatePlan={validatePlan}
+          onRefresh={onRefresh}
+        />
+      )}
     </>
   )
 }
