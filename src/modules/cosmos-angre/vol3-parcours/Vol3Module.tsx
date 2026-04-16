@@ -794,16 +794,27 @@ export default function Vol3Module() {
               2D
             </button>
             <button
-              onClick={() => setViewMode('3d-advanced')}
+              onClick={() => setViewMode('3d')}
               className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
-                viewMode === '3d-advanced'
+                viewMode === '3d'
                   ? 'bg-purple-700 text-white'
                   : 'text-gray-500 hover:text-gray-300'
               }`}
-              title="Vue 3D avancée : Isométrique, Perspective, Semi-réaliste"
+              title="Vue 3D volumétrique (Three.js)"
             >
               <Box className="w-3 h-3" />
               3D
+            </button>
+            <button
+              onClick={() => setViewMode('3d-advanced')}
+              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
+                viewMode === '3d-advanced'
+                  ? 'bg-pink-700 text-white'
+                  : 'text-gray-500 hover:text-gray-300'
+              }`}
+              title="Vue 3D avancée (module Isométrique/Perspective/Semi-réaliste)"
+            >
+              3D+
             </button>
           </div>
         )}
