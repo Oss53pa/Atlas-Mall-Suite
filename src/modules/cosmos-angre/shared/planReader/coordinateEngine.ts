@@ -97,9 +97,17 @@ export function detectUnitScale(insunits: number | undefined, bounds: Bounds): {
     6: { scale: 1.0, unit: 'm' },
   }
 
+  // Si $INSUNITS disponible, vérifier que la taille résultante est cohérente
   if (insunits !== undefined && insunits in knownUnits) {
     const { scale, unit } = knownUnits[insunits]
-    return { scaleFactor: scale, detectedUnit: unit }
+    const w = Math.max(bounds.width, bounds.height)
+    const realSize = w * scale
+    // Un centre commercial fait 50-500 m. Si la conversion donne < 10 m ou > 2 km,
+    // c'est incohérent → fallback heuristique
+    if (realSize >= 10 && realSize <= 2000) {
+      return { scaleFactor: scale, detectedUnit: unit }
+    }
+    console.warn(`[DXF] $INSUNITS=${insunits} (${unit}) donne ${realSize.toFixed(1)}m — incohérent, fallback auto-detect`)
   }
 
   // Heuristic: auto-detect from coordinate range
