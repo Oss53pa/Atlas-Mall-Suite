@@ -9,6 +9,7 @@ import { simulateABM } from '../algorithms/socialForceABM'
 import { compareAB, monteCarloPercentiles, randomNormal } from '../algorithms/monteCarlo'
 import { simulateJourney } from '../../engines/parcoursAgentEngine'
 import { optimizeSignage } from '../../engines/signageOptimizer'
+import { computeDetailedJourneys, type DetailedJourney } from '../engines/detailedJourneyEngine'
 
 export interface ParcoursAnalysisInput {
   planWidth: number
@@ -46,6 +47,15 @@ export interface ParcoursPayload {
     b: { description: string; avgVisitMin: number; penetrationPct: number }
     recommendation: 'A' | 'B' | 'inconclusive'
     probABetter: number
+  }
+  /** NOUVEAU : parcours détaillés calculés depuis le plan réel (A* + personas). */
+  detailedJourneys?: DetailedJourney[]
+  detailedAggregate?: {
+    avgDistanceM: number
+    avgDurationMin: number
+    avgStops: number
+    mostVisitedSpaces: Array<{ spaceId: string; label: string; visits: number }>
+    leastVisitedSpaces: Array<{ spaceId: string; label: string; visits: number }>
   }
 }
 
@@ -178,6 +188,51 @@ export async function analyzeParcours(input: ParcoursAnalysisInput): Promise<Pro
     })
   }
 
+  // ─── NOUVEAU : calcul de parcours DÉTAILLÉS depuis le plan réel ───
+  // Pour chaque persona : score chaque zone, sélectionne les plus attractives,
+  // calcule A* entre chaque → waypoints concrets affichables sur le plan.
+  const detailedResult = computeDetailedJourneys({
+    spaces: input.spaces.map(s => ({
+      id: s.id, label: s.label, type: s.type,
+      areaSqm: s.areaSqm, polygon: s.polygon, floorId: s.floorId,
+    })),
+    planWidth: input.planWidth,
+    planHeight: input.planHeight,
+    entrance: input.entrance,
+    exits: input.exits,
+  })
+
+  // Actions issues des parcours détaillés : zones mortes (peu/pas visitées)
+  const deadZones = detailedResult.aggregate.leastVisitedSpaces.slice(0, 3)
+  for (const dz of deadZones) {
+    actions.push({
+      id: nextId(),
+      verb: 'note',
+      targetId: dz.spaceId,
+      label: `Zone "${dz.label}" peu attractive — 0 parcours la visite`,
+      rationale: `Aucun des ${detailedResult.personas.length} personas ne visite cette zone. Envisager : repositionner l'enseigne, améliorer la signalétique ou requalifier la zone.`,
+      payload: { spaceId: dz.spaceId },
+      severity: 'warning',
+      confidence: confidence(0.8, 'Calcul A* sur plan réel'),
+      sources: [citeAlgo('detailed-journeys', 'Parcours personas A* sur plan')],
+    })
+  }
+
+  // Action : parcours le mieux scoré à mettre en avant
+  const bestJourney = [...detailedResult.journeys].sort((a, b) => b.qualityScore - a.qualityScore)[0]
+  if (bestJourney && bestJourney.qualityScore > 60) {
+    actions.push({
+      id: nextId(),
+      verb: 'note',
+      label: `Parcours optimal identifié : "${bestJourney.personaName}" (score ${bestJourney.qualityScore}/100)`,
+      rationale: `${bestJourney.steps.length} arrêts · ${bestJourney.totalDistanceM.toFixed(0)}m · ${bestJourney.totalDurationMin.toFixed(0)}min. Utiliser ce parcours comme référence marketing.`,
+      payload: { journey: bestJourney },
+      severity: 'info',
+      confidence: confidence(0.85, 'A* + scoring affinité persona'),
+      sources: [citeAlgo('detailed-journeys', 'Parcours personas A* sur plan')],
+    })
+  }
+
   const payload: ParcoursPayload = {
     personas,
     abmMetrics: {
@@ -194,9 +249,11 @@ export async function analyzeParcours(input: ParcoursAnalysisInput): Promise<Pro
       recommendation: ab.recommendation,
       probABetter: ab.probABetter,
     },
+    detailedJourneys: detailedResult.journeys,
+    detailedAggregate: detailedResult.aggregate,
   }
 
-  const summary = `${personas.length} personas (K-Means) · ABM : flux ${abm.metrics.arrived}/${abm.metrics.totalAgents} arrivés en ${abm.metrics.avgTravelTimeS.toFixed(0)}s · signalétique ${signageRes.coveragePct.toFixed(0)}% · variante recommandée : ${ab.recommendation}.`
+  const summary = `${detailedResult.personas.length} personas · ${detailedResult.journeys.length} parcours calculés sur plan réel (A*) · distance moy ${detailedResult.aggregate.avgDistanceM.toFixed(0)}m · ${detailedResult.aggregate.avgStops.toFixed(1)} arrêts · ${detailedResult.aggregate.leastVisitedSpaces.length} zones mortes identifiées.`
 
   const findingsWithRag = await enrichFindingsWithRag(findings, 2)
   const actionsWithRag = await enrichActionsWithRag(actions, 1)
