@@ -8,6 +8,9 @@ const OnboardingWizard = React.lazy(() => import('./shared/components/Onboarding
 const Vol1Module = React.lazy(() => import('./vol1-commercial'))
 const Vol2Module = React.lazy(() => import('./vol2-securitaire'))
 const Vol3Module = React.lazy(() => import('./vol3-parcours'))
+const Proph3tGlobalMount = React.lazy(() =>
+  import('./shared/proph3t/components/Proph3tGlobalMount').then(m => ({ default: m.Proph3tGlobalMount }))
+)
 // Vol3D is now embedded inside Vol2/Vol3 as a view mode, not a standalone route
 const Vol3DModule = React.lazy(() => import('./vol-3d'))
 const SceneEditor = React.lazy(() => import('./scene-editor'))
@@ -43,17 +46,23 @@ export default function CosmosAngre() {
 
   return (
     <React.Suspense fallback={<LoadingFallback />}>
-      <Routes>
-        {/* Plus de landing page projet — redirige vers Vol.1 par defaut */}
-        <Route index element={<Navigate to="vol1" replace />} />
-        <Route path="vol1/*" element={<ErrorBoundary fallbackTitle="Erreur Vol.1 Commercial"><Vol1Module /></ErrorBoundary>} />
-        <Route path="vol2/*" element={<ErrorBoundary fallbackTitle="Erreur Vol.2 Securitaire"><Vol2Module /></ErrorBoundary>} />
-        <Route path="vol3/*" element={<ErrorBoundary fallbackTitle="Erreur Vol.3 Parcours"><Vol3Module /></ErrorBoundary>} />
-        {/* Vue 3D avancee / Editeur de scene */}
-        <Route path="3d/*" element={<Vol3DModule />} />
-        <Route path="scene-editor/*" element={<ErrorBoundary fallbackTitle="Erreur Editeur de Scene"><SceneEditor /></ErrorBoundary>} />
-        <Route path="*" element={<Navigate to="/projects/cosmos-angre" replace />} />
-      </Routes>
+      <>
+        <Routes>
+          {/* Plus de landing page projet — redirige vers Vol.1 par defaut */}
+          <Route index element={<Navigate to="vol1" replace />} />
+          <Route path="vol1/*" element={<ErrorBoundary fallbackTitle="Erreur Vol.1 Commercial"><Vol1Module /></ErrorBoundary>} />
+          <Route path="vol2/*" element={<ErrorBoundary fallbackTitle="Erreur Vol.2 Securitaire"><Vol2Module /></ErrorBoundary>} />
+          <Route path="vol3/*" element={<ErrorBoundary fallbackTitle="Erreur Vol.3 Parcours"><Vol3Module /></ErrorBoundary>} />
+          {/* Vue 3D avancee / Editeur de scene */}
+          <Route path="3d/*" element={<Vol3DModule />} />
+          <Route path="scene-editor/*" element={<ErrorBoundary fallbackTitle="Erreur Editeur de Scene"><SceneEditor /></ErrorBoundary>} />
+          <Route path="*" element={<Navigate to="/projects/cosmos-angre" replace />} />
+        </Routes>
+        {/* Modal PROPH3T montée UNE SEULE FOIS au niveau projet (pas dans chaque volume) */}
+        <React.Suspense fallback={null}>
+          <Proph3tGlobalMount />
+        </React.Suspense>
+      </>
     </React.Suspense>
   )
 }

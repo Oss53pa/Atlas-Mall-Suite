@@ -583,10 +583,8 @@ export function PlanCanvasV2({
         <PlanSelector />
         {/* Gestionnaire étages + bibliothèque de plans */}
         <FloorManagerPanel />
-        {/* Modal d'attribution des étages (hybride strict) — avant PROPH3T */}
-        <FloorAttributionModalMount plan={plan} />
-        {/* PROPH3T modal auto-ouvert après validation étages */}
-        <Proph3tImportModalMount plan={plan} />
+        {/* Les modales PROPH3T sont montées au niveau projet (cosmos-angre/index.tsx)
+            pour éviter d'avoir N instances (1 par volume) qui se rendent en parallèle */}
       </div>
     )
   }
