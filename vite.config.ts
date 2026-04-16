@@ -29,11 +29,31 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // Keep React/Zustand in a single vendor chunk to prevent duplicate instances
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/zustand')) {
+          // ─── Vendors that must load before any volume chunk ───
+          // lucide-react is used by every volume and every section; when it
+          // falls into the default chunk, lazy-loaded section chunks can
+          // evaluate before their icons resolve → TDZ "Cannot access 'X'
+          // before initialization". Pinning it to react-vendor guarantees
+          // eager loading.
+          if (
+            id.includes('node_modules/react/') ||
+            id.includes('node_modules/react-dom/') ||
+            id.includes('node_modules/react-router-dom/') ||
+            id.includes('node_modules/zustand/') ||
+            id.includes('node_modules/lucide-react/') ||
+            id.includes('node_modules/scheduler/')
+          ) {
             return 'react-vendor'
           }
-          // Volume code splitting
+          // ─── Shared cosmos-angre code ───
+          // Must be in its own chunk (or merged with react-vendor) so it
+          // evaluates before any vol{1,2,3} lazy chunk that imports from it.
+          // Without this, cross-chunk TDZ hits constants like
+          // ATLAS_STUDIO_GROUP_META, CANVAS_SCALE, etc.
+          if (id.includes('modules/cosmos-angre/shared/')) {
+            return 'cosmos-shared'
+          }
+          // ─── Volume code splitting ───
           if (id.includes('vol1-commercial'))    return 'vol1'
           if (id.includes('vol2-securitaire'))   return 'vol2'
           if (id.includes('vol3-parcours'))      return 'vol3'
@@ -41,8 +61,8 @@ export default defineConfig({
           if (id.includes('scenarios'))          return 'scenarios'
           if (id.includes('dce'))                return 'dce'
           if (id.includes('validation'))         return 'validation'
-          if (id.includes('planReader'))          return 'plan-reader'
-          // Vendor chunks
+          if (id.includes('planReader'))         return 'plan-reader'
+          // ─── Other vendor chunks ───
           if (id.includes('three'))              return 'vendor-three'
           if (id.includes('pdfjs-dist'))         return 'vendor-pdfjs'
           if (id.includes('web-ifc'))            return 'vendor-web-ifc'
