@@ -17,6 +17,7 @@ import { DxfViewerCanvas } from './DxfViewerCanvas'
 import { ObjectLibraryPanel } from './ObjectLibraryPanel'
 import { PlanSelector } from './PlanSelector'
 import { Proph3tImportModal } from '../proph3t/components/Proph3tImportModal'
+import { FloorManagerPanel } from './FloorManagerPanel'
 
 // Mount inline pour piloter la modal depuis le store.
 // Le composant utilise createPortal donc il rend HORS du DOM tree de PlanCanvasV2,
@@ -484,6 +485,8 @@ export function PlanCanvasV2({
         />
         {/* Plan selector dropdown */}
         <PlanSelector />
+        {/* Gestionnaire étages + bibliothèque de plans */}
+        <FloorManagerPanel />
         {/* PROPH3T modal auto-ouvert après import */}
         <Proph3tImportModalMount plan={plan} />
       </div>
