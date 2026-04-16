@@ -90,6 +90,27 @@ window.history.pushState = function (...args: Parameters<typeof originalPushStat
   localStorage.removeItem('atlas-proph3t-disabled')
   console.log('[Atlas] PROPH3T réactivé. Rechargez la page.')
 }
+;(window as any).disableDxfViewer = () => {
+  localStorage.setItem('atlas-dxf-viewer-disabled', '1')
+  console.log('[Atlas] DXF viewer désactivé → fallback SVG léger. Rechargez.')
+}
+;(window as any).enableDxfViewer = () => {
+  localStorage.removeItem('atlas-dxf-viewer-disabled')
+  console.log('[Atlas] DXF viewer réactivé. Rechargez.')
+}
+
+// URL ?lite=true → active le mode léger (SVG only, pas de DXF WebGL)
+try {
+  const url = new URL(window.location.href)
+  if (url.searchParams.get('lite') === 'true') {
+    localStorage.setItem('atlas-dxf-viewer-disabled', '1')
+    console.warn('[Atlas] Mode LITE activé (DXF viewer désactivé)')
+  }
+  if (url.searchParams.get('heavy') === 'true') {
+    localStorage.removeItem('atlas-dxf-viewer-disabled')
+    console.log('[Atlas] Mode HEAVY (DXF WebGL)')
+  }
+} catch { /* */ }
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -110,8 +131,11 @@ if (import.meta.env.PROD) {
         console.log('  • window.clearPlanCache()   — vide le cache DXF/plan en IndexedDB')
         console.log('  • window.disableProph3t()   — désactive totalement PROPH3T')
         console.log('  • window.enableProph3t()    — réactive PROPH3T')
+        console.log('  • window.disableDxfViewer() — fallback SVG léger (si DXF freeze)')
+        console.log('  • window.enableDxfViewer()  — réactive DXF WebGL')
         console.log('  • window.nuclearReset()     — reset complet SW + caches')
         console.log('  • URL ?kill=true            — kill switch PROPH3T')
+        console.log('  • URL ?lite=true            — mode léger sans DXF WebGL')
       })
       .catch(() => { /* silent */ })
   })

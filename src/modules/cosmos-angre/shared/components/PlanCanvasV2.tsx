@@ -577,7 +577,13 @@ export function PlanCanvasV2({
   })), [plan.spaces])
 
   // ── WebGL DXF viewer: use dxf-viewer library for full CAD rendering ──
-  if (plan.dxfBlobUrl) {
+  // Kill switch : si atlas-dxf-viewer-disabled, force le fallback SVG léger
+  const dxfViewerDisabled = (() => {
+    try { return localStorage.getItem('atlas-dxf-viewer-disabled') === '1' }
+    catch { return false }
+  })()
+
+  if (plan.dxfBlobUrl && !dxfViewerDisabled) {
     // Attend la rehydratation avant de rendre DxfViewerCanvas
     if (!rehydratedDxfUrl && !rehydrateError) {
       return (
