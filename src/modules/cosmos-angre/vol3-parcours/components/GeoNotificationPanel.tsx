@@ -22,16 +22,16 @@ interface GeoNotificationPanelProps {
   zones: { id: string; label: string }[]
 }
 
-const TYPE_CONFIG: Record<GeoNotification['type'], { icon: typeof Bell; color: string; label: string }> = {
-  promo: { icon: Gift, color: 'text-amber-400', label: 'Promotion' },
-  info: { icon: Info, color: 'text-blue-400', label: 'Information' },
-  cosmos_club: { icon: MapPin, color: 'text-purple-400', label: 'Cosmos Club' },
-  navigation: { icon: Navigation, color: 'text-emerald-400', label: 'Navigation' },
-}
-
 export default function GeoNotificationPanel({
   notifications, onAdd, onToggle, onDelete, zones,
 }: GeoNotificationPanelProps) {
+  const TYPE_CONFIG: Record<GeoNotification['type'], { icon: typeof Bell; color: string; label: string }> = {
+    promo: { icon: Gift, color: 'text-amber-400', label: 'Promotion' },
+    info: { icon: Info, color: 'text-blue-400', label: 'Information' },
+    cosmos_club: { icon: MapPin, color: 'text-purple-400', label: 'Cosmos Club' },
+    navigation: { icon: Navigation, color: 'text-emerald-400', label: 'Navigation' },
+  }
+
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
     zoneId: '',
