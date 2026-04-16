@@ -9,6 +9,26 @@ import { Proph3tResultPanel } from './Proph3tResultPanel'
 import { runSkill, getLastResult, onProph3tResult } from '../orchestrator'
 import type { Proph3tResult, Proph3tAction } from '../orchestrator.types'
 
+// Helper toast simple (pas de dépendance externe)
+function showToast(message: string, duration = 3500): void {
+  if (typeof document === 'undefined') return
+  const el = document.createElement('div')
+  el.textContent = message
+  el.style.cssText = `
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    z-index:100000; background:rgba(15,23,42,0.95); color:#fff;
+    padding:12px 20px; border-radius:10px; font-size:13px; font-weight:500;
+    border:1px solid rgba(168,85,247,0.5); box-shadow:0 10px 40px rgba(0,0,0,0.4);
+    max-width:90vw; text-align:center; font-family:system-ui,sans-serif;
+  `
+  document.body.appendChild(el)
+  setTimeout(() => {
+    el.style.transition = 'opacity 0.3s'
+    el.style.opacity = '0'
+    setTimeout(() => el.remove(), 300)
+  }, duration)
+}
+
 interface Props {
   open: boolean
   onClose: () => void
@@ -63,6 +83,24 @@ export function Proph3tImportModal({
   const handleValidate = () => {
     onValidatePlan?.()
     onClose()
+    // Navigue vers Vol.1 Commercial pour démarrer le travail manuel
+    try {
+      const path = window.location.pathname
+      // Si on est dans /projects/cosmos-angre/... → aller au vol1
+      if (path.includes('/projects/') && !path.includes('/vol1') && !path.includes('/vol2') && !path.includes('/vol3')) {
+        const base = path.replace(/\/$/, '')
+        window.location.hash = ''
+        window.history.pushState({}, '', `${base.split('/').slice(0, 4).join('/')}/vol1`)
+        window.dispatchEvent(new PopStateEvent('popstate'))
+      }
+    } catch { /* navigation best-effort */ }
+    // Toast visuel de confirmation
+    showToast('✓ Plan validé — vous pouvez maintenant travailler dans les volumes (panneau PROPH3T à droite)')
+  }
+
+  const handleClose = () => {
+    onClose()
+    showToast('Modal fermée — vous pouvez la rouvrir depuis le bouton PROPH3T', 2000)
   }
 
   if (!open) return null
@@ -95,7 +133,11 @@ export function Proph3tImportModal({
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/[0.05] rounded-lg text-slate-400">
+          <button
+            onClick={handleClose}
+            className="p-2 hover:bg-white/[0.05] rounded-lg text-slate-400 hover:text-white"
+            title="Fermer (Échap)"
+          >
             <X size={18} />
           </button>
         </div>

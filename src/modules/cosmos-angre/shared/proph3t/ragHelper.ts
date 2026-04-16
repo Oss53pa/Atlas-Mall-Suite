@@ -94,18 +94,38 @@ export async function findRelevantSources(
   }
 }
 
-/** Helper : enrichit chaque action avec des sources RAG basées sur son label. */
+// Cap dur pour éviter freeze main thread sur longs listes
+const MAX_ENRICH_ITEMS = 8
+
+/** Helper : enrichit chaque action avec des sources RAG basées sur son label.
+ *  Parallèle + timeout 500ms global → non bloquant. Max 8 items pour perf. */
 export async function enrichActionsWithRag<T extends { label: string; sources: SourceCitation[] }>(
   actions: T[],
   topKPerAction = 2,
 ): Promise<T[]> {
-  await ensureRagSeeded()
-  const enriched: T[] = []
-  for (const a of actions) {
-    const ragSources = await findRelevantSources(a.label, topKPerAction)
-    enriched.push({ ...a, sources: [...a.sources, ...ragSources] })
+  if (actions.length === 0) return actions
+  try {
+    await Promise.race([
+      ensureRagSeeded(),
+      new Promise<void>((_, rej) => setTimeout(() => rej(new Error('rag seed timeout')), 2000)),
+    ])
+  } catch { return actions /* skip enrichment si seed trop lent */ }
+
+  // Limite dure pour éviter freeze
+  const toEnrich = actions.slice(0, MAX_ENRICH_ITEMS)
+  const rest = actions.slice(MAX_ENRICH_ITEMS)
+
+  // Parallèle avec timeout global 1s
+  try {
+    const results = await Promise.race([
+      Promise.all(toEnrich.map(a => findRelevantSources(a.label, topKPerAction).catch(() => []))),
+      new Promise<SourceCitation[][]>((_, rej) => setTimeout(() => rej(new Error('rag search timeout')), 1500)),
+    ])
+    const enriched = toEnrich.map((a, i) => ({ ...a, sources: [...a.sources, ...(results[i] ?? [])] }))
+    return [...enriched, ...rest]
+  } catch {
+    return actions // timeout → retourne sans enrichissement
   }
-  return enriched
 }
 
 /** Helper : enrichit chaque finding avec sources RAG. */
@@ -113,11 +133,24 @@ export async function enrichFindingsWithRag<T extends { title: string; descripti
   findings: T[],
   topKPerFinding = 2,
 ): Promise<T[]> {
-  await ensureRagSeeded()
-  const enriched: T[] = []
-  for (const f of findings) {
-    const ragSources = await findRelevantSources(`${f.title} ${f.description}`, topKPerFinding)
-    enriched.push({ ...f, sources: [...f.sources, ...ragSources] })
+  if (findings.length === 0) return findings
+  try {
+    await Promise.race([
+      ensureRagSeeded(),
+      new Promise<void>((_, rej) => setTimeout(() => rej(new Error('rag seed timeout')), 2000)),
+    ])
+  } catch { return findings }
+
+  const toEnrich = findings.slice(0, MAX_ENRICH_ITEMS)
+  const rest = findings.slice(MAX_ENRICH_ITEMS)
+  try {
+    const results = await Promise.race([
+      Promise.all(toEnrich.map(f => findRelevantSources(`${f.title} ${f.description}`, topKPerFinding).catch(() => []))),
+      new Promise<SourceCitation[][]>((_, rej) => setTimeout(() => rej(new Error('rag search timeout')), 1500)),
+    ])
+    const enriched = toEnrich.map((f, i) => ({ ...f, sources: [...f.sources, ...(results[i] ?? [])] }))
+    return [...enriched, ...rest]
+  } catch {
+    return findings
   }
-  return enriched
 }

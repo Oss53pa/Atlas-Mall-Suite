@@ -54,11 +54,38 @@ interface EnrichOptions {
   model?: string
 }
 
+/** Vérifie rapidement si Ollama est joignable (2s timeout). Cache 60s. */
+let ollamaCheckCache: { reachable: boolean; at: number } | null = null
+async function isOllamaReachable(): Promise<boolean> {
+  if (ollamaCheckCache && Date.now() - ollamaCheckCache.at < 60_000) {
+    return ollamaCheckCache.reachable
+  }
+  try {
+    const ctrl = new AbortController()
+    const t = setTimeout(() => ctrl.abort(), 2000)
+    const url = (typeof window !== 'undefined' && (window as any).__OLLAMA_URL__) || 'http://localhost:11434'
+    const res = await fetch(`${url}/api/tags`, { signal: ctrl.signal })
+    clearTimeout(t)
+    const ok = res.ok
+    ollamaCheckCache = { reachable: ok, at: Date.now() }
+    return ok
+  } catch {
+    ollamaCheckCache = { reachable: false, at: Date.now() }
+    return false
+  }
+}
+
 export async function enrichWithNarrative<T>(
   result: Proph3tResult<T>,
   opts: EnrichOptions = {},
 ): Promise<Proph3tResult<T>> {
   const silent = opts.silentOnFailure ?? true
+
+  // Skip si Ollama indispo (évite freeze 60s en attendant timeout)
+  if (!(await isOllamaReachable())) {
+    console.log(`[PROPH3T narrative] Ollama indispo → skip narratif pour ${result.skill}`)
+    return result
+  }
 
   // Compact representation pour le LLM (évite payload trop gros)
   const compact = {

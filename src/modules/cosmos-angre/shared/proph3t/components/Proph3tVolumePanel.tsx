@@ -74,20 +74,28 @@ export function Proph3tVolumePanel({
   title, position = 'right', open: openProp, onToggle,
 }: Props) {
   const cfg = VOLUME_CONFIG[volume]
-  const [internalOpen, setInternalOpen] = useState(true)
+  // Panneau FERMÉ par défaut (évite exécution lourde à l'ouverture du volume)
+  const [internalOpen, setInternalOpen] = useState(false)
   const open = openProp ?? internalOpen
   const setOpen = (v: boolean) => { setInternalOpen(v); onToggle?.(v) }
 
   const [result, setResult] = useState<Proph3tResult<unknown> | null>(null)
   const [running, setRunning] = useState<'eval' | 'suggest' | 'audit' | null>(null)
+  const lastExecAt = React.useRef<number>(0)
 
   const execute = useCallback(async (mode: 'eval' | 'suggest' | 'audit') => {
     if (running) return
+    // Cooldown 2s — évite spam clics + protège le main thread
+    const now = Date.now()
+    if (now - lastExecAt.current < 2000) {
+      console.log(`[Proph3tVolumePanel] cooldown, skip ${mode}`)
+      return
+    }
+    lastExecAt.current = now
     const input = buildInput()
     if (!input) return
     setRunning(mode)
     try {
-      // Même skill, mais on pourrait moduler via un "focus" si besoin
       const r = await runSkill(cfg.skill, input)
       setResult(r)
     } catch (err) {
@@ -97,45 +105,16 @@ export function Proph3tVolumePanel({
     }
   }, [buildInput, cfg.skill, running, volume])
 
-  // Auto-refresh sur event bus
-  useEffect(() => {
-    let cancelled = false
-    let timer: ReturnType<typeof setTimeout> | null = null
-    ;(async () => {
-      const { eventBus } = await import('../../domain/events')
-      const listener = () => {
-        if (cancelled) return
-        if (timer) clearTimeout(timer)
-        // Debounce : ré-évalue 800ms après la dernière modif
-        timer = setTimeout(() => {
-          if (!cancelled && !running) void execute('eval')
-        }, 800)
-      }
-      // Écoute toutes les mutations pertinentes
-      const unsubs = [
-        eventBus.on('lot.created', listener),
-        eventBus.on('lot.updated', listener),
-        eventBus.on('lot.deleted', listener),
-        eventBus.on('lot.statusChanged', listener),
-        eventBus.on('lot.tenantAssigned', listener),
-      ]
-      ;(globalThis as any).__proph3t_panel_unsubs = unsubs
-    })()
-    return () => {
-      cancelled = true
-      if (timer) clearTimeout(timer)
-      const unsubs = (globalThis as any).__proph3t_panel_unsubs as Array<() => void> | undefined
-      if (unsubs) for (const u of unsubs) u()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  // Auto-refresh sur event bus DÉSACTIVÉ — déclenchait freeze sur hydratation
+  // (400 lots → 400 events lot.created → debounce empile les timers → bloque main thread)
+  // L'utilisateur clique manuellement Évaluer / Suggérer / Auditer.
 
   // Collapsed state
   if (!open) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className={`fixed ${position === 'right' ? 'right-2' : 'left-2'} top-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-2 px-2 py-3 rounded-lg bg-slate-950/90 border ${cfg.border} text-slate-300 hover:bg-slate-900`}
+        className={`fixed ${position === 'right' ? 'right-2' : 'left-2'} top-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2 px-2 py-3 rounded-lg bg-slate-950/90 border ${cfg.border} text-slate-300 hover:bg-slate-900`}
         style={{ writingMode: 'vertical-rl' }}
         title="Ouvrir PROPH3T"
       >
@@ -155,7 +134,7 @@ export function Proph3tVolumePanel({
 
   return (
     <aside
-      className={`fixed ${position === 'right' ? 'right-0' : 'left-0'} top-16 bottom-4 w-[380px] z-30 rounded-l-xl ${position === 'left' ? 'rounded-l-none rounded-r-xl' : ''} bg-slate-950/95 border ${cfg.border} flex flex-col overflow-hidden shadow-2xl`}
+      className={`fixed ${position === 'right' ? 'right-0' : 'left-0'} top-16 bottom-4 w-[380px] z-20 rounded-l-xl ${position === 'left' ? 'rounded-l-none rounded-r-xl' : ''} bg-slate-950/95 border ${cfg.border} flex flex-col overflow-hidden shadow-2xl`}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/[0.06] bg-gradient-to-r from-purple-950/30 to-slate-950">

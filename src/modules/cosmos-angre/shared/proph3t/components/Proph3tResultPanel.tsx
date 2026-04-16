@@ -45,6 +45,22 @@ export function Proph3tResultPanel({ result, onApplyAction, className = '', comp
         decision: 'accepted',
         correctedAt: new Date().toISOString(),
       })
+      // Feedback visuel : toast de confirmation
+      if (typeof document !== 'undefined') {
+        const el = document.createElement('div')
+        el.textContent = `✓ ${action.label.slice(0, 80)}${action.label.length > 80 ? '…' : ''}`
+        el.style.cssText = `
+          position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+          z-index:100000; background:rgba(16,185,129,0.95); color:#fff;
+          padding:10px 18px; border-radius:8px; font-size:12px; font-weight:500;
+          box-shadow:0 10px 30px rgba(0,0,0,0.3); max-width:90vw;
+          font-family:system-ui,sans-serif;
+        `
+        document.body.appendChild(el)
+        setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300) }, 2500)
+      }
+    } catch (err) {
+      console.error('[Proph3t action] failed', err)
     } finally {
       setBusyAction(null)
     }
