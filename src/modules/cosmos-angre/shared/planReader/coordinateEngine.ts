@@ -110,15 +110,13 @@ function autoDetectScale(bounds: Bounds): {
   scaleFactor: number
   detectedUnit: 'mm' | 'cm' | 'm' | 'ft' | 'in' | 'unknown'
 } {
-  const w = bounds.width
-  // A mall plan is typically 50m-500m wide
-  // If width > 10000 → probably mm → 0.001
-  // If width > 1000  → probably cm → 0.01
-  // If width > 100   → probably dm/ft → 0.1
-  // Otherwise → probably m → 1.0
-  if (w > 10000) return { scaleFactor: 0.001, detectedUnit: 'mm' }
-  if (w > 1000) return { scaleFactor: 0.01, detectedUnit: 'cm' }
-  if (w > 100) return { scaleFactor: 0.1, detectedUnit: 'unknown' }
+  const w = Math.max(bounds.width, bounds.height)
+  // Plan centre commercial typique 50-500 m réels
+  // - w > 50000 → mm (50 000 mm = 50 m)
+  // - w > 5000  → cm (5 000 cm = 50 m)
+  // - sinon     → déjà en m (w=239 → plan de 239 m, cohérent pour grand mall)
+  if (w > 50000) return { scaleFactor: 0.001, detectedUnit: 'mm' }
+  if (w > 5000) return { scaleFactor: 0.01, detectedUnit: 'cm' }
   return { scaleFactor: 1.0, detectedUnit: 'm' }
 }
 

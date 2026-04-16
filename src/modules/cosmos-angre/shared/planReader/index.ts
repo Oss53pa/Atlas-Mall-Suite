@@ -744,6 +744,11 @@ export async function importPlan(
         // DIMENSION.measurement is in drawing units (typically mm)
         // DIMENSION.subDefinitionPoint1/2 are the measured endpoints
         const maxDim = Math.max(bW, bH)
+        // Heuristique unités DXF basée sur l'étendue du plan (maxDim = max(bW, bH))
+        // Un centre commercial fait typiquement 50-300 m de côté.
+        // - maxDim > 50000 → mm (50 000 mm = 50 m)
+        // - maxDim > 5000  → cm (5 000 cm = 50 m)
+        // - sinon          → m direct (plan déjà en mètres, ex: 239 m)
         let detectedUnit: string
         if (maxDim > 50000) detectedUnit = 'mm'
         else if (maxDim > 5000) detectedUnit = 'cm'

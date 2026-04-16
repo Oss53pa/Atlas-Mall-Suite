@@ -23,6 +23,29 @@ export function Proph3tGlobalMount() {
   const closeFloorAttribution = usePlanEngineStore(s => s.closeFloorAttribution)
   const validatePlan = usePlanEngineStore(s => s.validatePlan)
 
+  // ⚠ IMPORTANT : TOUS les hooks doivent être appelés AVANT tout return conditionnel
+  // (règles des hooks React). useCallback ici DOIT rester avant les early returns.
+  const onApplyAction = useCallback(async (action: Proph3tAction) => {
+    switch (action.verb) {
+      case 'exclude-layer': {
+        const layerName = (action.payload?.layerName as string) ?? action.targetId
+        if (!layerName) return
+        const { useExcludedLayersStore } = await import('../../stores/excludedLayersStore')
+        useExcludedLayersStore.getState().exclude(layerName)
+        return
+      }
+      case 'reclassify-zone':
+      case 'flag-anomaly': {
+        const spaceId = (action.payload?.spaceId as string) ?? action.targetId
+        if (!spaceId) return
+        usePlanEngineStore.getState().selectSpace?.(spaceId)
+        return
+      }
+      default:
+        return
+    }
+  }, [])
+
   // Kill switch : si PROPH3T désactivé, ne monte rien
   const disabled = (() => {
     try { return localStorage.getItem('atlas-proph3t-disabled') === '1' }
@@ -75,28 +98,6 @@ export function Proph3tGlobalMount() {
     closeFloorAttribution()
     openProph3tModal()
   }
-
-  // ── Actions PROPH3T ────────────────────────────────────
-  const onApplyAction = useCallback(async (action: Proph3tAction) => {
-    switch (action.verb) {
-      case 'exclude-layer': {
-        const layerName = (action.payload?.layerName as string) ?? action.targetId
-        if (!layerName) return
-        const { useExcludedLayersStore } = await import('../../stores/excludedLayersStore')
-        useExcludedLayersStore.getState().exclude(layerName)
-        return
-      }
-      case 'reclassify-zone':
-      case 'flag-anomaly': {
-        const spaceId = (action.payload?.spaceId as string) ?? action.targetId
-        if (!spaceId) return
-        usePlanEngineStore.getState().selectSpace?.(spaceId)
-        return
-      }
-      default:
-        return
-    }
-  }, [])
 
   return (
     <>
