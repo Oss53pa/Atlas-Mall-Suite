@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ConsolidatedReportButton } from '../shared/components/ConsolidatedReportButton'
+import { Proph3tVolumePanel } from '../shared/proph3t/components/Proph3tVolumePanel'
 import {
   ArrowLeft,
   Eye,
@@ -1535,6 +1536,37 @@ export default function Vol2Module() {
       </footer>
 
       <Model3DImportModal open={show3DImport} onClose={() => setShow3DImport(false)} />
+
+      {/* Panneau PROPH3T dockable — présent en permanence pour suggestions / évaluations / audit */}
+      {parsedPlan && (
+        <Proph3tVolumePanel
+          volume="security"
+          buildInput={() => ({
+            planWidth: parsedPlan.bounds.width || 200,
+            planHeight: parsedPlan.bounds.height || 140,
+            spaces: (parsedPlan.spaces ?? []).map(s => ({
+              id: s.id, type: s.type as string | undefined, areaSqm: s.areaSqm,
+              polygon: s.polygon as [number, number][], floorId: s.floorId,
+              label: s.label,
+            })),
+            cameras: cameras.filter(c => !c.autoPlaced).map(c => ({
+              id: c.id, floorId: c.floorId,
+              x: c.x > 1 ? c.x : c.x * (parsedPlan.bounds.width || 200),
+              y: c.y > 1 ? c.y : c.y * (parsedPlan.bounds.height || 140),
+              angle: c.angle, fov: c.fov, rangeM: c.rangeM || c.range || 10,
+            })),
+            doors: doors.map(d => ({
+              id: d.id, floorId: d.floorId,
+              x: d.x > 1 ? d.x : d.x * (parsedPlan.bounds.width || 200),
+              y: d.y > 1 ? d.y : d.y * (parsedPlan.bounds.height || 140),
+              isExit: d.isExit, hasBadge: d.hasBadge,
+            })),
+            floors: (parsedPlan.detectedFloors ?? [{ id: 'RDC', label: 'RDC', bounds: { width: parsedPlan.bounds.width, height: parsedPlan.bounds.height } }]).map(f => ({
+              id: f.id, label: f.label, bounds: { width: f.bounds.width, height: f.bounds.height },
+            })),
+          })}
+        />
+      )}
     </div>
   )
 }

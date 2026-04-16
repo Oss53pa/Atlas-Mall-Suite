@@ -24,40 +24,18 @@ import { Proph3tImportModal } from '../proph3t/components/Proph3tImportModal'
 function Proph3tImportModalMount({ plan }: { plan: ParsedPlan }) {
   const open = usePlanEngineStore(s => s.proph3tModalOpen)
   const close = usePlanEngineStore(s => s.closeProph3tModal)
-  const buildSecurityInput = useCallback(() => {
-    if (!plan) return null
-    return {
-      planWidth: plan.bounds.width || 200,
-      planHeight: plan.bounds.height || 140,
-      spaces: (plan.spaces ?? []).map(s => ({
-        id: s.id, type: s.type as string | undefined, areaSqm: s.areaSqm,
-        polygon: s.polygon as [number, number][], floorId: s.floorId,
-        label: s.label,
-      })),
-      cameras: [],
-      doors: [],
-      floors: (plan.detectedFloors ?? [{ id: 'RDC', label: 'RDC', bounds: { width: plan.bounds.width, height: plan.bounds.height } }]).map(f => ({
-        id: f.id, label: f.label, bounds: { width: f.bounds.width, height: f.bounds.height },
-      })),
-    }
+  const validatePlan = usePlanEngineStore(s => s.validatePlan)
+
+  // Ré-exécute analyzePlanAtImport après corrections utilisateur
+  const onRefresh = useCallback(async () => {
+    if (!plan) return
+    const { runSkill } = await import('../proph3t/orchestrator')
+    await runSkill('analyzePlanAtImport', {
+      plan,
+      importId: `refresh-${Date.now()}`,
+      fileName: 'plan courant',
+    })
   }, [plan])
-  const buildParcoursInput = useCallback(() => {
-    if (!plan) return null
-    return {
-      planWidth: plan.bounds.width || 200,
-      planHeight: plan.bounds.height || 140,
-      spaces: (plan.spaces ?? []).map(s => ({
-        id: s.id, label: s.label, type: s.type as string | undefined,
-        areaSqm: s.areaSqm, polygon: s.polygon as [number, number][], floorId: s.floorId,
-      })),
-      pois: [],
-    }
-  }, [plan])
-  const buildCommercialInput = useCallback(async () => {
-    const mod = await import('../stores/lotsStore')
-    const lots = mod.useLotsStore.getState().all()
-    return { lots, horizonMonths: 12 }
-  }, [])
 
   // Application réelle des actions PROPH3T (le ✓ doit DÉCLENCHER quelque chose)
   const onApplyAction = useCallback(async (action: import('../proph3t/orchestrator.types').Proph3tAction) => {
@@ -138,11 +116,10 @@ function Proph3tImportModalMount({ plan }: { plan: ParsedPlan }) {
       onClose={close}
       projectName="Cosmos Angré"
       orgName="Centre commercial · Abidjan"
-      buildSecurityInput={buildSecurityInput}
-      buildParcoursInput={buildParcoursInput}
-      buildCommercialInput={buildCommercialInput as any}
       captureScreenshot={captureScreenshot}
       onApplyAction={onApplyAction}
+      onValidatePlan={validatePlan}
+      onRefresh={onRefresh}
     />
   )
 }

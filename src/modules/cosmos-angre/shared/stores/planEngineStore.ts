@@ -23,6 +23,14 @@ interface PlanEngineState {
   proph3tModalOpen: boolean
   openProph3tModal: () => void
   closeProph3tModal: () => void
+
+  // ── Workflow state ──
+  /** Plan validé par l'utilisateur (Phase A terminée) → accès aux volumes. */
+  planValidated: boolean
+  /** Timestamp de validation. */
+  planValidatedAt: string | null
+  validatePlan: () => void
+  invalidatePlan: () => void
   /** All parsed plans keyed by importId (in-memory only, not persisted) */
   parsedPlans: Record<string, ParsedPlan>
   /** Store a parsed plan associated with an import */
@@ -108,6 +116,12 @@ export const usePlanEngineStore = create<PlanEngineState>()(
       proph3tModalOpen: false,
       openProph3tModal: () => set({ proph3tModalOpen: true }),
       closeProph3tModal: () => set({ proph3tModalOpen: false }),
+
+      // Workflow state
+      planValidated: false,
+      planValidatedAt: null,
+      validatePlan: () => set({ planValidated: true, planValidatedAt: new Date().toISOString() }),
+      invalidatePlan: () => set({ planValidated: false, planValidatedAt: null }),
 
       parsedPlans: {},
       storeParsedPlan: (importId, plan) => set(s => ({

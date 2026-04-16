@@ -47,6 +47,7 @@ import {
 } from '../shared/components/atlasStudioNav'
 import FloorPlanCanvas, { CANVAS_SCALE } from '../shared/components/FloorPlanCanvas'
 import { ConsolidatedReportButton } from '../shared/components/ConsolidatedReportButton'
+import { Proph3tVolumePanel } from '../shared/proph3t/components/Proph3tVolumePanel'
 import { PlanCanvasV2 } from '../shared/components/PlanCanvasV2'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
@@ -491,6 +492,9 @@ export default function Vol3Module() {
     () => floors.find((f) => f.id === activeFloorId) ?? floors[0],
     [floors, activeFloorId],
   )
+
+  // Plan courant pour le panneau PROPH3T
+  const parsedPlan = usePlanEngineStore(s => s.parsedPlan)
 
   const floorPois = useMemo(() => {
     let filtered = pois.filter((p) => p.floorId === activeFloorId)
@@ -1625,6 +1629,31 @@ export default function Vol3Module() {
           </span>
         </div>
       </footer>
+
+      {/* Panneau PROPH3T Vol.3 — suggestions parcours / signalétique / audit */}
+      {parsedPlan && (
+        <Proph3tVolumePanel
+          volume="parcours"
+          buildInput={() => {
+            const pw = parsedPlan.bounds.width || 200
+            const ph = parsedPlan.bounds.height || 140
+            return {
+              planWidth: pw,
+              planHeight: ph,
+              spaces: (parsedPlan.spaces ?? []).map(s => ({
+                id: s.id, label: s.label, type: s.type as string | undefined,
+                areaSqm: s.areaSqm, polygon: s.polygon as [number, number][], floorId: s.floorId,
+              })),
+              pois: floorPois.map(p => ({
+                id: p.id, label: p.label,
+                x: p.x > 1 ? p.x : p.x * pw,
+                y: p.y > 1 ? p.y : p.y * ph,
+                floorId: p.floorId, priority: p.priority,
+              })),
+            }
+          }}
+        />
+      )}
     </div>
   )
 }

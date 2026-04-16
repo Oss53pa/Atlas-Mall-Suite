@@ -8,6 +8,7 @@ import { ConsolidatedReportButton } from '../../shared/components/ConsolidatedRe
 import { WayfinderPanel } from '../../shared/components/WayfinderPanel'
 import type { WayfinderSpace } from '../../shared/components/WayfinderRenderer'
 import { MultiPlanOverlay } from '../../shared/components/MultiPlanOverlay'
+import { Proph3tVolumePanel } from '../../shared/proph3t/components/Proph3tVolumePanel'
 import type { CommercialSpace, SpaceStatus } from '../store/vol1Types'
 import { Grid3X3, Sparkles, Loader2, CalendarDays, Cuboid, Navigation, Map } from 'lucide-react'
 import { getSpacePhaseStatus, computePhaseMetrics, PHASE_STATUS_COLORS } from '../engines/phasingEngine'
@@ -720,6 +721,18 @@ export default function PlanCommercialSection() {
           <MultiPlanOverlay floorId={floorId} />
         </div>
       )}
+
+      {/* Panneau PROPH3T Vol.1 — suggestions / évaluations / audit en continu */}
+      <Proph3tVolumePanel
+        volume="commercial"
+        buildInput={() => {
+          // Use lotsStore canonical lots (hydraté à l'import)
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const mod = require('../../shared/stores/lotsStore') as typeof import('../../shared/stores/lotsStore')
+          const lots = mod.useLotsStore.getState().all()
+          return { lots, horizonMonths: 12 }
+        }}
+      />
     </div>
   )
 }
