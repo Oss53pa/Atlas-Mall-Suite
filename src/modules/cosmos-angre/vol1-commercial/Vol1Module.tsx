@@ -1,6 +1,6 @@
 // ═══ VOL.1 PLAN COMMERCIAL — Main Module Component ═══
 
-import React, { useState, lazy, Suspense } from 'react'
+import React, { useMemo, useState, lazy, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useVol1Store } from './store/vol1Store'
 import {
@@ -53,7 +53,9 @@ interface NavGroup {
   separator?: boolean
 }
 
-const NAV_GROUPS: NavGroup[] = [
+// Factory: defers cross-chunk ATLAS_STUDIO_GROUP_META access to render time.
+// See Vol3Module for rationale (chunk TDZ avoidance).
+const buildNavGroups = (): NavGroup[] => [
   {
     ...ATLAS_STUDIO_GROUP_META,
     items: [
@@ -87,6 +89,7 @@ const Loading = () => (
 export default function Vol1Module() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<Vol1Tab>(ATLAS_STUDIO_DEFAULT_TAB as Vol1Tab)
+  const NAV_GROUPS = useMemo(() => buildNavGroups(), [])
 
   return (
     <div className="flex h-full" style={{ background: '#080c14', color: '#e2e8f0' }}>

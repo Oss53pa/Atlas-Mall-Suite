@@ -127,7 +127,9 @@ interface NavGroup {
   separator?: boolean
 }
 
-const NAV_GROUPS: NavGroup[] = [
+// Factory: defers cross-chunk ATLAS_STUDIO_GROUP_META access to render time.
+// See Vol3Module for rationale (chunk TDZ avoidance).
+const buildNavGroups = (): NavGroup[] => [
   {
     ...ATLAS_STUDIO_GROUP_META,
     items: [
@@ -266,6 +268,7 @@ function transitionIcon(type: TransitionNode['type']): string {
 
 export default function Vol2Module() {
   const navigate = useNavigate()
+  const NAV_GROUPS = useMemo(() => buildNavGroups(), [])
 
   // ── Hydrate from Supabase on mount / project switch ──────
   const projectId = useActiveProjectId()

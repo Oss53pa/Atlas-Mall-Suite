@@ -141,7 +141,10 @@ interface NavGroup {
   separator?: boolean
 }
 
-const NAV_GROUPS: NavGroup[] = [
+// Factory instead of module-level const: defers the spread of the cross-chunk
+// import ATLAS_STUDIO_GROUP_META until render time, avoiding a TDZ when the
+// `vol3` chunk evaluates before the `index` chunk (manualChunks in vite.config).
+const buildNavGroups = (): NavGroup[] => [
   {
     ...ATLAS_STUDIO_GROUP_META,
     items: [
@@ -369,6 +372,9 @@ function MomentDetail({
 export default function Vol3Module() {
   const navigate = useNavigate()
   const store = useVol3Store()
+  // Build once per mount — reads the cross-chunk ATLAS_STUDIO_GROUP_META
+  // at render time, after all chunks have finished evaluating.
+  const NAV_GROUPS = useMemo(() => buildNavGroups(), [])
 
   // ── Hydrate from Supabase on mount / project switch ──────
   const projectId = useActiveProjectId()
