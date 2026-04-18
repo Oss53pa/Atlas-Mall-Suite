@@ -24,9 +24,15 @@ const db = new ParsedPlanDB()
 
 export async function savePlanToCache(plan: ParsedPlan): Promise<void> {
   try {
+    // Strip blob: URLs — ils meurent au refresh page (ERR_FILE_NOT_FOUND).
+    // Les images persistantes passent par planImageCache (IndexedDB + Blob).
+    const rec = plan as ParsedPlan & { imageUrl?: string }
+    const stripped: ParsedPlan = rec.imageUrl?.startsWith('blob:')
+      ? { ...plan, imageUrl: undefined } as ParsedPlan
+      : plan
     await db.current.put({
       id: 'current',
-      parsedPlan: plan,
+      parsedPlan: stripped,
       savedAt: new Date().toISOString(),
     })
   } catch (err) {
@@ -37,7 +43,13 @@ export async function savePlanToCache(plan: ParsedPlan): Promise<void> {
 export async function loadPlanFromCache(): Promise<ParsedPlan | null> {
   try {
     const rec = await db.current.get('current')
-    return rec?.parsedPlan ?? null
+    if (!rec?.parsedPlan) return null
+    // Defense en profondeur : strip tout blob URL residuel des anciens caches.
+    const plan = rec.parsedPlan as ParsedPlan & { imageUrl?: string }
+    if (plan.imageUrl?.startsWith('blob:')) {
+      return { ...plan, imageUrl: undefined } as ParsedPlan
+    }
+    return plan
   } catch (err) {
     console.warn('[parsedPlanCache] load failed', err)
     return null

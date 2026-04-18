@@ -42,7 +42,7 @@ export async function bootstrapProph3t(): Promise<void> {
 /** Récupère l'input commercial depuis le lotsStore canonique. */
 function getCommercialInputFromStore(): CommercialAnalysisInput {
   // Lazy import pour éviter les cycles
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+   
   const { useLotsStore } = require('../stores/lotsStore') as typeof import('../stores/lotsStore')
   const lots = useLotsStore.getState().all()
   return {

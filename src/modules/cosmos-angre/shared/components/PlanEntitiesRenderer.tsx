@@ -7,6 +7,7 @@ import type {
   TextGeometry, DimensionGeometry,
 } from '../planReader/planEngineTypes'
 import { isInViewport } from '../planReader/coordinateEngine'
+import { useHiddenEntitiesStore } from '../stores/hiddenEntitiesStore'
 
 interface Props {
   entities: PlanEntity[]
@@ -15,12 +16,21 @@ interface Props {
   viewport: ViewportState
   canvasW: number
   canvasH: number
+  /** Mode gomme : un clic sur une entite la masque via le store hiddenEntities. */
+  eraseMode?: boolean
 }
 
-function PlanEntitiesRendererInner({ entities, layers, lod, viewport, canvasW, canvasH }: Props) {
+function PlanEntitiesRendererInner({ entities, layers, lod, viewport, canvasW, canvasH, eraseMode }: Props) {
+  const hiddenIds = useHiddenEntitiesStore(s => s.hiddenIds)
+  const hideEntity = useHiddenEntitiesStore(s => s.hide)
+
   const visibleEntities = useMemo(() => {
     const layerMap = new Map(layers.map(l => [l.name, l]))
+    const hiddenSet = new Set(hiddenIds)
     return entities.filter(e => {
+      // Mode gomme : entite masquee manuellement par l'utilisateur
+      if (hiddenSet.has(e.id)) return false
+
       // Layer visibility
       const layer = layerMap.get(e.layer)
       if (layer && !layer.visible) return false
@@ -41,12 +51,18 @@ function PlanEntitiesRendererInner({ entities, layers, lod, viewport, canvasW, c
 
       return true
     })
-  }, [entities, layers, lod, viewport, canvasW, canvasH])
+  }, [entities, layers, lod, viewport, canvasW, canvasH, hiddenIds])
 
   return (
     <g className="plan-entities">
       {visibleEntities.map(entity => (
-        <EntityShape key={entity.id} entity={entity} lod={lod} />
+        <EntityShape
+          key={entity.id}
+          entity={entity}
+          lod={lod}
+          onClick={eraseMode ? () => hideEntity(entity.id) : undefined}
+          eraseMode={eraseMode}
+        />
       ))}
     </g>
   )
@@ -56,28 +72,55 @@ export const PlanEntitiesRenderer = React.memo(PlanEntitiesRendererInner)
 
 // ─── ENTITY RENDERER ─────────────────────────────────────
 
-const EntityShape = React.memo(function EntityShape({ entity, lod }: { entity: PlanEntity; lod: LODLevel }) {
+interface EntityShapeProps {
+  entity: PlanEntity
+  lod: LODLevel
+  onClick?: () => void
+  eraseMode?: boolean
+}
+
+const EntityShape = React.memo(function EntityShape({ entity, lod, onClick, eraseMode }: EntityShapeProps) {
   const g = entity.geometry
   const color = entity.color ?? '#94a3b8'
 
-  switch (g.kind) {
-    case 'line':
-      return <LineShape g={g} color={color} />
-    case 'polyline':
-      return <PolylineShape g={g} color={color} />
-    case 'circle':
-      return <CircleShape g={g} color={color} />
-    case 'arc':
-      return <ArcShape g={g} color={color} />
-    case 'text':
-      if (lod === 'minimal') return null
-      return <TextShape g={g} color={color} />
-    case 'dimension':
-      if (lod === 'minimal') return null
-      return <DimensionShape g={g} />
-    default:
-      return null
-  }
+  const shape = (() => {
+    switch (g.kind) {
+      case 'line':      return <LineShape g={g} color={color} />
+      case 'polyline':  return <PolylineShape g={g} color={color} />
+      case 'circle':    return <CircleShape g={g} color={color} />
+      case 'arc':       return <ArcShape g={g} color={color} />
+      case 'text':      return lod === 'minimal' ? null : <TextShape g={g} color={color} />
+      case 'dimension': return lod === 'minimal' ? null : <DimensionShape g={g} />
+      default:          return null
+    }
+  })()
+  if (!shape) return null
+
+  if (!eraseMode || !onClick) return shape
+
+  // Mode gomme : wrap dans un <g> cliquable + cursor crosshair + hover red.
+  return (
+    <g
+      onClick={(e) => { e.stopPropagation(); onClick() }}
+      style={{ cursor: 'crosshair' }}
+      className="plan-erase-target"
+    >
+      {shape}
+      {/* Bounding box discrete en hover pour montrer ce qu'on va gommer */}
+      <rect
+        x={entity.bounds.minX}
+        y={entity.bounds.minY}
+        width={entity.bounds.width}
+        height={entity.bounds.height}
+        fill="transparent"
+        stroke="transparent"
+        strokeWidth={0.08}
+        vectorEffect="non-scaling-stroke"
+        onMouseEnter={(e) => { e.currentTarget.setAttribute('stroke', '#ef4444') }}
+        onMouseLeave={(e) => { e.currentTarget.setAttribute('stroke', 'transparent') }}
+      />
+    </g>
+  )
 })
 
 function LineShape({ g, color }: { g: LineGeometry; color: string }) {

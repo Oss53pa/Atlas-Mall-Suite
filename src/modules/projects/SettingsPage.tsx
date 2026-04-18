@@ -5,9 +5,10 @@ import { useSettingsStore } from './settingsStore'
 import type { ThemeMode, Language, Units } from './settingsStore'
 import {
   Moon, Sun, Globe, Ruler, User, Building2, Save,
-  Monitor, Eye, Palette,
+  Monitor, Eye, Palette, KeyRound,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import ApiKeySection from './components/ApiKeySection'
 
 function SettingsGroup({ title, icon: Icon, children }: { title: string; icon: React.ComponentType<any>; children: React.ReactNode }) {
   return (
@@ -123,6 +124,11 @@ export default function SettingsPage() {
             <SettingsRow label="Écran de bienvenue" description="Afficher la page d'accueil au lancement">
               <Toggle checked={settings.showWelcome} onChange={(v) => setSetting('showWelcome', v)} />
             </SettingsRow>
+          </SettingsGroup>
+
+          {/* Intégrations IA */}
+          <SettingsGroup title="Intégrations IA" icon={KeyRound}>
+            <ApiKeySection />
           </SettingsGroup>
 
           {/* À propos */}

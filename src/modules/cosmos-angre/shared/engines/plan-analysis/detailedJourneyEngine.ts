@@ -7,6 +7,7 @@
 
 import { simulateJourney, type JourneyStep } from '../../engines/parcoursAgentEngine'
 import { kmeans } from '../algorithms/kmeans'
+import { useSpaceCorrectionsStore, type SpaceCategory } from '../../stores/spaceCorrectionsStore'
 
 export interface Space {
   id: string
@@ -129,7 +130,27 @@ export const DEFAULT_PERSONAS: DetailedPersona[] = [
 
 // ─── Catégorisation des spaces ────────────────────────────
 
-function categorize(space: Space): keyof DetailedPersona['affinities'] | 'circulation' | 'service-tech' | 'other' {
+export type ResolvedCategory = keyof DetailedPersona['affinities'] | 'circulation' | 'service-tech' | 'other'
+
+/** Version exportée : utilise les corrections manuelles puis fallback regex. */
+export function resolveSpaceCategory(space: Space): ResolvedCategory {
+  return categorize(space)
+}
+
+/** Version exportée : libellé corrigé si présent. */
+export function resolveSpaceLabel(space: Space): string {
+  return resolveLabel(space)
+}
+
+function categorize(space: Space): ResolvedCategory {
+  // PRIORITÉ 1 : correction manuelle stockée
+  try {
+    const manual = useSpaceCorrectionsStore.getState().getCategory(space.id)
+    if (manual) return manual as SpaceCategory
+  } catch {
+    // store pas initialisé (contexte SSR / worker) → fallback regex
+  }
+
   const t = String(space.type ?? '').toLowerCase()
   const label = space.label.toLowerCase()
   if (/mode|vetement|chaussure|bijou|accessoir/i.test(t + ' ' + label)) return 'mode'
@@ -142,6 +163,24 @@ function categorize(space: Space): keyof DetailedPersona['affinities'] | 'circul
   if (/circul|couloir|hall|mail|passage/i.test(t)) return 'circulation'
   if (/technique|local|wc|sanitaire|electr|stockage|reserve/i.test(t + ' ' + label)) return 'service-tech'
   return 'other'
+}
+
+/** Résout le libellé d'affichage (custom > auto). */
+function resolveLabel(space: Space): string {
+  try {
+    return useSpaceCorrectionsStore.getState().resolveLabel(space.id, space.label)
+  } catch {
+    return space.label
+  }
+}
+
+/** true si l'utilisateur a marqué ce space comme exclu de l'analyse. */
+function isManuallyExcluded(space: Space): boolean {
+  try {
+    return useSpaceCorrectionsStore.getState().isExcluded(space.id)
+  } catch {
+    return false
+  }
 }
 
 function centroidOf(polygon: [number, number][]): { x: number; y: number } {
@@ -191,7 +230,9 @@ export function computeDetailedJourneys(input: DetailedJourneyInput): DetailedJo
   const walkableSpaces = floorSpaces
     .filter(s => {
       const cat = categorize(s)
-      return cat !== 'service-tech' // exclut techniques
+      if (cat === 'service-tech') return false // exclut techniques
+      if (isManuallyExcluded(s)) return false  // exclus manuellement
+      return true
     })
     .map(s => ({ id: s.id, polygon: s.polygon }))
 
@@ -199,8 +240,9 @@ export function computeDetailedJourneys(input: DetailedJourneyInput): DetailedJo
   const visitCounter = new Map<string, { label: string; visits: number }>()
 
   for (const persona of personas) {
-    // 1. Score chaque space pour ce persona
+    // 1. Score chaque space pour ce persona (exclut les spaces marqués exclus)
     const scored = floorSpaces
+      .filter(s => !isManuallyExcluded(s))
       .map(s => ({ space: s, score: scoreSpaceForPersona(s, persona) }))
       .filter(x => x.score > 0.2) // seuil d'attractivité
       .sort((a, b) => b.score - a.score)
@@ -244,16 +286,17 @@ export function computeDetailedJourneys(input: DetailedJourneyInput): DetailedJo
     for (const s of selected) {
       const c = centroidOf(s.space.polygon)
       const cat = categorize(s.space)
+      const displayLabel = resolveLabel(s.space)
       stops.push({
         spaceId: s.space.id,
-        label: s.space.label,
+        label: displayLabel,
         x: c.x, y: c.y,
         dwellMinutes: persona.dwellMinutes,
         category: String(cat),
         reason: `Affinité ${cat} ${((persona.affinities[cat as keyof DetailedPersona['affinities']] ?? 0) * 100).toFixed(0)}% · surface ${s.space.areaSqm.toFixed(0)}m²`,
       })
       // Compteur de visites agrégé
-      const vc = visitCounter.get(s.space.id) ?? { label: s.space.label, visits: 0 }
+      const vc = visitCounter.get(s.space.id) ?? { label: displayLabel, visits: 0 }
       vc.visits++
       visitCounter.set(s.space.id, vc)
     }
@@ -312,12 +355,13 @@ export function computeDetailedJourneys(input: DetailedJourneyInput): DetailedJo
     .sort((a, b) => b.visits - a.visits)
 
   const attractiveSpaces = floorSpaces.filter(s => {
+    if (isManuallyExcluded(s)) return false
     const c = categorize(s)
     return ['mode', 'restauration', 'services', 'loisirs', 'alimentaire', 'beaute', 'enfants'].includes(c)
   })
   const unvisited = attractiveSpaces
     .filter(s => !visitCounter.has(s.id))
-    .map(s => ({ spaceId: s.id, label: s.label, visits: 0 }))
+    .map(s => ({ spaceId: s.id, label: resolveLabel(s), visits: 0 }))
 
   const totalDistances = journeys.reduce((s, j) => s + j.totalDistanceM, 0)
   const totalDurations = journeys.reduce((s, j) => s + j.totalDurationMin, 0)

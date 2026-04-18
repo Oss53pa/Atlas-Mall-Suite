@@ -5,7 +5,7 @@
 //  - légende sélective (on peut masquer un persona)
 
 import React, { useState } from 'react'
-import type { DetailedJourney } from '../proph3t/engines/detailedJourneyEngine'
+import type { DetailedJourney } from '../engines/plan-analysis/detailedJourneyEngine'
 
 interface Props {
   journeys: DetailedJourney[]

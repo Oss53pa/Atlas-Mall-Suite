@@ -176,22 +176,70 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "Cle Claude invalide" }), { status: 401, headers: cors })
   }
 
+  // ── F-014 : auth utilisateur Supabase obligatoire ─────────
+  // ── F-011 : protection contre l'IDOR (lecture mémoire arbitraire) ──
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+
+  const authHeader = req.headers.get("Authorization") ?? ""
+  if (!authHeader.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "Authorization manquant" }), { status: 401, headers: cors })
+  }
+  const userJwt = authHeader.slice(7)
+
+  // Récupère l'identité utilisateur via Supabase Auth
+  let userId: string | null = null
+  if (supabaseUrl && supabaseAnonKey) {
+    try {
+      const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+        headers: { "Authorization": `Bearer ${userJwt}`, "apikey": supabaseAnonKey },
+      })
+      if (!userRes.ok) {
+        return new Response(JSON.stringify({ error: "JWT invalide" }), { status: 401, headers: cors })
+      }
+      const userJson = await userRes.json() as { id?: string }
+      userId = userJson.id ?? null
+    } catch {
+      return new Response(JSON.stringify({ error: "Auth indisponible" }), { status: 503, headers: cors })
+    }
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "Utilisateur introuvable" }), { status: 401, headers: cors })
+    }
+  }
+
+  // Si projectId est fourni, vérifier que l'utilisateur en est membre
+  if (parsedBody.projectId && supabaseUrl && supabaseAnonKey && userId) {
+    const memberRes = await fetch(
+      `${supabaseUrl}/rest/v1/project_members?projet_id=eq.${encodeURIComponent(parsedBody.projectId)}&user_id=eq.${encodeURIComponent(userId)}&select=role`,
+      { headers: { "apikey": supabaseAnonKey, "Authorization": `Bearer ${userJwt}` } },
+    )
+    if (!memberRes.ok) {
+      return new Response(JSON.stringify({ error: "Verification appartenance projet impossible" }), { status: 503, headers: cors })
+    }
+    const members = await memberRes.json() as Array<{ role: string }>
+    if (members.length === 0) {
+      return new Response(JSON.stringify({ error: "Acces projet refuse" }), { status: 403, headers: cors })
+    }
+  }
+
   // ── Load memory context from Supabase ──────────────────────
 
   let memoryContext = parsedBody.memoryNarrative ?? ""
 
   if (parsedBody.projectId) {
     try {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
-      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-
-      if (supabaseUrl && supabaseKey) {
+      // Service role key conservé (RLS désactivée) MAIS uniquement après
+      // verification d'appartenance ci-dessus. Si on voulait que la RLS
+      // s'applique, il faudrait utiliser userJwt + anonKey ; ici on garde
+      // le service role pour rester cohérent avec les autres lectures.
+      if (supabaseUrl && supabaseServiceKey) {
         const res = await fetch(
           `${supabaseUrl}/rest/v1/proph3t_memory?projet_id=eq.${encodeURIComponent(parsedBody.projectId)}&order=created_at.desc&limit=20`,
           {
             headers: {
-              "apikey": supabaseKey,
-              "Authorization": `Bearer ${supabaseKey}`,
+              "apikey": supabaseServiceKey,
+              "Authorization": `Bearer ${supabaseServiceKey}`,
             },
           }
         )
@@ -258,8 +306,7 @@ Deno.serve(async (req: Request) => {
 
   if (parsedBody.projectId && parsedBody.sessionId) {
     try {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
-      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      const supabaseKey = supabaseServiceKey
 
       if (supabaseUrl && supabaseKey) {
         const memHeaders = {

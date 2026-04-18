@@ -909,25 +909,71 @@ export function Plan3DView({
           momentCount++
         }
 
-        // ── Vol.3 Parcours: Journey paths (glowing lines) ──
+        // ── Vol.3 Parcours: Journey paths (glowing lines au sol) ──
         let journeyCount = 0
+        // Épaisseur & hauteur fixes, indépendantes du wallHeight, pour que
+        // les chemins restent visibles quel que soit le plan (mall géant ou
+        // boutique). 0.35m au sol, rayon 0.25m + halo 0.5m.
+        const pathZ = 0.15
+        const pathRadius = 0.25
+        const haloRadius = 0.55
         for (const j of filteredJourneys) {
           if (j.points.length < 2) continue
           const t = floorTransform(j.floorId)
           const pts: THREE.Vector3[] = j.points.map(p => new THREE.Vector3(
             p.x + t.dx,
             p.y + t.dy,
-            wallHeight * 0.05 + t.dz,
+            pathZ + t.dz,
           ))
-          const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal', 0.4)
-          const tubeGeo = new THREE.TubeGeometry(curve, Math.max(16, pts.length * 4), Math.max(pw, ph) * 0.001, 6, false)
-          const tubeMat = new THREE.MeshBasicMaterial({
-            color: new THREE.Color(j.color || '#34d399'),
+          const color = new THREE.Color(j.color || '#34d399')
+          const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal', 0.5)
+          const segs = Math.max(32, pts.length * 6)
+
+          // Halo extérieur (semi-transparent, plus large)
+          const haloGeo = new THREE.TubeGeometry(curve, segs, haloRadius, 8, false)
+          const haloMat = new THREE.MeshBasicMaterial({
+            color,
             transparent: true,
-            opacity: 0.7 * t.opacity,
+            opacity: 0.18 * t.opacity,
+            depthWrite: false,
+          })
+          const halo = new THREE.Mesh(haloGeo, haloMat)
+          halo.renderOrder = 500
+          scene.add(halo)
+
+          // Tube principal (opaque coloré)
+          const tubeGeo = new THREE.TubeGeometry(curve, segs, pathRadius, 12, false)
+          const tubeMat = new THREE.MeshBasicMaterial({
+            color,
+            transparent: true,
+            opacity: 0.95 * t.opacity,
           })
           const tube = new THREE.Mesh(tubeGeo, tubeMat)
+          tube.renderOrder = 600
           scene.add(tube)
+
+          // Flèches directionnelles le long du chemin (tous les ~15m)
+          const totalLen = curve.getLength()
+          const step = 15
+          const nArrows = Math.max(1, Math.floor(totalLen / step))
+          for (let a = 1; a <= nArrows; a++) {
+            const u = a / (nArrows + 1)
+            const pos = curve.getPointAt(u)
+            const tan = curve.getTangentAt(u).normalize()
+            // Cône orienté dans le sens de la tangente
+            const coneGeo = new THREE.ConeGeometry(0.5, 1.2, 8)
+            const coneMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95 * t.opacity })
+            const cone = new THREE.Mesh(coneGeo, coneMat)
+            cone.position.copy(pos)
+            // Cône par défaut pointe vers +Y ; on aligne sur la tangente XZ
+            const axis = new THREE.Vector3(0, 1, 0)
+            const tanXY = new THREE.Vector3(tan.x, tan.y, 0).normalize()
+            const quat = new THREE.Quaternion().setFromUnitVectors(axis, tanXY)
+            cone.setRotationFromQuaternion(quat)
+            cone.renderOrder = 601
+            scene.add(cone)
+          }
+
           journeyCount++
         }
 

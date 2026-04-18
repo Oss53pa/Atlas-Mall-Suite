@@ -1,18 +1,14 @@
 // ═══ POINT D'ENTRÉE UNIFIÉ — LECTURE DE PLANS ═══
 
 import type {
-  PlanSourceType, PlanImportState, CalibrationResult, DimEntity,
-  PDFPlanPage, RasterRecognitionResult, RecognizedZone,
+  PlanSourceType, PlanImportState,
+  PDFPlanPage, RecognizedZone,
 } from './planReaderTypes'
-import type { Zone } from '../proph3t/types'
 import type { PlanEntity, DetectedSpace, WallSegment, Bounds } from './planEngineTypes'
-import { extractDimEntities, calibratePlanFromDims, linkDimsToZones } from './dimParser'
+import { extractDimEntities, calibratePlanFromDims } from './dimParser'
 import { readPDFPlan, convertPDFToZones } from './pdfPlanReader'
-import { recognizeRasterPlan, convertVisionToAtlasZones } from './rasterRecognizer'
-import { normalizeGeometry, validateZones } from './geometryNormalizer'
-import { generateCotationSpecs, renderCotationsOnPDF } from './cotationEngine'
-import { computeBoundsFromPoints, normalizeAllEntities, detectUnitScale, computeBounds } from './coordinateEngine'
-import { buildParsedPlanFromEntities } from './planBridge'
+import { recognizeRasterPlan } from './rasterRecognizer'
+import { computeBoundsFromPoints, normalizeAllEntities, detectUnitScale } from './coordinateEngine'
 
 // ─── LAYER CATEGORY CLASSIFICATION ───
 
@@ -148,12 +144,6 @@ export async function importPlan(
         const dwgZones: typeof state.detectedZones = []
         const dwgDims: typeof state.detectedDims = []
         let zIdx = 0, dIdx = 0
-
-        // Layers that represent structure/construction — NOT usable spaces
-        const isStructuralLayer = (layer: string): boolean => {
-          const l = layer.toLowerCase()
-          return /maconn|hatch|beton|facade|acier|coupe|axes|cotation|dim|texte|text|vent|volet|drain|tab|corriger|contour|ligne|stylo|hide|defpoint|handle|marquage|pdf|geom/i.test(l)
-        }
 
         // Classify space type from its NAME (text label from the plan) or layer name
         const classifySpace = (name: string): { type: string; niveau: number; color: string } => {
@@ -460,7 +450,7 @@ export async function importPlan(
             if (entity.type !== 'TEXT' && entity.type !== 'MTEXT') continue
             const e = entity as any
             if (e.inPaperSpace === true || e.paperSpace === true) continue
-            let text = (e.text ?? e.contents ?? '').replace(/\\[A-Za-z][^;]*;/g, '').replace(/[{}\\]/g, '').trim()
+            const text = (e.text ?? e.contents ?? '').replace(/\\[A-Za-z][^;]*;/g, '').replace(/[{}\\]/g, '').trim()
             if (!text || text.length < 2) continue
             // Skip pure dimension numbers
             if (/^\d+[.,]?\d*\s*(mm|cm|m)?$/.test(text)) continue

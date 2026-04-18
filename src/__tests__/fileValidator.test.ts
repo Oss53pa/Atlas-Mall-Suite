@@ -29,8 +29,8 @@ describe('validatePlanFile', () => {
     expect(r.valid).toBe(true)
   })
 
-  it('rejette un DXF trop volumineux (> 50MB)', () => {
-    const r = validatePlanFile(makeFile('plan.dxf', 60 * 1024 * 1024))
+  it('rejette un DXF trop volumineux (> limite 500MB)', () => {
+    const r = validatePlanFile(makeFile('plan.dxf', 600 * 1024 * 1024))
     expect(r.valid).toBe(false)
     expect(r.error).toMatch(/volumineux/i)
   })

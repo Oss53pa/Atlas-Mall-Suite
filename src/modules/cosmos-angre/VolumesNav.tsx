@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShieldCheck, Route, Sparkles, Link2, ArrowRight, Building2, Zap, Globe, Box } from 'lucide-react'
+import { ShieldCheck, Route, Sparkles, Link2, ArrowRight, Building2, Zap, Globe, Box, Navigation } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface VolumeStat {
@@ -79,6 +79,25 @@ const volumes: VolumeConfig[] = [
       { value: '\u221e', label: 'Expériences' },
     ],
     route: '/projects/cosmos-angre/vol3',
+  },
+  {
+    id: 'vol4',
+    number: 4,
+    badge: 'VOL. 4',
+    title: 'Wayfinder',
+    subtitle: 'GPS intérieur · Mobile · Web · Bornes',
+    description:
+      'Navigation indoor temps réel. WiFi fingerprinting + BLE + PDR fusionnés par EKF, ' +
+      'A* bidirectionnel pondéré, 5 modes d\u2019itinéraire dont PMR et évacuation.',
+    icon: Navigation,
+    accent: '#0ea5e9',
+    accentRgb: '14, 165, 233',
+    stats: [
+      { value: '±1.5m', label: 'Précision' },
+      { value: '<50ms', label: 'Calcul A*' },
+      { value: '3', label: 'Plateformes' },
+    ],
+    route: '/projects/cosmos-angre/vol4',
   },
 ]
 

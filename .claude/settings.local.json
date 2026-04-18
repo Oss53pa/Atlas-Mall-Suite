@@ -6,7 +6,26 @@
       "Bash(npx vite:*)",
       "Bash(rm -f \"C:/devs/Atlas-Mall-Suite/.git/index.lock\")",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -E \"\\\\.\\(ts|js\\)$\")",
+      "Bash(xargs ls:*)",
+      "Bash(npx vitest:*)",
+      "Bash(tee C:\\\\devs\\\\Atlas-Mall-Suite\\\\_tsc_output.log)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(rm -f _tsc.log)",
+      "Bash(ls -la .env*)",
+      "Bash(ls src/supabase/ src/lib/supabase*)",
+      "Bash(grep -h \"create table\" src/supabase/migrations/*.sql)",
+      "Bash(grep -A 30 \"create table if not exists proph3t_feedback\" src/supabase/migrations/*.sql)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(npx tsc *)",
+      "Bash(npm install *)",
+      "Bash(rm -f _t.log)",
+      "Bash(curl -s http://localhost:5173/src/modules/cosmos-angre/shared/engines/plan-analysis/pdfReportEngine.ts)",
+      "Bash(git mv *)",
+      "PowerShell(Rename-Item -Path \"src\\\\modules\\\\cosmos-angre\" -NewName \"core\" -ErrorAction Stop)",
+      "Bash(jobs -p)"
     ]
   }
 }

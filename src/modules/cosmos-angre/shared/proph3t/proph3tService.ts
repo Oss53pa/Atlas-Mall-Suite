@@ -60,8 +60,12 @@ async function callClaude(
   messages: AIMessage[],
   projectData?: Record<string, unknown>
 ): Promise<string> {
-  const clientKey = localStorage.getItem('atlas_claude_key') ?? ''
-  if (!clientKey) throw new Error('Cle Claude non configuree')
+  // Clé lue depuis le store centralisé (Paramètres → Intégrations IA).
+  // Fallback de compatibilité : ancien localStorage key utilisé avant l'ajout
+  // du store dédié apiKeyStore.
+  const { getClaudeApiKey } = await import('../../../../lib/apiKeyStore')
+  const clientKey = getClaudeApiKey() ?? localStorage.getItem('atlas_claude_key') ?? ''
+  if (!clientKey) throw new Error('Cle Claude non configuree (Parametres > Integrations IA)')
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? ''
   const res = await fetch(`${supabaseUrl}/functions/v1/proph3t-claude`, {

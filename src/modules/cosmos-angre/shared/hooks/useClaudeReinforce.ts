@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { supabase } from '../../../../lib/supabase'
+import { useApiKeyStore } from '../../../../lib/apiKeyStore'
 import type {
   Zone, Camera, Door, POI, SignageItem, TransitionNode, Floor,
 } from '../proph3t/types'
@@ -39,7 +40,14 @@ export function useClaudeReinforce(): ClaudeReinforceResult {
   const [answer, setAnswer] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [claudeKey, setClaudeKey] = useState('')
+  // Clé lue depuis le store centralisé — l'utilisateur la configure dans
+  // Paramètres → Intégrations IA. Le setter local ne sert plus qu'à
+  // synchroniser ponctuellement l'UI si un composant héritant de ce hook
+  // veut présenter un éditeur inline, mais il n'est plus source de vérité.
+  const storedKey = useApiKeyStore(s => s.claudeApiKey)
+  const setStoredKey = useApiKeyStore(s => s.setKey)
+  const claudeKey = storedKey
+  const setClaudeKey = setStoredKey
 
   const reinforce = useCallback(
     async (
@@ -49,7 +57,7 @@ export function useClaudeReinforce(): ClaudeReinforceResult {
       proph3tAnswer: string
     ): Promise<string | null> => {
       if (!claudeKey) {
-        setError('Clé Claude API requise. Veuillez la saisir dans les paramètres.')
+        setError('Clé Claude API requise. Configurez-la dans Paramètres → Intégrations IA.')
         return null
       }
 

@@ -9,7 +9,7 @@ import { simulateABM } from '../algorithms/socialForceABM'
 import { compareAB, monteCarloPercentiles, randomNormal } from '../algorithms/monteCarlo'
 import { simulateJourney } from '../../engines/parcoursAgentEngine'
 import { optimizeSignage } from '../../engines/signageOptimizer'
-import { computeDetailedJourneys, type DetailedJourney } from '../engines/detailedJourneyEngine'
+import { computeDetailedJourneys, type DetailedJourney } from '../../engines/plan-analysis/detailedJourneyEngine'
 
 export interface ParcoursAnalysisInput {
   planWidth: number
