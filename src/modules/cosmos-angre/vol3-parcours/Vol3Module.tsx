@@ -38,6 +38,7 @@ import {
   Smartphone,
   Upload,
   Box,
+  Pencil,
 } from 'lucide-react'
 import { useVol3Store } from './store/vol3Store'
 import { usePlanImportStore } from '../shared/stores/planImportStore'
@@ -49,77 +50,36 @@ import FloorPlanCanvas, { CANVAS_SCALE } from '../shared/components/FloorPlanCan
 import { ConsolidatedReportButton } from '../shared/components/ConsolidatedReportButton'
 import { Proph3tVolumePanel } from '../shared/proph3t/components/Proph3tVolumePanel'
 import { DetailedJourneysOverlay } from '../shared/components/DetailedJourneysOverlay'
-import type { DetailedJourney } from '../shared/proph3t/engines/detailedJourneyEngine'
+import { SpaceInfoOverlay } from '../shared/components/SpaceInfoOverlay'
+import { DetailedJourneyReport } from '../shared/components/DetailedJourneyReport'
+import { FlowPathsOverlay } from '../shared/components/FlowPathsOverlay'
+import { PlanCleaningPanel } from '../shared/components/PlanCleaningPanel'
+import { SignageBudgetPanel } from '../shared/components/SignageBudgetPanel'
+import { PmrAnalysisPanel } from '../shared/components/PmrAnalysisPanel'
+import { AbmSimulationPanel } from '../shared/components/AbmSimulationPanel'
+import { AbmHeatmapOverlay } from '../shared/components/AbmHeatmapOverlay'
+import type { AbmResult, TimeSlot } from '../shared/engines/plan-analysis/abmSocialForceEngine'
+import { exportWayfindingJSON } from '../shared/engines/plan-analysis/navGraphEngine'
+import { exportSignageCDC, exportCleanedDxf } from '../shared/engines/plan-analysis/signageExportEngine'
+import { generateSignagePdfReport } from '../shared/engines/plan-analysis/pdfReportEngine'
+import { PovGuideViewer } from '../shared/components/PovGuideViewer'
+import { QrLabelsExport } from '../shared/components/QrLabelsExport'
+import { SignageFeedbackInbox } from '../shared/components/SignageFeedbackInbox'
+import { SignageMemoryPanel } from '../shared/components/SignageMemoryPanel'
+import type { DetailedJourney } from '../shared/engines/plan-analysis/detailedJourneyEngine'
+import type { FlowAnalysisResult } from '../shared/engines/plan-analysis/flowPathEngine'
 
-// Monte l'overlay des parcours PROPH3T au-dessus du canvas Vol.3
-// Utilise ResizeObserver pour suivre la taille du canvas et scale les coords mètres → pixels
-function Vol3ProphJourneysMount({
-  journeys, planWidth, planHeight,
-}: { journeys: DetailedJourney[]; planWidth: number; planHeight: number }) {
-  const containerRef = React.useRef<HTMLDivElement>(null)
-  const [size, setSize] = React.useState({ w: 0, h: 0 })
-
-  React.useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    // Trouve le parent main qui contient le canvas
-    const parent = el.parentElement
-    if (!parent) return
-    const update = () => setSize({ w: parent.clientWidth, h: parent.clientHeight })
-    update()
-    const ro = new ResizeObserver(update)
-    ro.observe(parent)
-    return () => ro.disconnect()
-  }, [])
-
-  // Scale : fit le plan dans la viewport avec marge 10%
-  const scale = size.w > 0 && size.h > 0
-    ? Math.min(size.w / planWidth, size.h / planHeight) * 0.9
-    : 1
-  const offsetX = (size.w - planWidth * scale) / 2
-  const offsetY = (size.h - planHeight * scale) / 2
-  const worldToScreen = (x: number, y: number) => ({
-    x: x * scale + offsetX,
-    y: y * scale + offsetY,
-  })
-
-  return (
-    <div ref={containerRef} className="absolute inset-0 pointer-events-none" style={{ zIndex: 15 }}>
-      <DetailedJourneysOverlay
-        journeys={journeys}
-        worldToScreen={worldToScreen}
-        width={size.w}
-        height={size.h}
-      />
-    </div>
-  )
-}
-
-// Panneau isolé → évite re-render infini quand le state parent change
-const Vol3Proph3tPanel = React.memo(function Vol3Proph3tPanel({
-  parsedPlan, floorPois,
-}: { parsedPlan: any; floorPois: any[] }) {
-  const buildInput = React.useCallback(() => {
-    const pw = parsedPlan.bounds.width || 200
-    const ph = parsedPlan.bounds.height || 140
-    return {
-      planWidth: pw,
-      planHeight: ph,
-      spaces: (parsedPlan.spaces ?? []).map((s: any) => ({
-        id: s.id, label: s.label, type: s.type as string | undefined,
-        areaSqm: s.areaSqm, polygon: s.polygon as [number, number][], floorId: s.floorId,
-      })),
-      pois: floorPois.map((p: any) => ({
-        id: p.id, label: p.label,
-        x: p.x > 1 ? p.x : p.x * pw,
-        y: p.y > 1 ? p.y : p.y * ph,
-        floorId: p.floorId, priority: p.priority,
-      })),
-    }
-  }, [parsedPlan, floorPois])
-  return <Proph3tVolumePanel volume="parcours" buildInput={buildInput} />
-})
+// F-004 : overlays + downloadBlob + Proph3tPanel extraits dans components/Vol3Overlays.tsx
+import {
+  Vol3ProphJourneysMount,
+  Vol3AbmHeatmapMount,
+  Vol3FlowPathsMount,
+  Vol3SpaceInfoMount,
+  Vol3Proph3tPanel,
+  downloadBlob,
+} from './components/Vol3Overlays'
 import { PlanCanvasV2 } from '../shared/components/PlanCanvasV2'
+import { PlanLayerSelector } from '../shared/components/PlanLayerSelector'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
 import { savePlanImageFromUrl, loadAllPlanImages } from '../shared/stores/planImageCache'
@@ -135,310 +95,30 @@ import GeoNotificationPanel, { type GeoNotification } from './components/GeoNoti
 import VisitReplay, { type VisitPath } from './components/VisitReplay'
 import type { ChatMessage, MomentCle, POI, SignageItem } from '../shared/proph3t/types'
 
-// ── Lazy section imports ─────────────────────────────────────
-const ParcoursSectionLazy = lazy(() => import('./sections/ParcoursSection'))
-const ParcoursClientSectionLazy = lazy(() => import('./sections/ParcoursClientSection'))
-const WayfindingSectionLazy = lazy(() => import('./sections/WayfindingSection'))
-const SignaleticsSectionLazy = lazy(() => import('./sections/SignaleticsSection'))
-const HeatmapSectionLazy = lazy(() => import('./sections/HeatmapSection'))
-const RapportSectionLazy = lazy(() => import('./sections/RapportSection'))
-const ChatSectionLazy = lazy(() => import('./sections/ChatSection'))
-const IntroSectionLazy = lazy(() => import('./sections/IntroSection'))
-const JourneyMapSectionLazy = lazy(() => import('./sections/JourneyMapSection'))
-const SwimlaneSectionLazy = lazy(() => import('./sections/SwimlaneSection'))
-const PersonasGridLazy = lazy(() => import('./sections/PersonasGrid'))
-const PersonaDetailLazy = lazy(() => import('./sections/PersonaDetail'))
-const TouchpointsMatrixLazy = lazy(() => import('./sections/TouchpointsMatrix'))
-const KpiDashboardLazy = lazy(() => import('./sections/KpiDashboard'))
-const PlanActionLazy = lazy(() => import('./sections/PlanAction'))
-const SignaletiquePageLazy = lazy(() => import('./sections/SignaletiquePage'))
-const ExperienceDashboardLazy = lazy(() => import('./sections/ExperienceDashboard'))
-const ActionTrackerLazy = lazy(() => import('./sections/ActionTracker'))
-const SignaletiquTrackerLazy = lazy(() => import('./sections/SignaletiquTracker'))
-const TouchpointTrackerLazy = lazy(() => import('./sections/TouchpointTracker'))
-const FeedbackModuleLazy = lazy(() => import('./sections/FeedbackModule'))
-const DwellTimeOptimizerLazy = lazy(() => import('./sections/DwellTimeOptimizer'))
-const RevenuePredictorLazy = lazy(() => import('./sections/RevenuePredictor'))
-const SeasonalPlanningLazy = lazy(() => import('./sections/SeasonalPlanning'))
-const TenantMixValidatorLazy = lazy(() => import('./sections/TenantMixValidator'))
+// F-004 : 26 lazy imports deplaces dans sections/Vol3NonPlanRouter.tsx
+// Conserves ici uniquement ceux utilises inline dans Vol3Module (branch 'plan').
 const PlanImportsSectionLazy = lazy(() => import('../shared/components/PlanImportsSection'))
 const View3DSectionLazy = lazy(() => import('../shared/view3d/View3DSection'))
 
-type Vol3Tab =
-  | 'plan'
-  | 'plan_imports'
-  | 'parcours'
-  | 'wayfinding'
-  | 'signaletique'
-  | 'heatmap'
-  | 'rapport'
-  | 'chat'
-  | 'intro'
-  | 'journeymap'
-  | 'parcoursvisuel'
-  | 'swimlane'
-  | 'personas'
-  | 'awa_moussa'
-  | 'serge'
-  | 'pamela'
-  | 'aminata'
-  | 'touchpoints'
-  | 'kpis'
-  | 'action'
-  | 'signaletique_page'
-  | 'exp_dashboard'
-  | 'action_tracker'
-  | 'signa_tracker'
-  | 'touch_tracker'
-  | 'feedbacks'
-  | 'dwell_time'
-  | 'revenue_predictor'
-  | 'seasonal'
-  | 'tenant_mix_validator'
+// Router des sections non-plan (routing `activeTab` hors `plan`).
+import { Vol3NonPlanRouter } from './sections/Vol3NonPlanRouter'
+// Sidebar navigation (F-004).
+import { Vol3Sidebar } from './components/Vol3Sidebar'
+// Footer (F-004).
+import { Vol3Footer } from './components/Vol3Footer'
+// Plan toolbar (F-004).
+import { Vol3PlanToolbar } from './components/Vol3PlanToolbar'
 
-// ─── Sidebar nav definition ─────────────────────────────────
+// F-004 : Vol3Tab + NavItem/NavGroup + buildNavGroups extraits dans sidebarConfig.tsx
+import { type Vol3Tab, type NavItem, type NavGroup, buildNavGroups } from './sidebarConfig'
 
-interface NavItem {
-  id: Vol3Tab
-  label: string
-  icon: React.ComponentType<{ className?: string }>
-  dot?: boolean
-}
-
-interface NavGroup {
-  key: string
-  label: string
-  icon: React.ComponentType<{ className?: string }>
-  color: string
-  items: NavItem[]
-  separator?: boolean
-}
-
-// Factory instead of module-level const: defers the spread of the cross-chunk
-// import ATLAS_STUDIO_GROUP_META until render time, avoiding a TDZ when the
-// `vol3` chunk evaluates before the `index` chunk (manualChunks in vite.config).
-const buildNavGroups = (): NavGroup[] => [
-  {
-    ...ATLAS_STUDIO_GROUP_META,
-    items: [
-      { id: 'plan_imports', label: 'Plans importés', icon: Upload },
-      { id: 'plan', label: 'Plan interactif', icon: Map },
-      { id: 'parcours', label: 'Parcours client', icon: Route },
-      { id: 'wayfinding', label: 'Wayfinding', icon: Navigation },
-      { id: 'signaletique', label: 'Signalétique (plan)', icon: Signpost },
-      { id: 'heatmap', label: 'Heatmap', icon: Flame },
-      { id: 'rapport', label: 'Rapport', icon: FileText },
-      { id: 'chat', label: 'Proph3t Chat', icon: MessageSquare },
-    ],
-  },
-  {
-    key: 'vue',
-    label: "VUE D'ENSEMBLE",
-    icon: LayoutDashboard,
-    color: '#34d399',
-    separator: true,
-    items: [
-      { id: 'intro', label: 'Introduction', icon: Info },
-    ],
-  },
-  {
-    key: 'journeymap',
-    label: 'M1 — JOURNEY MAP',
-    icon: Map,
-    color: '#34d399',
-    items: [
-      { id: 'journeymap', label: 'Journey Map', icon: Map, dot: true },
-      { id: 'parcoursvisuel', label: 'Parcours visuel', icon: Eye },
-      { id: 'swimlane', label: 'Swimlane · 10 couches', icon: Layers },
-    ],
-  },
-  {
-    key: 'personas',
-    label: 'M2 — PERSONAS',
-    icon: Users,
-    color: '#8b5cf6',
-    items: [
-      { id: 'personas', label: '4 Personas Cosmos', icon: Users },
-      { id: 'awa_moussa', label: 'Awa & Moussa', icon: Users },
-      { id: 'serge', label: 'Serge', icon: User },
-      { id: 'pamela', label: 'Pamela', icon: User },
-      { id: 'aminata', label: 'Aminata', icon: User },
-    ],
-  },
-  {
-    key: 'touchpoints',
-    label: 'M3 — TOUCHPOINTS',
-    icon: Grid3X3,
-    color: '#f59e0b',
-    items: [
-      { id: 'touchpoints', label: 'Matrice touchpoints', icon: Grid3X3 },
-    ],
-  },
-  {
-    key: 'kpis',
-    label: 'M4 — KPIS',
-    icon: BarChart2,
-    color: '#ef4444',
-    items: [
-      { id: 'kpis', label: 'Dashboard KPIs', icon: BarChart2 },
-    ],
-  },
-  {
-    key: 'action',
-    label: "M5 — PLAN D'ACTION",
-    icon: Calendar,
-    color: '#06b6d4',
-    items: [
-      { id: 'action', label: "Plan d'action", icon: Calendar },
-    ],
-  },
-  {
-    key: 'signaletique_page',
-    label: 'M6 — SIGNALÉTIQUE',
-    icon: Signpost,
-    color: '#22c55e',
-    items: [
-      { id: 'signaletique_page', label: 'Signalétique directionnelle', icon: Signpost },
-    ],
-  },
-  {
-    key: 'pilotage',
-    label: 'PILOTAGE',
-    icon: BarChart2,
-    color: '#ef4444',
-    separator: true,
-    items: [
-      { id: 'exp_dashboard', label: 'Dashboard expérience', icon: BarChart2, dot: true },
-      { id: 'action_tracker', label: "Plan d'action A01-A13", icon: Calendar },
-      { id: 'signa_tracker', label: 'Déploiement signalétique', icon: Signpost },
-      { id: 'touch_tracker', label: 'Touchpoints', icon: Smartphone },
-      { id: 'feedbacks', label: 'Réclamations visiteurs', icon: MessageSquare },
-    ],
-  },
-  {
-    key: 'advanced',
-    label: 'ANALYSE AVANCÉE',
-    icon: BarChart2,
-    color: '#ec4899',
-    separator: true,
-    items: [
-      { id: 'dwell_time', label: 'Dwell Time Optimizer', icon: Eye },
-      { id: 'revenue_predictor', label: 'Revenue Predictor', icon: BarChart2 },
-      { id: 'seasonal', label: 'Scénarios saisonniers', icon: Calendar },
-      { id: 'tenant_mix_validator', label: 'Tenant Mix Validator', icon: Grid3X3 },
-    ],
-  },
-]
-
-// ─── Helpers ──────────────────────────────────────────────────
-
-function iconAbbrev(icon: string): string {
-  const map: Record<string, string> = {
-    'door-open': 'EN',
-    store: 'ST',
-    utensils: 'RS',
-    crown: 'VIP',
-    restroom: 'WC',
-    elevator: 'ASC',
-    escalator: 'ESC',
-    'info-circle': 'i',
-    prescription: 'PH',
-    'cash-register': 'CA',
-    car: 'PK',
-  }
-  return map[icon] ?? icon.slice(0, 2).toUpperCase()
-}
-
-function signageColor(type: string): string {
-  if (type.startsWith('totem')) return '#F59E0B'
-  if (type.includes('pmr') || type.includes('pictogramme')) return '#3B82F6'
-  if (type.includes('sortie') || type.includes('secours') || type.includes('bloc')) return '#EF4444'
-  if (type.includes('dir')) return '#10B981'
-  return '#8B5CF6'
-}
-
-function uid(): string {
-  return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-}
+// F-004 : helpers iconAbbrev / signageColor / uid extraits dans ./helpers.ts
+import { iconAbbrev, signageColor, uid } from './helpers'
 
 // ─── Moment Detail Sub-Panel ──────────────────────────────────
 
-function MomentDetail({
-  moment,
-  onClose,
-}: {
-  moment: MomentCle
-  onClose: () => void
-}) {
-  return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
-        <h3 className="font-semibold text-emerald-400 flex items-center gap-2">
-          <span className="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs flex items-center justify-center font-bold">
-            {moment.number}
-          </span>
-          {moment.name}
-        </h3>
-        <button onClick={onClose} className="text-gray-500 hover:text-gray-300">
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 text-sm">
-        {/* KPI */}
-        <div className="rounded-lg bg-emerald-950/30 border border-emerald-800/40 p-3">
-          <div className="text-xs text-emerald-500 font-mono mb-1 flex items-center gap-1">
-            <Star className="w-3 h-3" /> KPI
-          </div>
-          <p className="text-gray-200">{moment.kpi}</p>
-        </div>
-
-        {/* Friction */}
-        <div className="rounded-lg bg-amber-950/30 border border-amber-800/40 p-3">
-          <div className="text-xs text-amber-500 font-mono mb-1 flex items-center gap-1">
-            <AlertTriangle className="w-3 h-3" /> Friction
-          </div>
-          <p className="text-gray-200">{moment.friction}</p>
-        </div>
-
-        {/* Recommendation */}
-        <div className="rounded-lg bg-blue-950/30 border border-blue-800/40 p-3">
-          <div className="text-xs text-blue-400 font-mono mb-1 flex items-center gap-1">
-            <Lightbulb className="w-3 h-3" /> Recommandation
-          </div>
-          <p className="text-gray-200">{moment.recommendation}</p>
-        </div>
-
-        {/* Cosmos Club Action */}
-        {moment.cosmosClubAction && (
-          <div className="rounded-lg bg-purple-950/30 border border-purple-800/40 p-3">
-            <div className="text-xs text-purple-400 font-mono mb-1 flex items-center gap-1">
-              <Crown className="w-3 h-3" /> Cosmos Club
-            </div>
-            <p className="text-gray-200">{moment.cosmosClubAction}</p>
-          </div>
-        )}
-
-        {/* Linked Signage */}
-        {moment.signageItems.length > 0 && (
-          <div className="pt-2 border-t border-gray-800">
-            <div className="text-xs text-gray-500 font-mono mb-2">Signalétique liée</div>
-            <div className="flex flex-wrap gap-1">
-              {moment.signageItems.map((sid) => (
-                <span
-                  key={sid}
-                  className="px-2 py-0.5 rounded text-xs bg-gray-800 text-gray-300 font-mono"
-                >
-                  {sid}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
+// F-004 : MomentDetail extrait dans components/MomentDetail.tsx
+import { MomentDetail } from './components/MomentDetail'
 
 // ─── Main Component ───────────────────────────────────────────
 
@@ -512,8 +192,48 @@ export default function Vol3Module() {
   const [viewMode, setViewMode] = useState<'2d' | '3d' | '3d-advanced'>('2d')
 
   // ── PROPH3T parcours détaillés (calculés à la demande) ──
-  const [proph3tJourneys, setProph3tJourneys] = useState<import('../shared/proph3t/engines/detailedJourneyEngine').DetailedJourney[] | null>(null)
+  const [proph3tJourneys, setProph3tJourneys] = useState<import('../shared/engines/plan-analysis/detailedJourneyEngine').DetailedJourney[] | null>(null)
   const [computingJourneys, setComputingJourneys] = useState(false)
+
+  // ── Flux entrées → sorties + signalétique (nouveau moteur principal) ──
+  const [flowResult, setFlowResult] = useState<FlowAnalysisResult | null>(null)
+  const [computingFlow, setComputingFlow] = useState(false)
+  const [focusedEntrance, setFocusedEntrance] = useState<string | null>(null)
+
+  // ── Overlay infos espaces (type + dimensions cliquables pour correction) ──
+  const [showSpaceInfo, setShowSpaceInfo] = useState(false)
+
+  // ── Mode gomme : clic sur une entite du plan → la masque individuellement ──
+  const [eraseMode, setEraseMode] = useState(false)
+
+  // ── Rapport détaillé parcours (modal) ──
+  const [reportOpen, setReportOpen] = useState(false)
+
+  // ── Panneau de nettoyage du plan (modal) ──
+  const [cleaningOpen, setCleaningOpen] = useState(false)
+
+  // ── Budget max de panneaux optionnels (hors ERP qui est non négociable) ──
+  const [signageBudget, setSignageBudget] = useState(50)
+
+  // ── Panneau configuration signalétique (budget + score cohérence) ──
+  const [signageConfigOpen, setSignageConfigOpen] = useState(false)
+
+  // ── Panneau PMR (analyse accessibilité + surbrillance) ──
+  const [pmrPanelOpen, setPmrPanelOpen] = useState(false)
+  const [highlightPmrNonCompliant, setHighlightPmrNonCompliant] = useState(false)
+
+  // ── Simulation ABM Social Force (3 tranches horaires) ──
+  const [abmPanelOpen, setAbmPanelOpen] = useState(false)
+  const [abmResults, setAbmResults] = useState<Partial<Record<TimeSlot, AbmResult>>>({})
+  const [activeAbmSlot, setActiveAbmSlot] = useState<TimeSlot | null>(null)
+
+  // ── Visite guidée POV first-person ──
+  const [povOpen, setPovOpen] = useState(false)
+
+  // ── Signalétique : QR export, feedback inbox, mémoire inter-projets ──
+  const [qrExportOpen, setQrExportOpen] = useState(false)
+  const [feedbackInboxOpen, setFeedbackInboxOpen] = useState(false)
+  const [memoryPanelOpen, setMemoryPanelOpen] = useState(false)
 
   // ── Placement tools ──
   type PlaceTool = null | 'poi' | 'signage'
@@ -781,6 +501,83 @@ export default function Vol3Module() {
     [handleSendChat],
   )
 
+  // ── Handlers toolbar plan (F-004 : extraits pour Vol3PlanToolbar) ─────
+
+  const handleComputeFlow = useCallback(async () => {
+    if (!parsedPlan || computingFlow) return
+    setComputingFlow(true)
+    try {
+      const { computeFlowPaths } = await import('../shared/engines/plan-analysis/flowPathEngine')
+      const wallSegments = (parsedPlan.wallSegments ?? []).map(w => ({
+        x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2,
+      }))
+      const result = computeFlowPaths({
+        spaces: (parsedPlan.spaces ?? []).map(s => ({
+          id: s.id, label: s.label, type: s.type,
+          areaSqm: s.areaSqm, polygon: s.polygon as [number, number][],
+          floorId: s.floorId,
+        })),
+        planWidth: parsedPlan.bounds.width || 200,
+        planHeight: parsedPlan.bounds.height || 140,
+        floorId: activeFloorId,
+        wallSegments,
+        signageBudget,
+        erpMaxSpacingM: 30,
+      })
+      setFlowResult(result)
+      setFocusedEntrance(null)
+    } catch (err) {
+      console.error('[PROPH3T Flux] failed', err)
+    } finally {
+      setComputingFlow(false)
+    }
+  }, [parsedPlan, computingFlow, activeFloorId, signageBudget])
+
+  const handleExportWayfindingJson = useCallback(() => {
+    if (!flowResult?.navGraph) return
+    const json = exportWayfindingJSON(flowResult.navGraph)
+    const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' })
+    downloadBlob(blob, `wayfinding-${Date.now()}.json`)
+  }, [flowResult])
+
+  const handleExportCdcExcel = useCallback(async () => {
+    if (!flowResult) return
+    try {
+      const blob = await exportSignageCDC(flowResult, 'Cosmos Angré', activeFloor?.level ?? 'RDC')
+      downloadBlob(blob, `CDC-signaletique-${Date.now()}.xlsx`)
+    } catch (err) {
+      console.error('[Export Excel] failed:', err)
+    }
+  }, [flowResult, activeFloor])
+
+  const handleExportDxf = useCallback(() => {
+    if (!parsedPlan) return
+    try {
+      const blob = exportCleanedDxf(parsedPlan, 'Cosmos Angré')
+      downloadBlob(blob, `plan-nettoye-${Date.now()}.dxf`)
+    } catch (err) {
+      console.error('[Export DXF] failed:', err)
+    }
+  }, [parsedPlan])
+
+  const handleExportPdfReport = useCallback(async () => {
+    if (!flowResult || !parsedPlan) return
+    try {
+      const blob = await generateSignagePdfReport({
+        flowResult,
+        wallSegments: (parsedPlan.wallSegments ?? []).map(w => ({ x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2 })),
+        spacePolygons: (parsedPlan.spaces ?? []).map(s => s.polygon as [number, number][]),
+        planBounds: { width: parsedPlan.bounds.width || 200, height: parsedPlan.bounds.height || 140 },
+        projectName: 'Cosmos Angré',
+        floorLabel: activeFloor?.level ?? 'RDC',
+        abmResults,
+      })
+      downloadBlob(blob, `rapport-parcours-${Date.now()}.pdf`)
+    } catch (err) {
+      console.error('[Rapport PDF] failed:', err)
+    }
+  }, [flowResult, parsedPlan, activeFloor, abmResults])
+
   // ── Render ────────────────────────────────────────────────
 
   return (
@@ -807,206 +604,57 @@ export default function Vol3Module() {
           </div>
         </div>
 
-        {/* Floor tabs — only shown when plan is active */}
-        {activeTab === 'plan' && (
-          <div className="flex items-center gap-1 ml-6">
-            {floors.map((f) => (
-              <button
-                key={f.id}
-                onClick={() => store.setActiveFloor(f.id)}
-                className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                  f.id === activeFloorId
-                    ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                }`}
-              >
-                {f.level}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* View mode toggle */}
-        {activeTab === 'plan' && (
-          <div className="flex items-center gap-0.5 bg-gray-800 rounded-lg p-0.5 mr-3">
-            <button
-              onClick={() => setViewMode('2d')}
-              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
-                viewMode === '2d'
-                  ? 'bg-gray-700 text-white'
-                  : 'text-gray-500 hover:text-gray-300'
-              }`}
-            >
-              <Grid3X3 className="w-3 h-3" />
-              2D
-            </button>
-            <button
-              onClick={() => setViewMode('3d')}
-              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
-                viewMode === '3d'
-                  ? 'bg-purple-700 text-white'
-                  : 'text-gray-500 hover:text-gray-300'
-              }`}
-              title="Vue 3D volumétrique (Three.js)"
-            >
-              <Box className="w-3 h-3" />
-              3D
-            </button>
-            <button
-              onClick={() => setViewMode('3d-advanced')}
-              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
-                viewMode === '3d-advanced'
-                  ? 'bg-pink-700 text-white'
-                  : 'text-gray-500 hover:text-gray-300'
-              }`}
-              title="Vue 3D avancée (module Isométrique/Perspective/Semi-réaliste)"
-            >
-              3D+
-            </button>
-          </div>
-        )}
-
-        {/* Bouton PROPH3T Parcours — calcule les parcours détaillés sur le plan */}
-        {activeTab === 'plan' && parsedPlan && (
-          <button
-            onClick={async () => {
-              if (computingJourneys) return
-              setComputingJourneys(true)
-              try {
-                const { computeDetailedJourneys } = await import('../shared/proph3t/engines/detailedJourneyEngine')
-                const result = computeDetailedJourneys({
-                  spaces: (parsedPlan.spaces ?? []).map(s => ({
-                    id: s.id, label: s.label, type: s.type,
-                    areaSqm: s.areaSqm, polygon: s.polygon as [number, number][],
-                    floorId: s.floorId,
-                  })),
-                  planWidth: parsedPlan.bounds.width || 200,
-                  planHeight: parsedPlan.bounds.height || 140,
-                  floorId: activeFloorId,
-                })
-                setProph3tJourneys(result.journeys)
-                console.log(`[PROPH3T Parcours] ${result.journeys.length} parcours calculés`, result)
-              } catch (err) {
-                console.error('[PROPH3T Parcours] failed', err)
-              } finally {
-                setComputingJourneys(false)
-              }
-            }}
-            disabled={computingJourneys}
-            className="ml-2 flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-medium bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:opacity-90 disabled:opacity-50"
-            title="Calculer les parcours client détaillés (PROPH3T A* sur plan réel)"
-          >
-            {computingJourneys ? '⏳ Calcul…' : proph3tJourneys ? `✨ ${proph3tJourneys.length} parcours` : '✨ Calculer parcours'}
-          </button>
-        )}
-        {proph3tJourneys && activeTab === 'plan' && (
-          <button
-            onClick={() => setProph3tJourneys(null)}
-            className="ml-1 flex items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-medium bg-slate-800 text-slate-400 hover:text-white"
-            title="Masquer les parcours PROPH3T"
-          >
-            ✕
-          </button>
-        )}
-
-        {/* Profile selector — only shown when plan is active */}
-        {activeTab === 'plan' && (
-          <div className="relative">
-            <select
-              value={activeProfileId ?? ''}
-              onChange={(e) => store.setActiveProfile(e.target.value || null)}
-              className="appearance-none bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 pr-7 text-xs text-gray-300 focus:outline-none focus:border-emerald-500"
-            >
-              <option value="">Tous profils</option>
-              {visitorProfiles.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                  {p.pmrRequired ? ' (PMR)' : ''}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-3 h-3 text-gray-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
-        )}
-
-        {/* Proph3t badge */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/8 border border-purple-500/15">
-          <Sparkles className="w-3 h-3 text-purple-400" />
-          <span className="text-[10px] font-semibold text-purple-300/80">Proph3t</span>
-        </div>
+        {/* F-004 : toolbar plan extrait dans Vol3PlanToolbar */}
+        <Vol3PlanToolbar
+          activeTab={activeTab}
+          floors={floors}
+          activeFloorId={activeFloorId}
+          onSetActiveFloor={(id) => store.setActiveFloor(id)}
+          viewMode={viewMode}
+          onSetViewMode={setViewMode}
+          parsedPlan={parsedPlan}
+          flowResult={flowResult as any}
+          computingFlow={computingFlow}
+          onComputeFlow={handleComputeFlow}
+          onClearFlow={() => { setFlowResult(null); setFocusedEntrance(null) }}
+          showSpaceInfo={showSpaceInfo}
+          onToggleSpaceInfo={() => setShowSpaceInfo(v => !v)}
+          eraseMode={eraseMode}
+          onToggleEraseMode={() => setEraseMode(v => !v)}
+          onOpenReport={() => setReportOpen(true)}
+          onOpenCleaning={() => setCleaningOpen(true)}
+          onOpenSignage={() => setSignageConfigOpen(true)}
+          activeAbmSlot={activeAbmSlot}
+          onOpenAbm={() => setAbmPanelOpen(true)}
+          onOpenPmr={() => setPmrPanelOpen(true)}
+          onExportWayfindingJson={handleExportWayfindingJson}
+          onExportCdcExcel={handleExportCdcExcel}
+          onExportDxf={handleExportDxf}
+          onOpenPov={() => setPovOpen(true)}
+          onOpenQrExport={() => setQrExportOpen(true)}
+          projectId={projectId}
+          onOpenFeedbackInbox={() => setFeedbackInboxOpen(true)}
+          onOpenMemory={() => setMemoryPanelOpen(true)}
+          onExportPdfReport={handleExportPdfReport}
+          visitorProfiles={visitorProfiles}
+          activeProfileId={activeProfileId}
+          onSetActiveProfile={(id) => store.setActiveProfile(id)}
+        />
+        {/* Tous les boutons toolbar plan + profile selector + badge Proph3t
+            sont desormais rendus par <Vol3PlanToolbar /> ci-dessus (F-004). */}
       </header>
 
       {/* ═══ Main body ═══ */}
       <div className="flex-1 flex min-h-0">
-        {/* ── Sidebar navigation — always visible ──────────── */}
-        <aside className="flex-none w-60 border-r border-white/[0.04] bg-surface-1 overflow-y-auto">
-          {/* Sidebar header */}
-          <div className="px-4 pt-4 pb-3 border-b border-white/[0.04]">
-            <div className="text-[12px] font-bold text-white tracking-tight">Cosmos Angré</div>
-            <div className="text-[9px] text-gray-500 font-mono mt-0.5 tracking-wider">VOL. 3 — PARCOURS CLIENT</div>
-          </div>
-
-          {/* Navigation groups */}
-          <nav className="py-2 px-2">
-            {NAV_GROUPS.map((group) => {
-              const groupAccent = group.color
-
-              return (
-                <div key={group.key}>
-                  {group.separator && <div className="divider mx-1" />}
-
-                  {/* Group header */}
-                  <button
-                    onClick={() => toggleGroup(group.key)}
-                    className="w-full flex items-center gap-2 px-2 py-2 cursor-pointer rounded-lg hover:bg-white/[0.02] transition-colors duration-150"
-                  >
-                    <div className="w-0.5 h-3.5 rounded-full flex-none" style={{ background: group.color, opacity: 0.5 }} />
-                    <group.icon className="w-3 h-3 flex-none" style={{ color: group.color, opacity: 0.7 }} />
-                    <span className="text-[10px] font-semibold tracking-[0.1em] flex-1 text-left text-gray-500">
-                      {group.label}
-                    </span>
-                    <ChevronDown className={`w-3 h-3 text-gray-600 transition-transform duration-200 ${openGroups[group.key] ? '' : '-rotate-90'}`} />
-                  </button>
-
-                  {/* Group items with smooth transition */}
-                  <div className={`overflow-hidden transition-all duration-200 ${openGroups[group.key] ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                    <div className="pb-1 pl-1">
-                      {group.items.map((item) => {
-                        const isActive = activeTab === item.id
-                        return (
-                          <button
-                            key={item.id}
-                            onClick={() => setActiveTab(item.id)}
-                            className={`w-full flex items-center gap-2.5 pl-4 pr-3 py-[7px] rounded-lg text-left transition-all duration-150 ${
-                              isActive
-                                ? 'bg-white/[0.06] text-white'
-                                : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.02]'
-                            }`}
-                            style={isActive ? { boxShadow: `inset 2px 0 0 ${groupAccent}` } : undefined}
-                          >
-                            <item.icon className="w-3.5 h-3.5 flex-none" style={isActive ? { color: groupAccent } : undefined} />
-                            <span className="text-[11px] font-medium truncate">{item.label}</span>
-                            {item.dot && (
-                              <span className="glow-dot flex-none ml-auto" style={{ background: '#f59e0b' }} />
-                            )}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </nav>
-
-          {/* Save status */}
-          <div className="px-4 py-2 border-t border-white/[0.04]">
-            <SaveStatusIndicator status={saveStatus} />
-          </div>
-        </aside>
+        {/* ── Sidebar navigation — F-004 : extraite dans Vol3Sidebar ── */}
+        <Vol3Sidebar
+          navGroups={NAV_GROUPS}
+          activeTab={activeTab}
+          onSelectTab={setActiveTab}
+          openGroups={openGroups}
+          onToggleGroup={toggleGroup}
+          saveStatus={saveStatus}
+        />
 
         {/* ── Content area ─────────────────────────────────── */}
         {activeTab === 'plan' ? (<>
@@ -1285,12 +933,57 @@ export default function Vol3Module() {
             </div>
           )}
 
-          {/* Overlay PROPH3T parcours détaillés (rendu au-dessus du canvas) */}
+          {/* Sélecteur de plans superposés — multi-plans */}
+          {parsedPlan && activeFloor && (
+            <div className="absolute top-3 right-3 z-20">
+              <PlanLayerSelector
+                floorId={activeFloor.id}
+                onPrimaryPlanChange={(url) => useVol3Store.getState().setPlanImageUrl(activeFloor.id, url)}
+              />
+            </div>
+          )}
+
+          {/* Overlay FLUX 2D (affiché UNIQUEMENT en mode 2D — en 3D les chemins
+              sont rendus comme tubes Three.js directement dans la scène) */}
+          {parsedPlan && flowResult && viewMode === '2d' && (
+            <Vol3FlowPathsMount
+              result={flowResult}
+              focusedEntranceId={focusedEntrance}
+              onFocusEntrance={setFocusedEntrance}
+              planWidth={parsedPlan.bounds.width || 200}
+              planHeight={parsedPlan.bounds.height || 140}
+            />
+          )}
+
+          {/* Overlay HEATMAP ABM (2D uniquement — densité piétonne par tranche horaire) */}
+          {parsedPlan && activeAbmSlot && abmResults[activeAbmSlot] && viewMode === '2d' && (
+            <Vol3AbmHeatmapMount
+              heatmap={abmResults[activeAbmSlot]!.heatmap}
+              planWidth={parsedPlan.bounds.width || 200}
+              planHeight={parsedPlan.bounds.height || 140}
+            />
+          )}
+
+          {/* Overlay PROPH3T parcours détaillés (ancien, conservé pour compat) */}
           {parsedPlan && proph3tJourneys && proph3tJourneys.length > 0 && (
             <Vol3ProphJourneysMount
               journeys={proph3tJourneys}
               planWidth={parsedPlan.bounds.width || 200}
               planHeight={parsedPlan.bounds.height || 140}
+            />
+          )}
+
+          {/* Overlay infos espaces (type + dimensions + clic = corriger labelisation) */}
+          {parsedPlan && showSpaceInfo && (
+            <Vol3SpaceInfoMount
+              spaces={(parsedPlan.spaces ?? []).map(s => ({
+                id: s.id, label: s.label, type: s.type,
+                areaSqm: s.areaSqm, polygon: s.polygon as [number, number][],
+                floorId: s.floorId,
+              }))}
+              planWidth={parsedPlan.bounds.width || 200}
+              planHeight={parsedPlan.bounds.height || 140}
+              floorId={activeFloorId}
             />
           )}
 
@@ -1311,32 +1004,101 @@ export default function Vol3Module() {
                   plan={plan}
                   onCanvasClick={placeTool ? (x, y) => handleCanvasClick(x, y) : undefined}
                   viewMode={viewMode === '2d' ? '2d' : viewMode === '3d' ? '3d' : '3d-advanced'}
-                  pois={floorPois.map(p => ({
-                    id: p.id, floorId: p.floorId, label: p.label,
-                    x: p.x > 1 ? p.x : p.x * pw,
-                    y: p.y > 1 ? p.y : p.y * ph,
-                    icon: p.icon, color: p.color,
-                  }))}
-                  signage={floorSignage.map(s => ({
-                    id: s.id, floorId: s.floorId, ref: s.ref,
-                    x: s.x > 1 ? s.x : s.x * pw,
-                    y: s.y > 1 ? s.y : s.y * ph,
-                    type: s.type, content: s.content,
-                  }))}
+                  eraseMode={eraseMode}
+                  overlayFloorId={activeFloorId}
+                  pois={(() => {
+                    const base = floorPois.map(p => ({
+                      id: p.id, floorId: p.floorId, label: p.label,
+                      x: p.x > 1 ? p.x : p.x * pw,
+                      y: p.y > 1 ? p.y : p.y * ph,
+                      icon: p.icon, color: p.color,
+                    }))
+                    // Ajoute les entrées / sorties / transits du flowResult comme POIs 3D
+                    if (flowResult) {
+                      for (const e of flowResult.entrances) base.push({
+                        id: `flow-${e.id}`, floorId: e.floorId ?? activeFloorId,
+                        label: e.label, x: e.x, y: e.y, icon: 'info', color: '#10b981',
+                      } as any)
+                      for (const e of flowResult.exits) base.push({
+                        id: `flow-${e.id}`, floorId: e.floorId ?? activeFloorId,
+                        label: e.label, x: e.x, y: e.y, icon: 'info', color: '#ef4444',
+                      } as any)
+                      for (const e of flowResult.transits) base.push({
+                        id: `flow-${e.id}`, floorId: e.floorId ?? activeFloorId,
+                        label: e.label, x: e.x, y: e.y, icon: 'info', color: '#60a5fa',
+                      } as any)
+                    }
+                    return base
+                  })()}
+                  signage={(() => {
+                    const base = floorSignage.map(s => ({
+                      id: s.id, floorId: s.floorId, ref: s.ref,
+                      x: s.x > 1 ? s.x : s.x * pw,
+                      y: s.y > 1 ? s.y : s.y * ph,
+                      type: s.type, content: s.content,
+                    }))
+                    // Injecte les panneaux recommandés par PROPH3T dans la scène 3D
+                    if (flowResult) {
+                      for (const s of flowResult.signage) {
+                        const sigTypeMap: Record<string, 'directionnel' | 'identifiant' | 'info' | 'reglementaire'> = {
+                          welcome: 'info',
+                          directional: 'directionnel',
+                          'you-are-here': 'identifiant',
+                          information: 'info',
+                          exit: 'reglementaire',
+                        }
+                        base.push({
+                          id: `flow-sig-${s.id}`,
+                          floorId: activeFloorId,
+                          ref: s.type.toUpperCase(),
+                          x: s.x, y: s.y,
+                          type: sigTypeMap[s.type] ?? 'info',
+                          content: s.suggestedContent[0] ?? s.reason,
+                        } as any)
+                      }
+                    }
+                    return base
+                  })()}
                   moments={floorMoments.map(m => ({
                     id: m.id, floorId: m.floorId, number: m.number, name: m.name,
                     x: m.x > 1 ? m.x : m.x * pw,
                     y: m.y > 1 ? m.y : m.y * ph,
                   }))}
-                  journeys={floorMoments.length > 1 ? [{
-                    id: 'journey-default',
-                    floorId: floorMoments[0]?.floorId ?? activeFloorId,
-                    points: [...floorMoments].sort((a, b) => a.number - b.number).map(m => ({
-                      x: m.x > 1 ? m.x : m.x * pw,
-                      y: m.y > 1 ? m.y : m.y * ph,
-                    })),
-                    color: '#34d399',
-                  }] : []}
+                  journeys={(() => {
+                    // Priorité : si flowResult → chemins flux (colorés par paire)
+                    if (flowResult && flowResult.paths.length > 0) {
+                      // Même palette que l'overlay pour cohérence visuelle
+                      const palette = [
+                        '#34d399', '#60a5fa', '#fbbf24', '#f472b6', '#a78bfa',
+                        '#fb7185', '#22d3ee', '#facc15', '#fb923c', '#c084fc',
+                        '#4ade80', '#38bdf8', '#f59e0b', '#ec4899', '#8b5cf6',
+                        '#e11d48', '#06b6d4', '#eab308', '#ea580c', '#d946ef',
+                      ]
+                      const hash = (s: string) => {
+                        let h = 0
+                        for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0
+                        return palette[Math.abs(h) % palette.length]
+                      }
+                      return flowResult.paths
+                        .filter(p => !focusedEntrance || p.from.id === focusedEntrance)
+                        .map(p => ({
+                          id: p.id,
+                          floorId: activeFloorId,
+                          points: p.waypoints,
+                          color: hash(`${p.from.id}→${p.to.id}`),
+                        }))
+                    }
+                    // Fallback : parcours séquentiel des moments
+                    return floorMoments.length > 1 ? [{
+                      id: 'journey-default',
+                      floorId: floorMoments[0]?.floorId ?? activeFloorId,
+                      points: [...floorMoments].sort((a, b) => a.number - b.number).map(m => ({
+                        x: m.x > 1 ? m.x : m.x * pw,
+                        y: m.y > 1 ? m.y : m.y * ph,
+                      })),
+                      color: '#34d399',
+                    }] : []
+                  })()}
                   placeMode={placeMode3D}
                   onPlace={(kind, x, y, floorId) => {
                     const id = `${kind}-${Date.now()}`
@@ -1705,109 +1467,187 @@ export default function Vol3Module() {
           )}
         </aside>
         </>) : (
-          /* ── Non-plan sections: full-width content ── */
-          <main className="flex-1 min-w-0 overflow-y-auto" style={{ background: '#080c14' }}>
-            <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="w-5 h-5 animate-spin text-gray-500" /></div>}>
-              {activeTab === 'intro' && <IntroSectionLazy />}
-              {activeTab === 'journeymap' && <JourneyMapSectionLazy />}
-              {activeTab === 'parcoursvisuel' && <ParcoursSectionLazy />}
-              {activeTab === 'swimlane' && <SwimlaneSectionLazy />}
-              {activeTab === 'personas' && <PersonasGridLazy />}
-              {activeTab === 'awa_moussa' && <PersonaDetailLazy personaId="awa_moussa" />}
-              {activeTab === 'serge' && <PersonaDetailLazy personaId="serge" />}
-              {activeTab === 'pamela' && <PersonaDetailLazy personaId="pamela" />}
-              {activeTab === 'aminata' && <PersonaDetailLazy personaId="aminata" />}
-              {activeTab === 'touchpoints' && <TouchpointsMatrixLazy />}
-              {activeTab === 'kpis' && <KpiDashboardLazy />}
-              {activeTab === 'action' && <PlanActionLazy />}
-              {activeTab === 'signaletique_page' && <SignaletiquePageLazy />}
-              {activeTab === 'parcours' && <ParcoursClientSectionLazy />}
-              {activeTab === 'wayfinding' && <WayfindingSectionLazy />}
-              {activeTab === 'signaletique' && <SignaleticsSectionLazy />}
-              {activeTab === 'heatmap' && <HeatmapSectionLazy />}
-              {activeTab === 'rapport' && <RapportSectionLazy />}
-              {activeTab === 'chat' && <ChatSectionLazy />}
-              {activeTab === 'exp_dashboard' && <ExperienceDashboardLazy />}
-              {activeTab === 'action_tracker' && <ActionTrackerLazy />}
-              {activeTab === 'signa_tracker' && <SignaletiquTrackerLazy />}
-              {activeTab === 'touch_tracker' && <TouchpointTrackerLazy />}
-              {activeTab === 'feedbacks' && <FeedbackModuleLazy />}
-              {activeTab === 'dwell_time' && <DwellTimeOptimizerLazy />}
-              {activeTab === 'revenue_predictor' && <RevenuePredictorLazy />}
-              {activeTab === 'seasonal' && <SeasonalPlanningLazy />}
-              {activeTab === 'tenant_mix_validator' && <TenantMixValidatorLazy />}
-              {activeTab === 'plan_imports' && (
-                <PlanImportsSectionLazy
-                  volumeColor="#34d399"
-                  volumeLabel="VOL. 3 — PARCOURS CLIENT"
-                  floors={floors}
-                  activeFloorId={activeFloorId}
-                  onImportComplete={(importedZones, dims, calibration, floorId, planImageUrl, _fileInfo, parsedPlan, importId) => {
-                    const current = useVol3Store.getState().zones
-                    const newZones = importedZones.map((z, i) => ({
-                      id: z.id ?? `import-${Date.now()}-${i}`,
-                      floorId: z.floorId ?? floorId,
-                      label: z.label ?? `Zone ${i + 1}`,
-                      type: (z.type ?? 'commerce') as any,
-                      x: z.x ?? 0, y: z.y ?? 0, w: z.w ?? 0.1, h: z.h ?? 0.1,
-                      niveau: (z.niveau ?? 2) as any,
-                      color: z.color ?? '#0a2a15',
-                    }))
-                    useVol3Store.setState({ zones: [...current, ...newZones] })
-                    // Store plan image as background for the floor canvas + persist to IndexedDB
-                    if (planImageUrl) {
-                      useVol3Store.getState().setPlanImageUrl(floorId, planImageUrl)
-                      void savePlanImageFromUrl(floorId, planImageUrl, 'plan-import.png')
-                    }
-                    // Store ParsedPlan in engine store for vectorial rendering
-                    const plan = parsedPlan ?? buildParsedPlanFromImport(importedZones, dims, calibration)
-                    usePlanEngineStore.getState().setParsedPlan(plan)
-                    usePlanEngineStore.getState().setSpaces(plan.spaces)
-                    usePlanEngineStore.getState().setLayers(plan.layers)
-                    if (importId) usePlanEngineStore.getState().storeParsedPlan(importId, plan)
-                  }}
-                />
-              )}
-            </Suspense>
-          </main>
+          /* ── Non-plan sections: routing delegue a Vol3NonPlanRouter (F-004) ── */
+          <Vol3NonPlanRouter
+            activeTab={activeTab}
+            renderPlanImports={() => (
+              <PlanImportsSectionLazy
+                volumeColor="#34d399"
+                volumeLabel="VOL. 3 — PARCOURS CLIENT"
+                floors={floors}
+                activeFloorId={activeFloorId}
+                onImportComplete={(importedZones, dims, calibration, floorId, planImageUrl, _fileInfo, parsedPlan, importId) => {
+                  const current = useVol3Store.getState().zones
+                  const newZones = importedZones.map((z, i) => ({
+                    id: z.id ?? `import-${Date.now()}-${i}`,
+                    floorId: z.floorId ?? floorId,
+                    label: z.label ?? `Zone ${i + 1}`,
+                    type: (z.type ?? 'commerce') as any,
+                    x: z.x ?? 0, y: z.y ?? 0, w: z.w ?? 0.1, h: z.h ?? 0.1,
+                    niveau: (z.niveau ?? 2) as any,
+                    color: z.color ?? '#0a2a15',
+                  }))
+                  useVol3Store.setState({ zones: [...current, ...newZones] })
+                  if (planImageUrl) {
+                    useVol3Store.getState().setPlanImageUrl(floorId, planImageUrl)
+                    void savePlanImageFromUrl(floorId, planImageUrl, 'plan-import.png')
+                  }
+                  const plan = parsedPlan ?? buildParsedPlanFromImport(importedZones, dims, calibration)
+                  usePlanEngineStore.getState().setParsedPlan(plan)
+                  usePlanEngineStore.getState().setSpaces(plan.spaces)
+                  usePlanEngineStore.getState().setLayers(plan.layers)
+                  if (importId) usePlanEngineStore.getState().storeParsedPlan(importId, plan)
+                }}
+              />
+            )}
+          />
         )}
       </div>
 
-      {/* ═══ Bottom Bar ═══ */}
-      <footer className="flex items-center justify-between px-4 py-1.5 border-t border-gray-800 bg-gray-950/90 backdrop-blur-sm text-xs text-gray-500 shrink-0">
-        <div className="flex items-center gap-4">
-          <span>
-            <span className="text-emerald-400 font-semibold">{floorPois.length}</span> POI
-            {floorPois.length !== 1 && 's'}
-          </span>
-          <span className="w-px h-3 bg-gray-800" />
-          <span>
-            <span className="text-amber-400 font-semibold">{floorSignage.length}</span> signalétique
-          </span>
-          <span className="w-px h-3 bg-gray-800" />
-          <span>
-            Moments{' '}
-            <span className="text-blue-400 font-semibold">
-              {momentsProgress.addressed}/{momentsProgress.total}
-            </span>{' '}
-            adressés
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {activeProfile && (
-            <span className="text-gray-600">
-              Profil: <span className="text-gray-400">{activeProfile.name}</span>
-            </span>
-          )}
-          <span className="text-gray-600">
-            Étage: <span className="text-gray-400">{activeFloor?.level ?? '—'}</span>
-          </span>
-        </div>
-      </footer>
+      {/* ═══ Bottom Bar — F-004 : extrait dans Vol3Footer ═══ */}
+      <Vol3Footer
+        poiCount={floorPois.length}
+        signageCount={floorSignage.length}
+        momentsAddressed={momentsProgress.addressed}
+        momentsTotal={momentsProgress.total}
+        activeProfileName={activeProfile?.name}
+        activeFloorLevel={activeFloor?.level}
+      />
 
       {/* Panneau PROPH3T Vol.3 — suggestions parcours / signalétique / audit */}
       {parsedPlan && <Vol3Proph3tPanel parsedPlan={parsedPlan} floorPois={floorPois} />}
+
+      {/* Planche QR à imprimer (un QR par panneau) */}
+      {qrExportOpen && flowResult?.placement && projectId && (
+        <QrLabelsExport
+          panels={flowResult.placement.panels}
+          projetId={projectId}
+          floorId={activeFloor?.level}
+          projectName="Cosmos Angré"
+          onClose={() => setQrExportOpen(false)}
+        />
+      )}
+
+      {/* Inbox des signalements terrain */}
+      {feedbackInboxOpen && projectId && (
+        <SignageFeedbackInbox
+          projetId={projectId}
+          onClose={() => setFeedbackInboxOpen(false)}
+        />
+      )}
+
+      {/* Mémoire inter-projets : suggestions automatiques */}
+      {memoryPanelOpen && projectId && (
+        <SignageMemoryPanel
+          projetId={projectId}
+          onClose={() => setMemoryPanelOpen(false)}
+        />
+      )}
+
+      {/* Visite guidée POV first-person (modal plein-écran Three.js) */}
+      {povOpen && flowResult && parsedPlan && flowResult.paths.length > 0 && (
+        <PovGuideViewer
+          flowResult={flowResult}
+          walls={(parsedPlan.wallSegments ?? []).map(w => ({ x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2 }))}
+          spacePolygons={(parsedPlan.spaces ?? []).map(s => s.polygon as [number, number][])}
+          onClose={() => setPovOpen(false)}
+        />
+      )}
+
+      {/* Panneau ABM : simulation flux (3 tranches horaires) */}
+      {abmPanelOpen && flowResult && parsedPlan && (
+        <AbmSimulationPanel
+          flowResult={flowResult}
+          walls={(parsedPlan.wallSegments ?? []).map(w => ({ x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2 }))}
+          spacePolygons={(parsedPlan.spaces ?? []).map(s => s.polygon as [number, number][])}
+          abmResults={abmResults}
+          onResultsChange={setAbmResults}
+          activeSlot={activeAbmSlot}
+          onActiveSlotChange={setActiveAbmSlot}
+          onClose={() => setAbmPanelOpen(false)}
+        />
+      )}
+
+      {/* Panneau PMR : analyse accessibilité + surbrillance */}
+      {pmrPanelOpen && flowResult && (
+        <PmrAnalysisPanel
+          flowResult={flowResult}
+          highlightNonCompliant={highlightPmrNonCompliant}
+          onToggleHighlight={setHighlightPmrNonCompliant}
+          onClose={() => setPmrPanelOpen(false)}
+        />
+      )}
+
+      {/* Panneau signalétique : budget + score + liste panneaux */}
+      {signageConfigOpen && flowResult && (
+        <SignageBudgetPanel
+          flowResult={flowResult}
+          signageBudget={signageBudget}
+          onBudgetChange={setSignageBudget}
+          onRecompute={async () => {
+            if (!parsedPlan || computingFlow) return
+            setComputingFlow(true)
+            try {
+              const { computeFlowPaths } = await import('../shared/engines/plan-analysis/flowPathEngine')
+              const wallSegments = (parsedPlan.wallSegments ?? []).map(w => ({
+                x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2,
+              }))
+              const result = computeFlowPaths({
+                spaces: (parsedPlan.spaces ?? []).map(s => ({
+                  id: s.id, label: s.label, type: s.type,
+                  areaSqm: s.areaSqm, polygon: s.polygon as [number, number][],
+                  floorId: s.floorId,
+                })),
+                planWidth: parsedPlan.bounds.width || 200,
+                planHeight: parsedPlan.bounds.height || 140,
+                floorId: activeFloorId,
+                wallSegments,
+                signageBudget,
+                erpMaxSpacingM: 30,
+                floors: effectiveFloors.map(f => ({
+                  id: f.id,
+                  label: f.level,
+                  level: parseInt(String(f.level).replace(/[^\d-]/g, ''), 10) || 0,
+                })),
+                includePmr: true,
+              })
+              setFlowResult(result)
+            } finally {
+              setComputingFlow(false)
+            }
+          }}
+          onClose={() => setSignageConfigOpen(false)}
+        />
+      )}
+
+      {/* Panneau de nettoyage du plan (Min / Std / Complet) */}
+      {cleaningOpen && parsedPlan && (
+        <PlanCleaningPanel
+          plan={parsedPlan}
+          onClose={() => setCleaningOpen(false)}
+          onApply={(cleaned) => {
+            // Remplace le plan courant par sa version nettoyée
+            usePlanEngineStore.getState().setParsedPlan(cleaned)
+          }}
+        />
+      )}
+
+      {/* Rapport écrit détaillé des flux + signalétique (PDF-ready modal) */}
+      {reportOpen && parsedPlan && flowResult && (
+        <DetailedJourneyReport
+          onClose={() => setReportOpen(false)}
+          flowResult={flowResult}
+          spaces={(parsedPlan.spaces ?? []).map(s => ({
+            id: s.id, label: s.label, type: s.type,
+            areaSqm: s.areaSqm, polygon: s.polygon as [number, number][],
+            floorId: s.floorId,
+          }))}
+          planWidth={parsedPlan.bounds.width || 200}
+          planHeight={parsedPlan.bounds.height || 140}
+          projectName="Cosmos Angré"
+          floorId={activeFloorId}
+        />
+      )}
     </div>
   )
 }

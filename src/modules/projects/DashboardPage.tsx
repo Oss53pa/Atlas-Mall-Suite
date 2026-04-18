@@ -10,6 +10,7 @@ import {
 import { useProjectStore } from './projectStore'
 import { PROJECT_TEMPLATES } from './templateData'
 import type { Project, ProjectType, ProjectStatus } from './types'
+import { COUNTRY_DEFAULTS, REGULATORY_PRESETS } from './types'
 import toast from 'react-hot-toast'
 
 const STATUS_COLORS: Record<ProjectStatus, { bg: string; text: string; label: string }> = {
@@ -27,11 +28,16 @@ function NewProjectModal({ onClose }: { onClose: () => void }) {
   const addProject = useProjectStore((s) => s.addProject)
   const setActiveProject = useProjectStore((s) => s.setActiveProject)
   const navigate = useNavigate()
-  const [step, setStep] = useState<'template' | 'details'>('template')
+  const [step, setStep] = useState<'template' | 'details' | 'locale'>('template')
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
   const [form, setForm] = useState({
     name: '', client: '', address: '', surface_m2: 0, opening_date: '',
+    floor_count: 3,
+    country: 'CI',
   })
+
+  const countryDefaults = COUNTRY_DEFAULTS[form.country] ?? COUNTRY_DEFAULTS.CI
+  const preset = REGULATORY_PRESETS[countryDefaults.preset]
 
   const handleCreate = () => {
     if (!form.name.trim()) { toast.error('Nom du projet requis'); return }
@@ -42,6 +48,12 @@ function NewProjectModal({ onClose }: { onClose: () => void }) {
       name: form.name,
       client: form.client,
       address: form.address,
+      country: form.country,
+      currency: countryDefaults.currency,
+      vat_rate: countryDefaults.vat,
+      locale: countryDefaults.locale,
+      regulatory_refs: preset.refs,
+      floor_count: form.floor_count,
       surface_m2: form.surface_m2 || 20000,
       type: tpl?.type ?? 'mall',
       opening_date: form.opening_date || '2027-01-01',
@@ -53,7 +65,7 @@ function NewProjectModal({ onClose }: { onClose: () => void }) {
     }
     addProject(project)
     setActiveProject(id)
-    toast.success(`Projet "${form.name}" créé`)
+    toast.success(`Projet "${form.name}" créé (${countryDefaults.currency} · TVA ${countryDefaults.vat}%)`)
     onClose()
     navigate(`/projects/${id}`)
   }
@@ -139,6 +151,52 @@ function NewProjectModal({ onClose }: { onClose: () => void }) {
               <input type="date" value={form.opening_date} onChange={(e) => setForm({ ...form, opening_date: e.target.value })}
                 className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/10 outline-none focus:border-indigo-500/50" />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-[11px] text-gray-500 mb-1 block">Nombre d'étages</label>
+                <input type="number" min={1} max={20} value={form.floor_count}
+                  onChange={(e) => setForm({ ...form, floor_count: +e.target.value })}
+                  className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/10 outline-none focus:border-indigo-500/50" />
+              </div>
+              <div>
+                <label className="text-[11px] text-gray-500 mb-1 block">Pays</label>
+                <select value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })}
+                  className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/10 outline-none focus:border-indigo-500/50">
+                  <option value="CI">Côte d'Ivoire</option>
+                  <option value="SN">Sénégal</option>
+                  <option value="BF">Burkina Faso</option>
+                  <option value="ML">Mali</option>
+                  <option value="FR">France</option>
+                  <option value="BE">Belgique</option>
+                  <option value="MA">Maroc</option>
+                  <option value="DZ">Algérie</option>
+                  <option value="TN">Tunisie</option>
+                  <option value="US">États-Unis</option>
+                  <option value="GB">Royaume-Uni</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Résumé config locale */}
+            <div className="rounded-lg border border-indigo-900/40 bg-indigo-950/20 px-3 py-2.5">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-indigo-300 font-semibold">Configuration automatique</span>
+                <span className="text-indigo-400 tabular-nums">
+                  {countryDefaults.currency} · TVA {countryDefaults.vat}%
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-400 mt-1">
+                Référentiels : <strong className="text-slate-200">{preset.label}</strong> — {preset.refs.length} normes activées
+              </div>
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {preset.refs.map(r => (
+                  <span key={r} className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800/60 text-slate-300 border border-slate-700/50">
+                    {r}
+                  </span>
+                ))}
+              </div>
+            </div>
+
             <div className="flex justify-end gap-3 pt-2">
               <button onClick={onClose} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition">Annuler</button>
               <button onClick={handleCreate}
@@ -186,11 +244,8 @@ export default function DashboardPage() {
 
   const handleOpenProject = (project: Project) => {
     setActiveProject(project.id)
-    if (project.id === 'cosmos-angre') {
-      navigate('/projects/cosmos-angre')
-    } else {
-      navigate(`/projects/${project.id}`)
-    }
+    // Route générique multi-projets (Cosmos Angré est un projet comme un autre)
+    navigate(`/projects/${project.id}`)
   }
 
   const handleDelete = (e: React.MouseEvent, id: string) => {
@@ -202,21 +257,54 @@ export default function DashboardPage() {
 
   return (
     <div className="h-full overflow-y-auto" style={{ background: '#060a13', color: '#e2e8f0' }}>
+      {/* Hero bandeau : positionnement plateforme */}
+      <div className="border-b border-white/[0.06]" style={{
+        background: 'linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(168,85,247,0.06) 50%, transparent 100%)',
+      }}>
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex items-start justify-between gap-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] tracking-widest uppercase text-indigo-300 font-bold">
+                  Atlas Mall Suite
+                </span>
+                <span className="text-[10px] text-slate-500">·</span>
+                <span className="text-[10px] text-slate-500">
+                  Plateforme multi-projets pour centres commerciaux
+                </span>
+              </div>
+              <h1 className="text-3xl font-bold text-white tracking-tight m-0">
+                Bienvenue sur votre espace projets
+              </h1>
+              <p className="text-sm text-slate-400 mt-2 max-w-2xl">
+                Gérez autant de projets de malls que nécessaire — conception, audit réglementaire,
+                signalétique, exploitation. Chaque projet est isolé (multi-tenant) et configurable
+                (pays, devise, référentiels). Le projet pilote <strong className="text-emerald-300">Cosmos Angré</strong> est
+                préchargé pour démonstration.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowNewProject(true)}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm font-semibold transition-all hover:-translate-y-0.5 shadow-lg shadow-indigo-500/30"
+              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+            >
+              <Plus size={18} />
+              Nouveau projet
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Stats bar */}
       <div className="border-b border-white/[0.06]" style={{ background: '#0a0f1a' }}>
         <div className="max-w-7xl mx-auto px-6 py-5">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">Mes projets</h1>
-              <p className="text-sm text-gray-500 mt-0.5">Gérez tous vos projets Atlas Mall Suite</p>
+              <h2 className="text-lg font-bold text-white tracking-tight m-0">Mes projets</h2>
+              <p className="text-[11px] text-gray-500 mt-0.5">
+                {stats.total} projet{stats.total > 1 ? 's' : ''} · {(stats.totalSurface / 1000).toFixed(0)}k m² cumulés
+              </p>
             </div>
-            <button
-              onClick={() => setShowNewProject(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-all hover:-translate-y-0.5"
-            >
-              <Plus size={16} />
-              Nouveau projet
-            </button>
           </div>
 
           {/* Stats cards */}
@@ -294,12 +382,19 @@ export default function DashboardPage() {
                     borderColor: isActive ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.06)',
                   }}
                 >
-                  {isActive && (
-                    <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-indigo-500/15 border border-indigo-500/25 px-2 py-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                      <span className="text-[9px] font-semibold text-indigo-400 tracking-wide">ACTIF</span>
-                    </div>
-                  )}
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                    {project.id === 'cosmos-angre' && (
+                      <div className="flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5">
+                        <span className="text-[9px] font-semibold text-emerald-400 tracking-wide">PILOTE</span>
+                      </div>
+                    )}
+                    {isActive && (
+                      <div className="flex items-center gap-1 rounded-full bg-indigo-500/15 border border-indigo-500/25 px-2 py-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                        <span className="text-[9px] font-semibold text-indigo-400 tracking-wide">ACTIF</span>
+                      </div>
+                    )}
+                  </div>
 
                   <div className="flex items-start gap-3 mb-3">
                     <span className="text-2xl">{TYPE_ICONS[project.type]}</span>

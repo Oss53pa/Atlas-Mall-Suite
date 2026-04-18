@@ -612,6 +612,7 @@ export default function PlanCommercialSection() {
             plan={plan}
             planImageUrl={planImageUrl}
             onSpaceClick={handleEngineSpaceClick}
+            overlayFloorId={floorId}
           >
             {/* Only show vol1Store mock overlay when NO real plan has been imported */}
             {!parsedPlan && filteredSpaces.map(sp => {

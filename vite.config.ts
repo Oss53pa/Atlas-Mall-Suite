@@ -10,6 +10,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // Alias @core → ancien dossier cosmos-angre (historiquement nommé d'après le projet pilote).
+      // Le dossier contient en réalité le code générique multi-projets (4 volumes + workspace).
+      // À terme, renommer physiquement src/modules/cosmos-angre/ → src/modules/core/
+      // puis faire pointer cet alias vers le nouveau chemin. Voir CONTRIBUTING.md.
+      '@core': path.resolve(__dirname, './src/modules/cosmos-angre'),
     },
     dedupe: ['react', 'react-dom', 'zustand'],
   },

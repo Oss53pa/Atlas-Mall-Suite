@@ -1,5 +1,5 @@
 import React, { lazy } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { useOnboardingStore } from './shared/stores/onboardingStore'
 import type { OnboardingResult } from './shared/components/OnboardingWizard'
 import { ErrorBoundary } from './shared/components/ErrorBoundary'
@@ -9,6 +9,7 @@ const OnboardingWizard = React.lazy(() => import('./shared/components/Onboarding
 const Vol1Module = React.lazy(() => import('./vol1-commercial'))
 const Vol2Module = React.lazy(() => import('./vol2-securitaire'))
 const Vol3Module = React.lazy(() => import('./vol3-parcours'))
+const Vol4Module = React.lazy(() => import('./vol4-wayfinder'))
 const Proph3tGlobalMount = React.lazy(() =>
   import('./shared/proph3t/components/Proph3tGlobalMount').then(m => ({ default: m.Proph3tGlobalMount }))
 )
@@ -29,6 +30,8 @@ export default function CosmosAngre() {
   // Recharge le parsedPlan depuis IndexedDB si besoin (après refresh / navigation)
   usePlanHydration()
 
+  const { projectId } = useParams<{ projectId: string }>()
+
   const onboardingCompleted = useOnboardingStore((s) => s.completed)
   const markComplete = useOnboardingStore((s) => s.markComplete)
 
@@ -37,7 +40,8 @@ export default function CosmosAngre() {
   }
 
   const handleSkip = () => {
-    markComplete('Cosmos Angre', ['vol1', 'vol2', 'vol3'], 3)
+    const defaultName = projectId === 'cosmos-angre' ? 'Cosmos Angré' : (projectId ?? 'Nouveau projet')
+    markComplete(defaultName, ['vol1', 'vol2', 'vol3', 'vol4'], 3)
   }
 
   if (!onboardingCompleted) {
@@ -57,10 +61,11 @@ export default function CosmosAngre() {
           <Route path="vol1/*" element={<ErrorBoundary fallbackTitle="Erreur Vol.1 Commercial"><Vol1Module /></ErrorBoundary>} />
           <Route path="vol2/*" element={<ErrorBoundary fallbackTitle="Erreur Vol.2 Securitaire"><Vol2Module /></ErrorBoundary>} />
           <Route path="vol3/*" element={<ErrorBoundary fallbackTitle="Erreur Vol.3 Parcours"><Vol3Module /></ErrorBoundary>} />
+          <Route path="vol4/*" element={<ErrorBoundary fallbackTitle="Erreur Vol.4 Wayfinder"><Vol4Module /></ErrorBoundary>} />
           {/* Vue 3D avancee / Editeur de scene */}
           <Route path="3d/*" element={<Vol3DModule />} />
           <Route path="scene-editor/*" element={<ErrorBoundary fallbackTitle="Erreur Editeur de Scene"><SceneEditor /></ErrorBoundary>} />
-          <Route path="*" element={<Navigate to="/projects/cosmos-angre" replace />} />
+          <Route path="*" element={<Navigate to={`/projects/${projectId ?? 'cosmos-angre'}`} replace />} />
         </Routes>
         {/* Modal PROPH3T montée UNE SEULE FOIS au niveau projet (pas dans chaque volume) */}
         <React.Suspense fallback={null}>

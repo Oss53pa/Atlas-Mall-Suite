@@ -17,7 +17,8 @@
     /* Paths */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@core/*": ["./src/modules/cosmos-angre/*"]
     },
 
     /* Linting */

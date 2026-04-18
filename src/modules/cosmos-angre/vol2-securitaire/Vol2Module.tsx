@@ -1132,6 +1132,7 @@ export default function Vol2Module() {
             <PlanCanvasV2
               plan={parsedPlan}
               planImageUrl={activeFloor ? (planImageUrls[activeFloor.id] || usePlanImportStore.getState().getActivePlanUrl(activeFloor.id)) : undefined}
+              overlayFloorId={activeFloor?.id}
               viewMode={viewMode === '3d-advanced' ? '3d-advanced' : viewMode === '3d' ? '3d' : '2d'}
               cameras={cameras.filter(c => !c.autoPlaced || false).map(c => {
                 const pw = parsedPlan.bounds.width || 200
@@ -1217,6 +1218,7 @@ export default function Vol2Module() {
             <PlanCanvasV2
               plan={parsedPlan}
               planImageUrl={activeFloor ? (planImageUrls[activeFloor.id] || usePlanImportStore.getState().getActivePlanUrl(activeFloor.id)) : undefined}
+              overlayFloorId={activeFloor?.id}
             />
             ) : (
             <FloorPlanCanvas

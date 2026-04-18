@@ -8,6 +8,7 @@ import {
   fitToScreen, zoomAtPoint, screenToWorld, computeLOD,
 } from '../planReader/coordinateEngine'
 import { usePlanEngineStore } from '../stores/planEngineStore'
+import { usePlanImportStore } from '../stores/planImportStore'
 import { PlanEntitiesRenderer } from './PlanEntitiesRenderer'
 import { SpaceOverlay } from './SpaceOverlay'
 import { SpaceEditPanel } from './SpaceEditPanel'
@@ -257,6 +258,14 @@ interface PlanCanvasV2Props {
     summary: { info: number; warning: number; critical: number }
     floorStats?: Array<{ floorId: string; coveragePct: number; camerasCount: number; exitsCount: number }>
   }
+  /** Mode gomme : un clic sur une entite la masque (piliers, hachures, etc.) */
+  eraseMode?: boolean
+  /**
+   * floorId utilisé pour récupérer et rendre les plans superposés
+   * depuis `usePlanImportStore.layersPerFloor[overlayFloorId]`.
+   * Si omis, aucune superposition n'est rendue.
+   */
+  overlayFloorId?: string
 }
 
 export function PlanCanvasV2({
@@ -265,6 +274,8 @@ export function PlanCanvasV2({
   cameras, doors, blindSpots,
   pois, signage, moments, journeys,
   placeMode, onPlace, onEntityUpdate, onEntityDelete, compliance,
+  eraseMode,
+  overlayFloorId,
 }: PlanCanvasV2Props) {
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -742,9 +753,19 @@ export function PlanCanvasV2({
                   viewport={viewport}
                   canvasW={containerSize.w}
                   canvasH={containerSize.h}
+                  eraseMode={eraseMode}
                 />
               )
             })()}
+
+            {/* Plans superposés (multi-plans overlay) */}
+            {overlayFloorId && (
+              <StackedPlanOverlays
+                floorId={overlayFloorId}
+                mainImageUrl={planImageUrl || plan.planImageUrl}
+                bounds={plan.bounds}
+              />
+            )}
 
             {/* Space overlay (polygon zones) — toggleable */}
             {showZones && (
@@ -973,5 +994,49 @@ function LayerPanel({ layers, onToggle }: { layers: PlanLayer[]; onToggle: (name
         </div>
       )}
     </div>
+  )
+}
+
+// ── StackedPlanOverlays ──────────────────────────────────────
+// Rend les plans superposés du store `planImportStore` pour un floorId donné,
+// empilés sous forme d'<image> SVG avec opacité individuelle.
+// Dessine DANS le même <g transform> que le plan principal pour qu'ils suivent
+// le zoom/pan. Exclut l'image principale (déjà rendue en base).
+
+function StackedPlanOverlays({
+  floorId, mainImageUrl, bounds,
+}: {
+  floorId: string
+  mainImageUrl?: string
+  bounds: { width: number; height: number }
+}) {
+  const imports = usePlanImportStore(s => s.imports)
+  const layersPerFloor = usePlanImportStore(s => s.layersPerFloor)
+  const layers = layersPerFloor[floorId] ?? []
+
+  // Filtre : visible + URL dispo + pas le plan principal (pour éviter double rendu)
+  const visibleOverlays = layers
+    .map(l => ({ layer: l, record: imports.find(r => r.id === l.importId) }))
+    .filter(x => x.record && x.record.status === 'success' && x.record.planImageUrl)
+    .filter(x => x.layer.visible)
+    .filter(x => x.record!.planImageUrl !== mainImageUrl)
+
+  if (visibleOverlays.length === 0) return null
+
+  return (
+    <g className="multi-plan-overlays" style={{ pointerEvents: 'none' }}>
+      {visibleOverlays.map(({ layer, record }) => (
+        <image
+          key={layer.importId}
+          href={record!.planImageUrl}
+          x={0}
+          y={0}
+          width={bounds.width}
+          height={bounds.height}
+          opacity={layer.opacity}
+          preserveAspectRatio="none"
+        />
+      ))}
+    </g>
   )
 }

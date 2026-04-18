@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
 import AppLayout from './components/AppLayout'
+import { HelpFloatingBall } from './components/HelpFloatingBall'
 
 // Landing (public, no layout)
 const LandingPage = lazy(() => import('./modules/landing/LandingPage'))
@@ -21,7 +22,8 @@ const TeamOnboarding = lazy(() => import('./modules/onboarding/TeamOnboarding'))
 // Main app (inside AppLayout)
 const DashboardPage = lazy(() => import('./modules/projects/DashboardPage'))
 const OrgSettingsPage = lazy(() => import('./modules/settings/OrgSettingsPage'))
-const CosmosAngre = lazy(() => import('./modules/cosmos-angre'))
+// Workspace projet (anciennement CosmosAngre — désormais générique pour tout projet)
+const ProjectWorkspace = lazy(() => import('./modules/cosmos-angre'))
 
 // Transversal pages
 const ScenariosPage = lazy(() => import('./modules/transversal/ScenariosPage'))
@@ -33,6 +35,15 @@ const BenchmarkPage = lazy(() => import('./modules/transversal/BenchmarkPage'))
 const Proph3tPage = lazy(() => import('./modules/tools/Proph3tPage'))
 const ExportPage = lazy(() => import('./modules/tools/ExportPage'))
 const VirtualTourPage = lazy(() => import('./modules/tools/VirtualTourPage'))
+
+// Mobile feedback (public, no layout) — scanné via QR code sur un panneau
+const SignageFeedbackPage = lazy(() => import('./modules/cosmos-angre/shared/pages/SignageFeedbackPage'))
+
+// Notice d'utilisation (public, plein écran, imprimable)
+const NoticePage = lazy(() => import('./modules/docs/NoticePage'))
+
+// Wayfinder Kiosk Runtime (public, plein écran, sans AppLayout)
+const KioskRuntime = lazy(() => import('./modules/cosmos-angre/wayfinder-designer/runtime/KioskRuntime'))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,8 +66,19 @@ function App() {
       <BrowserRouter>
         <Suspense fallback={<Loading />}>
           <Routes>
+            {/* ── Page publique mobile (QR code scanné par un agent terrain) ── */}
+            <Route path="/feedback" element={<SignageFeedbackPage />} />
+
+            {/* ── Notice d'utilisation (publique, imprimable) ── */}
+            <Route path="/notice" element={<NoticePage />} />
+
+            {/* ── Runtime borne autonome (CDC §08) ── */}
+            <Route path="/kiosk/:kioskId" element={<KioskRuntime />} />
+
             {/* ── Main app (with TopBar + Sidebar layout) ── */}
             <Route element={<AppLayout />}>
+              {/* Accueil = liste de projets (multi-projet) */}
+              <Route index element={<DashboardPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/settings/*" element={<OrgSettingsPage />} />
               {/* Transversal */}
@@ -68,15 +90,15 @@ function App() {
               <Route path="/proph3t" element={<Proph3tPage />} />
               <Route path="/export" element={<ExportPage />} />
               <Route path="/virtual-tour" element={<VirtualTourPage />} />
-              {/* Projects */}
-              <Route path="/projects/cosmos-angre/*" element={<CosmosAngre />} />
-              <Route path="/projects/:projectId/*" element={<DashboardPage />} />
+              {/* Workspace projet — générique, fonctionne pour TOUT projectId (Cosmos Angré est le pilote) */}
+              <Route path="/projects/:projectId/*" element={<ProjectWorkspace />} />
             </Route>
 
-            {/* ── Everything else → project ── */}
-            <Route path="*" element={<Navigate to="/projects/cosmos-angre" replace />} />
+            {/* ── Everything else → dashboard (liste de projets) ── */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Suspense>
+        <HelpFloatingBall />
         <Toaster
           position="bottom-right"
           toastOptions={{

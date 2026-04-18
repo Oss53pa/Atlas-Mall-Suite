@@ -78,6 +78,23 @@ interface CadState {
   toggleLayerVisibility: (layerId: string) => void
   setLayerOpacity: (layerId: string, opacity: number) => void
   toggleLayerLock: (layerId: string) => void
+  /** Crée un nouveau calque personnalisé. */
+  addLayer: (partial: Partial<CadLayer> & { name: string }) => CadLayer
+  /** Renomme un calque. */
+  renameLayer: (layerId: string, name: string) => void
+  /**
+   * Dissocie les entités d'un calque : elles sont déplacées vers un calque cible
+   * (par défaut `default`). Le calque source reste existant mais vide.
+   * Retourne le nombre d'entités dissociées.
+   */
+  dissociateLayer: (layerId: string, targetLayerId?: string) => number
+  /**
+   * Supprime un calque. `mode`:
+   *   - 'purge'       → supprime aussi toutes les entités du calque (destructif)
+   *   - 'dissociate'  → déplace d'abord les entités vers `targetLayerId` puis supprime le calque
+   * Le calque `plan` (plan importé, verrouillé) ne peut pas être supprimé.
+   */
+  deleteLayer: (layerId: string, mode?: 'purge' | 'dissociate', targetLayerId?: string) => boolean
 
   // Snap
   setSnapConfig: (config: Partial<SnapConfig>) => void
@@ -276,6 +293,85 @@ export const useCadStore = create<CadState>()((set, get) => ({
   toggleLayerLock: (layerId) => set((s) => ({
     layers: s.layers.map(l => l.id === layerId ? { ...l, locked: !l.locked } : l),
   })),
+
+  addLayer: (partial) => {
+    const id = partial.id ?? `layer-${Date.now().toString(36)}`
+    const layer: CadLayer = {
+      id,
+      name: partial.name,
+      color: partial.color ?? '#64748b',
+      visible: partial.visible ?? true,
+      opacity: partial.opacity ?? 1,
+      locked: partial.locked ?? false,
+    }
+    get().pushHistory(`Ajouter calque "${layer.name}"`)
+    set((s) => ({ layers: [...s.layers, layer] }))
+    return layer
+  },
+
+  renameLayer: (layerId, name) => {
+    get().pushHistory(`Renommer calque`)
+    set((s) => ({
+      layers: s.layers.map(l => l.id === layerId ? { ...l, name } : l),
+    }))
+  },
+
+  dissociateLayer: (layerId, targetLayerId) => {
+    const state = get()
+    const source = state.layers.find(l => l.id === layerId)
+    if (!source) return 0
+    // S'assurer qu'un calque "default" existe comme cible de repli
+    let target = targetLayerId
+      ? state.layers.find(l => l.id === targetLayerId)?.id
+      : state.layers.find(l => l.id === 'default')?.id
+    if (!target) {
+      // Créer un calque `default` à la volée
+      const def = get().addLayer({ id: 'default', name: 'Défaut', color: '#94a3b8' })
+      target = def.id
+    }
+    // Compter puis déplacer
+    const affected = state.entities.filter(e => e.layer === layerId)
+    if (affected.length === 0) return 0
+    get().pushHistory(`Dissocier ${affected.length} entité(s) du calque "${source.name}"`)
+    set((s) => ({
+      entities: s.entities.map(e => e.layer === layerId ? { ...e, layer: target! } : e),
+    }))
+    return affected.length
+  },
+
+  deleteLayer: (layerId, mode = 'dissociate', targetLayerId) => {
+    const state = get()
+    const layer = state.layers.find(l => l.id === layerId)
+    if (!layer) return false
+    // Le calque `plan` (plan importé) est protégé
+    if (layerId === 'plan') {
+
+      console.warn('[cadStore] Le calque "plan" est protégé et ne peut pas être supprimé.')
+      return false
+    }
+    const entitiesOnLayer = state.entities.filter(e => e.layer === layerId).length
+    if (mode === 'dissociate' && entitiesOnLayer > 0) {
+      get().dissociateLayer(layerId, targetLayerId)
+    }
+    get().pushHistory(
+      mode === 'purge' && entitiesOnLayer > 0
+        ? `Supprimer calque "${layer.name}" + ${entitiesOnLayer} entité(s)`
+        : `Supprimer calque "${layer.name}"`,
+    )
+    set((s) => ({
+      layers: s.layers.filter(l => l.id !== layerId),
+      entities: mode === 'purge'
+        ? s.entities.filter(e => e.layer !== layerId)
+        : s.entities,
+      selectedIds: mode === 'purge'
+        ? new Set([...s.selectedIds].filter(id => {
+            const e = s.entities.find(x => x.id === id)
+            return e ? e.layer !== layerId : false
+          }))
+        : s.selectedIds,
+    }))
+    return true
+  },
 
   // ── Snap ───────────────────────────────────────────────
 
