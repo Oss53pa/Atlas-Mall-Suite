@@ -48,11 +48,13 @@ export async function loadIFC(
   const url = URL.createObjectURL(file)
 
   try {
-    const model = await loader.loadAsync(url, (event) => {
+    // web-ifc-three v0.0.126 retourne le modèle typé `unknown` au runtime :
+    // cast explicite vers IFCModel (Object3D) pour satisfaire TypeScript.
+    const model = (await loader.loadAsync(url, (event) => {
       if (event.lengthComputable && onProgress) {
         onProgress(Math.round((event.loaded / event.total) * 100))
       }
-    })
+    })) as unknown as THREE.Object3D & { modelID?: number }
 
     // Wrap in a group
     const scene = new THREE.Group()

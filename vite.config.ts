@@ -30,6 +30,14 @@ export default defineConfig({
       'Cross-Origin-Embedder-Policy': 'require-corp',
     },
   },
+  esbuild: {
+    // En production : supprime console.log/debug/info (on garde console.warn/error)
+    // En dev : on conserve tout pour le débogage
+    drop: (process.env.NODE_ENV === 'production' ? ['debugger'] : []) as ('debugger' | 'console')[],
+    pure: process.env.NODE_ENV === 'production'
+      ? ['console.log', 'console.debug', 'console.info', 'console.trace']
+      : [],
+  },
   build: {
     target: 'es2020',
     sourcemap: true,

@@ -75,6 +75,18 @@ function App() {
             {/* ── Runtime borne autonome (CDC §08) ── */}
             <Route path="/kiosk/:kioskId" element={<KioskRuntime />} />
 
+            {/* ── Landing page publique ── */}
+            <Route path="/landing" element={<LandingPage />} />
+
+            {/* ── Auth pages (sans AppLayout) ── */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+
+            {/* ── Onboarding (séquence à compléter après inscription) ── */}
+            <Route path="/onboard/org" element={<OrgOnboarding />} />
+            <Route path="/onboard/project" element={<ProjectOnboarding />} />
+            <Route path="/onboard/team" element={<TeamOnboarding />} />
+
             {/* ── Main app (with TopBar + Sidebar layout) ── */}
             <Route element={<AppLayout />}>
               {/* Accueil = liste de projets (multi-projet) */}

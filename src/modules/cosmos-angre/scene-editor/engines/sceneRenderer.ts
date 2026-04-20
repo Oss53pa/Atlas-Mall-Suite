@@ -96,7 +96,9 @@ export class SceneRenderer {
         obj.rotation.clone()
       )
     })
-    this.scene.add(this.transformControls)
+    // three@0.183 : TransformControls étend Object3D mais le type resolu est
+    // `unknown` selon la version de @types/three. Cast explicite.
+    this.scene.add(this.transformControls as unknown as THREE.Object3D)
 
     // Sol
     const groundGeo = new THREE.PlaneGeometry(100, 100)

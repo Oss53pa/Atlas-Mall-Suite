@@ -3,6 +3,8 @@
 // a fully volumetric 3D scene with walls, floor slabs, and zones.
 
 import React, { useEffect, useRef, useState } from 'react'
+import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { getSpaceColor, type ColorMode } from '../planReader/spaceColoring'
 import { usePlanEngineStore } from '../stores/planEngineStore'
 import { useSceneEditorStore } from '../../scene-editor/store/sceneEditorStore'
@@ -1620,9 +1622,9 @@ export function Plan3DView({
         // Double-clic = zoom-to-space sur la zone cliquée
         const onDblClick = (ev: MouseEvent) => {
           const rect = renderer.domElement.getBoundingClientRect()
-          mouse.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1
-          mouse.y = -((ev.clientY - rect.top) / rect.height) * 2 + 1
-          raycaster.setFromCamera(mouse, camera)
+          pointer.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1
+          pointer.y = -((ev.clientY - rect.top) / rect.height) * 2 + 1
+          raycaster.setFromCamera(pointer, camera)
           const hits = raycaster.intersectObjects(zoneMeshes, false)
           if (hits.length) {
             const mesh = hits[0].object as THREE.Mesh

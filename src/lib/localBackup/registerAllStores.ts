@@ -14,7 +14,9 @@ import { usePlanEngineStore } from '../../modules/cosmos-angre/shared/stores/pla
 import { useAnnotationsStore } from '../../modules/cosmos-angre/shared/stores/annotationsStore'
 import { useEditableSpaceStore } from '../../modules/cosmos-angre/shared/stores/editableSpaceStore'
 import { usePlanImportStore } from '../../modules/cosmos-angre/shared/stores/planImportStore'
-import { usePlansLibraryStore } from '../../modules/cosmos-angre/shared/stores/plansLibraryStore'
+// Note: plansLibraryStore n'est PAS un store Zustand — c'est un wrapper IndexedDB
+// (Dexie) avec ses propres fonctions async (savePlan, loadPlan, listPlans…).
+// Il n'a pas besoin du système de backup Zustand — la persistance est native.
 import { useLotsStore } from '../../modules/cosmos-angre/shared/stores/lotsStore'
 import { useOnboardingStore } from '../../modules/cosmos-angre/shared/stores/onboardingStore'
 import { useHiddenEntitiesStore } from '../../modules/cosmos-angre/shared/stores/hiddenEntitiesStore'
@@ -59,7 +61,7 @@ export function registerAllStoresForBackup() {
   registerStore('annotations', useAnnotationsStore as unknown as Parameters<typeof registerStore>[1])
   registerStore('editableSpaces', useEditableSpaceStore as unknown as Parameters<typeof registerStore>[1])
   registerStore('planImport', usePlanImportStore as unknown as Parameters<typeof registerStore>[1])
-  registerStore('plansLibrary', usePlansLibraryStore as unknown as Parameters<typeof registerStore>[1])
+  // plansLibrary non enregistré : c'est un store IndexedDB natif (voir plansLibraryStore.ts)
   registerStore('lots', useLotsStore as unknown as Parameters<typeof registerStore>[1])
   registerStore('onboarding', useOnboardingStore as unknown as Parameters<typeof registerStore>[1])
   registerStore('hiddenEntities', useHiddenEntitiesStore as unknown as Parameters<typeof registerStore>[1])
@@ -83,7 +85,7 @@ export function applySnapshotToAllStores(stores: Record<string, unknown>) {
     annotations: useAnnotationsStore as unknown as { setState: (p: unknown) => void },
     editableSpaces: useEditableSpaceStore as unknown as { setState: (p: unknown) => void },
     planImport: usePlanImportStore as unknown as { setState: (p: unknown) => void },
-    plansLibrary: usePlansLibraryStore as unknown as { setState: (p: unknown) => void },
+    // plansLibrary : pas de setState (IndexedDB natif)
     lots: useLotsStore as unknown as { setState: (p: unknown) => void },
     onboarding: useOnboardingStore as unknown as { setState: (p: unknown) => void },
     hiddenEntities: useHiddenEntitiesStore as unknown as { setState: (p: unknown) => void },

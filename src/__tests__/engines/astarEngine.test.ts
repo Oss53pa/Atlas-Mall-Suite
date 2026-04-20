@@ -22,7 +22,7 @@ function buildLineGraph(n: number): NavGraph {
         congestion: 1,
         attractivity: 0,
         weight: 1,
-      } as NavEdge)
+      } as unknown as NavEdge)
     }
   }
   const _adj = new Map<string, Array<{ edgeId: string; to: string; weight: number }>>()

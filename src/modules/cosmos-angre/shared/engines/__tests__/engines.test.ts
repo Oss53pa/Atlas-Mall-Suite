@@ -13,6 +13,7 @@ describe('coverageOptimizer', () => {
         id: 'hall',
         type: 'commerce',
         polygon: [[5, 5], [35, 5], [35, 25], [5, 25]],
+        areaSqm: 600,
       }],
       budget: 3,
       defaultRangeM: 10, defaultFovDeg: 90, gridStepM: 1.5,
@@ -25,7 +26,7 @@ describe('coverageOptimizer', () => {
   it('respecte le budget maximum', () => {
     const res = optimizeCoverage({
       planWidth: 20, planHeight: 20,
-      spaces: [{ id: 's', type: 'commerce', polygon: [[0, 0], [20, 0], [20, 20], [0, 20]] }],
+      spaces: [{ id: 's', type: 'commerce', polygon: [[0, 0], [20, 0], [20, 20], [0, 20]], areaSqm: 400 }],
       budget: 2,
     })
     expect(res.proposed.length).toBeLessThanOrEqual(2)
@@ -34,7 +35,7 @@ describe('coverageOptimizer', () => {
   it('ne propose rien si budget 0', () => {
     const res = optimizeCoverage({
       planWidth: 20, planHeight: 20,
-      spaces: [{ id: 's', type: 'commerce', polygon: [[0, 0], [20, 0], [20, 20], [0, 20]] }],
+      spaces: [{ id: 's', type: 'commerce', polygon: [[0, 0], [20, 0], [20, 20], [0, 20]], areaSqm: 400 }],
       budget: 0,
     })
     expect(res.proposed).toEqual([])

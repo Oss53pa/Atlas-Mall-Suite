@@ -170,8 +170,8 @@ export default function RasterPreview({
         <span className="text-[10px] text-gray-500">Cliquer = selectionner · Glisser = deplacer · Coins = redimensionner</span>
       </div>
 
-      {/* Selected zone editor */}
-      {selected && (
+      {/* Selected zone editor — selected garantit que selectedId n'est pas null */}
+      {selected && selectedId && (
         <div className="flex items-center gap-3 p-2 rounded-lg bg-gray-800/50 border border-gray-700">
           {/* Label edit */}
           {editingId === selectedId ? (
