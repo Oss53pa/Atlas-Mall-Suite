@@ -8,7 +8,7 @@
 // Accessible via /projects/:projectId/studio/*
 // Les modèles enregistrés ici alimentent ensuite Vol.1/Vol.2/Vol.3/Vol.4.
 
-import React, { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Upload, Edit3, Archive, Sparkles, Lock, CheckCircle2, AlertCircle,
@@ -39,8 +39,19 @@ export default function AtlasStudioModule() {
 
   const parsedPlan = usePlanEngineStore((s) => s.parsedPlan)
   const planValidated = usePlanEngineStore((s) => s.planValidated)
-  const models = usePlanModelsStore((s) => s.getModelsForProject(pid))
-  const activeModel = usePlanModelsStore((s) => s.getActiveModel(pid))
+  // Sélections Zustand stables — on ne consomme pas les fonctions dérivées
+  // du store (elles retournent des nouveaux array/objets à chaque call →
+  // boucle de re-render infinie). On dérive via useMemo.
+  const allModels = usePlanModelsStore((s) => s.models)
+  const activeModelId = usePlanModelsStore((s) => s.activeModelIdByProject[pid])
+  const models = useMemo(
+    () => allModels.filter(m => m.projectId === pid),
+    [allModels, pid],
+  )
+  const activeModel = useMemo(
+    () => allModels.find(m => m.id === activeModelId) ?? undefined,
+    [allModels, activeModelId],
+  )
 
   return (
     <div className="h-full flex flex-col bg-[#080c14]">

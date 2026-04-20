@@ -7,7 +7,7 @@
 //   - Dupliquer, renommer, supprimer, marquer validé/brouillon
 //   - Enregistrer le plan courant comme nouveau modèle
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Save, Copy, Trash2, CheckCircle2, Edit2, X,
   FileText, Archive, Clock, Square, Layers, Ruler, Check,
@@ -24,13 +24,23 @@ export function PlanModelsLibrary({ projectId }: Props) {
   const setParsedPlan = usePlanEngineStore((s) => s.setParsedPlan)
   const validatePlan = usePlanEngineStore((s) => s.validatePlan)
 
-  const models = usePlanModelsStore((s) => s.getModelsForProject(projectId))
+  // IMPORTANT : sélectionner directement `models` (référence stable) puis
+  // filtrer/trier dans useMemo pour éviter les boucles de re-render Zustand
+  // (un sélecteur qui retourne un nouveau array à chaque appel déclenche un
+  // setState infini → "Maximum update depth exceeded").
+  const allModels = usePlanModelsStore((s) => s.models)
   const activeModelId = usePlanModelsStore((s) => s.activeModelIdByProject[projectId])
   const saveCurrentAsModel = usePlanModelsStore((s) => s.saveCurrentAsModel)
   const duplicateModel = usePlanModelsStore((s) => s.duplicateModel)
   const updateModel = usePlanModelsStore((s) => s.updateModel)
   const deleteModel = usePlanModelsStore((s) => s.deleteModel)
   const setActiveModel = usePlanModelsStore((s) => s.setActiveModel)
+
+  const models = useMemo(
+    () => allModels.filter(m => m.projectId === projectId)
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+    [allModels, projectId],
+  )
 
   const [saveOpen, setSaveOpen] = useState(false)
   const [saveName, setSaveName] = useState('')
