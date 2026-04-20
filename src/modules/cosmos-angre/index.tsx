@@ -18,9 +18,9 @@ const Proph3tGlobalMount = React.lazy(() =>
 // Vol3D is now embedded inside Vol2/Vol3 as a view mode, not a standalone route
 const Vol3DModule = React.lazy(() => import('./vol-3d'))
 const SceneEditor = React.lazy(() => import('./scene-editor'))
-const RemodelingStage = React.lazy(() =>
-  import('./shared/components/RemodelingStage').then(m => ({ default: m.RemodelingStage }))
-)
+// RemodelingStage est remplacé par AtlasStudioModule — import retiré pour éviter
+// l'import inutile. Si quelqu'un a encore besoin de cette page, elle existe
+// toujours dans shared/components/RemodelingStage.tsx.
 const EditPlanFloatingButton = React.lazy(() =>
   import('./shared/components/EditPlanFloatingButton').then(m => ({ default: m.EditPlanFloatingButton }))
 )
@@ -70,7 +70,8 @@ export default function CosmosAngre() {
           {/* Accueil projet = Atlas Studio (Phase 0 — import + édition + modèles) */}
           <Route index element={<Navigate to="studio" replace />} />
           <Route path="studio/*" element={<ErrorBoundary fallbackTitle="Erreur Atlas Studio"><AtlasStudioModule /></ErrorBoundary>} />
-          <Route path="remodelage/*" element={<ErrorBoundary fallbackTitle="Erreur Remodelage"><RemodelingStage /></ErrorBoundary>} />
+          {/* Ancienne page Remodelage — redirige vers Atlas Studio (source unique) */}
+          <Route path="remodelage/*" element={<Navigate to="../studio" replace />} />
           {/* Volumes métier — protégés par le guard BaselineGuard */}
           <Route path="vol1/*" element={<BaselineGuard projectId={projectId}><ErrorBoundary fallbackTitle="Erreur Vol.1 Commercial"><Vol1Module /></ErrorBoundary></BaselineGuard>} />
           <Route path="vol2/*" element={<BaselineGuard projectId={projectId}><ErrorBoundary fallbackTitle="Erreur Vol.2 Securitaire"><Vol2Module /></ErrorBoundary></BaselineGuard>} />

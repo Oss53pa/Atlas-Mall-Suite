@@ -8,7 +8,7 @@
 // restent une seule et même source du plan.
 
 import { useEffect, useMemo, useState } from 'react'
-import { Info, Download, RotateCcw } from 'lucide-react'
+import { Info, Download, RotateCcw, AlertTriangle } from 'lucide-react'
 import { SpaceEditorCanvas, type EditableSpace } from './SpaceEditorCanvas'
 import { usePlanEngineStore } from '../stores/planEngineStore'
 import { useEditableSpaceStore } from '../stores/editableSpaceStore'
@@ -76,22 +76,39 @@ export default function SpaceEditorSection() {
       <div className="flex items-center gap-3 px-4 py-2 border-b border-gray-800/60 shrink-0">
         <h2 className="text-sm font-semibold text-white">Éditeur d'espaces</h2>
         <span className="text-[11px] text-gray-500">
-          {spaces.length} espace{spaces.length > 1 ? 's' : ''} · {spaces.filter(s => s.validated).length} validé{spaces.filter(s => s.validated).length > 1 ? 's' : ''}
+          {spaces.length} espace{spaces.length > 1 ? 's' : ''} dessiné{spaces.length > 1 ? 's' : ''}
+          {spaces.length > 0 && ` · ${spaces.filter(s => s.validated).length} validé${spaces.filter(s => s.validated).length > 1 ? 's' : ''}`}
         </span>
         <span className="text-[10px] text-slate-600 ml-2">
-          Commun aux Vol.1 / Vol.2 / Vol.3 · source unique du plan
+          Le plan DXF sert de fond — dessine TES propres espaces dessus
         </span>
         <div className="flex-1" />
-        {parsedPlan.spaces?.length > 0 && (
-          <button onClick={importDetected}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 text-xs hover:bg-emerald-600/30">
-            <Download className="w-3 h-3" /> Importer espaces détectés ({parsedPlan.spaces.length})
+        {/* Bouton "Importer espaces détectés" — caché par défaut pour éviter de
+            polluer l'éditeur avec les 500+ polygones auto-détectés par le parser.
+            Disponible sous forme de petit bouton discret pour les cas avancés. */}
+        {parsedPlan.spaces?.length > 0 && spaces.length === 0 && (
+          <details className="relative">
+            <summary className="text-[10px] text-slate-500 hover:text-slate-300 cursor-pointer select-none px-2 py-1 rounded hover:bg-white/5">
+              Options avancées
+            </summary>
+            <div className="absolute right-0 top-full mt-1 w-64 rounded-lg bg-slate-900 border border-white/10 shadow-xl z-10 p-2">
+              <div className="flex items-start gap-2 p-2 rounded bg-amber-950/20 border border-amber-900/30 text-[10px] text-amber-200 mb-2">
+                <AlertTriangle size={11} className="flex-shrink-0 mt-0.5" />
+                <span>Attention : le parser DXF a détecté <strong>{parsedPlan.spaces.length} polygones</strong>. Importer les ajoute TOUS d'un coup — souvent pollue le plan.</span>
+              </div>
+              <button onClick={importDetected}
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 text-[10px] hover:bg-emerald-600/30">
+                <Download className="w-3 h-3" /> Importer quand même ({parsedPlan.spaces.length})
+              </button>
+            </div>
+          </details>
+        )}
+        {spaces.length > 0 && (
+          <button onClick={() => { if (confirm('Effacer tous les espaces édités ?')) clear() }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-900/20 border border-red-800/30 text-red-400 text-xs hover:bg-red-900/30">
+            <RotateCcw className="w-3 h-3" /> Réinitialiser
           </button>
         )}
-        <button onClick={() => { if (confirm('Effacer tous les espaces édités ?')) clear() }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-900/20 border border-red-800/30 text-red-400 text-xs hover:bg-red-900/30">
-          <RotateCcw className="w-3 h-3" /> Réinitialiser
-        </button>
       </div>
 
       <div className="flex-1 min-h-0">
