@@ -904,24 +904,24 @@ export function SpaceEditorCanvas({
                     r={4} fill="#fff" opacity={0.6}
                   />
                 )}
-                {/* Label — largeur adaptative au nom */}
+                {/* Label — taille réduite, police non-grasse */}
                 {(() => {
                   const displayName = s.name || '(sans nom)'
-                  const lblWidth = Math.max(80, displayName.length * 7 + 20)
+                  const lblWidth = Math.max(60, displayName.length * 5.5 + 16)
                   return (
                     <g transform={`translate(${cx}, ${cy})`} style={{ pointerEvents: 'none' }}>
                       <rect
-                        x={-lblWidth / 2} y={-14}
-                        width={lblWidth} height={28}
-                        fill="rgba(15,23,42,0.92)"
-                        stroke={isSelected ? '#fff' : 'rgba(255,255,255,0.15)'}
-                        strokeWidth={isSelected ? 1.5 : 0.5}
-                        rx={4}
+                        x={-lblWidth / 2} y={-10}
+                        width={lblWidth} height={20}
+                        fill="rgba(15,23,42,0.88)"
+                        stroke={isSelected ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.12)'}
+                        strokeWidth={isSelected ? 1 : 0.5}
+                        rx={3}
                       />
-                      <text textAnchor="middle" fontSize={12} fontWeight="bold" fill="#fff" y={0}>
-                        {meta.icon} {displayName.length > 20 ? displayName.slice(0, 19) + '…' : displayName}
+                      <text textAnchor="middle" fontSize={9} fontWeight="500" fill="#e2e8f0" y={-1}>
+                        {meta.icon} {displayName.length > 22 ? displayName.slice(0, 21) + '…' : displayName}
                       </text>
-                      <text textAnchor="middle" fontSize={9} fill="#94a3b8" y={11}>
+                      <text textAnchor="middle" fontSize={7} fill="#94a3b8" y={7}>
                         {areaSqm.toFixed(0)} m² · {meta.label}
                       </text>
                     </g>
