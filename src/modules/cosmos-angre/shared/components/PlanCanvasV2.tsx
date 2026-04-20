@@ -585,6 +585,8 @@ export function PlanCanvasV2({
     id: s.id, label: s.label, type: s.type,
     bounds: s.bounds, areaSqm: s.areaSqm, color: s.color,
     floorId: s.floorId,
+    // Inclure le polygone réel pour rendu 3D fidèle (sinon bounding box seulement)
+    polygon: s.polygon,
   })), [plan.spaces])
 
   // ── WebGL DXF viewer: DÉSACTIVÉ PAR DÉFAUT (freeze sur gros DXF) ──

@@ -245,18 +245,28 @@ export function computeCleaningPlan(
   }
 }
 
-/** Applique le plan de nettoyage en retournant une copie nettoyée du parsedPlan. */
+/** Applique le plan de nettoyage en retournant une copie nettoyée du parsedPlan.
+ *  Filtre TOUS les champs dérivés du DXF qui ont un `layer` associé :
+ *    - entities, layers (sources)
+ *    - wallSegments (→ rendu 3D / murs)
+ *    - dimensions (→ cotes affichées)
+ *  Les spaces sans calque sont conservés (détection polygonale autonome).
+ */
 export function applyCleaningPlan(plan: ParsedPlan, cleaning: CleaningPlan): ParsedPlan {
   const keep = new Set(cleaning.keptLayers)
   const entities: PlanEntity[] = plan.entities.filter(e => keep.has(e.layer))
   const layers: PlanLayer[] = plan.layers.filter(l => keep.has(l.name))
-  // On conserve les spaces tels quels (ils viennent de la détection polygonale
-  // et ne sont pas liés 1-1 aux calques retirés). L'utilisateur peut exclure
-  // individuellement via SpaceCorrectionsStore.
+  // Nettoyer AUSSI les wallSegments (sinon la vue 3D garde les murs parasites)
+  const wallSegments = plan.wallSegments.filter(w => keep.has(w.layer))
+  // Nettoyer les dimensions/cotes si leur calque a été retiré
+  const dimensions = (plan.dimensions ?? []).filter(d => keep.has(d.layer))
+
   return {
     ...plan,
     entities,
     layers,
+    wallSegments,
+    dimensions,
   }
 }
 

@@ -29,6 +29,12 @@ interface SceneEditorState {
   // External API
   externalApiEnabled: boolean
 
+  // View mode & color sync (unified 2D/3D editor)
+  viewMode: '2d' | '3d' | 'split'
+  colorMode: 'type' | 'vol1-revenue' | 'vol2-erp' | 'vol3-flow' | 'floor'
+  setViewMode: (v: '2d' | '3d' | 'split') => void
+  setColorMode: (v: 'type' | 'vol1-revenue' | 'vol2-erp' | 'vol3-flow' | 'floor') => void
+
   // Actions — Scene
   setScene: (scene: SceneData) => void
   resetScene: (zoneType?: string) => void
@@ -96,6 +102,11 @@ export const useSceneEditorStore = create<SceneEditorState>((set, get) => ({
   libraryCategory: null,
 
   externalApiEnabled: false,
+
+  viewMode: '3d',
+  colorMode: 'type',
+  setViewMode: (v) => set({ viewMode: v }),
+  setColorMode: (v) => set({ colorMode: v }),
 
   // ── Scene ──
 

@@ -6,9 +6,9 @@ import { persist } from 'zustand/middleware'
 interface OnboardingState {
   completed: boolean
   projectName: string | null
-  selectedVolumes: ('vol1' | 'vol2' | 'vol3')[]
+  selectedVolumes: ('vol1' | 'vol2' | 'vol3' | 'vol4')[]
   floorCount: number
-  markComplete: (name: string, volumes: ('vol1' | 'vol2' | 'vol3')[], floors: number) => void
+  markComplete: (name: string, volumes: ('vol1' | 'vol2' | 'vol3' | 'vol4')[], floors: number) => void
   reset: () => void
 }
 

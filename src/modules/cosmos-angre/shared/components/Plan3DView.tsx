@@ -3,6 +3,14 @@
 // a fully volumetric 3D scene with walls, floor slabs, and zones.
 
 import React, { useEffect, useRef, useState } from 'react'
+import { getSpaceColor, type ColorMode } from '../planReader/spaceColoring'
+import { usePlanEngineStore } from '../stores/planEngineStore'
+import { useSceneEditorStore } from '../../scene-editor/store/sceneEditorStore'
+
+/** Hook : lit colorMode du store SceneEditor (sync avec le studio 2D/3D). */
+function useSceneEditorStoreColorMode(): ColorMode {
+  return useSceneEditorStore(s => s.colorMode) as ColorMode
+}
 
 interface WallSeg { x1: number; y1: number; x2: number; y2: number; layer: string; floorId?: string }
 interface Space3D {
@@ -13,6 +21,8 @@ interface Space3D {
   areaSqm: number
   color: string | null
   floorId?: string
+  /** Polygone réel (vertices en mètres). Si absent, on retombe sur bounding box. */
+  polygon?: [number, number][]
 }
 interface DetectedFloor3D {
   id: string
@@ -228,7 +238,11 @@ export function Plan3DView({
   // Ombres DÉSACTIVÉES par défaut — consomment énormément de GPU sur plans denses
   // (Shadow Map 2048² + cast/receive sur 400+ InstancedMesh → freeze navigateur)
   const [shadowsEnabled, setShadowsEnabled] = useState(false)
-  const [colorBy, setColorBy] = useState<'category' | 'floor'>('category')
+  const [colorBy, setColorBy] = useState<'category' | 'floor' | 'vol1-revenue' | 'vol2-erp' | 'vol3-flow'>('category')
+  // Sync avec le store sceneEditorStore (si ouvert depuis SceneEditor)
+  const storeColorMode = useSceneEditorStoreColorMode()
+  const effectiveColorBy = storeColorMode ?? colorBy
+  const spaceStates = usePlanEngineStore(s => s.spaceStates)
   const [displayMenuOpen, setDisplayMenuOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const fitViewRef = useRef<(() => void) | null>(null)
@@ -242,10 +256,18 @@ export function Plan3DView({
   const [currentFloor, setCurrentFloor] = useState<string | 'all'>(activeFloorId)
   const [showDimensions, setShowDimensions] = useState(false)
   const [showLabels, setShowLabels] = useState(true)
+  const [showFloorMarkings, setShowFloorMarkings] = useState(true)
+  const [showColumns, setShowColumns] = useState(true)
   const [floorOpacity, setFloorOpacity] = useState<Record<string, number>>({})
   const [hiddenFloors, setHiddenFloors] = useState<Set<string>>(new Set())
   const [hiddenLayers, setHiddenLayers] = useState<Set<string>>(new Set())
   const [layerPanelOpen, setLayerPanelOpen] = useState(false)
+  // Overrides utilisateur : quel type est ce calque ?
+  //   - 'marking' → forcer en marquage au sol (rendu à plat)
+  //   - 'wall'    → forcer en mur (extrusion verticale pleine hauteur)
+  //   - 'curb'    → forcer en terre-plein / bordure basse (hauteur ~50 cm)
+  //   - undefined → heuristique auto
+  const [layerKindOverrides, setLayerKindOverrides] = useState<Record<string, 'marking' | 'wall' | 'curb'>>({})
 
   // Discover unique layer names from wall segments
   const allLayers = React.useMemo(() => {
@@ -253,6 +275,63 @@ export function Plan3DView({
     for (const w of wallSegments) set.add(w.layer)
     return Array.from(set).sort()
   }, [wallSegments])
+
+  // Détecte si un segment appartient à du marquage au sol (parking, circulation,
+  // hachures, zones, etc.) par introspection du nom de calque. Ces segments
+  // doivent être rendus à PLAT sur le sol, pas extrudés en murs verticaux.
+  // Les overrides utilisateur ont priorité sur l'heuristique automatique.
+  const isFloorMarkingLayer = React.useCallback((layerName: string): boolean => {
+    const override = layerKindOverrides[layerName]
+    if (override === 'marking') return true
+    if (override === 'wall' || override === 'curb') return false
+    const l = (layerName ?? '').toLowerCase()
+    return (
+      /park|station|stall/.test(l) ||          // parking / stationnement / stalls
+      /marquage|marking|painted|peinture/.test(l) ||
+      /sol|floor-mark|ground-mark|pavement/.test(l) ||
+      /hatching|hachure|hachur/.test(l) ||
+      /circul|lane|voie|chauss/.test(l) ||     // voies circulation
+      /a-park|a-pave|l-park|l-pave/.test(l) || // conventions AutoCAD
+      /^pk|^parking|^stat|^mrq/.test(l) ||
+      /plot|zone-num|room-tag/.test(l) ||      // numérotation places
+      /carrel|tile|pave|dalle|finition/.test(l) || // carrelage / dallage
+      /floor-tile|floor-pattern|floor-finish/.test(l) ||
+      /revetement|rev[-_]sol/.test(l)
+    )
+  }, [layerKindOverrides])
+
+  // Détecte les poteaux / piliers / colonnes structurelles.
+  // Ces éléments peuvent être rendus comme cylindres, masqués, ou conservés
+  // selon la préférence utilisateur.
+  const isColumnLayer = React.useCallback((layerName: string): boolean => {
+    const l = (layerName ?? '').toLowerCase()
+    return (
+      /poteau|pilier|colonne/.test(l) ||
+      /column|pillar|pole/.test(l) ||
+      /s-col|a-col|struct-col|structural-col/.test(l) ||
+      /^col[-_]|^pot[-_]|^pil[-_]/.test(l)
+    )
+  }, [])
+
+  // Détecte les terre-pleins, bordures basses, jardinières, espaces verts :
+  // rendus avec une hauteur ~50 cm (pas 3 m comme un mur) et couleur terre/végétal.
+  // Typique : bordures de promenade, massifs, plates-bandes, mobilier urbain bas.
+  const isLowCurbLayer = React.useCallback((layerName: string): boolean => {
+    const override = layerKindOverrides[layerName]
+    if (override === 'curb') return true
+    const l = (layerName ?? '').toLowerCase()
+    return (
+      /terre.?plein|terreplein/.test(l) ||
+      /bordure|kerb|curb|edge-stone/.test(l) ||
+      /jardinier|planter|plantation|massif/.test(l) ||
+      /espace.?vert|green-space|greenery/.test(l) ||
+      /paysag|landscap/.test(l) ||
+      /promenade|plaza|place-publique/.test(l) ||  // les bordures des promenades
+      /vegetation|veg[-_]|vegetal/.test(l) ||
+      /parterre|flower-bed/.test(l) ||
+      /mobilier|street-furniture|banc|bench/.test(l)
+    )
+  }, [layerKindOverrides])
 
   // Filter walls/spaces by selected floor + hidden floors + hidden layers
   const filteredWalls = React.useMemo(() => {
@@ -263,8 +342,41 @@ export function Plan3DView({
     } else if (currentFloor !== 'all' && detectedFloors.length > 0) {
       ws = ws.filter(w => !w.floorId || w.floorId === currentFloor)
     }
+    // Exclut les segments détectés comme marquage au sol (rendus séparément à plat)
+    ws = ws.filter(w => !isFloorMarkingLayer(w.layer))
+    // Exclut les terre-pleins/bordures (rendus séparément avec hauteur réduite)
+    ws = ws.filter(w => !isLowCurbLayer(w.layer))
+    // Exclut les poteaux si l'utilisateur a demandé à les masquer
+    if (!showColumns) ws = ws.filter(w => !isColumnLayer(w.layer))
     return ws
-  }, [wallSegments, currentFloor, detectedFloors.length, hiddenFloors, hiddenLayers])
+  }, [wallSegments, currentFloor, detectedFloors.length, hiddenFloors, hiddenLayers, isFloorMarkingLayer, isLowCurbLayer, isColumnLayer, showColumns])
+
+  // Terre-pleins et bordures basses : extrudés à hauteur réduite (~50 cm)
+  const [showCurbs, setShowCurbs] = useState(true)
+  const filteredCurbs = React.useMemo(() => {
+    if (!showCurbs) return []
+    let ws = wallSegments.filter(w => isLowCurbLayer(w.layer))
+    if (hiddenLayers.size > 0) ws = ws.filter(w => !hiddenLayers.has(w.layer))
+    if (currentFloor === 'all' && detectedFloors.length > 0) {
+      ws = ws.filter(w => !w.floorId || !hiddenFloors.has(w.floorId))
+    } else if (currentFloor !== 'all' && detectedFloors.length > 0) {
+      ws = ws.filter(w => !w.floorId || w.floorId === currentFloor)
+    }
+    return ws
+  }, [wallSegments, currentFloor, detectedFloors.length, hiddenFloors, hiddenLayers, showCurbs, isLowCurbLayer])
+
+  // Marquages au sol : mêmes filtres mais on garde uniquement les couches marquage
+  const filteredFloorMarkings = React.useMemo(() => {
+    if (!showFloorMarkings) return []
+    let ws = wallSegments.filter(w => isFloorMarkingLayer(w.layer))
+    if (hiddenLayers.size > 0) ws = ws.filter(w => !hiddenLayers.has(w.layer))
+    if (currentFloor === 'all' && detectedFloors.length > 0) {
+      ws = ws.filter(w => !w.floorId || !hiddenFloors.has(w.floorId))
+    } else if (currentFloor !== 'all' && detectedFloors.length > 0) {
+      ws = ws.filter(w => !w.floorId || w.floorId === currentFloor)
+    }
+    return ws
+  }, [wallSegments, currentFloor, detectedFloors.length, hiddenFloors, hiddenLayers, showFloorMarkings, isFloorMarkingLayer])
 
   const filteredSpaces = React.useMemo(() => {
     let sp = spaces
@@ -564,30 +676,105 @@ export function Plan3DView({
           const sh = sp.bounds.height
           if (!sw || !sh || sw < 0.5 || sh < 0.5) continue
 
-          // Couleur : par catégorie (défaut) ou par étage
-          let colorHex: string
-          if (colorBy === 'floor') {
-            const floorPalette = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#a855f7', '#06b6d4', '#84cc16', '#f97316']
-            const idx = detectedFloors.findIndex(f => f.id === sp.floorId)
-            colorHex = floorPalette[(idx >= 0 ? idx : 0) % floorPalette.length]
-          } else {
-            colorHex = sp.color || ZONE_COLORS[sp.type] || '#3b82f6'
-          }
+          // Couleur : résolution via spaceColoring helper (5 modes supportés)
+          // Compat : 'category' ancien = 'type' nouveau
+          const effectiveMode: ColorMode =
+            (effectiveColorBy as unknown as string) === 'category'
+              ? 'type'
+              : (effectiveColorBy as ColorMode)
+          // Space3D n'a pas tous les champs d'un DetectedSpace — on fabrique
+          // un proxy minimal suffisant pour getSpaceColor.
+          const proxySpace = {
+            id: sp.id, label: sp.label, type: sp.type, polygon: [], areaSqm: sp.areaSqm,
+            layer: '', color: sp.color, floorId: sp.floorId,
+            bounds: { minX: sp.bounds.minX, minY: sp.bounds.minY, maxX: sp.bounds.maxX ?? 0, maxY: sp.bounds.maxY ?? 0, width: sp.bounds.width, height: sp.bounds.height },
+            metadata: {},
+          } as any
+          const colorHex = getSpaceColor(proxySpace, effectiveMode, {
+            spaceStates,
+            detectedFloors,
+          })
           const color = new THREE.Color(colorHex)
           const t = floorTransform(sp.floorId)
 
-          const zoneGeo = new THREE.BoxGeometry(sw, sh, 0.15)
-          const zoneMat = new THREE.MeshLambertMaterial({
-            color,
-            transparent: true,
-            opacity: 0.5 * t.opacity,
-          })
-          const zone = new THREE.Mesh(zoneGeo, zoneMat)
+          // ─── Rendu selon polygone réel (si dispo) ou bounding box ───
+          const useRealPolygon = sp.polygon && sp.polygon.length >= 3
           const zx = sp.bounds.minX + sw / 2 + t.dx
           const zy = sp.bounds.minY + sh / 2 + t.dy
-          zone.position.set(zx, zy, 0.08 + t.dz)
-          zone.userData = { spaceId: sp.id, spaceLabel: sp.label, floorId: sp.floorId }
-          scene.add(zone)
+
+          if (useRealPolygon && sp.polygon) {
+            // Shape Three.js à partir des vertices du polygone (monde → world+translation)
+            const shape = new THREE.Shape()
+            shape.moveTo(sp.polygon[0][0] + t.dx, sp.polygon[0][1] + t.dy)
+            for (let i = 1; i < sp.polygon.length; i++) {
+              shape.lineTo(sp.polygon[i][0] + t.dx, sp.polygon[i][1] + t.dy)
+            }
+            shape.closePath()
+            // Dalle extrudée très fine (0.15 m) — comme la Box mais forme exacte
+            const zoneGeo = new THREE.ExtrudeGeometry(shape, { depth: 0.15, bevelEnabled: false })
+            const zoneMat = new THREE.MeshLambertMaterial({
+              color,
+              transparent: true,
+              opacity: 0.35 * t.opacity,  // Opacité réduite pour laisser voir les murs
+            })
+            const zone = new THREE.Mesh(zoneGeo, zoneMat)
+            zone.position.set(0, 0, 0.08 + t.dz)  // Les vertices sont déjà en coords monde
+            zone.userData = { spaceId: sp.id, spaceLabel: sp.label, floorId: sp.floorId }
+            scene.add(zone)
+
+            // Contour sombre pour délimiter nettement chaque espace
+            const edgePositions: number[] = []
+            for (let i = 0; i < sp.polygon.length; i++) {
+              const a = sp.polygon[i]
+              const b = sp.polygon[(i + 1) % sp.polygon.length]
+              edgePositions.push(a[0] + t.dx, a[1] + t.dy, 0.09 + t.dz)
+              edgePositions.push(b[0] + t.dx, b[1] + t.dy, 0.09 + t.dz)
+            }
+            const edgeGeo = new THREE.BufferGeometry()
+            edgeGeo.setAttribute('position', new THREE.Float32BufferAttribute(edgePositions, 3))
+            const edgeMat = new THREE.LineBasicMaterial({
+              color: color.clone().multiplyScalar(0.3),  // version sombre de la couleur zone
+              transparent: true,
+              opacity: 0.9 * t.opacity,
+              linewidth: 2,
+            })
+            const edges = new THREE.LineSegments(edgeGeo, edgeMat)
+            scene.add(edges)
+          } else {
+            // Fallback bounding box (comportement historique)
+            const zoneGeo = new THREE.BoxGeometry(sw, sh, 0.15)
+            const zoneMat = new THREE.MeshLambertMaterial({
+              color,
+              transparent: true,
+              opacity: 0.35 * t.opacity,
+            })
+            const zone = new THREE.Mesh(zoneGeo, zoneMat)
+            zone.position.set(zx, zy, 0.08 + t.dz)
+            zone.userData = { spaceId: sp.id, spaceLabel: sp.label, floorId: sp.floorId }
+            scene.add(zone)
+
+            // Contour rectangulaire (bounding box)
+            const minX = sp.bounds.minX + t.dx
+            const minY = sp.bounds.minY + t.dy
+            const maxX = minX + sw
+            const maxY = minY + sh
+            const z = 0.09 + t.dz
+            const rectPos = [
+              minX, minY, z,  maxX, minY, z,
+              maxX, minY, z,  maxX, maxY, z,
+              maxX, maxY, z,  minX, maxY, z,
+              minX, maxY, z,  minX, minY, z,
+            ]
+            const edgeGeo = new THREE.BufferGeometry()
+            edgeGeo.setAttribute('position', new THREE.Float32BufferAttribute(rectPos, 3))
+            const edgeMat = new THREE.LineBasicMaterial({
+              color: color.clone().multiplyScalar(0.3),
+              transparent: true,
+              opacity: 0.9 * t.opacity,
+            })
+            const edges = new THREE.LineSegments(edgeGeo, edgeMat)
+            scene.add(edges)
+          }
           slabCount++
 
           if (showLabels && sp.label && sp.label !== `Zone ${slabCount}` && sw * sh > pw * ph * 0.0003) {
@@ -1045,6 +1232,114 @@ export function Plan3DView({
           instancedMesh.frustumCulled = true
           scene.add(instancedMesh)
           wallCount += walls.length
+        }
+
+        // ── Marquage au sol (parking, circulation, hachures) — rendu À PLAT ──
+        // Traits peints sur le sol, PAS des murs. Rendus comme lignes fines sur plan Z=0
+        // (légèrement au-dessus du plancher pour éviter z-fighting).
+        if (filteredFloorMarkings.length > 0) {
+          // Groupe par floorId + couleur pour batch rendering
+          type MarkInstance = { x1: number; y1: number; x2: number; y2: number; z: number; color: number }
+          const marksByColor = new Map<number, MarkInstance[]>()
+          for (const seg of filteredFloorMarkings) {
+            const dx = seg.x2 - seg.x1
+            const dy = seg.y2 - seg.y1
+            const len = Math.sqrt(dx * dx + dy * dy)
+            if (len < 0.05) continue
+            // Couleur selon contexte : parking = blanc, circulation = jaune,
+            // carrelage = gris clair, hachures = gris moyen
+            const l = (seg.layer ?? '').toLowerCase()
+            const color = /park|stall|station/.test(l) ? 0xffffff
+              : /circul|lane|voie/.test(l) ? 0xfbbf24
+              : /carrel|tile|pave|dalle|finition|revetement/.test(l) ? 0xcbd5e1
+              : /hatch|hachur/.test(l) ? 0x94a3b8
+              : 0xe2e8f0
+            const t = floorTransform(seg.floorId)
+            if (!marksByColor.has(color)) marksByColor.set(color, [])
+            marksByColor.get(color)!.push({
+              x1: seg.x1 + t.dx, y1: seg.y1 + t.dy,
+              x2: seg.x2 + t.dx, y2: seg.y2 + t.dy,
+              z: t.dz + 0.01, // 1 cm au-dessus du sol pour éviter z-fighting
+              color,
+            })
+          }
+
+          // Rendu par LineSegments (plus léger que des BoxGeometry)
+          for (const [color, marks] of marksByColor) {
+            const positions: number[] = []
+            for (const m of marks) {
+              positions.push(m.x1, m.y1, m.z, m.x2, m.y2, m.z)
+            }
+            const geo = new THREE.BufferGeometry()
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+            const mat = new THREE.LineBasicMaterial({
+              color,
+              transparent: true,
+              opacity: 0.85,
+              linewidth: 1,
+            })
+            const lines = new THREE.LineSegments(geo, mat)
+            lines.frustumCulled = true
+            lines.computeLineDistances?.()
+            scene.add(lines)
+          }
+        }
+
+        // ── Terre-pleins / bordures basses — extrudés avec hauteur réduite ──
+        // ~50 cm au lieu de ~3 m, pour rendre les bordures de promenade sans créer
+        // de faux murs hauts qui masquent la vue.
+        if (filteredCurbs.length > 0) {
+          const curbHeight = Math.min(0.5, wallHeight * 0.15)  // ~50 cm max
+          const curbThick = Math.max(wallThick * 1.5, 0.2)     // bordure un peu plus épaisse
+
+          type CurbInstance = { x: number; y: number; z: number; len: number; angle: number }
+          const curbsByColor = new Map<number, CurbInstance[]>()
+          for (const seg of filteredCurbs) {
+            const dx = seg.x2 - seg.x1
+            const dy = seg.y2 - seg.y1
+            const len = Math.sqrt(dx * dx + dy * dy)
+            if (len < 0.05) continue
+            // Couleur selon contexte : végétal = vert olive, mobilier = gris, bordure = beige
+            const l = (seg.layer ?? '').toLowerCase()
+            const color = /veget|plant|jardin|massif|espace.?vert|parterre/.test(l) ? 0x8b9d6b   // vert olive
+              : /mobilier|furniture|banc|bench/.test(l) ? 0x706860                                // gris brun
+              : /promenade|plaza/.test(l) ? 0xa89878                                              // beige clair
+              : 0x9b8872                                                                           // beige/terre par défaut
+            const t = floorTransform(seg.floorId)
+            if (!curbsByColor.has(color)) curbsByColor.set(color, [])
+            curbsByColor.get(color)!.push({
+              x: (seg.x1 + seg.x2) / 2 + t.dx,
+              y: (seg.y1 + seg.y2) / 2 + t.dy,
+              z: curbHeight / 2 + t.dz,
+              len,
+              angle: Math.atan2(dy, dx),
+            })
+          }
+
+          for (const [color, curbs] of curbsByColor) {
+            const mat = new THREE.MeshStandardMaterial({
+              color,
+              roughness: 0.9,
+              metalness: 0,
+            })
+            const baseGeo = new THREE.BoxGeometry(1, 1, 1)
+            const instancedMesh = new THREE.InstancedMesh(baseGeo, mat, curbs.length)
+            instancedMesh.castShadow = shadowsEnabled
+            instancedMesh.receiveShadow = shadowsEnabled
+            const dummy = new THREE.Object3D()
+            for (let i = 0; i < curbs.length; i++) {
+              const c = curbs[i]
+              dummy.position.set(c.x, c.y, c.z)
+              dummy.rotation.set(0, 0, c.angle)
+              dummy.scale.set(c.len, curbThick, curbHeight)
+              dummy.updateMatrix()
+              instancedMesh.setMatrixAt(i, dummy.matrix)
+            }
+            instancedMesh.instanceMatrix.needsUpdate = true
+            instancedMesh.computeBoundingSphere()
+            instancedMesh.frustumCulled = true
+            scene.add(instancedMesh)
+          }
         }
 
         // ── If no walls, add boundary walls so user sees SOMETHING volumetric ──
@@ -1622,7 +1917,7 @@ export function Plan3DView({
         try { cleanupFns[i]() } catch { /* ignore */ }
       }
     }
-  }, [filteredWalls, filteredSpaces, filteredDims, filteredCameras, filteredDoors, filteredBlindSpots, filteredPois, filteredSignage, filteredMoments, filteredJourneys, effectiveBounds, mode, showLabels, showFov, currentFloor, detectedFloors, floorOpacity, shadowsEnabled, colorBy])
+  }, [filteredWalls, filteredFloorMarkings, filteredCurbs, filteredSpaces, filteredDims, filteredCameras, filteredDoors, filteredBlindSpots, filteredPois, filteredSignage, filteredMoments, filteredJourneys, effectiveBounds, mode, showLabels, showFov, currentFloor, detectedFloors, floorOpacity, shadowsEnabled, colorBy, effectiveColorBy, spaceStates])
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`} style={{ background: '#0a0a14' }}>
@@ -1690,14 +1985,33 @@ export function Plan3DView({
               <div className="absolute top-full left-0 mt-1 w-56 bg-slate-950 border border-white/[0.1] rounded-lg shadow-2xl z-50 py-1.5">
                 <MenuToggle label="Labels des zones" on={showLabels} onClick={() => setShowLabels(!showLabels)} />
                 <MenuToggle label="Cotes / dimensions" on={showDimensions} onClick={() => setShowDimensions(!showDimensions)} />
+                <MenuToggle label="Marquage au sol (parking, voies, carrelage)" on={showFloorMarkings} onClick={() => setShowFloorMarkings(!showFloorMarkings)} />
+                <MenuToggle label="Poteaux / piliers / colonnes" on={showColumns} onClick={() => setShowColumns(!showColumns)} />
+                <MenuToggle label="Terre-pleins / bordures (promenade)" on={showCurbs} onClick={() => setShowCurbs(!showCurbs)} />
                 <MenuToggle label="Ombres portées" on={shadowsEnabled} onClick={() => setShadowsEnabled(!shadowsEnabled)} />
                 <div className="border-t border-white/[0.06] my-1" />
-                <MenuToggle
-                  label={`Couleur : ${colorBy === 'category' ? 'par catégorie' : 'par étage'}`}
-                  on={false}
-                  onClick={() => setColorBy(c => c === 'category' ? 'floor' : 'category')}
-                  icon="🎨"
-                />
+                {(() => {
+                  const modes: Array<{ key: typeof colorBy; label: string; icon: string }> = [
+                    { key: 'category',     label: 'Par catégorie',    icon: '🏷' },
+                    { key: 'floor',        label: 'Par étage',         icon: '▤' },
+                    { key: 'vol1-revenue', label: 'Revenus (Vol.1)',   icon: '💰' },
+                    { key: 'vol2-erp',     label: 'Conformité ERP',    icon: '🛡' },
+                    { key: 'vol3-flow',    label: 'Flux (Vol.3)',      icon: '👣' },
+                  ]
+                  const cur = modes.find(m => m.key === effectiveColorBy) ?? modes[0]
+                  return (
+                    <MenuToggle
+                      label={`Couleur : ${cur.icon} ${cur.label}`}
+                      on={false}
+                      onClick={() => {
+                        const i = modes.findIndex(m => m.key === effectiveColorBy)
+                        const next = modes[(i + 1) % modes.length]
+                        setColorBy(next.key)
+                      }}
+                      icon="🎨"
+                    />
+                  )
+                })()}
                 <div className="border-t border-white/[0.06] my-1" />
                 <button
                   onClick={() => { exportRef.current?.(); setDisplayMenuOpen(false) }}
@@ -1896,26 +2210,65 @@ export function Plan3DView({
               </div>
               {allLayers.map(layer => {
                 const isHidden = hiddenLayers.has(layer)
+                const isMarking = isFloorMarkingLayer(layer)
+                const isCurb = isLowCurbLayer(layer)
+                const isColumn = isColumnLayer(layer)
+                const hasOverride = layerKindOverrides[layer] !== undefined
+                const kindLabel = isMarking ? 'SOL' : isCurb ? 'BORD' : isColumn ? 'POT' : 'MUR'
+                const kindColor = isMarking ? 'bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30'
+                  : isCurb ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30'
+                  : isColumn ? 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/30'
+                  : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
                 return (
-                  <button
+                  <div
                     key={layer}
-                    onClick={() => {
-                      setHiddenLayers(prev => {
-                        const next = new Set(prev)
-                        if (next.has(layer)) next.delete(layer)
-                        else next.add(layer)
-                        return next
-                      })
-                    }}
-                    className={`w-full flex items-center gap-2 px-3 py-1 text-left text-[10px] transition-colors hover:bg-gray-800 ${
-                      isHidden ? 'text-gray-600' : 'text-gray-200'
+                    className={`flex items-center gap-1 px-2 py-1 hover:bg-gray-800 ${
+                      isHidden ? 'opacity-50' : ''
                     }`}
                   >
-                    <span className={`w-2.5 h-2.5 rounded-sm border flex-shrink-0 ${
-                      isHidden ? 'bg-transparent border-gray-600' : 'bg-blue-500 border-blue-400'
-                    }`} />
-                    <span className="truncate">{layer}</span>
-                  </button>
+                    <button
+                      onClick={() => {
+                        setHiddenLayers(prev => {
+                          const next = new Set(prev)
+                          if (next.has(layer)) next.delete(layer)
+                          else next.add(layer)
+                          return next
+                        })
+                      }}
+                      className="flex items-center gap-1.5 flex-1 min-w-0 text-left text-[10px]"
+                      title="Afficher / masquer ce calque"
+                    >
+                      <span className={`w-2.5 h-2.5 rounded-sm border flex-shrink-0 ${
+                        isHidden ? 'bg-transparent border-gray-600' : 'bg-blue-500 border-blue-400'
+                      }`} />
+                      <span className={`truncate ${isHidden ? 'text-gray-600' : 'text-gray-200'}`}>{layer}</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setLayerKindOverrides(prev => {
+                          const next = { ...prev }
+                          // Cycle : auto → wall → marking → curb → auto
+                          const cur = prev[layer]
+                          if (cur === undefined) next[layer] = 'wall'
+                          else if (cur === 'wall') next[layer] = 'marking'
+                          else if (cur === 'marking') next[layer] = 'curb'
+                          else delete next[layer]
+                          return next
+                        })
+                      }}
+                      className={`text-[9px] px-1.5 py-0.5 rounded flex-shrink-0 ${kindColor} ${hasOverride ? 'ring-1 ring-white/30' : ''}`}
+                      title={
+                        (hasOverride ? 'Forcé' : 'Auto-détecté') + ` : ${
+                          kindLabel === 'SOL' ? 'marquage au sol (à plat)'
+                          : kindLabel === 'BORD' ? 'terre-plein / bordure basse (~50 cm)'
+                          : kindLabel === 'POT' ? 'poteau / colonne'
+                          : 'mur pleine hauteur'
+                        }. Clic pour cycler (MUR → SOL → BORD → auto).`
+                      }
+                    >
+                      {kindLabel}
+                    </button>
+                  </div>
                 )
               })}
             </div>

@@ -1,9 +1,11 @@
-import React, { lazy } from 'react'
-import { Routes, Route, Navigate, useParams } from 'react-router-dom'
+import React from 'react'
+import { Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom'
 import { useOnboardingStore } from './shared/stores/onboardingStore'
 import type { OnboardingResult } from './shared/components/OnboardingWizard'
 import { ErrorBoundary } from './shared/components/ErrorBoundary'
 import { usePlanHydration } from './shared/hooks/usePlanHydration'
+import { usePlanEngineStore } from './shared/stores/planEngineStore'
+import { Lock, AlertCircle } from 'lucide-react'
 
 const OnboardingWizard = React.lazy(() => import('./shared/components/OnboardingWizard'))
 const Vol1Module = React.lazy(() => import('./vol1-commercial'))
@@ -16,6 +18,9 @@ const Proph3tGlobalMount = React.lazy(() =>
 // Vol3D is now embedded inside Vol2/Vol3 as a view mode, not a standalone route
 const Vol3DModule = React.lazy(() => import('./vol-3d'))
 const SceneEditor = React.lazy(() => import('./scene-editor'))
+const RemodelingStage = React.lazy(() =>
+  import('./shared/components/RemodelingStage').then(m => ({ default: m.RemodelingStage }))
+)
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -52,16 +57,20 @@ export default function CosmosAngre() {
     )
   }
 
+  // Guard : si le plan n'est pas validé, rediriger vers remodelage
+
   return (
     <React.Suspense fallback={<LoadingFallback />}>
       <>
         <Routes>
-          {/* Plus de landing page projet — redirige vers Vol.1 par defaut */}
-          <Route index element={<Navigate to="vol1" replace />} />
-          <Route path="vol1/*" element={<ErrorBoundary fallbackTitle="Erreur Vol.1 Commercial"><Vol1Module /></ErrorBoundary>} />
-          <Route path="vol2/*" element={<ErrorBoundary fallbackTitle="Erreur Vol.2 Securitaire"><Vol2Module /></ErrorBoundary>} />
-          <Route path="vol3/*" element={<ErrorBoundary fallbackTitle="Erreur Vol.3 Parcours"><Vol3Module /></ErrorBoundary>} />
-          <Route path="vol4/*" element={<ErrorBoundary fallbackTitle="Erreur Vol.4 Wayfinder"><Vol4Module /></ErrorBoundary>} />
+          {/* Accueil projet = phase Remodelage (identification des espaces) */}
+          <Route index element={<Navigate to="remodelage" replace />} />
+          <Route path="remodelage/*" element={<ErrorBoundary fallbackTitle="Erreur Remodelage"><RemodelingStage /></ErrorBoundary>} />
+          {/* Volumes métier — protégés par le guard BaselineGuard */}
+          <Route path="vol1/*" element={<BaselineGuard projectId={projectId}><ErrorBoundary fallbackTitle="Erreur Vol.1 Commercial"><Vol1Module /></ErrorBoundary></BaselineGuard>} />
+          <Route path="vol2/*" element={<BaselineGuard projectId={projectId}><ErrorBoundary fallbackTitle="Erreur Vol.2 Securitaire"><Vol2Module /></ErrorBoundary></BaselineGuard>} />
+          <Route path="vol3/*" element={<BaselineGuard projectId={projectId}><ErrorBoundary fallbackTitle="Erreur Vol.3 Parcours"><Vol3Module /></ErrorBoundary></BaselineGuard>} />
+          <Route path="vol4/*" element={<BaselineGuard projectId={projectId}><ErrorBoundary fallbackTitle="Erreur Vol.4 Wayfinder"><Vol4Module /></ErrorBoundary></BaselineGuard>} />
           {/* Vue 3D avancee / Editeur de scene */}
           <Route path="3d/*" element={<Vol3DModule />} />
           <Route path="scene-editor/*" element={<ErrorBoundary fallbackTitle="Erreur Editeur de Scene"><SceneEditor /></ErrorBoundary>} />
@@ -74,4 +83,59 @@ export default function CosmosAngre() {
       </>
     </React.Suspense>
   )
+}
+
+// ─── BaselineGuard ────────────────────────────────────
+// Bloque l'accès aux volumes tant que le plan n'est pas validé comme base.
+
+function BaselineGuard({
+  projectId, children,
+}: { projectId?: string; children: React.ReactNode }) {
+  const navigate = useNavigate()
+  const planValidated = usePlanEngineStore(s => s.planValidated)
+  const parsedPlan = usePlanEngineStore(s => s.parsedPlan)
+
+  if (!parsedPlan) {
+    return (
+      <div className="h-full flex items-center justify-center bg-slate-950 p-8">
+        <div className="text-center max-w-md">
+          <AlertCircle className="w-14 h-14 text-amber-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-white mb-2">Aucun plan importé</h2>
+          <p className="text-sm text-slate-400 mb-5">
+            Vous devez d'abord importer un plan avant d'utiliser les volumes métier.
+          </p>
+          <button
+            onClick={() => navigate(`/projects/${projectId ?? 'cosmos-angre'}/remodelage`)}
+            className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold"
+          >
+            Importer un plan →
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!planValidated) {
+    return (
+      <div className="h-full flex items-center justify-center bg-slate-950 p-8">
+        <div className="text-center max-w-md">
+          <Lock className="w-14 h-14 text-amber-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-white mb-2">Base de travail non verrouillée</h2>
+          <p className="text-sm text-slate-400 mb-5">
+            Le plan doit d'abord être validé comme <strong className="text-white">base de travail </strong>
+            (Phase 2 · Remodelage) avant d'accéder aux volumes métier.
+            Identifiez chaque espace puis cliquez <strong className="text-emerald-400">« Enregistrer comme base »</strong>.
+          </p>
+          <button
+            onClick={() => navigate(`/projects/${projectId ?? 'cosmos-angre'}/remodelage`)}
+            className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-bold shadow-lg shadow-emerald-500/20"
+          >
+            Aller au Remodelage →
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return <>{children}</>
 }
