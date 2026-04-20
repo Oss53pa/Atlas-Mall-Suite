@@ -119,6 +119,11 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>
 );
 
+// Sauvegarde locale automatique (IndexedDB) — tous volumes
+import('./lib/localBackup/bootstrap')
+  .then(m => m.initLocalBackup())
+  .catch(err => console.warn('[Atlas] initLocalBackup failed:', err))
+
 // M24 — Enregistre le service worker après first paint (offline-first)
 if (import.meta.env.PROD) {
   window.addEventListener('load', () => {
