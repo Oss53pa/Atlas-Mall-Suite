@@ -228,7 +228,8 @@ export default function AppLayout() {
               </div>
             )}
 
-            {/* Transversal */}
+            {/* Transversal — visible uniquement hors projet */}
+            {!isInProject && (
             <div className="px-2 pt-4">
               <p className="text-[9px] text-gray-600 uppercase tracking-widest font-semibold px-2 mb-1.5">Transversal</p>
               {TRANSVERSAL_ITEMS.map(item => {
@@ -244,8 +245,10 @@ export default function AppLayout() {
                 )
               })}
             </div>
+            )}
 
-            {/* Outils */}
+            {/* Outils — visibles uniquement hors projet */}
+            {!isInProject && (
             <div className="px-2 pt-4">
               <p className="text-[9px] text-gray-600 uppercase tracking-widest font-semibold px-2 mb-1.5">Outils</p>
               {TOOL_ITEMS.map(item => {
@@ -261,6 +264,20 @@ export default function AppLayout() {
                 )
               })}
             </div>
+            )}
+
+            {/* Bannière d'aide quand on est dans un projet : rappel que les
+                outils de volume (import, éditeur) sont dans la sidebar du volume */}
+            {isInProject && (
+              <div className="mx-2 mt-4 p-3 rounded-lg border border-indigo-500/20 bg-indigo-500/[0.05]">
+                <p className="text-[10px] text-indigo-300 font-semibold mb-1">Dans un projet</p>
+                <p className="text-[10px] text-gray-400 leading-relaxed">
+                  Import plan, éditeur d'espaces, analyses et rapports sont
+                  accessibles dans la <strong className="text-indigo-300">sidebar du volume</strong>{' '}
+                  (onglet <em>Atlas Studio · Phase 0</em>).
+                </p>
+              </div>
+            )}
           </>
         )}
 
