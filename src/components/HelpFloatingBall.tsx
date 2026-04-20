@@ -75,8 +75,8 @@ export function HelpFloatingBall() {
   const location = useLocation()
   const ballRef = useRef<HTMLButtonElement>(null)
 
-  // Position draggable persistée
-  const { style: dragStyle, handleProps: dragHandleProps } = useDraggable('help-ball-pos', {
+  // Position draggable persistée — tout le bouton est draggable
+  const { style: dragStyle, handleProps: dragHandleProps, wrapClick } = useDraggable('help-ball-pos', {
     defaultBottom: 24, defaultRight: 24,
   })
 
@@ -121,19 +121,15 @@ export function HelpFloatingBall() {
   const ctx = getContextualHelp(location.pathname)
 
   const ball = (
-    <div style={dragStyle} className="flex items-center gap-0">
-      {/* Poignée drag à gauche du bouton */}
-      <div {...dragHandleProps}
-        className="w-4 h-14 flex items-center justify-center text-white/60 hover:text-white/90 rounded-l-full bg-slate-900/60"
-      >
-        <GripVertical size={10} />
-      </div>
+    <div style={dragStyle}>
     <button
       ref={ballRef}
-      onClick={handleOpen}
-      title="Aide & Guide d'utilisation (Shift+?)"
+      onClick={wrapClick(handleOpen)}
+      onMouseDown={dragHandleProps.onMouseDown}
+      onDoubleClick={dragHandleProps.onDoubleClick}
+      title="Aide (glisser pour déplacer · double-clic = reset position)"
       aria-label="Ouvrir l'aide"
-      className={`w-14 h-14 rounded-r-full shadow-2xl flex items-center justify-center text-white transition-transform hover:scale-110 ${
+      className={`w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-white transition-transform hover:scale-110 relative ${
         pulse ? 'animate-pulse' : ''
       }`}
       style={{
@@ -145,6 +141,10 @@ export function HelpFloatingBall() {
       {pulse && (
         <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 ring-2 ring-slate-900" />
       )}
+      {/* Indicateur visuel de drag (petit GripVertical en coin) */}
+      <span className="absolute -bottom-0.5 -left-0.5 w-4 h-4 rounded-full bg-white/30 flex items-center justify-center">
+        <GripVertical size={8} className="text-white" />
+      </span>
     </button>
     </div>
   )

@@ -310,7 +310,10 @@ export function SpaceEditorCanvas({
           return
         }
       }
+      // Clic sur zone vide en mode select = pan du plan + désélection
       setSelectedIds(new Set())
+      e.preventDefault()
+      startPan(e.clientX, e.clientY)
       return
     }
 
@@ -608,7 +611,7 @@ export function SpaceEditorCanvas({
   const cursor = isPanning ? 'grabbing'
     : spaceDown ? 'grab'
     : mode === 'select'
-      ? (draggingVertex ? 'grabbing' : hoveredVertex ? 'grab' : 'default')
+      ? (draggingVertex ? 'grabbing' : hoveredVertex ? 'grab' : 'grab')
     : mode === 'wall' && dragStart ? 'crosshair'
     : 'crosshair'
 
@@ -1078,7 +1081,12 @@ export function SpaceEditorCanvas({
         {/* Aide flottante en mode select */}
         {mode === 'select' && selectedIds.size === 0 && spaces.length > 0 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg bg-slate-900/95 border border-white/10 text-[10px] text-slate-300 shadow-xl pointer-events-none">
-            💡 Clic sur un espace = sélectionner · Glisser sommet = déformer · Double-clic = éditer les infos
+            💡 Clic espace = sélectionner · Glisser zone vide = déplacer le plan · Sommet = déformer · Double-clic = éditer
+          </div>
+        )}
+        {mode === 'select' && spaces.length === 0 && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg bg-slate-900/95 border border-white/10 text-[10px] text-slate-300 shadow-xl pointer-events-none">
+            💡 Glisser pour déplacer le plan · Molette = zoom · F = recadrer · Passer en mode Rect/Polygone pour dessiner
           </div>
         )}
         {mode === 'select' && selectedIds.size > 0 && !editingSpace && (
@@ -1130,12 +1138,13 @@ function SpaceMetadataPanel({
   const anomaly = checkSurfaceAnomaly(type, areaSqm)
 
   return (
-    <div className="absolute right-4 top-4 w-[340px] bg-slate-900 border border-white/10 rounded-lg shadow-2xl flex flex-col max-h-[calc(100vh-100px)]">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+    <div className="absolute right-4 top-4 w-[340px] bg-slate-900 border border-white/10 rounded-lg shadow-2xl flex flex-col max-h-[calc(100vh-100px)] overflow-hidden">
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/10">
         <h3 className="text-sm font-bold text-white">Éditer espace</h3>
         <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      {/* min-h-0 critique : permet au flex-1 de shrink et au overflow-y-auto de fonctionner */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
         {/* Nom — auto-save au blur */}
         <div>
           <label className="block text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1">
@@ -1261,8 +1270,8 @@ function SpaceMetadataPanel({
         </label>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center justify-between px-4 py-3 border-t border-white/10 bg-slate-950/40">
+      {/* Actions — sticky en bas */}
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-t border-white/10 bg-slate-950/40">
         <button onClick={onDelete}
           className="text-[11px] text-red-400 hover:text-red-300 flex items-center gap-1">
           <Trash2 className="w-3.5 h-3.5" /> Supprimer

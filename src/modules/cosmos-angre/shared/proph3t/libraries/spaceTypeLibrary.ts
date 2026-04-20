@@ -36,9 +36,17 @@ export type SpaceTypeKey =
   // Circulation intérieure
   | 'mail_central' | 'atrium' | 'promenade' | 'couloir_secondaire' | 'hall_distribution'
   | 'passage_pieton_couvert'
-  // Commerces & services
+  // Commerces & services — types généraux
   | 'local_commerce' | 'restauration' | 'food_court' | 'loisirs' | 'services'
   | 'grande_surface' | 'kiosque'
+  // Commerces — segments métier précis
+  | 'commerce_supermarche' | 'commerce_restaurant'
+  | 'commerce_mode' | 'commerce_accessoires'
+  | 'commerce_banque_assurance' | 'commerce_services'
+  | 'commerce_beaute_sante' | 'commerce_cadeaux_alimentaire'
+  | 'commerce_multimedia'
+  // Bâtiments hors galerie commerciale
+  | 'big_box' | 'market'
   // Équipements
   | 'sanitaires' | 'escalator' | 'ascenseur' | 'rampe_pmr'
   | 'escalier_fixe' | 'point_information' | 'borne_wayfinder'
@@ -303,6 +311,87 @@ export const SPACE_TYPE_META: Record<SpaceTypeKey, SpaceTypeMeta> = {
     icon: '🛖', color: '#f43f5e',
     expectedSqm: { min: 2, max: 30 },
     description: 'Stand éphémère ou permanent en promenade.',
+  },
+
+  // ─── Commerces — segments métier précis ───
+  commerce_supermarche: {
+    label: 'Supermarché',
+    category: 'commerces-services',
+    icon: '🛒', color: '#059669',
+    expectedSqm: { min: 400, max: 5000 },
+    description: 'Supermarché alimentaire (fruits, légumes, épicerie, frais, surgelés). En galerie ou standalone.',
+  },
+  commerce_restaurant: {
+    label: 'Restaurant',
+    category: 'commerces-services',
+    icon: '🍽', color: '#f59e0b',
+    expectedSqm: { min: 40, max: 500 },
+    description: 'Restaurant service à table, café, brasserie. Cuisine + salle + (terrasse optionnelle).',
+  },
+  commerce_mode: {
+    label: 'Mode',
+    category: 'commerces-services',
+    icon: '👗', color: '#ec4899',
+    expectedSqm: { min: 30, max: 2000 },
+    description: 'Habillement homme/femme/enfant, chaussures, sport, lingerie.',
+  },
+  commerce_accessoires: {
+    label: 'Accessoires',
+    category: 'commerces-services',
+    icon: '👜', color: '#d946ef',
+    expectedSqm: { min: 20, max: 300 },
+    description: 'Maroquinerie, bijouterie, horlogerie, lunetterie, petite maroquinerie.',
+  },
+  commerce_banque_assurance: {
+    label: 'Banque & assurances',
+    category: 'commerces-services',
+    icon: '🏦', color: '#2563eb',
+    expectedSqm: { min: 30, max: 300 },
+    description: 'Agence bancaire, mutuelle, assurance, bureau de change, Western Union.',
+  },
+  commerce_services: {
+    label: 'Services',
+    category: 'commerces-services',
+    icon: '🛠', color: '#06b6d4',
+    expectedSqm: { min: 15, max: 200 },
+    description: 'Pressing, photocopie/impression, agence de voyage, cordonnerie, clé minute, retouche.',
+  },
+  commerce_beaute_sante: {
+    label: 'Beauté & santé',
+    category: 'commerces-services',
+    icon: '💄', color: '#f472b6',
+    expectedSqm: { min: 20, max: 400 },
+    description: 'Parfumerie, pharmacie, opticien, coiffeur, institut de beauté, ongles, spa, centre esthétique.',
+  },
+  commerce_cadeaux_alimentaire: {
+    label: 'Cadeaux & alimentaire fin',
+    category: 'commerces-services',
+    icon: '🎁', color: '#c026d3',
+    expectedSqm: { min: 15, max: 250 },
+    description: 'Librairie, papeterie, cadeaux, fleuriste, cave à vin, épicerie fine, chocolaterie, confiserie, décoration.',
+  },
+  commerce_multimedia: {
+    label: 'Multimédia',
+    category: 'commerces-services',
+    icon: '📱', color: '#7c3aed',
+    expectedSqm: { min: 30, max: 800 },
+    description: 'Électronique, téléphonie/opérateur mobile, informatique, gaming, son/image, photo.',
+  },
+
+  // ─── Bâtiments HORS galerie commerciale ───
+  big_box: {
+    label: 'Big Box',
+    category: 'commerces-services',
+    icon: '🏭', color: '#64748b',
+    expectedSqm: { min: 1000, max: 20000 },
+    description: 'Magasin entrepôt indépendant à grande surface spécialisée (meubles, bricolage, sport, jardinage). Accès direct depuis parking externe, pas de galerie commerciale intégrée.',
+  },
+  market: {
+    label: 'Market (marché)',
+    category: 'commerces-services',
+    icon: '🏘', color: '#b45309',
+    expectedSqm: { min: 300, max: 5000 },
+    description: 'Marché couvert ou semi-ouvert avec multiples stands/étals traditionnels (alimentaire, artisanat, produits locaux). Agencement en allées avec échoppes modulaires.',
   },
 
   // ─── Équipements ───
@@ -576,6 +665,15 @@ export const SPACE_TYPES_BY_CATEGORY: Record<SpaceTypeCategory, SpaceTypeKey[]> 
     'passage_pieton_couvert',
   ],
   'commerces-services': [
+    // Segments métier précis (préférer ceux-ci)
+    'commerce_supermarche', 'commerce_restaurant',
+    'commerce_mode', 'commerce_accessoires',
+    'commerce_banque_assurance', 'commerce_services',
+    'commerce_beaute_sante', 'commerce_cadeaux_alimentaire',
+    'commerce_multimedia',
+    // Bâtiments hors galerie
+    'big_box', 'market',
+    // Types génériques (fallback)
     'local_commerce', 'restauration', 'food_court', 'loisirs', 'services',
     'grande_surface', 'kiosque',
   ],
@@ -642,6 +740,20 @@ const TYPE_PATTERNS: Array<{ key: SpaceTypeKey; pattern: RegExp }> = [
   { key: 'hall_distribution', pattern: /\bhall\b|lobby/i },
   { key: 'sanitaires',        pattern: /\bwc\b|sanitaire|toilet|lav/i },
   { key: 'food_court',        pattern: /food[_\s]?court|court[_\s]?restauration|espace[_\s]?restauration/i },
+  // ─── Segments commerciaux précis (à matcher AVANT les types génériques) ───
+  { key: 'commerce_supermarche', pattern: /super[_\s]?march|supermarket|grocery|auchan|carrefour|marjane|prosuma|hyper(?!march)/i },
+  { key: 'commerce_restaurant',  pattern: /\brestau|restauran|bistro|brasserie|cafe|bar\b|snack|pizzeria|kfc|mcdo|burger/i },
+  { key: 'commerce_mode',        pattern: /\bmode\b|habillement|vetement|pret[_\s]?a[_\s]?porter|chaussure|lingerie|sport[_\s]?wear|zara|h&m|mango|celio/i },
+  { key: 'commerce_accessoires', pattern: /accessoir|maroquinerie|bijouterie|horloger|lunetterie|opticien[_\s]?mode|sac\b/i },
+  { key: 'commerce_banque_assurance', pattern: /banque|bank|assurance|insurance|mutuelle|bureau[_\s]?change|western[_\s]?union|money[_\s]?gram/i },
+  { key: 'commerce_beaute_sante', pattern: /parfum|pharmacie|opticien|coiffeur|institut[_\s]?beaute|ongles?|spa|esthetique|beauty/i },
+  { key: 'commerce_cadeaux_alimentaire', pattern: /librair|papeter|cadeau|fleuriste|cave[_\s]?vin|epicerie[_\s]?fine|chocolat|confiserie|deco/i },
+  { key: 'commerce_multimedia',  pattern: /electroniq|telephoni|orange|mtn|moov|apple|samsung|informatiq|gaming|photo[_\s]?shop|son[_\s]?image/i },
+  { key: 'commerce_services',    pattern: /pressing|photocop|imprim|voyage|cordonner|cle[_\s]?minute|retouch/i },
+  // ─── Bâtiments hors galerie ───
+  { key: 'big_box',              pattern: /big[_\s]?box|ikea|decathlon|leroy[_\s]?merlin|castorama|conforama|but\b|boulanger|fnac\b|darty|intermarche|lidl|aldi/i },
+  { key: 'market',               pattern: /\bmarket\b|marche[_\s]?couvert|halles|souk|bazar/i },
+  // Types génériques (fallback si aucun segment précis)
   { key: 'restauration',      pattern: /restaur|food|cafe|bar|snack|cuisine|pizza/i },
   { key: 'loisirs',           pattern: /cinema|bowling|gym|sport|arcade|loisir/i },
   { key: 'grande_surface',    pattern: /hyper|supermarche|carrefour|shoprite|marina|anchor/i },
@@ -693,9 +805,22 @@ export function autoDetectSpaceType(label: string, type?: string): SpaceTypeKey 
 export function spaceTypeToCategory(type: SpaceTypeKey): string {
   // Mapping vers les 10 catégories simplifiées existantes
   switch (type) {
-    case 'local_commerce': case 'grande_surface': case 'kiosque': return 'mode'
-    case 'restauration': case 'food_court': return 'restauration'
-    case 'services': case 'point_information': case 'borne_wayfinder': return 'services'
+    case 'local_commerce': case 'grande_surface': case 'kiosque':
+    case 'commerce_mode': case 'commerce_accessoires':
+    case 'commerce_cadeaux_alimentaire': case 'big_box': case 'market':
+      return 'mode'
+    case 'commerce_supermarche':
+      return 'alimentaire' as string
+    case 'restauration': case 'food_court':
+    case 'commerce_restaurant':
+      return 'restauration'
+    case 'services': case 'point_information': case 'borne_wayfinder':
+    case 'commerce_banque_assurance': case 'commerce_services':
+      return 'services'
+    case 'commerce_beaute_sante':
+      return 'services'
+    case 'commerce_multimedia':
+      return 'mode'
     case 'loisirs': return 'loisirs'
     case 'sanitaires': return 'service-tech'
     case 'escalator': case 'ascenseur': case 'rampe_pmr': case 'escalier_fixe':

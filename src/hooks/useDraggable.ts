@@ -65,14 +65,18 @@ export function useDraggable(storageKey: string, opts: Options = {}) {
     try { localStorage.setItem(storageKey, JSON.stringify(position)) } catch { /* ignore */ }
   }, [position, storageKey])
 
+  // Seuil avant de considérer qu'on drag (pour distinguer click vs drag)
+  const DRAG_THRESHOLD_PX = 4
+  const [didDrag, setDidDrag] = useState(false)
+
   const onMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button !== 0) return
-    e.preventDefault()
-    e.stopPropagation()
+    // On ne preventDefault pas ici pour laisser le clic se propager si pas de drag
     dragState.current = {
       startX: e.clientX, startY: e.clientY,
       origX: position.x, origY: position.y,
     }
+    setDidDrag(false)
     setDragging(true)
   }, [position])
 
@@ -83,6 +87,9 @@ export function useDraggable(storageKey: string, opts: Options = {}) {
       if (!s) return
       const dx = e.clientX - s.startX
       const dy = e.clientY - s.startY
+      // Seuil avant de bouger vraiment (distingue click vs drag)
+      if (!didDrag && Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return
+      if (!didDrag) setDidDrag(true)
       setPosition({
         x: Math.max(margin, Math.min(window.innerWidth - margin, s.origX + dx)),
         y: Math.max(margin, Math.min(window.innerHeight - margin, s.origY + dy)),
@@ -98,7 +105,7 @@ export function useDraggable(storageKey: string, opts: Options = {}) {
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
     }
-  }, [dragging, margin])
+  }, [dragging, margin, didDrag])
 
   const onDoubleClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -131,5 +138,22 @@ export function useDraggable(storageKey: string, opts: Options = {}) {
     title: 'Glisser pour déplacer · double-clic pour réinitialiser la position',
   }
 
-  return { position, style, handleProps, dragging }
+  /**
+   * Props pour rendre le **conteneur entier** draggable tout en préservant
+   * les clics. Le consommateur doit wrapper ses onClick avec `wrapClick` pour
+   * éviter qu'un drag ne déclenche le clic.
+   */
+  const wrapClick = <T extends (e: React.MouseEvent) => void>(handler: T) => {
+    return ((e: React.MouseEvent) => {
+      // Ne pas déclencher le clic si on vient de faire un drag
+      if (didDrag) {
+        e.preventDefault()
+        e.stopPropagation()
+        return
+      }
+      handler(e)
+    }) as T
+  }
+
+  return { position, style, handleProps, dragging, didDrag, wrapClick }
 }
