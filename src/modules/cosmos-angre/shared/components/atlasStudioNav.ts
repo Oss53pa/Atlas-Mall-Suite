@@ -10,6 +10,7 @@ import {
   FileText,
   MessageSquare,
   Sparkles,
+  Edit3,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -28,12 +29,15 @@ export const ATLAS_STUDIO_GROUP_META = {
 
 // Sections that MUST exist in every volume's Studio phase.
 // Volumes may interleave their own items but these IDs are reserved.
+// NOTE : L'ID "editor" est utilisé par Vol.1/Vol.2 ; Vol.3 a historiquement
+// son propre ID `space_editor` avec le même composant shared.
 export const ATLAS_STUDIO_CORE_ITEMS: AtlasStudioNavItem[] = [
-  { id: 'plan_imports', label: 'Plans importés', icon: Upload },
-  { id: 'plan', label: 'Plan interactif', icon: Map },
-  { id: 'analyse', label: 'Analyse Proph3t', icon: BarChart2 },
-  { id: 'rapport', label: 'Rapport', icon: FileText },
-  { id: 'chat', label: 'Proph3t Chat', icon: MessageSquare },
+  { id: 'plan_imports', label: 'Plans importés',  icon: Upload },
+  { id: 'editor',       label: 'Éditeur espaces', icon: Edit3 },
+  { id: 'plan',         label: 'Plan interactif', icon: Map },
+  { id: 'analyse',      label: 'Analyse Proph3t', icon: BarChart2 },
+  { id: 'rapport',      label: 'Rapport',         icon: FileText },
+  { id: 'chat',         label: 'Proph3t Chat',    icon: MessageSquare },
 ]
 
 export const ATLAS_STUDIO_DEFAULT_TAB = 'plan_imports'

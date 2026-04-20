@@ -24,6 +24,7 @@ import {
   Accessibility,
   AlertTriangle,
   Upload,
+  Edit3,
   Box,
   Layers,
   Grid3x3,
@@ -106,9 +107,10 @@ const ComplianceTrackerLazy = lazy(() => import('./sections/ComplianceTracker'))
 const AuditExistantLazy = lazy(() => import('./sections/AuditExistant'))
 const VmsIntegrationLazy = lazy(() => import('./sections/VmsIntegration'))
 const PlanImportsSectionLazy = lazy(() => import('../shared/components/PlanImportsSection'))
+const SpaceEditorSectionLazy = lazy(() => import('../shared/components/SpaceEditorSection'))
 const View3DSectionLazy = lazy(() => import('../shared/view3d/View3DSection'))
 
-type Vol2Tab = 'plan' | 'analyse' | 'rapport' | 'simulation' | 'budget' | 'chat' | 'introduction' | 'kpis' | 'perimetre' | 'acces' | 'video' | 'incendie' | 'procedures' | 'organigramme' | 'control_room' | 'incidents' | 'risk_matrix' | 'whatif' | 'staffing' | 'rondes' | 'compliance' | 'audit_existant' | 'vms' | 'plan_imports'
+type Vol2Tab = 'plan' | 'analyse' | 'rapport' | 'simulation' | 'budget' | 'chat' | 'introduction' | 'kpis' | 'perimetre' | 'acces' | 'video' | 'incendie' | 'procedures' | 'organigramme' | 'control_room' | 'incidents' | 'risk_matrix' | 'whatif' | 'staffing' | 'rondes' | 'compliance' | 'audit_existant' | 'vms' | 'plan_imports' | 'editor'
 
 // ─── Sidebar nav definition ─────────────────────────────────
 
@@ -135,6 +137,7 @@ const buildNavGroups = (): NavGroup[] => [
     ...ATLAS_STUDIO_GROUP_META,
     items: [
       { id: 'plan_imports', label: 'Plans importés', icon: Upload },
+      { id: 'editor', label: 'Éditeur espaces', icon: Edit3 },
       { id: 'plan', label: 'Plan interactif', icon: Map },
       { id: 'analyse', label: 'Analyse Proph3t', icon: BarChart2 },
       { id: 'simulation', label: 'Simulation', icon: Play },
@@ -1475,6 +1478,7 @@ export default function Vol2Module() {
               {activeTab === 'compliance' && <ComplianceTrackerLazy />}
               {activeTab === 'audit_existant' && <AuditExistantLazy />}
               {activeTab === 'vms' && <VmsIntegrationLazy />}
+              {activeTab === 'editor' && <SpaceEditorSectionLazy />}
               {activeTab === 'plan_imports' && (
                 <PlanImportsSectionLazy
                   volumeColor="#38bdf8"

@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Loader2,
   Sparkles,
+  Edit3,
 } from 'lucide-react'
 import SaveStatusIndicator from '../shared/components/SaveStatusIndicator'
 import {
@@ -34,20 +35,21 @@ const TenantsSectionLazy = lazy(() => import('./sections/TenantsSection'))
 const Proph3tCommercialSectionLazy = lazy(() => import('./sections/Proph3tCommercialSection'))
 const ExportCommercialSectionLazy = lazy(() => import('./sections/ExportCommercialSection'))
 const PlanImportsSectionLazy = lazy(() => import('../shared/components/PlanImportsSection'))
+const SpaceEditorSectionLazy = lazy(() => import('../shared/components/SpaceEditorSection'))
 
 
-type Vol1Tab = 'dashboard' | 'plan' | 'plan_imports' | 'tenants' | 'proph3t' | 'exports'
+type Vol1Tab = 'dashboard' | 'plan' | 'plan_imports' | 'editor' | 'tenants' | 'proph3t' | 'exports'
 
 interface NavItem {
   id: Vol1Tab
   label: string
-  icon: React.ComponentType<{ size?: number; className?: string }>
+  icon: React.ComponentType<any>
 }
 
 interface NavGroup {
   key: string
   label: string
-  icon: React.ComponentType<{ size?: number; className?: string }>
+  icon: React.ComponentType<any>
   color: string
   items: NavItem[]
   separator?: boolean
@@ -60,6 +62,7 @@ const buildNavGroups = (): NavGroup[] => [
     ...ATLAS_STUDIO_GROUP_META,
     items: [
       { id: 'plan_imports', label: 'Plans importés', icon: Upload },
+      { id: 'editor', label: 'Éditeur espaces', icon: Edit3 },
       { id: 'plan', label: 'Plan Commercial', icon: Map },
       { id: 'proph3t', label: 'Analyse Proph3t', icon: Brain },
       { id: 'exports', label: 'Rapport / Export', icon: Download },
@@ -234,6 +237,7 @@ export default function Vol1Module() {
               }}
             />
           )}
+          {activeTab === 'editor' && <SpaceEditorSectionLazy />}
           {activeTab === 'plan' && <PlanCommercialSectionLazy />}
           {activeTab === 'tenants' && <TenantsSectionLazy />}
           {activeTab === 'proph3t' && <Proph3tCommercialSectionLazy />}

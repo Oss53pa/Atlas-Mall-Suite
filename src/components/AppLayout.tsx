@@ -203,26 +203,30 @@ export default function AppLayout() {
               </button>
             </div>
 
-            {/* Volumes */}
-            <div className="px-2 pt-3">
-              <p className="text-[9px] text-gray-600 uppercase tracking-widest font-semibold px-2 mb-1.5">Volumes</p>
-              {VOLUME_ITEMS.map(item => {
-                const Icon = item.icon
-                const isActive = currentVolPath === item.id
-                return (
-                  <button key={item.id}
-                    onClick={() => navigate(`/projects/${activeProject?.id}/${item.path}`)}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all mb-0.5"
-                    style={{
-                      background: isActive ? `${item.color}10` : 'transparent',
-                      color: isActive ? item.color : '#4a5568',
-                      border: `1px solid ${isActive ? `${item.color}25` : 'transparent'}`,
-                    }}>
-                    <Icon size={13} /> {item.label}
-                  </button>
-                )
-              })}
-            </div>
+            {/* Volumes — UNIQUEMENT hors projet (sinon la sidebar projet affiche déjà tout) */}
+            {!isInProject && (
+              <div className="px-2 pt-3">
+                <p className="text-[9px] text-gray-600 uppercase tracking-widest font-semibold px-2 mb-1.5">
+                  Volumes (projet actif)
+                </p>
+                {VOLUME_ITEMS.map(item => {
+                  const Icon = item.icon
+                  const isActive = currentVolPath === item.id
+                  return (
+                    <button key={item.id}
+                      onClick={() => navigate(`/projects/${activeProject?.id}/${item.path}`)}
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all mb-0.5"
+                      style={{
+                        background: isActive ? `${item.color}10` : 'transparent',
+                        color: isActive ? item.color : '#4a5568',
+                        border: `1px solid ${isActive ? `${item.color}25` : 'transparent'}`,
+                      }}>
+                      <Icon size={13} /> {item.label}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
 
             {/* Transversal */}
             <div className="px-2 pt-4">
