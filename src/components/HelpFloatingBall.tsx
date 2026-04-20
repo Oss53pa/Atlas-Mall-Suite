@@ -13,8 +13,9 @@ import { Link, useLocation } from 'react-router-dom'
 import {
   HelpCircle, X, ChevronRight, ShoppingBag, ShieldAlert, Footprints,
   Navigation, Sparkles, Upload, Workflow, Brain, Keyboard, BookOpen,
-  AlertCircle, MousePointer2, Save, Layers,
+  AlertCircle, MousePointer2, Save, Layers, GripVertical,
 } from 'lucide-react'
+import { useDraggable } from '../hooks/useDraggable'
 
 const STORAGE_KEY = 'atlas-help-ball-seen'
 
@@ -74,6 +75,11 @@ export function HelpFloatingBall() {
   const location = useLocation()
   const ballRef = useRef<HTMLButtonElement>(null)
 
+  // Position draggable persistée
+  const { style: dragStyle, handleProps: dragHandleProps } = useDraggable('help-ball-pos', {
+    defaultBottom: 24, defaultRight: 24,
+  })
+
   // Pulse au premier chargement si l'utilisateur ne l'a jamais ouvert
   useEffect(() => {
     const seen = localStorage.getItem(STORAGE_KEY)
@@ -115,12 +121,19 @@ export function HelpFloatingBall() {
   const ctx = getContextualHelp(location.pathname)
 
   const ball = (
+    <div style={dragStyle} className="flex items-center gap-0">
+      {/* Poignée drag à gauche du bouton */}
+      <div {...dragHandleProps}
+        className="w-4 h-14 flex items-center justify-center text-white/60 hover:text-white/90 rounded-l-full bg-slate-900/60"
+      >
+        <GripVertical size={10} />
+      </div>
     <button
       ref={ballRef}
       onClick={handleOpen}
       title="Aide & Guide d'utilisation (Shift+?)"
       aria-label="Ouvrir l'aide"
-      className={`fixed bottom-6 right-6 z-[9998] w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-white transition-transform hover:scale-110 ${
+      className={`w-14 h-14 rounded-r-full shadow-2xl flex items-center justify-center text-white transition-transform hover:scale-110 ${
         pulse ? 'animate-pulse' : ''
       }`}
       style={{
@@ -133,6 +146,7 @@ export function HelpFloatingBall() {
         <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 ring-2 ring-slate-900" />
       )}
     </button>
+    </div>
   )
 
   if (!open) return createPortal(ball, document.body)

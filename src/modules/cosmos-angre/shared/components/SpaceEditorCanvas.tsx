@@ -152,18 +152,125 @@ export function SpaceEditorCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIds, spaces, editingSpaceId])
 
-  // ─── Wheel zoom ───────────────────────────────
+  // ─── Wheel zoom — centré sur le curseur ─────────────
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault()
-    const delta = -e.deltaY * 0.001
-    const newScale = Math.max(0.5, Math.min(40, viewport.scale * (1 + delta)))
-    setViewport(v => ({ ...v, scale: newScale }))
-  }, [viewport.scale])
+    const svg = svgRef.current
+    if (!svg) return
+    const rect = svg.getBoundingClientRect()
+    const mx = e.clientX - rect.left
+    const my = e.clientY - rect.top
+
+    // Point du monde sous le curseur AVANT zoom
+    const worldX = (mx - viewport.offsetX) / viewport.scale
+    const worldY = (my - viewport.offsetY) / viewport.scale
+
+    const delta = -e.deltaY * 0.0015
+    const newScale = Math.max(0.3, Math.min(80, viewport.scale * (1 + delta)))
+
+    // Ajuste l'offset pour que le même point monde reste sous le curseur APRÈS zoom
+    const newOffsetX = mx - worldX * newScale
+    const newOffsetY = my - worldY * newScale
+
+    setViewport({ scale: newScale, offsetX: newOffsetX, offsetY: newOffsetY })
+  }, [viewport])
+
+  // ─── Pan — middle-click OU Space + drag OU clic-droit ───
+
+  const [isPanning, setIsPanning] = useState(false)
+  const [panStart, setPanStart] = useState<{ x: number; y: number; offX: number; offY: number } | null>(null)
+  const [spaceDown, setSpaceDown] = useState(false)
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement
+      if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable) return
+      if (e.code === 'Space' && !spaceDown) {
+        e.preventDefault()
+        setSpaceDown(true)
+      } else if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault()
+        fitToScreen()
+      } else if (e.key === '+' || e.key === '=') {
+        e.preventDefault()
+        zoomBy(1.25)
+      } else if (e.key === '-' || e.key === '_') {
+        e.preventDefault()
+        zoomBy(0.8)
+      }
+    }
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') setSpaceDown(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
+    }
+
+  }, [spaceDown])
+
+  const startPan = (clientX: number, clientY: number) => {
+    setIsPanning(true)
+    setPanStart({ x: clientX, y: clientY, offX: viewport.offsetX, offY: viewport.offsetY })
+  }
+
+  const doPan = (clientX: number, clientY: number) => {
+    if (!panStart) return
+    setViewport(v => ({
+      ...v,
+      offsetX: panStart.offX + (clientX - panStart.x),
+      offsetY: panStart.offY + (clientY - panStart.y),
+    }))
+  }
+
+  const endPan = () => { setIsPanning(false); setPanStart(null) }
+
+  // ─── Zoom buttons + fit ─────────────────────────
+
+  const zoomBy = (factor: number) => {
+    const svg = svgRef.current
+    if (!svg) return
+    const rect = svg.getBoundingClientRect()
+    const mx = rect.width / 2
+    const my = rect.height / 2
+    const worldX = (mx - viewport.offsetX) / viewport.scale
+    const worldY = (my - viewport.offsetY) / viewport.scale
+    const newScale = Math.max(0.3, Math.min(80, viewport.scale * factor))
+    setViewport({
+      scale: newScale,
+      offsetX: mx - worldX * newScale,
+      offsetY: my - worldY * newScale,
+    })
+  }
+
+  const fitToScreen = () => {
+    const svg = svgRef.current
+    if (!svg) return
+    const rect = svg.getBoundingClientRect()
+    const padding = 40
+    const fit = Math.min(
+      (rect.width - padding * 2) / Math.max(1, planBounds.width),
+      (rect.height - padding * 2) / Math.max(1, planBounds.height),
+    )
+    setViewport({
+      scale: fit,
+      offsetX: (rect.width - planBounds.width * fit) / 2,
+      offsetY: (rect.height - planBounds.height * fit) / 2,
+    })
+  }
 
   // ─── Événements souris ───────────────────────
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Pan : middle-click (1), ou clic gauche + Space maintenu
+    if (e.button === 1 || (e.button === 0 && spaceDown)) {
+      e.preventDefault()
+      startPan(e.clientX, e.clientY)
+      return
+    }
     if (e.button !== 0) return
     const world = screenToWorld(e.clientX, e.clientY)
 
@@ -278,6 +385,9 @@ export function SpaceEditorCanvas({
   }, [mode, visibleSpaces, viewport.scale, screenToWorld, draftPoints, dragStart, wallThicknessCm])
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    // Pan en cours — prioritaire
+    if (isPanning) { doPan(e.clientX, e.clientY); return }
+
     const world = screenToWorld(e.clientX, e.clientY)
     setCursorWorld(world)
 
@@ -311,6 +421,8 @@ export function SpaceEditorCanvas({
   }, [draggingVertex, mode, visibleSpaces, viewport.scale, screenToWorld, spaces, splitLine])
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    if (isPanning) { endPan(); return }
+
     if (draggingVertex) {
       setDraggingVertex(null)
       return
@@ -493,8 +605,10 @@ export function SpaceEditorCanvas({
 
   // ─── Rendu SVG ────────────────────────────────
 
-  const cursor = mode === 'select'
-    ? (draggingVertex ? 'grabbing' : hoveredVertex ? 'grab' : 'default')
+  const cursor = isPanning ? 'grabbing'
+    : spaceDown ? 'grab'
+    : mode === 'select'
+      ? (draggingVertex ? 'grabbing' : hoveredVertex ? 'grab' : 'default')
     : mode === 'wall' && dragStart ? 'crosshair'
     : 'crosshair'
 
@@ -650,6 +764,34 @@ export function SpaceEditorCanvas({
           SNAP
         </button>
 
+        <div className="h-5 w-px bg-white/10 mx-1" />
+
+        {/* Zoom / Fit */}
+        <button
+          onClick={() => zoomBy(1.25)}
+          className="p-1.5 rounded text-slate-400 hover:text-white"
+          title="Zoom + (molette)"
+        >
+          <span className="text-[12px] font-bold">+</span>
+        </button>
+        <button
+          onClick={() => zoomBy(0.8)}
+          className="p-1.5 rounded text-slate-400 hover:text-white"
+          title="Zoom − (molette)"
+        >
+          <span className="text-[12px] font-bold">−</span>
+        </button>
+        <button
+          onClick={fitToScreen}
+          className="p-1.5 rounded text-slate-400 hover:text-white"
+          title="Recadrer (F)"
+        >
+          <span className="text-[11px] font-bold">⤢</span>
+        </button>
+        <span className="text-[10px] text-slate-500 tabular-nums px-1">
+          {Math.round(viewport.scale * 100) / 100}×
+        </span>
+
         <div className="flex-1" />
 
         {/* Niveau actif */}
@@ -759,21 +901,86 @@ export function SpaceEditorCanvas({
                     r={4} fill="#fff" opacity={0.6}
                   />
                 )}
-                {/* Label */}
-                <g transform={`translate(${cx}, ${cy})`} style={{ pointerEvents: 'none' }}>
-                  <rect x={-40} y={-12} width={80} height={24} fill="rgba(15,23,42,0.85)" rx={3} />
-                  <text textAnchor="middle" fontSize={10} fontWeight="bold" fill="#fff" y={0}>
-                    {meta.icon} {s.name.length > 12 ? s.name.slice(0, 11) + '…' : s.name}
-                  </text>
-                  <text textAnchor="middle" fontSize={8} fill="#94a3b8" y={8}>
-                    {areaSqm.toFixed(0)} m² · {meta.label}
-                  </text>
-                </g>
+                {/* Label — largeur adaptative au nom */}
+                {(() => {
+                  const displayName = s.name || '(sans nom)'
+                  const lblWidth = Math.max(80, displayName.length * 7 + 20)
+                  return (
+                    <g transform={`translate(${cx}, ${cy})`} style={{ pointerEvents: 'none' }}>
+                      <rect
+                        x={-lblWidth / 2} y={-14}
+                        width={lblWidth} height={28}
+                        fill="rgba(15,23,42,0.92)"
+                        stroke={isSelected ? '#fff' : 'rgba(255,255,255,0.15)'}
+                        strokeWidth={isSelected ? 1.5 : 0.5}
+                        rx={4}
+                      />
+                      <text textAnchor="middle" fontSize={12} fontWeight="bold" fill="#fff" y={0}>
+                        {meta.icon} {displayName.length > 20 ? displayName.slice(0, 19) + '…' : displayName}
+                      </text>
+                      <text textAnchor="middle" fontSize={9} fill="#94a3b8" y={11}>
+                        {areaSqm.toFixed(0)} m² · {meta.label}
+                      </text>
+                    </g>
+                  )
+                })()}
                 {/* Warning si surface aberrante */}
                 {anomaly.aberrant && (
                   <g transform={`translate(${cx + 30}, ${cy - 12})`}>
                     <circle r={6} fill="#f59e0b" stroke="#fff" strokeWidth={1} />
                     <text textAnchor="middle" fontSize={9} fill="#000" y={3} fontWeight="bold">!</text>
+                  </g>
+                )}
+
+                {/* ─── Boutons d'action (visibles uniquement sur espace sélectionné, mode select) ─── */}
+                {mode === 'select' && isSelected && (
+                  <g transform={`translate(${cx}, ${cy + 24})`}>
+                    {/* Fond */}
+                    <rect x={-52} y={0} width={104} height={22} fill="rgba(15,23,42,0.95)" stroke="rgba(255,255,255,0.15)" strokeWidth={0.5} rx={4} />
+                    {/* Bouton Éditer */}
+                    <g transform="translate(-40, 11)" style={{ cursor: 'pointer' }}
+                       onClick={(e) => { e.stopPropagation(); setEditingSpaceId(s.id) }}>
+                      <title>Éditer les informations (type, nom, statut…)</title>
+                      <circle r={9} fill="#6366f1" />
+                      <text textAnchor="middle" y={3} fontSize={10} fill="#fff">✏</text>
+                    </g>
+                    {/* Bouton Valider */}
+                    <g transform="translate(-12, 11)" style={{ cursor: 'pointer' }}
+                       onClick={(e) => { e.stopPropagation(); updateSpace(s.id, { validated: !s.validated }) }}>
+                      <title>{s.validated ? 'Marquer non validé' : 'Marquer validé'}</title>
+                      <circle r={9} fill={s.validated ? '#10b981' : '#475569'} />
+                      <text textAnchor="middle" y={3} fontSize={11} fill="#fff" fontWeight="bold">✓</text>
+                    </g>
+                    {/* Bouton Dupliquer */}
+                    <g transform="translate(16, 11)" style={{ cursor: 'pointer' }}
+                       onClick={(e) => {
+                         e.stopPropagation()
+                         const copy: EditableSpace = {
+                           ...s,
+                           id: `sp-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,
+                           name: `${s.name} (copie)`,
+                           polygon: s.polygon.map(p => ({ x: p.x + 1, y: p.y + 1 })),
+                           validated: false,
+                         }
+                         onSpacesChange([...spaces, copy])
+                       }}>
+                      <title>Dupliquer</title>
+                      <circle r={9} fill="#0ea5e9" />
+                      <text textAnchor="middle" y={3} fontSize={9} fill="#fff">⧉</text>
+                    </g>
+                    {/* Bouton Supprimer */}
+                    <g transform="translate(40, 11)" style={{ cursor: 'pointer' }}
+                       onClick={(e) => {
+                         e.stopPropagation()
+                         if (confirm(`Supprimer "${s.name}" ?`)) {
+                           onSpacesChange(spaces.filter(x => x.id !== s.id))
+                           setSelectedIds(new Set())
+                         }
+                       }}>
+                      <title>Supprimer</title>
+                      <circle r={9} fill="#ef4444" />
+                      <text textAnchor="middle" y={3} fontSize={10} fill="#fff">×</text>
+                    </g>
                   </g>
                 )}
               </g>
@@ -868,6 +1075,20 @@ export function SpaceEditorCanvas({
           </defs>
         </svg>
 
+        {/* Aide flottante en mode select */}
+        {mode === 'select' && selectedIds.size === 0 && spaces.length > 0 && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg bg-slate-900/95 border border-white/10 text-[10px] text-slate-300 shadow-xl pointer-events-none">
+            💡 Clic sur un espace = sélectionner · Glisser sommet = déformer · Double-clic = éditer les infos
+          </div>
+        )}
+        {mode === 'select' && selectedIds.size > 0 && !editingSpace && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg bg-indigo-900/80 border border-indigo-500/40 text-[10px] text-indigo-200 shadow-xl pointer-events-none flex items-center gap-3">
+            <span><strong>{selectedIds.size}</strong> espace{selectedIds.size > 1 ? 's' : ''} sélectionné{selectedIds.size > 1 ? 's' : ''}</span>
+            <span className="text-slate-400">·</span>
+            <span>✏ bouton bleu = infos · ✓ vert = valider · ⧉ = dupliquer · × = supprimer · <kbd className="bg-slate-800 px-1 rounded">Delete</kbd> = effacer</span>
+          </div>
+        )}
+
         {/* Panel édition espace */}
         {editingSpace && (
           <SpaceMetadataPanel
@@ -915,15 +1136,23 @@ function SpaceMetadataPanel({
         <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {/* Nom */}
+        {/* Nom — auto-save au blur */}
         <div>
           <label className="block text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1">
-            Nom précis
+            Nom précis <span className="text-emerald-400 normal-case tracking-normal font-normal">· sauvé auto à la validation</span>
           </label>
           <input
-            value={name} onChange={(e) => setName(e.target.value)}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={() => {
+              if (name !== space.name) onSave({ name })
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur()
+            }}
             placeholder="ex: Entrée principale Nord, Local A12 Restauration"
-            className="w-full px-2 py-1.5 rounded bg-slate-950 border border-white/10 text-sm text-white"
+            className="w-full px-2 py-1.5 rounded bg-slate-950 border border-white/10 text-sm text-white focus:border-indigo-500 outline-none"
+            autoFocus
           />
         </div>
 

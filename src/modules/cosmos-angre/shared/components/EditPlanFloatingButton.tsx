@@ -1,12 +1,14 @@
 // ═══ EditPlanFloatingButton ═══
 //
-// Bouton flottant toujours visible dans le workspace projet.
-// Permet de revenir à la phase Remodelage / ouvrir l'éditeur 2D à tout moment,
-// depuis n'importe quel volume.
+// Bouton flottant draggable dans le workspace projet.
+// - Drag sur la "poignée" (icône ✥) pour déplacer
+// - Double-clic poignée = reset position
+// - Clic sur le bouton principal = navigation vers Atlas Studio
 
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
-import { Pencil, Layers } from 'lucide-react'
+import { Pencil, Layers, GripVertical } from 'lucide-react'
 import { usePlanEngineStore } from '../stores/planEngineStore'
+import { useDraggable } from '../../../../hooks/useDraggable'
 
 export function EditPlanFloatingButton() {
   const navigate = useNavigate()
@@ -16,7 +18,13 @@ export function EditPlanFloatingButton() {
   const planValidated = usePlanEngineStore(s => s.planValidated)
   const spacesCount = usePlanEngineStore(s => s.parsedPlan?.spaces.length ?? 0)
 
-  // Ne pas afficher sur la phase remodelage elle-même (pour éviter le doublon)
+  // Position draggable persistée
+  const { style, handleProps } = useDraggable('edit-plan-btn-pos', {
+    defaultBottom: 100, defaultRight: 24,
+  })
+
+  // Ne pas afficher dans les éditeurs (doublon)
+  if (location.pathname.includes('/studio')) return null
   if (location.pathname.includes('/remodelage')) return null
   if (location.pathname.includes('/scene-editor')) return null
   // Ne pas afficher hors d'un projet
@@ -25,10 +33,8 @@ export function EditPlanFloatingButton() {
   const pid = projectId ?? 'cosmos-angre'
 
   return (
-    <div className="fixed bottom-24 right-6 z-[50] flex flex-col gap-2 items-end">
-      <button
-        onClick={() => navigate(`/projects/${pid}/remodelage`)}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-full shadow-2xl text-white text-[12px] font-semibold transition-all hover:scale-105"
+    <div style={style} className="flex flex-col gap-2 items-end">
+      <div className="flex items-center gap-0 rounded-full shadow-2xl"
         style={{
           background: planValidated
             ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
@@ -37,15 +43,29 @@ export function EditPlanFloatingButton() {
             ? '0 10px 30px rgba(99,102,241,0.45)'
             : '0 10px 30px rgba(245,158,11,0.45)',
         }}
-        title={planValidated
-          ? 'Éditer le plan de base (modifier, dessiner, supprimer espaces)'
-          : 'Base non verrouillée — cliquez pour terminer la phase Remodelage'}
       >
-        <Pencil size={14} />
-        <span>Éditer le plan</span>
-        {!planValidated && <span className="ml-1 px-1.5 py-0.5 rounded-full bg-white/20 text-[9px] font-bold uppercase tracking-wider">À valider</span>}
-        {spacesCount > 0 && <span className="text-[10px] opacity-75">· {spacesCount} espaces</span>}
-      </button>
+        {/* Poignée de drag */}
+        <div {...handleProps}
+          className="px-2 py-2.5 text-white/70 hover:text-white rounded-l-full"
+          title="Glisser pour déplacer · double-clic pour réinitialiser"
+        >
+          <GripVertical size={12} />
+        </div>
+
+        {/* Bouton principal */}
+        <button
+          onClick={() => navigate(`/projects/${pid}/studio`)}
+          className="flex items-center gap-2 pr-4 py-2.5 text-white text-[12px] font-semibold transition-transform hover:scale-105 rounded-r-full"
+          title={planValidated
+            ? 'Éditer le plan (Atlas Studio)'
+            : 'Base non verrouillée — aller à Atlas Studio'}
+        >
+          <Pencil size={14} />
+          <span>Éditer le plan</span>
+          {!planValidated && <span className="ml-1 px-1.5 py-0.5 rounded-full bg-white/20 text-[9px] font-bold uppercase tracking-wider">À valider</span>}
+          {spacesCount > 0 && <span className="text-[10px] opacity-75">· {spacesCount} esp</span>}
+        </button>
+      </div>
 
       {planValidated && (
         <button

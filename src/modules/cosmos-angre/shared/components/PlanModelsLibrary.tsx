@@ -93,9 +93,9 @@ export function PlanModelsLibrary({ projectId }: Props) {
             onClick={() => setSaveOpen(true)}
             disabled={!parsedPlan}
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[12px] font-semibold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
-            title={parsedPlan ? 'Enregistrer le plan courant comme nouveau modèle' : 'Importez d\'abord un plan'}
+            title={parsedPlan ? 'Enregistre un snapshot du plan comme BROUILLON (pas encore final)' : 'Importez d\'abord un plan'}
           >
-            <Save size={13} /> Enregistrer comme modèle
+            <Save size={13} /> Enregistrer brouillon
           </button>
         </div>
 

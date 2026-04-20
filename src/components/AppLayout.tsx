@@ -114,7 +114,7 @@ export default function AppLayout() {
 
       {/* ═══ SIDEBAR PERMANENTE ═══ */}
       <aside
-        className={`flex-shrink-0 flex flex-col border-r overflow-y-auto overflow-x-hidden transition-all duration-200 ${
+        className={`flex-shrink-0 flex flex-col border-r overflow-hidden transition-all duration-200 ${
           isInsideVolume ? 'w-12' : 'w-52'
         }`}
         style={{ background: '#080c16', borderColor: 'rgba(255,255,255,0.05)' }}
@@ -191,7 +191,8 @@ export default function AppLayout() {
           </div>
         )}
 
-        {/* Navigation */}
+        {/* Navigation — zone scrollable qui remplit l'espace central */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
         {!isInsideVolume && (
           <>
             {/* Dashboard */}
@@ -350,11 +351,11 @@ export default function AppLayout() {
           </div>
         )}
 
-        {/* Spacer */}
-        <div className="flex-1" />
+        </div>
+        {/* /Fin zone scrollable */}
 
-        {/* Bottom: Proph3t + Settings + User */}
-        <div className={`border-t border-white/[0.04] ${isInsideVolume ? 'px-1 py-2 flex flex-col items-center gap-1' : 'p-2 space-y-1'}`}>
+        {/* Bottom: Proph3t + Settings + User (fixé, sticky) */}
+        <div className={`flex-shrink-0 border-t border-white/[0.04] ${isInsideVolume ? 'px-1 py-2 flex flex-col items-center gap-1' : 'p-2 space-y-1'}`}>
           {/* Proph3t status */}
           {!isInsideVolume ? (
             <div className="flex items-center gap-2 px-2 py-1 text-[10px] text-gray-600">
