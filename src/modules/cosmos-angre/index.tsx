@@ -24,6 +24,7 @@ const RemodelingStage = React.lazy(() =>
 const EditPlanFloatingButton = React.lazy(() =>
   import('./shared/components/EditPlanFloatingButton').then(m => ({ default: m.EditPlanFloatingButton }))
 )
+const AtlasStudioModule = React.lazy(() => import('./shared/components/AtlasStudioModule'))
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -66,8 +67,9 @@ export default function CosmosAngre() {
     <React.Suspense fallback={<LoadingFallback />}>
       <>
         <Routes>
-          {/* Accueil projet = phase Remodelage (identification des espaces) */}
-          <Route index element={<Navigate to="remodelage" replace />} />
+          {/* Accueil projet = Atlas Studio (Phase 0 — import + édition + modèles) */}
+          <Route index element={<Navigate to="studio" replace />} />
+          <Route path="studio/*" element={<ErrorBoundary fallbackTitle="Erreur Atlas Studio"><AtlasStudioModule /></ErrorBoundary>} />
           <Route path="remodelage/*" element={<ErrorBoundary fallbackTitle="Erreur Remodelage"><RemodelingStage /></ErrorBoundary>} />
           {/* Volumes métier — protégés par le guard BaselineGuard */}
           <Route path="vol1/*" element={<BaselineGuard projectId={projectId}><ErrorBoundary fallbackTitle="Erreur Vol.1 Commercial"><Vol1Module /></ErrorBoundary></BaselineGuard>} />

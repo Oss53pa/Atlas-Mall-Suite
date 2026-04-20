@@ -266,16 +266,59 @@ export default function AppLayout() {
             </div>
             )}
 
-            {/* Bannière d'aide quand on est dans un projet : rappel que les
-                outils de volume (import, éditeur) sont dans la sidebar du volume */}
-            {isInProject && (
-              <div className="mx-2 mt-4 p-3 rounded-lg border border-indigo-500/20 bg-indigo-500/[0.05]">
-                <p className="text-[10px] text-indigo-300 font-semibold mb-1">Dans un projet</p>
-                <p className="text-[10px] text-gray-400 leading-relaxed">
-                  Import plan, éditeur d'espaces, analyses et rapports sont
-                  accessibles dans la <strong className="text-indigo-300">sidebar du volume</strong>{' '}
-                  (onglet <em>Atlas Studio · Phase 0</em>).
+            {/* ── PHASES DU PROJET (visible uniquement dans un projet) ── */}
+            {isInProject && activeProject && (
+              <div className="px-2 pt-3">
+                <p className="text-[9px] text-gray-600 uppercase tracking-widest font-semibold px-2 mb-1.5">
+                  Phase 0 — Plans
                 </p>
+                <button
+                  onClick={() => navigate(`/projects/${activeProject.id}/studio`)}
+                  className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-[11px] font-semibold transition-all mb-1"
+                  style={{
+                    background: location.pathname.includes('/studio')
+                      ? 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(99,102,241,0.15))'
+                      : 'rgba(168,85,247,0.06)',
+                    color: '#c4b5fd',
+                    border: `1px solid ${location.pathname.includes('/studio') ? 'rgba(168,85,247,0.4)' : 'rgba(168,85,247,0.15)'}`,
+                  }}
+                  title="Atlas Studio — Import plan, éditeur espaces, bibliothèque de modèles"
+                >
+                  <span className="text-base">✨</span>
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="font-bold">Atlas Studio</div>
+                    <div className="text-[9px] text-purple-400/70 font-normal">Import · Éditeur · Modèles</div>
+                  </div>
+                </button>
+
+                <p className="text-[9px] text-gray-600 uppercase tracking-widest font-semibold px-2 mt-3 mb-1.5">
+                  Phases 1-4 — Analyses
+                </p>
+                {VOLUME_ITEMS.map(item => {
+                  const Icon = item.icon
+                  const isActive = currentVolPath === item.id
+                  return (
+                    <button key={item.id}
+                      onClick={() => navigate(`/projects/${activeProject.id}/${item.path}`)}
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all mb-0.5"
+                      style={{
+                        background: isActive ? `${item.color}10` : 'transparent',
+                        color: isActive ? item.color : '#4a5568',
+                        border: `1px solid ${isActive ? `${item.color}25` : 'transparent'}`,
+                      }}>
+                      <Icon size={13} /> {item.label}
+                    </button>
+                  )
+                })}
+
+                <div className="mx-0 mt-4 p-3 rounded-lg border border-indigo-500/20 bg-indigo-500/[0.05]">
+                  <p className="text-[10px] text-indigo-300 font-semibold mb-1">💡 Workflow</p>
+                  <p className="text-[10px] text-gray-400 leading-relaxed">
+                    1. Atlas Studio → importer + éditer + <strong>enregistrer le modèle</strong><br />
+                    2. Activer un modèle → débloquer les volumes<br />
+                    3. Les volumes consomment le modèle actif
+                  </p>
+                </div>
               </div>
             )}
           </>
