@@ -19,7 +19,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   MousePointer, Hexagon, Square, Spline, MoveHorizontal,
   Merge, Scissors, Copy, Trash2, RotateCcw, Grid3X3, Check,
-  AlertTriangle,
+  AlertTriangle, Car, Accessibility, Zap, Bike, Package, Users2, ArrowRight,
 } from 'lucide-react'
 import * as Geo from '../engines/plan-analysis/spaceGeometryEngine'
 import {
@@ -30,7 +30,23 @@ import {
 
 // ─── Types ─────────────────────────────────────────
 
-export type DrawMode = 'select' | 'poly' | 'rect' | 'curve' | 'wall'
+export type DrawMode =
+  | 'select' | 'poly' | 'rect' | 'curve' | 'wall'
+  // Templates parking (clic = pose)
+  | 'parking-standard' | 'parking-pmr' | 'parking-ve'
+  | 'parking-moto' | 'parking-livraison' | 'parking-famille'
+  // Flèche sens (2 clics)
+  | 'arrow-flow'
+
+// Templates parking (dimensions en mètres)
+const PARKING_TEMPLATES: Record<string, { w: number; h: number; typeKey: SpaceTypeKey; label: string; color: string }> = {
+  'parking-standard':  { w: 2.5, h: 5,   typeKey: 'parking_place_standard',  label: 'Place std',  color: '#60a5fa' },
+  'parking-pmr':       { w: 3.3, h: 5,   typeKey: 'parking_place_pmr',       label: 'Place PMR',  color: '#3b82f6' },
+  'parking-ve':        { w: 2.5, h: 5,   typeKey: 'parking_place_ve',        label: 'Borne VE',   color: '#22c55e' },
+  'parking-moto':      { w: 1,   h: 2,   typeKey: 'parking_place_moto',      label: 'Moto',       color: '#7dd3fc' },
+  'parking-livraison': { w: 3,   h: 7,   typeKey: 'parking_place_livraison', label: 'Livraison',  color: '#f59e0b' },
+  'parking-famille':   { w: 3,   h: 5,   typeKey: 'parking_place_famille',   label: 'Famille',    color: '#f472b6' },
+}
 
 export interface EditableSpace {
   id: string
@@ -81,6 +97,7 @@ export function SpaceEditorCanvas({
   const [wallThicknessCm, setWallThicknessCm] = useState(20)
   const [editingSpaceId, setEditingSpaceId] = useState<string | null>(null)
   const [showOnlyActiveFloor, setShowOnlyActiveFloor] = useState(true)
+  const [cursorWorld, setCursorWorld] = useState<Geo.Point | null>(null)
 
   // Filtré par niveau
   const visibleSpaces = useMemo(
@@ -212,10 +229,57 @@ export function SpaceEditorCanvas({
       }
       return
     }
+
+    // Templates parking — clic unique = rectangle centré sur le clic
+    if (mode.startsWith('parking-')) {
+      const tpl = PARKING_TEMPLATES[mode as keyof typeof PARKING_TEMPLATES]
+      if (tpl) {
+        const poly: Geo.Polygon = [
+          { x: world.x - tpl.w / 2, y: world.y - tpl.h / 2 },
+          { x: world.x + tpl.w / 2, y: world.y - tpl.h / 2 },
+          { x: world.x + tpl.w / 2, y: world.y + tpl.h / 2 },
+          { x: world.x - tpl.w / 2, y: world.y + tpl.h / 2 },
+        ]
+        createSpaceWithType(poly, tpl.typeKey, tpl.label)
+      }
+      return
+    }
+
+    // Flèche sens — 2 clics
+    if (mode === 'arrow-flow') {
+      if (!dragStart) {
+        setDragStart(world)
+      } else {
+        // Corps fin + tête triangulaire
+        const dx = world.x - dragStart.x
+        const dy = world.y - dragStart.y
+        const len = Math.hypot(dx, dy)
+        if (len < 0.2) { setDragStart(null); return }
+        const nx = -dy / len, ny = dx / len
+        const t = 0.15  // demi-épaisseur corps (15 cm)
+        const headL = Math.min(0.8, len * 0.3)
+        const headW = 0.35
+        const bx = world.x - dx / len * headL
+        const by = world.y - dy / len * headL
+        const poly: Geo.Polygon = [
+          { x: dragStart.x + nx * t, y: dragStart.y + ny * t },
+          { x: bx + nx * t,           y: by + ny * t },
+          { x: bx + nx * headW,       y: by + ny * headW },
+          { x: world.x,               y: world.y },
+          { x: bx - nx * headW,       y: by - ny * headW },
+          { x: bx - nx * t,           y: by - ny * t },
+          { x: dragStart.x - nx * t,  y: dragStart.y - ny * t },
+        ]
+        createSpaceWithType(poly, 'parking_fleche_sens', 'Flèche sens')
+        setDragStart(null)
+      }
+      return
+    }
   }, [mode, visibleSpaces, viewport.scale, screenToWorld, draftPoints, dragStart, wallThicknessCm])
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const world = screenToWorld(e.clientX, e.clientY)
+    setCursorWorld(world)
 
     // Dragging vertex
     if (draggingVertex) {
@@ -313,6 +377,52 @@ export function SpaceEditorCanvas({
     onSpacesChange([...spaces, newSpace])
     setSelectedIds(new Set([id]))
     setEditingSpaceId(id)
+  }
+
+  /** Variante : crée un espace avec un type et un nom imposés (templates, drag). */
+  const createSpaceWithType = (poly: Geo.Polygon, typeKey: SpaceTypeKey, name: string) => {
+    const normalized = Geo.normalizePolygon(poly)
+    if (normalized.length < 3) return
+    const id = `sp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+    const newSpace: EditableSpace = {
+      id,
+      name,
+      type: typeKey,
+      polygon: normalized,
+      floorLevel: activeFloor,
+      validated: false,
+    }
+    onSpacesChange([...spaces, newSpace])
+    setSelectedIds(new Set([id]))
+  }
+
+  /** Drop HTML5 : pose un meuble/item depuis FurnitureLibrary. */
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    const catalogId = e.dataTransfer.getData('text/catalog-id')
+    if (!catalogId) return
+    // Import dynamique pour ne pas coupler au scene-editor
+    void import('../../scene-editor/store/furnitureCatalog').then(({ FURNITURE_CATALOG }) => {
+      let item: { id: string; name: string; w: number; d: number } | null = null
+      for (const [, cat] of Object.entries(FURNITURE_CATALOG)) {
+        const found = cat.items.find(i => i.id === catalogId)
+        if (found) { item = { id: found.id, name: found.name, w: found.w, d: found.d }; break }
+      }
+      if (!item) return
+      const world = screenToWorld(e.clientX, e.clientY)
+      const poly: Geo.Polygon = [
+        { x: world.x - item.w / 2, y: world.y - item.d / 2 },
+        { x: world.x + item.w / 2, y: world.y - item.d / 2 },
+        { x: world.x + item.w / 2, y: world.y + item.d / 2 },
+        { x: world.x - item.w / 2, y: world.y + item.d / 2 },
+      ]
+      createSpaceWithType(poly, 'autre', `🪑 ${item.name}`)
+    }).catch(() => {})
+  }, [screenToWorld, spaces, activeFloor])
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
   }
 
   const updateSpace = (id: string, changes: Partial<EditableSpace>) => {
@@ -449,6 +559,41 @@ export function SpaceEditorCanvas({
 
         <div className="h-5 w-px bg-white/10 mx-1" />
 
+        {/* ─── Templates parking (clic = pose) ─── */}
+        <div className="flex items-center gap-0.5 p-0.5 bg-slate-950 rounded" title="Places de parking (clic = pose un rectangle aux dimensions)">
+          {([
+            { m: 'parking-standard',  icon: Car,           title: 'Place standard 2.5×5 m',    color: '#60a5fa' },
+            { m: 'parking-pmr',       icon: Accessibility, title: 'Place PMR 3.3×5 m',         color: '#3b82f6' },
+            { m: 'parking-ve',        icon: Zap,           title: 'Borne VE 2.5×5 m',          color: '#22c55e' },
+            { m: 'parking-moto',      icon: Bike,          title: 'Place moto 1×2 m',          color: '#7dd3fc' },
+            { m: 'parking-livraison', icon: Package,       title: 'Livraison 3×7 m',           color: '#f59e0b' },
+            { m: 'parking-famille',   icon: Users2,        title: 'Famille 3×5 m',             color: '#f472b6' },
+          ] as Array<{ m: DrawMode; icon: any; title: string; color: string }>).map(o => (
+            <button key={o.m}
+              onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null) }}
+              className={`p-1.5 rounded text-[11px] flex items-center gap-1.5 ${
+                mode === o.m ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
+              title={o.title}
+            >
+              <o.icon className="w-3.5 h-3.5" style={{ color: mode === o.m ? undefined : o.color }} />
+            </button>
+          ))}
+        </div>
+
+        {/* ─── Flèche sens (2 clics) ─── */}
+        <button
+          onClick={() => { setMode('arrow-flow'); setDraftPoints([]); setDragStart(null); setSplitLine(null) }}
+          className={`p-1.5 rounded text-[11px] flex items-center gap-1.5 ${
+            mode === 'arrow-flow' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+          }`}
+          title="Flèche de sens (2 clics : origine → pointe)"
+        >
+          <ArrowRight className="w-3.5 h-3.5" style={{ color: mode === 'arrow-flow' ? undefined : '#f59e0b' }} />
+        </button>
+
+        <div className="h-5 w-px bg-white/10 mx-1" />
+
         {/* Opérations avancées */}
         <button
           onClick={mergeSelected}
@@ -543,6 +688,8 @@ export function SpaceEditorCanvas({
           onMouseUp={handleMouseUp}
           onDoubleClick={handleDoubleClick}
           onWheel={handleWheel}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
         >
           {/* Background plan */}
           {backgroundUrl && (
@@ -679,6 +826,46 @@ export function SpaceEditorCanvas({
               stroke="#ef4444" strokeWidth={2} strokeDasharray="6 3"
             />
           )}
+
+          {/* Preview template parking sous le curseur */}
+          {mode.startsWith('parking-') && cursorWorld && (() => {
+            const tpl = PARKING_TEMPLATES[mode as keyof typeof PARKING_TEMPLATES]
+            if (!tpl) return null
+            const p1 = worldToScreen(cursorWorld.x - tpl.w / 2, cursorWorld.y - tpl.h / 2)
+            const p2 = worldToScreen(cursorWorld.x + tpl.w / 2, cursorWorld.y + tpl.h / 2)
+            return (
+              <rect
+                x={p1.x} y={p1.y}
+                width={p2.x - p1.x} height={p2.y - p1.y}
+                fill={`${tpl.color}55`}
+                stroke={tpl.color}
+                strokeWidth={2}
+                strokeDasharray="4 2"
+                style={{ pointerEvents: 'none' }}
+              />
+            )
+          })()}
+
+          {/* Preview flèche sens en cours */}
+          {mode === 'arrow-flow' && dragStart && cursorWorld && (() => {
+            const p1 = worldToScreen(dragStart.x, dragStart.y)
+            const p2 = worldToScreen(cursorWorld.x, cursorWorld.y)
+            return (
+              <line
+                x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
+                stroke="#f59e0b" strokeWidth={3} strokeDasharray="5 3"
+                markerEnd="url(#arrow-preview-head)"
+                style={{ pointerEvents: 'none' }}
+              />
+            )
+          })()}
+
+          <defs>
+            <marker id="arrow-preview-head" viewBox="0 0 10 10" refX="8" refY="5"
+                    markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#f59e0b" />
+            </marker>
+          </defs>
         </svg>
 
         {/* Panel édition espace */}
