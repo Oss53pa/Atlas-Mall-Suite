@@ -20,6 +20,7 @@ import {
   MousePointer, Hexagon, Square, Spline, MoveHorizontal,
   Merge, Scissors, Copy, Trash2, RotateCcw, Grid3X3, Check,
   AlertTriangle, Car, Accessibility, Zap, Bike, Package, Users2, ArrowRight,
+  DoorOpen, DoorClosed, AlertOctagon, RectangleVertical,
 } from 'lucide-react'
 import * as Geo from '../engines/plan-analysis/spaceGeometryEngine'
 import {
@@ -35,6 +36,9 @@ export type DrawMode =
   // Templates parking (clic = pose)
   | 'parking-standard' | 'parking-pmr' | 'parking-ve'
   | 'parking-moto' | 'parking-livraison' | 'parking-famille'
+  // Templates portes (clic = pose)
+  | 'door-entree' | 'door-double' | 'door-automatique'
+  | 'door-interieure' | 'door-secours' | 'door-service'
   // Flèche sens (2 clics)
   | 'arrow-flow'
 
@@ -46,6 +50,17 @@ const PARKING_TEMPLATES: Record<string, { w: number; h: number; typeKey: SpaceTy
   'parking-moto':      { w: 1,   h: 2,   typeKey: 'parking_place_moto',      label: 'Moto',       color: '#7dd3fc' },
   'parking-livraison': { w: 3,   h: 7,   typeKey: 'parking_place_livraison', label: 'Livraison',  color: '#f59e0b' },
   'parking-famille':   { w: 3,   h: 5,   typeKey: 'parking_place_famille',   label: 'Famille',    color: '#f472b6' },
+}
+
+// Templates portes & accès (dimensions en mètres)
+// Largeur = passage utile, hauteur = épaisseur (dans le plan)
+const DOOR_TEMPLATES: Record<string, { w: number; h: number; typeKey: SpaceTypeKey; label: string; color: string }> = {
+  'door-entree':       { w: 1.0, h: 0.2, typeKey: 'porte_entree',      label: 'Porte entrée',   color: '#10b981' },
+  'door-double':       { w: 1.8, h: 0.2, typeKey: 'porte_double',      label: 'Porte double',   color: '#059669' },
+  'door-automatique':  { w: 1.5, h: 0.2, typeKey: 'porte_automatique', label: 'Porte auto',     color: '#14b8a6' },
+  'door-interieure':   { w: 0.9, h: 0.15, typeKey: 'porte_interieure', label: 'Porte int.',     color: '#64748b' },
+  'door-secours':      { w: 1.2, h: 0.2, typeKey: 'porte_secours',     label: 'Porte secours',  color: '#ef4444' },
+  'door-service':      { w: 1.0, h: 0.2, typeKey: 'porte_service',     label: 'Porte service',  color: '#0d9488' },
 }
 
 export interface EditableSpace {
@@ -343,6 +358,22 @@ export function SpaceEditorCanvas({
     // Templates parking — clic unique = rectangle centré sur le clic
     if (mode.startsWith('parking-')) {
       const tpl = PARKING_TEMPLATES[mode as keyof typeof PARKING_TEMPLATES]
+      if (tpl) {
+        const poly: Geo.Polygon = [
+          { x: world.x - tpl.w / 2, y: world.y - tpl.h / 2 },
+          { x: world.x + tpl.w / 2, y: world.y - tpl.h / 2 },
+          { x: world.x + tpl.w / 2, y: world.y + tpl.h / 2 },
+          { x: world.x - tpl.w / 2, y: world.y + tpl.h / 2 },
+        ]
+        createSpaceWithType(poly, tpl.typeKey, tpl.label)
+      }
+      return
+    }
+
+    // Templates portes — clic unique = rectangle fin centré sur le clic
+    // (l'utilisateur peut ensuite tourner via les sommets)
+    if (mode.startsWith('door-')) {
+      const tpl = DOOR_TEMPLATES[mode as keyof typeof DOOR_TEMPLATES]
       if (tpl) {
         const poly: Geo.Polygon = [
           { x: world.x - tpl.w / 2, y: world.y - tpl.h / 2 },
@@ -711,6 +742,30 @@ export function SpaceEditorCanvas({
 
         <div className="h-5 w-px bg-white/10 mx-1" />
 
+        {/* ─── Templates portes (clic = pose) ─── */}
+        <div className="flex items-center gap-0.5 p-0.5 bg-slate-950 rounded" title="Portes & ouvertures (clic = pose rectangle)">
+          {([
+            { m: 'door-entree',      icon: DoorOpen,          title: 'Porte d\'entrée 1m × 20cm',       color: '#10b981' },
+            { m: 'door-double',      icon: DoorOpen,          title: 'Porte double 1.8m × 20cm',        color: '#059669' },
+            { m: 'door-automatique', icon: RectangleVertical, title: 'Porte automatique 1.5m × 20cm',   color: '#14b8a6' },
+            { m: 'door-interieure',  icon: DoorClosed,        title: 'Porte intérieure 0.9m × 15cm',    color: '#64748b' },
+            { m: 'door-secours',     icon: AlertOctagon,      title: 'Porte secours 1.2m × 20cm (anti-panique)', color: '#ef4444' },
+            { m: 'door-service',     icon: DoorClosed,        title: 'Porte service 1m × 20cm',         color: '#0d9488' },
+          ] as Array<{ m: DrawMode; icon: any; title: string; color: string }>).map(o => (
+            <button key={o.m}
+              onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null) }}
+              className={`p-1.5 rounded text-[11px] flex items-center gap-1.5 ${
+                mode === o.m ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
+              title={o.title}
+            >
+              <o.icon className="w-3.5 h-3.5" style={{ color: mode === o.m ? undefined : o.color }} />
+            </button>
+          ))}
+        </div>
+
+        <div className="h-5 w-px bg-white/10 mx-1" />
+
         {/* Opérations avancées */}
         <button
           onClick={mergeSelected}
@@ -1053,6 +1108,35 @@ export function SpaceEditorCanvas({
                 strokeDasharray="4 2"
                 style={{ pointerEvents: 'none' }}
               />
+            )
+          })()}
+
+          {/* Preview porte sous le curseur */}
+          {mode.startsWith('door-') && cursorWorld && (() => {
+            const tpl = DOOR_TEMPLATES[mode as keyof typeof DOOR_TEMPLATES]
+            if (!tpl) return null
+            const p1 = worldToScreen(cursorWorld.x - tpl.w / 2, cursorWorld.y - tpl.h / 2)
+            const p2 = worldToScreen(cursorWorld.x + tpl.w / 2, cursorWorld.y + tpl.h / 2)
+            return (
+              <g style={{ pointerEvents: 'none' }}>
+                <rect
+                  x={p1.x} y={p1.y}
+                  width={p2.x - p1.x} height={p2.y - p1.y}
+                  fill={`${tpl.color}70`}
+                  stroke={tpl.color}
+                  strokeWidth={2}
+                  strokeDasharray="4 2"
+                />
+                {/* Arc de battement (indication de la porte qui s'ouvre) */}
+                <path
+                  d={`M ${p1.x} ${p2.y} A ${p2.x - p1.x} ${p2.x - p1.x} 0 0 1 ${p2.x} ${p2.y + (p2.x - p1.x)}`}
+                  fill="none"
+                  stroke={tpl.color}
+                  strokeWidth={1}
+                  strokeDasharray="2 2"
+                  opacity={0.6}
+                />
+              </g>
             )
           })()}
 

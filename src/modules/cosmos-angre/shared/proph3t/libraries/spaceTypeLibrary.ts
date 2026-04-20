@@ -33,6 +33,15 @@ export type SpaceTypeKey =
   | 'entree_parking_vehicule_entree' | 'entree_parking_vehicule_sortie'
   | 'entree_parking' | 'entree_service'
   | 'sortie_secours'
+  // Portes & ouvertures (éléments architecturaux unitaires)
+  | 'porte_entree' | 'porte_interieure' | 'porte_secours' | 'porte_service'
+  | 'porte_double' | 'porte_tambour' | 'porte_automatique'
+  // Contrôle & sécurité accès
+  | 'controle_acces' | 'sas_securite' | 'portique_securite'
+  // Services usagers
+  | 'guichet_service' | 'guichet_caisse' | 'atm' | 'cabine_photomaton'
+  // Transport
+  | 'arret_taxi' | 'arret_bus_tram' | 'station_velo_libre_service'
   // Circulation intérieure
   | 'mail_central' | 'atrium' | 'promenade' | 'couloir_secondaire' | 'hall_distribution'
   | 'passage_pieton_couvert'
@@ -216,6 +225,139 @@ export const SPACE_TYPE_META: Record<SpaceTypeKey, SpaceTypeMeta> = {
     erpRequired: true,
     description: 'Issue de secours ERP — BAES obligatoire (ISO 7010 E001).',
   },
+
+  // ─── Portes & ouvertures (éléments architecturaux unitaires) ───
+  porte_entree: {
+    label: 'Porte d\'entrée',
+    category: 'acces-circulation',
+    icon: '🚪', color: '#10b981',
+    expectedSqm: { min: 1, max: 8 },
+    erpRequired: true,
+    description: 'Porte d\'entrée bâtiment (simple battant). Largeur min 90 cm (PMR).',
+  },
+  porte_interieure: {
+    label: 'Porte intérieure',
+    category: 'acces-circulation',
+    icon: '🚪', color: '#64748b',
+    expectedSqm: { min: 1, max: 5 },
+    description: 'Porte intérieure entre locaux, couloirs, bureaux.',
+  },
+  porte_secours: {
+    label: 'Porte de secours',
+    category: 'acces-circulation',
+    icon: '🚨', color: '#ef4444',
+    expectedSqm: { min: 1, max: 8 },
+    erpRequired: true,
+    description: 'Porte de sortie de secours — barre anti-panique EN 1125 obligatoire.',
+  },
+  porte_service: {
+    label: 'Porte de service',
+    category: 'acces-circulation',
+    icon: '🚪', color: '#0d9488',
+    expectedSqm: { min: 1, max: 5 },
+    description: 'Porte de service personnel/livraison (contrôle d\'accès badge).',
+  },
+  porte_double: {
+    label: 'Porte double battant',
+    category: 'acces-circulation',
+    icon: '🚪🚪', color: '#059669',
+    expectedSqm: { min: 2, max: 12 },
+    erpRequired: true,
+    description: 'Porte double battant (≥ 1.60 m). Entrées principales ERP.',
+  },
+  porte_tambour: {
+    label: 'Porte tambour',
+    category: 'acces-circulation',
+    icon: '🔄', color: '#16a34a',
+    expectedSqm: { min: 4, max: 20 },
+    description: 'Porte tambour/rotative — isolation thermique, flux contrôlé.',
+  },
+  porte_automatique: {
+    label: 'Porte automatique',
+    category: 'acces-circulation',
+    icon: '⬌', color: '#14b8a6',
+    expectedSqm: { min: 2, max: 15 },
+    erpRequired: true,
+    description: 'Porte automatique coulissante (détecteur infrarouge). Flux piéton entrée ERP.',
+  },
+
+  // ─── Contrôle & sécurité accès ───
+  controle_acces: {
+    label: 'Contrôle d\'accès',
+    category: 'acces-circulation',
+    icon: '🔐', color: '#7c3aed',
+    expectedSqm: { min: 1, max: 20 },
+    description: 'Borne/lecteur badge, tourniquet, portillon. Point de filtrage des accès réservés.',
+  },
+  sas_securite: {
+    label: 'SAS de sécurité',
+    category: 'acces-circulation',
+    icon: '🛡', color: '#9333ea',
+    expectedSqm: { min: 3, max: 30 },
+    erpRequired: true,
+    description: 'SAS d\'entrée avec double porte (thermique, sécurité, anti-effraction).',
+  },
+  portique_securite: {
+    label: 'Portique détection',
+    category: 'acces-circulation',
+    icon: '⚠', color: '#a855f7',
+    expectedSqm: { min: 1, max: 6 },
+    description: 'Portique détection métaux/antivol. À proximité des entrées / caisses.',
+  },
+
+  // ─── Services usagers ───
+  guichet_service: {
+    label: 'Guichet service',
+    category: 'equipements',
+    icon: '🪟', color: '#0ea5e9',
+    expectedSqm: { min: 2, max: 25 },
+    description: 'Guichet/comptoir service (accueil, consigne, objets trouvés, conciergerie).',
+  },
+  guichet_caisse: {
+    label: 'Guichet caisse',
+    category: 'equipements',
+    icon: '💰', color: '#f59e0b',
+    expectedSqm: { min: 2, max: 15 },
+    description: 'Caisse centrale, bureau perception (parking, événements).',
+  },
+  atm: {
+    label: 'Distributeur ATM',
+    category: 'equipements',
+    icon: '🏧', color: '#2563eb',
+    expectedSqm: { min: 1, max: 5 },
+    description: 'Distributeur automatique de billets (DAB). Proximité entrées ou hall.',
+  },
+  cabine_photomaton: {
+    label: 'Cabine photomaton',
+    category: 'equipements',
+    icon: '📷', color: '#8b5cf6',
+    expectedSqm: { min: 1, max: 4 },
+    description: 'Cabine photo identité, passeport, permis.',
+  },
+
+  // ─── Transport (extérieur & abords) ───
+  arret_taxi: {
+    label: 'Arrêt taxi / VTC',
+    category: 'infrastructure',
+    icon: '🚕', color: '#facc15',
+    expectedSqm: { min: 10, max: 200 },
+    description: 'Zone dépose/prise taxi, VTC (Uber, Yango, Bolt). Quai avec marquage au sol.',
+  },
+  arret_bus_tram: {
+    label: 'Arrêt bus / tram',
+    category: 'infrastructure',
+    icon: '🚌', color: '#0ea5e9',
+    expectedSqm: { min: 15, max: 150 },
+    description: 'Arrêt transport collectif urbain — abribus, quai surélevé, borne info.',
+  },
+  station_velo_libre_service: {
+    label: 'Station vélo libre-service',
+    category: 'infrastructure',
+    icon: '🚲', color: '#22c55e',
+    expectedSqm: { min: 10, max: 80 },
+    description: 'Station vélo en libre-service (Vélib\', etc.). Arceaux avec bornes de location.',
+  },
+
   mail_central: {
     label: 'Mail central (galerie)',
     category: 'acces-circulation',
@@ -660,6 +802,11 @@ export const SPACE_TYPES_BY_CATEGORY: Record<SpaceTypeCategory, SpaceTypeKey[]> 
     'entree_parking_vehicule_entree', 'entree_parking_vehicule_sortie',
     'entree_parking', 'entree_service',
     'sortie_secours',
+    // Portes & ouvertures (éléments architecturaux)
+    'porte_entree', 'porte_double', 'porte_automatique', 'porte_tambour',
+    'porte_interieure', 'porte_service', 'porte_secours',
+    // Contrôle & sécurité
+    'controle_acces', 'sas_securite', 'portique_securite',
     // Circulation intérieure
     'mail_central', 'atrium', 'promenade', 'couloir_secondaire', 'hall_distribution',
     'passage_pieton_couvert',
@@ -680,6 +827,8 @@ export const SPACE_TYPES_BY_CATEGORY: Record<SpaceTypeCategory, SpaceTypeKey[]> 
   'equipements': [
     'sanitaires', 'escalator', 'ascenseur', 'rampe_pmr', 'escalier_fixe',
     'point_information', 'borne_wayfinder',
+    // Guichets & services usagers
+    'guichet_service', 'guichet_caisse', 'atm', 'cabine_photomaton',
   ],
   'infrastructure': [
     // Parking macro + éléments unitaires
@@ -692,6 +841,8 @@ export const SPACE_TYPES_BY_CATEGORY: Record<SpaceTypeCategory, SpaceTypeKey[]> 
     'exterieur_place_forum', 'exterieur_giratoire', 'exterieur_arret_transport',
     'exterieur_zone_detente', 'exterieur_aire_jeux', 'exterieur_fontaine',
     'exterieur_voirie',
+    // Transport (extérieur & abords)
+    'arret_taxi', 'arret_bus_tram', 'station_velo_libre_service',
   ],
   'autre': ['a_definir', 'autre', 'a_exclure'],
 }
@@ -708,6 +859,27 @@ export const SPACE_CATEGORY_META: Record<SpaceTypeCategory, { label: string; col
 
 const TYPE_PATTERNS: Array<{ key: SpaceTypeKey; pattern: RegExp }> = [
   { key: 'sortie_secours',    pattern: /(?:sortie|issue)[_\s]?secours|emergency[_\s]?exit/i },
+  // ─── Portes — à matcher AVANT les entrées bâtiment ───
+  { key: 'porte_tambour',     pattern: /porte[_\s]?tambour|revolving[_\s]?door/i },
+  { key: 'porte_automatique', pattern: /porte[_\s]?auto|automatic[_\s]?door|coulissante[_\s]?auto/i },
+  { key: 'porte_double',      pattern: /porte[_\s]?(?:double|2[_\s]?battant)|double[_\s]?door/i },
+  { key: 'porte_secours',     pattern: /porte[_\s]?secours|emergency[_\s]?door|anti[_\s]?panique/i },
+  { key: 'porte_service',     pattern: /porte[_\s]?service|service[_\s]?door|porte[_\s]?personnel/i },
+  { key: 'porte_interieure',  pattern: /porte[_\s]?(?:int|interieure|locale)/i },
+  { key: 'porte_entree',      pattern: /porte[_\s]?(?:entree|ext|principale)|main[_\s]?door|entrance[_\s]?door/i },
+  // ─── Contrôle accès ───
+  { key: 'sas_securite',      pattern: /\bsas\b|airlock|security[_\s]?vestibule/i },
+  { key: 'portique_securite', pattern: /portique|metal[_\s]?detector|antivol/i },
+  { key: 'controle_acces',    pattern: /controle[_\s]?acces|access[_\s]?control|tourniquet|portillon|turnstile|badge(?:eur|_reader)/i },
+  // ─── Guichets & services ───
+  { key: 'atm',               pattern: /\batm\b|distributeur[_\s]?(?:billet|automatique)|dab\b|cash[_\s]?machine/i },
+  { key: 'guichet_caisse',    pattern: /guichet[_\s]?caisse|caisse[_\s]?centrale|perception/i },
+  { key: 'guichet_service',   pattern: /guichet|counter|comptoir[_\s]?service|consigne|objets?[_\s]?trouves?|conciergerie/i },
+  { key: 'cabine_photomaton', pattern: /photomaton|photo[_\s]?identite|photo[_\s]?booth/i },
+  // ─── Transport ───
+  { key: 'arret_taxi',        pattern: /(?:arret|station)[_\s]?taxi|taxi[_\s]?rank|vtc|uber|yango|bolt[_\s]?stop/i },
+  { key: 'arret_bus_tram',    pattern: /(?:arret|station)[_\s]?(?:bus|tram)|bus[_\s]?stop|tram[_\s]?stop/i },
+  { key: 'station_velo_libre_service', pattern: /velib|velov|station[_\s]?velo|bike[_\s]?share|bike[_\s]?station/i },
   // ─── Accès SITE (matcher AVANT entrées bâtiment) ───
   // Véhicule (avec sens)
   { key: 'acces_site_vehicule_entree', pattern: /(?:acces|entree|rampe)[_\s]?(?:site[_\s]?|parcelle[_\s]?)?(?:vehicule|auto|voit)[_\s]?(?:in|entree|entrant)|veh[_\s]?in/i },
@@ -833,7 +1005,13 @@ export function spaceTypeToCategory(type: SpaceTypeKey): string {
     case 'entree_principale': case 'entree_secondaire': case 'entree_parking':
     case 'entree_parking_vehicule_entree': case 'entree_parking_vehicule_sortie':
     case 'entree_service': case 'sortie_secours':
+    case 'porte_entree': case 'porte_interieure': case 'porte_secours':
+    case 'porte_service': case 'porte_double': case 'porte_tambour': case 'porte_automatique':
+    case 'controle_acces': case 'sas_securite': case 'portique_securite':
+    case 'arret_taxi': case 'arret_bus_tram': case 'station_velo_libre_service':
       return 'circulation'
+    case 'guichet_service': case 'guichet_caisse': case 'atm': case 'cabine_photomaton':
+      return 'services'
     case 'zone_technique': case 'local_poubelles': case 'zone_livraison':
       return 'service-tech'
     case 'parking_vehicule': case 'parking_moto': case 'parking_velo':
