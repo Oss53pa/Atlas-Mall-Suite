@@ -5,6 +5,7 @@ import React from 'react'
 import { ChevronDown } from 'lucide-react'
 import type { NavGroup, Vol3Tab } from '../sidebarConfig'
 import SaveStatusIndicator, { type SaveStatus } from '../../shared/components/SaveStatusIndicator'
+import { PlanModelSelector } from '../../shared/components/PlanModelSelector'
 
 interface Vol3SidebarProps {
   navGroups: NavGroup[]
@@ -77,6 +78,12 @@ export function Vol3Sidebar({
           )
         })}
       </nav>
+
+      {/* Plan model selector (commun aux volumes) */}
+      <div className="px-3 py-2 border-t border-white/[0.04]">
+        <p className="text-[9px] uppercase tracking-widest text-slate-600 mb-1.5">Modèle de plan</p>
+        <PlanModelSelector projectId="cosmos-angre" accentColor="#34d399" />
+      </div>
 
       {/* Save status */}
       <div className="px-4 py-2 border-t border-white/[0.04]">

@@ -72,6 +72,7 @@ import ScoreGauge from '../shared/components/ScoreGauge'
 import Model3DImportModal from './components/Model3DImportModal'
 import { useCascade } from './hooks/useCascade'
 import SaveStatusIndicator, { type SaveStatus } from '../shared/components/SaveStatusIndicator'
+import { PlanModelSelector } from '../shared/components/PlanModelSelector'
 import {
   ATLAS_STUDIO_GROUP_META,
   ATLAS_STUDIO_DEFAULT_TAB,
@@ -1061,6 +1062,12 @@ export default function Vol2Module() {
               </div>
             ))}
           </nav>
+
+          {/* Plan model selector (commun aux volumes) */}
+          <div className="px-3 py-2 border-t border-white/[0.04]">
+            <p className="text-[9px] uppercase tracking-widest text-slate-600 mb-1.5">Modèle de plan</p>
+            <PlanModelSelector projectId="cosmos-angre" accentColor="#38bdf8" />
+          </div>
 
           {/* Save status */}
           <div className="px-4 py-2 border-t border-white/[0.04]">

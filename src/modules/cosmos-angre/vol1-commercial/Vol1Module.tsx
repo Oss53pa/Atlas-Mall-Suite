@@ -20,6 +20,7 @@ import {
   Edit3,
 } from 'lucide-react'
 import SaveStatusIndicator from '../shared/components/SaveStatusIndicator'
+import { PlanModelSelector } from '../shared/components/PlanModelSelector'
 import {
   ATLAS_STUDIO_GROUP_META,
   ATLAS_STUDIO_CORE_ITEMS,
@@ -173,6 +174,12 @@ export default function Vol1Module() {
             )
           })}
         </nav>
+
+        {/* Plan model selector (commun aux volumes) */}
+        <div className="px-3 py-2 border-t" style={{ borderColor: '#1e2a3a' }}>
+          <p className="text-[9px] uppercase tracking-widest text-slate-600 mb-1.5">Modèle de plan</p>
+          <PlanModelSelector projectId="cosmos-angre" accentColor="#f59e0b" />
+        </div>
 
         {/* Save status */}
         <div className="px-4 py-2 border-t" style={{ borderColor: '#1e2a3a' }}>
