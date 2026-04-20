@@ -21,6 +21,9 @@ const SceneEditor = React.lazy(() => import('./scene-editor'))
 const RemodelingStage = React.lazy(() =>
   import('./shared/components/RemodelingStage').then(m => ({ default: m.RemodelingStage }))
 )
+const EditPlanFloatingButton = React.lazy(() =>
+  import('./shared/components/EditPlanFloatingButton').then(m => ({ default: m.EditPlanFloatingButton }))
+)
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -79,6 +82,10 @@ export default function CosmosAngre() {
         {/* Modal PROPH3T montée UNE SEULE FOIS au niveau projet (pas dans chaque volume) */}
         <React.Suspense fallback={null}>
           <Proph3tGlobalMount />
+        </React.Suspense>
+        {/* Bouton flottant "Éditer le plan" — accessible depuis tous les volumes */}
+        <React.Suspense fallback={null}>
+          <EditPlanFloatingButton />
         </React.Suspense>
       </>
     </React.Suspense>
