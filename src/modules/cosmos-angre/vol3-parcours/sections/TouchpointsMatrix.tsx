@@ -42,7 +42,7 @@ const prioriteConfig: Record<Priority, { bg: string; border: string; text: strin
 const typeConfig: Record<TPType, { bg: string; text: string }> = {
   physique: { bg: 'rgba(20,184,166,0.12)', text: '#14b8a6' },
   digital: { bg: 'rgba(59,130,246,0.12)', text: '#3b82f6' },
-  humain: { bg: 'rgba(139,92,246,0.12)', text: '#8b5cf6' },
+  humain: { bg: 'rgba(167,125,76,0.12)', text: '#a77d4c' },
 }
 
 export default function TouchpointsMatrix() {
@@ -66,7 +66,7 @@ export default function TouchpointsMatrix() {
         <span style={{ color: '#1e2a3a' }}>|</span>
         <span><span style={{ color: '#3b82f6' }}>Digital : {countByType.digital}</span></span>
         <span style={{ color: '#1e2a3a' }}>|</span>
-        <span><span style={{ color: '#8b5cf6' }}>Humain : {countByType.humain}</span></span>
+        <span><span style={{ color: '#a77d4c' }}>Humain : {countByType.humain}</span></span>
       </div>
 
       {/* Phase filters */}

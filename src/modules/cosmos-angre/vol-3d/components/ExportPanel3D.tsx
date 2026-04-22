@@ -23,7 +23,7 @@ export default function ExportPanel3D() {
       {config.mode !== 'isometric' && (
         <>
           <button className="w-full px-3 py-2 bg-teal-500/15 border border-teal-500/30 rounded-lg text-sm text-teal-300 hover:bg-teal-500/25 transition">PNG 4K</button>
-          <button className="w-full px-3 py-2 bg-purple-500/15 border border-purple-500/30 rounded-lg text-sm text-purple-300 hover:bg-purple-500/25 transition">GLB (Blender/SketchUp)</button>
+          <button className="w-full px-3 py-2 bg-atlas-500/15 border border-atlas-500/30 rounded-lg text-sm text-atlas-300 hover:bg-atlas-500/25 transition">GLB (Blender/SketchUp)</button>
         </>
       )}
     </div>

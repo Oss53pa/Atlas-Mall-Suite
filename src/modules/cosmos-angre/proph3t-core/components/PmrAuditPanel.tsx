@@ -42,9 +42,9 @@ export function PmrAuditPanel({ pmr, onClose, onFocusEdge }: Props) {
   }, [pmr.recommendations])
 
   return (
-    <div className="bg-slate-950 border border-white/10 rounded-lg overflow-hidden">
+    <div className="bg-surface-0 border border-white/10 rounded-lg overflow-hidden">
       {/* Header */}
-      <header className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-slate-900">
+      <header className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-surface-1">
         <div className="flex items-center gap-2">
           <Accessibility className="text-blue-400" size={16} />
           <h3 className="text-sm font-bold text-white">Audit PMR (Loi 2005-102)</h3>
@@ -147,7 +147,7 @@ export function PmrAuditPanel({ pmr, onClose, onFocusEdge }: Props) {
                           <button
                             key={eid}
                             onClick={() => onFocusEdge?.(eid)}
-                            className="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 text-[10px] font-mono text-slate-400 hover:text-white"
+                            className="px-2 py-0.5 rounded bg-surface-1 hover:bg-slate-800 text-[10px] font-mono text-slate-400 hover:text-white"
                           >
                             {eid.slice(0, 14)}
                           </button>
@@ -168,7 +168,7 @@ export function PmrAuditPanel({ pmr, onClose, onFocusEdge }: Props) {
       )}
 
       {/* Note méthodologie */}
-      <div className="bg-slate-900/50 border-t border-white/5 px-5 py-3">
+      <div className="bg-surface-1/50 border-t border-white/5 px-5 py-3">
         <p className="text-[10px] text-slate-500 m-0 leading-relaxed">
           <strong className="text-slate-400">Méthodologie</strong> — analyse par arête du graphe de navigation.
           Largeur estimée par distance aux obstacles (percentile 25 sur 5 échantillons).
@@ -188,7 +188,7 @@ function ScoreRing({ score, color }: { score: number; color: string }) {
   return (
     <div className="relative">
       <svg width="100" height="100" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r="38" fill="none" stroke="#1e293b" strokeWidth="6" />
+        <circle cx="50" cy="50" r="38" fill="none" stroke="#3a3d44" strokeWidth="6" />
         <circle
           cx="50" cy="50" r="38" fill="none"
           stroke={color} strokeWidth="6" strokeLinecap="round"
@@ -212,7 +212,7 @@ function StatCard({
 }) {
   return (
     <div className={`rounded border p-3 ${
-      warning ? 'border-amber-900/50 bg-amber-950/20' : 'border-white/10 bg-slate-900/30'
+      warning ? 'border-amber-900/50 bg-amber-950/20' : 'border-white/10 bg-surface-1/30'
     }`}>
       <div className="flex items-center gap-2">
         <Icon size={13} className={warning ? 'text-amber-400' : 'text-slate-400'} />

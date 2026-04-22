@@ -28,7 +28,7 @@ export const FURNITURE_CATALOG: Record<string, CatalogCategory> = {
   },
   mode: {
     label: 'Boutique mode',
-    color: '#534AB7',
+    color: '#7e5e3c',
     items: [
       { id: 'rayon_veste', name: 'Rayon vetements',     category: 'mode', w: 1.2, d: 0.5, h: 1.8,  src: 'kenney/furniture/shelf_clothes.glb' },
       { id: 'presentoir',  name: 'Presentoir rond',     category: 'mode', w: 0.8, d: 0.8, h: 1.4,  src: 'kenney/furniture/rack_round.glb' },

@@ -16,13 +16,13 @@ const LAYER_PATTERNS: {
   { pattern: /restau|food|cuisine|cafe/i,              type: 'restauration',   niveau: 2, color: '#f59e0b', entityType: 'zone', confidence: 0.88 },
   { pattern: /circul|corridor|couloir|hall|galerie/i,  type: 'circulation',    niveau: 1, color: '#e5e7eb', entityType: 'zone', confidence: 0.85 },
   { pattern: /tech|elec|cvc|plomb|meca/i,              type: 'technique',      niveau: 4, color: '#ef4444', entityType: 'zone', confidence: 0.87 },
-  { pattern: /back.?off|admin/i,                       type: 'backoffice',     niveau: 4, color: '#8b5cf6', entityType: 'zone', confidence: 0.86 },
+  { pattern: /back.?off|admin/i,                       type: 'backoffice',     niveau: 4, color: '#a77d4c', entityType: 'zone', confidence: 0.86 },
   { pattern: /financ|compt|caiss|banqu|tresor/i,       type: 'financier',      niveau: 5, color: '#dc2626', entityType: 'zone', confidence: 0.91 },
   { pattern: /secours|urgence|exit|evacu/i,            type: 'sortie_secours', niveau: 3, color: '#22c55e', entityType: 'zone', confidence: 0.93 },
   { pattern: /loisir|cinema|jeu|entertain/i,           type: 'loisirs',        niveau: 2, color: '#06b6d4', entityType: 'zone', confidence: 0.84 },
   { pattern: /service|info|client/i,                   type: 'services',       niveau: 2, color: '#14b8a6', entityType: 'zone', confidence: 0.80 },
-  { pattern: /hotel|heberge/i,                         type: 'hotel',          niveau: 3, color: '#a855f7', entityType: 'zone', confidence: 0.89 },
-  { pattern: /bureau|office/i,                         type: 'bureaux',        niveau: 3, color: '#6366f1', entityType: 'zone', confidence: 0.82 },
+  { pattern: /hotel|heberge/i,                         type: 'hotel',          niveau: 3, color: '#b38a5a', entityType: 'zone', confidence: 0.89 },
+  { pattern: /bureau|office/i,                         type: 'bureaux',        niveau: 3, color: '#b38a5a', entityType: 'zone', confidence: 0.82 },
   { pattern: /ext|jardin|terrass|facade/i,             type: 'exterieur',      niveau: 1, color: '#84cc16', entityType: 'zone', confidence: 0.78 },
 ]
 
@@ -217,9 +217,9 @@ export function extractZonesFromDXF(
 
       const colorMap: Record<SpaceType, string> = {
         parking: '#64748b', commerce: '#3b82f6', restauration: '#f59e0b',
-        circulation: '#e5e7eb', technique: '#ef4444', backoffice: '#8b5cf6',
+        circulation: '#e5e7eb', technique: '#ef4444', backoffice: '#a77d4c',
         financier: '#dc2626', sortie_secours: '#22c55e', loisirs: '#06b6d4',
-        services: '#14b8a6', hotel: '#a855f7', bureaux: '#6366f1', exterieur: '#84cc16',
+        services: '#14b8a6', hotel: '#b38a5a', bureaux: '#b38a5a', exterieur: '#84cc16',
       }
 
       zones.push({
@@ -269,9 +269,9 @@ export function extractZonesFromDXF(
           }
           const colorMap: Record<SpaceType, string> = {
             parking: '#64748b', commerce: '#3b82f6', restauration: '#f59e0b',
-            circulation: '#e5e7eb', technique: '#ef4444', backoffice: '#8b5cf6',
+            circulation: '#e5e7eb', technique: '#ef4444', backoffice: '#a77d4c',
             financier: '#dc2626', sortie_secours: '#22c55e', loisirs: '#06b6d4',
-            services: '#14b8a6', hotel: '#a855f7', bureaux: '#6366f1', exterieur: '#84cc16',
+            services: '#14b8a6', hotel: '#b38a5a', bureaux: '#b38a5a', exterieur: '#84cc16',
           }
 
           zones.push({

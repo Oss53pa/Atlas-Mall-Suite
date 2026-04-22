@@ -53,7 +53,7 @@ export default function WhatIfSecurite() {
                   <button
                     onClick={() => setSelectedResult(hasResult)}
                     className="text-[11px] px-3 py-1.5 rounded-lg"
-                    style={{ background: 'rgba(139,92,246,0.1)', color: '#a855f7' }}
+                    style={{ background: 'rgba(167,125,76,0.1)', color: '#b38a5a' }}
                   >
                     Resultats
                   </button>
@@ -131,11 +131,11 @@ export default function WhatIfSecurite() {
 
             {/* Recommendations */}
             <div className="mt-3">
-              <span className="text-[10px] font-bold tracking-wider" style={{ color: '#a855f7' }}>RECOMMANDATIONS</span>
+              <span className="text-[10px] font-bold tracking-wider" style={{ color: '#b38a5a' }}>RECOMMANDATIONS</span>
               <ul className="mt-2 space-y-1">
                 {r.recommendations.map((rec, i) => (
                   <li key={i} className="flex items-start gap-2 text-[12px]" style={{ color: '#94a3b8' }}>
-                    <ArrowRight size={10} style={{ color: '#a855f7', marginTop: 3, flexShrink: 0 }} />
+                    <ArrowRight size={10} style={{ color: '#b38a5a', marginTop: 3, flexShrink: 0 }} />
                     {rec}
                   </li>
                 ))}

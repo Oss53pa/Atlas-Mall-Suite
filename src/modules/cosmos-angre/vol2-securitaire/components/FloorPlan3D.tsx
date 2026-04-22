@@ -124,7 +124,7 @@ function buildScene(
     canvas.width = 256
     canvas.height = 64
     const ctx2d = canvas.getContext('2d')!
-    ctx2d.fillStyle = '#a855f7'
+    ctx2d.fillStyle = '#b38a5a'
     ctx2d.font = 'bold 28px sans-serif'
     ctx2d.textAlign = 'center'
     ctx2d.fillText(floor.level, 128, 40)
@@ -707,7 +707,7 @@ export default function FloorPlan3D(props: FloorPlan3DProps) {
       {/* FPS mode overlay hint */}
       {props.navMode === 'fps' && !fpsLockedRef.current && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-          <div className="bg-gray-900/80 border border-gray-600 rounded-xl px-6 py-4 text-center backdrop-blur-sm pointer-events-auto">
+          <div className="bg-surface-1/80 border border-gray-600 rounded-xl px-6 py-4 text-center backdrop-blur-sm pointer-events-auto">
             <p className="text-sm text-white font-medium mb-1">Vue pieton</p>
             <p className="text-xs text-gray-400">
               Cliquez pour activer · <span className="font-mono text-emerald-400">WASD</span> pour bouger · <span className="font-mono text-gray-300">Echap</span> pour quitter

@@ -14,7 +14,7 @@ interface MetricCard {
 const metrics: MetricCard[] = [
   { label: 'NPS Global', value: '42', target: 'Cible > 40', delta: '+5 vs M-1', trend: 'up', color: '#34d399', icon: Star },
   { label: 'Visiteurs / jour', value: '4 200', target: 'Cible 4 000', delta: '+8%', trend: 'up', color: '#38bdf8', icon: Users },
-  { label: 'Dwell Time moyen', value: '94 min', target: 'Cible > 90 min', delta: '+6 min', trend: 'up', color: '#8b5cf6', icon: Clock },
+  { label: 'Dwell Time moyen', value: '94 min', target: 'Cible > 90 min', delta: '+6 min', trend: 'up', color: '#a77d4c', icon: Clock },
   { label: 'Conversion visite → achat', value: '47%', target: 'Cible > 45%', delta: '+2 pts', trend: 'up', color: '#f59e0b', icon: ShoppingBag },
   { label: 'Cosmos Club actifs', value: '8 450', target: 'Cible 12 000 à M+6', delta: '+620 ce mois', trend: 'up', color: '#ec4899', icon: Heart },
   { label: 'App MAU', value: '3 120', target: 'Cible > 3 500', delta: '-2%', trend: 'down', color: '#ef4444', icon: Smartphone },
@@ -149,7 +149,7 @@ export default function ExperienceDashboard() {
               <p className="text-[10px] text-slate-500">visiteurs</p>
               <div className="flex items-center justify-center gap-3 mt-2 text-[11px]">
                 <span style={{ color: '#34d399' }}>NPS {w.nps}</span>
-                <span style={{ color: '#8b5cf6' }}>{w.dwell}min</span>
+                <span style={{ color: '#a77d4c' }}>{w.dwell}min</span>
               </div>
             </div>
           ))}

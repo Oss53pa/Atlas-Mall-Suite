@@ -60,7 +60,7 @@ export default function ObjectLibrary({ category: initialCat, onSelect, isOpen, 
   if (!isOpen) return null
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 border-l border-gray-800">
+    <div className="flex flex-col h-full bg-surface-1 border-l border-gray-800">
       <div className="flex items-center justify-between px-3 py-2 border-b border-gray-800">
         <span className="text-xs font-semibold text-white">Bibliothèque</span>
         <button onClick={onClose} className="text-gray-500 hover:text-white">

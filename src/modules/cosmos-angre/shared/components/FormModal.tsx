@@ -19,7 +19,7 @@ export function Modal({ open, onClose, title, children, width = 'max-w-lg' }: Mo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-surface-0/60 backdrop-blur-sm" onClick={onClose} />
       <div className={`relative ${width} w-full mx-4 rounded-xl border border-white/[0.08] bg-surface-2 shadow-2xl animate-fade-in`}>
         <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06]">
           <h2 className="text-[14px] font-display font-bold text-white">{title}</h2>

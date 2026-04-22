@@ -1,9 +1,12 @@
 // ═══ EXPORT DCE WORD ═══
+// Le paquet `docx` (~120 kB gzip) est lazy-loadé pour ne pas alourdir le bundle
+// initial — il n'est téléchargé que si l'utilisateur clique "Exporter DCE".
 
-import { Document, Paragraph, TextRun, Table, TableRow, TableCell, HeadingLevel, AlignmentType, WidthType, Packer } from 'docx'
 import type { Vol2ExportData } from '../cosmos-angre/shared/proph3t/types'
 
 export async function exportDCE(data: Vol2ExportData): Promise<Blob> {
+  const { Document, Paragraph, TextRun, Table, TableRow, TableCell, HeadingLevel, AlignmentType, WidthType, Packer } = await import('docx')
+
   const p = (text: string, opts?: { bold?: boolean; size?: number; heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel]; align?: (typeof AlignmentType)[keyof typeof AlignmentType] }) =>
     new Paragraph({
       children: [new TextRun({ text, bold: opts?.bold, size: opts?.size || 22, font: 'Calibri' })],

@@ -74,7 +74,7 @@ const LAYER_PRESETS: Record<string, CanvasLayer[]> = {
     { id: 'structure', name: 'Structure', visible: true, locked: true, opacity: 100, color: '#666' },
     { id: 'cameras', name: 'Caméras', visible: true, locked: false, opacity: 100, color: '#3b82f6' },
     { id: 'acces', name: 'Accès', visible: true, locked: false, opacity: 100, color: '#22c55e' },
-    { id: 'reseaux', name: 'Réseaux', visible: false, locked: false, opacity: 60, color: '#a855f7' },
+    { id: 'reseaux', name: 'Réseaux', visible: false, locked: false, opacity: 60, color: '#b38a5a' },
     { id: 'annotations', name: 'Annotations', visible: true, locked: false, opacity: 100, color: '#f59e0b' },
   ],
   vol3: [
@@ -175,11 +175,11 @@ export default function CanvasEngine({
   }, [])
 
   return (
-    <div className="flex h-full" style={{ background: '#060a13' }}>
+    <div className="flex h-full" style={{ background: '#1a1d23' }}>
       {/* Canvas */}
       <div className="flex-1 flex flex-col">
         {/* Toolbar */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-white/[0.05]" style={{ background: '#0b1120' }}>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-white/[0.05]" style={{ background: '#202329' }}>
           {!readOnly && (
             <>
               <button onClick={() => setTool('select')} className={`p-1.5 rounded ${tool === 'select' ? 'bg-white/10 text-white' : 'text-gray-500'}`} title="Sélection"><MousePointer size={13} /></button>
@@ -190,7 +190,7 @@ export default function CanvasEngine({
             </>
           )}
           <button onClick={() => setShowGrid(!showGrid)} className={`p-1.5 rounded ${showGrid ? 'bg-white/10 text-white' : 'text-gray-500'}`} title="Grille"><Grid3X3 size={13} /></button>
-          <button onClick={() => setSnapEnabled(!snapEnabled)} className={`p-1.5 rounded text-[9px] font-bold ${snapEnabled ? 'bg-indigo-600 text-white' : 'text-gray-500 bg-white/5'}`} title="Snap">S</button>
+          <button onClick={() => setSnapEnabled(!snapEnabled)} className={`p-1.5 rounded text-[9px] font-bold ${snapEnabled ? 'bg-atlas-500 text-white' : 'text-gray-500 bg-white/5'}`} title="Snap">S</button>
           <button onClick={() => setShowDims(!showDims)} className={`p-1.5 rounded ${showDims ? 'bg-white/10 text-white' : 'text-gray-500'}`} title="Cotation"><Ruler size={13} /></button>
           <div className="w-px h-4 bg-white/[0.06] mx-1" />
           <button onClick={() => setShowLayerPanel(!showLayerPanel)} className={`p-1.5 rounded ${showLayerPanel ? 'bg-white/10 text-white' : 'text-gray-500'}`} title="Calques"><Layers size={13} /></button>
@@ -223,7 +223,7 @@ export default function CanvasEngine({
                 const opacity = (layer?.opacity ?? 100) / 100
                 if (obj.type === 'rect') {
                   return <Rect key={obj.id} x={20 + obj.x} y={20 + obj.y} width={obj.width} height={obj.height}
-                    fill={obj.fill} stroke={selectedId === obj.id ? '#818cf8' : obj.stroke} strokeWidth={selectedId === obj.id ? 2 : obj.strokeWidth}
+                    fill={obj.fill} stroke={selectedId === obj.id ? '#c9a068' : obj.stroke} strokeWidth={selectedId === obj.id ? 2 : obj.strokeWidth}
                     rotation={obj.rotation} opacity={opacity} draggable={!readOnly && !layer?.locked}
                     onClick={() => setSelectedId(obj.id)}
                     onDragEnd={(e) => {
@@ -262,7 +262,7 @@ export default function CanvasEngine({
       {showLayerPanel && (
         <div className="w-52 flex-shrink-0 border-l border-white/[0.05] overflow-y-auto" style={{ background: '#0a0f1a' }}>
           <div className="p-3 border-b border-white/[0.04]">
-            <h3 className="text-[11px] font-semibold text-white flex items-center gap-1.5"><Layers size={12} className="text-indigo-400" /> Calques</h3>
+            <h3 className="text-[11px] font-semibold text-white flex items-center gap-1.5"><Layers size={12} className="text-atlas-400" /> Calques</h3>
           </div>
           <div className="p-2 space-y-0.5">
             {layers.map(l => (
@@ -276,7 +276,7 @@ export default function CanvasEngine({
                 <div className="w-2.5 h-2.5 rounded-sm" style={{ background: l.color }} />
                 <span className={`text-[10px] flex-1 ${l.visible ? 'text-gray-300' : 'text-gray-600'}`}>{l.name}</span>
                 <input type="range" min={0} max={100} value={l.opacity} onChange={e => setLayerOpacity(l.id, +e.target.value)}
-                  className="w-12 h-1 accent-indigo-500" />
+                  className="w-12 h-1 accent-atlas-500" />
               </div>
             ))}
           </div>

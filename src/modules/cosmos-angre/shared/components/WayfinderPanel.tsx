@@ -53,8 +53,8 @@ export function WayfinderPanel({ open, onClose, spaces, pois, planBounds, title,
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-7xl h-[90vh] rounded-xl bg-slate-950 border border-white/[0.08] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-surface-0/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="w-full max-w-7xl h-[90vh] rounded-xl bg-surface-0 border border-white/[0.08] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
           <div>
@@ -69,14 +69,14 @@ export function WayfinderPanel({ open, onClose, spaces, pois, planBounds, title,
         </div>
 
         {/* Toolbar */}
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-white/[0.04] bg-slate-900/50">
+        <div className="flex items-center gap-2 px-4 py-2 border-b border-white/[0.04] bg-surface-1/50">
           {/* Theme presets */}
           <div className="flex items-center gap-1">
             <span className="text-[10px] text-slate-500 mr-1">Thème :</span>
             {(Object.keys(THEME_PRESETS) as Array<keyof typeof THEME_PRESETS>).map(k => (
               <button key={k} onClick={() => setThemeKey(k)}
                 className={`px-2.5 py-1 rounded text-[10px] font-medium transition ${themeKey === k
-                  ? 'bg-purple-600/30 border border-purple-500/50 text-purple-200'
+                  ? 'bg-atlas-600/30 border border-atlas-500/50 text-atlas-200'
                   : 'border border-white/[0.05] text-slate-400 hover:text-white'}`}>
                 {k}
               </button>
@@ -110,14 +110,14 @@ export function WayfinderPanel({ open, onClose, spaces, pois, planBounds, title,
             {exporting ? '...' : 'PNG (web)'}
           </button>
           <button onClick={handleHtml}
-            className="flex items-center gap-1 px-2.5 py-1 rounded bg-purple-600/20 border border-purple-500/40 text-purple-300 text-[10px] hover:bg-purple-600/30">
+            className="flex items-center gap-1 px-2.5 py-1 rounded bg-atlas-600/20 border border-atlas-500/40 text-atlas-300 text-[10px] hover:bg-atlas-600/30">
             <Download size={12} />
             HTML (borne)
           </button>
         </div>
 
         {/* Preview */}
-        <div className="flex-1 min-h-0 overflow-hidden p-4 bg-slate-950">
+        <div className="flex-1 min-h-0 overflow-hidden p-4 bg-surface-0">
           <div className="w-full h-full rounded-lg overflow-hidden border border-white/[0.06]">
             <WayfinderRenderer
               spaces={spaces}

@@ -25,13 +25,13 @@ interface Props {
 const EMPHASIS_META: Record<string, { label: string; color: string; icon: string }> = {
   revenue:   { label: 'Performance commerciale max', color: '#10b981', icon: '💰' },
   diversity: { label: 'Mix équilibré',                color: '#3b82f6', icon: '⚖' },
-  charter:   { label: 'Conformité charte stricte',    color: '#a855f7', icon: '📋' },
+  charter:   { label: 'Conformité charte stricte',    color: '#b38a5a', icon: '📋' },
   flagship:  { label: 'Stratégie flagship',           color: '#f59e0b', icon: '⭐' },
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
   mode: '#ec4899', restauration: '#f59e0b', services: '#06b6d4',
-  loisirs: '#a855f7', alimentaire: '#10b981', beaute: '#f43f5e',
+  loisirs: '#b38a5a', alimentaire: '#10b981', beaute: '#f43f5e',
   enfants: '#f97316', autre: '#94a3b8',
 }
 
@@ -40,7 +40,7 @@ export function MultiScenarioCards({ scenarios, onAdopt, onClose }: Props) {
 
   if (scenarios.length === 0) {
     return (
-      <div className="bg-slate-950 border border-white/10 rounded-lg p-8 text-center">
+      <div className="bg-surface-0 border border-white/10 rounded-lg p-8 text-center">
         <BarChart3 className="mx-auto text-slate-600" size={32} />
         <p className="text-sm text-slate-500 mt-2">Aucun scénario disponible.</p>
       </div>
@@ -48,8 +48,8 @@ export function MultiScenarioCards({ scenarios, onAdopt, onClose }: Props) {
   }
 
   return (
-    <div className="bg-slate-950 border border-white/10 rounded-lg overflow-hidden">
-      <header className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-slate-900">
+    <div className="bg-surface-0 border border-white/10 rounded-lg overflow-hidden">
+      <header className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-surface-1">
         <div className="flex items-center gap-2">
           <Trophy className="text-amber-400" size={16} />
           <h3 className="text-sm font-bold text-white">
@@ -102,7 +102,7 @@ function ScenarioCard({
     <div className={`rounded-lg border-2 transition-all ${
       isTop
         ? 'border-amber-500/50 bg-gradient-to-br from-amber-950/20 to-slate-900'
-        : 'border-white/10 bg-slate-900/40'
+        : 'border-white/10 bg-surface-1/40'
     }`}>
       {/* Header carte */}
       <div className="p-4">
@@ -186,7 +186,7 @@ function ScenarioCard({
               className={`flex-1 px-3 py-1.5 rounded text-[11px] font-bold flex items-center justify-center gap-1 ${
                 isTop
                   ? 'bg-amber-500 text-slate-900 hover:bg-amber-400'
-                  : 'bg-indigo-600 text-white hover:bg-indigo-500'
+                  : 'bg-atlas-500 text-white hover:bg-atlas-500'
               }`}
             >
               <CheckCircle size={12} />
@@ -215,7 +215,7 @@ function ScenarioCard({
               </div>
               <div className="max-h-32 overflow-y-auto space-y-0.5">
                 {changes.slice(0, 20).map((c, i) => (
-                  <div key={i} className="flex items-center gap-2 text-[10px] px-2 py-0.5 rounded bg-slate-950">
+                  <div key={i} className="flex items-center gap-2 text-[10px] px-2 py-0.5 rounded bg-surface-0">
                     <code className="text-slate-500 line-through">{c.before ?? 'libre'}</code>
                     <span className="text-slate-600">→</span>
                     <code className="text-emerald-400">{c.after}</code>
@@ -245,7 +245,7 @@ function Kpi({ label, value, icon: Icon, color }: {
   label: string; value: string; icon: React.ComponentType<any>; color: string
 }) {
   return (
-    <div className="rounded bg-slate-950 border border-white/5 p-2">
+    <div className="rounded bg-surface-0 border border-white/5 p-2">
       <div className="flex items-center gap-1 mb-0.5">
         <Icon size={10} className="text-slate-500" />
         <span className="text-[9px] uppercase tracking-wider text-slate-500">{label}</span>

@@ -42,7 +42,7 @@ export default function CameraLibrary({ onSelect, onClose }: CameraLibraryProps)
   }, [search])
 
   return (
-    <div className="flex flex-col h-full bg-gray-950">
+    <div className="flex flex-col h-full bg-surface-0">
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
         <h3 className="text-sm font-semibold text-blue-400 flex items-center gap-2">
           <Camera className="w-4 h-4" /> Bibliotheque Cameras
@@ -60,7 +60,7 @@ export default function CameraLibrary({ onSelect, onClose }: CameraLibraryProps)
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher..."
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-blue-500"
+            className="w-full bg-surface-1 border border-gray-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-blue-500"
           />
         </div>
       </div>
@@ -70,7 +70,7 @@ export default function CameraLibrary({ onSelect, onClose }: CameraLibraryProps)
           <button
             key={cam.model}
             onClick={() => onSelect(cam.model)}
-            className="w-full text-left bg-gray-900/50 border border-gray-800 rounded-lg p-3 hover:border-blue-500/40 hover:bg-blue-950/10 transition-colors"
+            className="w-full text-left bg-surface-1/50 border border-gray-800 rounded-lg p-3 hover:border-blue-500/40 hover:bg-blue-950/10 transition-colors"
           >
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs font-semibold text-white">{cam.model}</span>

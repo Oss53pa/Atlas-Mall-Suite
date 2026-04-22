@@ -289,10 +289,10 @@ export default function FloorPlanCanvas({
   // ── Guard ──────────────────────────────────────────────
   if (!floor) {
     return (
-      <div className={`flex flex-col items-center justify-center bg-gray-950 text-center p-8 ${className}`}>
+      <div className={`flex flex-col items-center justify-center bg-surface-0 text-center p-8 ${className}`}>
         <div className="text-gray-300 text-sm mb-2 font-medium">Aucun plan chargé</div>
         <div className="text-gray-500 text-xs max-w-md leading-relaxed">
-          Importez un plan DXF ou DWG depuis l'onglet <strong className="text-purple-400">Plans importés</strong>.
+          Importez un plan DXF ou DWG depuis l'onglet <strong className="text-atlas-400">Plans importés</strong>.
           Le plan sera ensuite disponible dans tous les volumes (Commercial, Sécurité, Parcours).
         </div>
       </div>
@@ -341,7 +341,7 @@ export default function FloorPlanCanvas({
   // ── 3D MODE: render View3DSection fullscreen ──
   if (viewMode === '3d') {
     return (
-      <div ref={containerRef} className={`relative overflow-hidden bg-gray-950 flex flex-col ${className}`}>
+      <div ref={containerRef} className={`relative overflow-hidden bg-surface-0 flex flex-col ${className}`}>
         {/* 2D/3D toggle */}
         <div className="absolute top-3 right-3 z-20 flex gap-1">
           <button
@@ -364,7 +364,7 @@ export default function FloorPlanCanvas({
   return (
     <div
       ref={containerRef}
-      className={`relative overflow-hidden bg-gray-950 flex ${className}`}
+      className={`relative overflow-hidden bg-surface-0 flex ${className}`}
     >
       {/* CAD Toolbar (left side) */}
       <CadToolbar />
@@ -516,7 +516,7 @@ export default function FloorPlanCanvas({
                 x={x} y={y} width={w} height={h}
                 fill={zone.color}
                 fillOpacity={showHeatmap ? 0.4 : hasImage ? 0.25 : 0.2}
-                stroke={isSelected ? '#a855f7' : zone.color}
+                stroke={isSelected ? '#b38a5a' : zone.color}
                 strokeWidth={isSelected ? 3 : hasImage ? 2 : 1}
                 strokeDasharray={isSelected ? '8 4' : undefined}
                 rx={hasImage ? 4 : 2}
@@ -633,7 +633,7 @@ export default function FloorPlanCanvas({
             )}
             {/* Vertex dots for active draw */}
             {cadDrawPoints.map((p, i) => (
-              <circle key={i} cx={p.x} cy={p.y} r={4} fill="#a855f7" stroke="#fff" strokeWidth={1} />
+              <circle key={i} cx={p.x} cy={p.y} r={4} fill="#b38a5a" stroke="#fff" strokeWidth={1} />
             ))}
           </g>
         )}
@@ -714,7 +714,7 @@ export default function FloorPlanCanvas({
 
       {/* Calibration status bar */}
       {calibration && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gray-950/80 px-3 py-1.5 flex items-center gap-4 text-[10px] z-10">
+        <div className="absolute bottom-0 left-0 right-0 bg-surface-0/80 px-3 py-1.5 flex items-center gap-4 text-[10px] z-10">
           <span className="text-gray-400">
             Calibration : {calibration.realWidthM.toFixed(1)}m × {calibration.realHeightM.toFixed(1)}m
           </span>
@@ -735,7 +735,7 @@ export default function FloorPlanCanvas({
 
       {/* ═══ ZONE EDITOR PANEL ═══ */}
       {editingZone && onZoneUpdate && (
-        <div className="absolute top-3 left-14 z-20 w-64 bg-gray-900/95 border border-gray-700 rounded-xl shadow-2xl backdrop-blur-sm overflow-hidden">
+        <div className="absolute top-3 left-14 z-20 w-64 bg-surface-1/95 border border-gray-700 rounded-xl shadow-2xl backdrop-blur-sm overflow-hidden">
           <div className="flex items-center justify-between px-3 py-2 border-b border-gray-800">
             <span className="text-[11px] font-bold text-white truncate">{editingZone.label || 'Zone sans nom'}</span>
             <button onClick={() => setEditingZoneId(null)} className="text-gray-500 hover:text-white text-sm">&times;</button>
@@ -755,7 +755,7 @@ export default function FloorPlanCanvas({
             <div>
               <label className="text-[9px] uppercase tracking-wider text-gray-500 block mb-1">Couleur</label>
               <div className="flex gap-1.5 flex-wrap">
-                {['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#a855f7', '#14b8a6', '#ec4899', '#6366f1', '#64748b', '#84cc16', '#06b6d4', '#dc2626'].map(c => (
+                {['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#b38a5a', '#14b8a6', '#ec4899', '#b38a5a', '#64748b', '#84cc16', '#06b6d4', '#dc2626'].map(c => (
                   <button
                     key={c}
                     onClick={() => onZoneUpdate(editingZone.id, { color: c })}

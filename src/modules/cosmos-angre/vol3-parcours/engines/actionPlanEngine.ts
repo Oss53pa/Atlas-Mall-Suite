@@ -48,7 +48,7 @@ export const VOLUME_COLORS: Record<ActionVolume, string> = {
   vol1: '#f59e0b',
   vol2: '#38bdf8',
   vol3: '#22c55e',
-  transversal: '#a855f7',
+  transversal: '#b38a5a',
 }
 
 // ── Generate default action plan for Cosmos Angre ────────────

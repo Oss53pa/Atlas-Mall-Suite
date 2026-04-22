@@ -64,7 +64,7 @@ export default function BudgetSection() {
         <h3 className="text-sm font-semibold text-white">Répartition</h3>
         {[
           { label: 'Vidéosurveillance', value: camTotal, color: '#3b82f6', icon: Camera },
-          { label: 'Contrôle d\'accès', value: doorTotal, color: '#8b5cf6', icon: DoorOpen },
+          { label: 'Contrôle d\'accès', value: doorTotal, color: '#a77d4c', icon: DoorOpen },
         ].map((cat) => (
           <div key={cat.label} className="space-y-1">
             <div className="flex items-center justify-between text-xs">
@@ -127,7 +127,7 @@ export default function BudgetSection() {
       {/* Door items table */}
       <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4">
         <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-1.5">
-          <DoorOpen className="w-4 h-4 text-purple-400" />
+          <DoorOpen className="w-4 h-4 text-atlas-400" />
           Contrôle d'accès
         </h3>
         <table className="w-full text-xs">
@@ -155,7 +155,7 @@ export default function BudgetSection() {
           <tfoot>
             <tr className="border-t border-gray-700">
               <td colSpan={3} className="py-2 text-right text-gray-400 font-medium">Sous-total accès</td>
-              <td className="py-2 text-right text-purple-400 font-bold font-mono">{doorTotal.toLocaleString('fr-FR')}</td>
+              <td className="py-2 text-right text-atlas-400 font-bold font-mono">{doorTotal.toLocaleString('fr-FR')}</td>
             </tr>
           </tfoot>
         </table>

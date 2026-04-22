@@ -15,7 +15,7 @@ export function Vol3Footer({
   activeProfileName, activeFloorLevel,
 }: Vol3FooterProps) {
   return (
-    <footer className="flex items-center justify-between px-4 py-1.5 border-t border-gray-800 bg-gray-950/90 backdrop-blur-sm text-xs text-gray-500 shrink-0">
+    <footer className="flex items-center justify-between px-4 py-1.5 border-t border-gray-800 bg-surface-0/90 backdrop-blur-sm text-xs text-gray-500 shrink-0">
       <div className="flex items-center gap-4">
         <span>
           <span className="text-emerald-400 font-semibold">{poiCount}</span> POI{poiCount !== 1 && 's'}

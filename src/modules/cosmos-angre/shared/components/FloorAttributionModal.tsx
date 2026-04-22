@@ -94,16 +94,16 @@ export function FloorAttributionModal({ open, detectedClusters, thumbnailForClus
 
   return createPortal(
     <div
-      className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 bg-surface-0/85 backdrop-blur-sm flex items-center justify-center p-4"
       style={{ zIndex: 99998 }}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel() }}
     >
       <div
-        className="w-full max-w-4xl max-h-[92vh] rounded-xl bg-slate-950 border border-cyan-500/40 flex flex-col overflow-hidden shadow-2xl"
+        className="w-full max-w-4xl max-h-[92vh] rounded-xl bg-surface-0 border border-cyan-500/40 flex flex-col overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] bg-gradient-to-r from-cyan-950/40 to-slate-950">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] bg-gradient-to-r from-cyan-950/40 to-surface-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-cyan-600/30 border border-cyan-500/40 flex items-center justify-center">
               <Layers size={18} className="text-cyan-300" />
@@ -148,10 +148,10 @@ export function FloorAttributionModal({ open, detectedClusters, thumbnailForClus
                     <img
                       src={thumbnailForCluster(a.clusterId) ?? ''}
                       alt={`Zone ${i + 1}`}
-                      className="w-20 h-20 rounded border border-white/[0.1] bg-slate-900 object-contain"
+                      className="w-20 h-20 rounded border border-white/[0.1] bg-surface-1 object-contain"
                     />
                   ) : (
-                    <div className="w-20 h-20 rounded border border-white/[0.1] bg-slate-900 flex items-center justify-center text-[10px] text-slate-600">
+                    <div className="w-20 h-20 rounded border border-white/[0.1] bg-surface-1 flex items-center justify-center text-[10px] text-slate-600">
                       Zone {i + 1}
                     </div>
                   )}
@@ -176,7 +176,7 @@ export function FloorAttributionModal({ open, detectedClusters, thumbnailForClus
                           <select
                             value={a.level ?? ''}
                             onChange={(e) => setLevel(a.clusterId, e.target.value ? (e.target.value as FloorLevel) : null)}
-                            className={`text-[11px] px-2 py-1 rounded bg-slate-900 border outline-none ${
+                            className={`text-[11px] px-2 py-1 rounded bg-surface-1 border outline-none ${
                               !a.level ? 'border-amber-500/50 text-amber-200' :
                               isDup ? 'border-red-500/60 text-red-200' :
                               'border-emerald-500/40 text-emerald-200'
@@ -217,7 +217,7 @@ export function FloorAttributionModal({ open, detectedClusters, thumbnailForClus
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-white/[0.06] bg-slate-900/40 flex items-center justify-between">
+        <div className="px-5 py-3 border-t border-white/[0.06] bg-surface-1/40 flex items-center justify-between">
           <div className="text-[10px] text-slate-500">
             {attributions.filter(a => !a.ignored && a.level).length} / {attributions.filter(a => !a.ignored).length} niveaux nommés
             {duplicateLevels.length > 0 && <span className="text-red-400 ml-2">· {duplicateLevels.length} doublon(s)</span>}

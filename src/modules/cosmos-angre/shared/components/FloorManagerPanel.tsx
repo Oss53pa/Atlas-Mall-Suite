@@ -40,7 +40,7 @@ export function FloorManagerPanel() {
       {/* Toggle button */}
       <button
         onClick={() => setOpen(!open)}
-        className="fixed top-20 left-3 z-30 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-white/[0.08] text-[10px] text-slate-300 hover:bg-slate-800 shadow-lg"
+        className="fixed top-20 left-3 z-30 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface-1/90 border border-white/[0.08] text-[10px] text-slate-300 hover:bg-slate-800 shadow-lg"
         title="Gestion des étages et bibliothèque de plans"
       >
         <Layers size={12} />
@@ -49,8 +49,8 @@ export function FloorManagerPanel() {
 
       {/* Panel */}
       {open && (
-        <aside className="fixed top-32 left-3 z-30 w-80 rounded-xl bg-slate-950/95 border border-white/[0.08] shadow-2xl overflow-hidden">
-          <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06] bg-slate-900/50">
+        <aside className="fixed top-32 left-3 z-30 w-80 rounded-xl bg-surface-0/95 border border-white/[0.08] shadow-2xl overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06] bg-surface-1/50">
             <div className="flex items-center gap-2">
               <Layers size={12} className="text-cyan-400" />
               <span className="text-[12px] font-semibold text-white">Étages détectés</span>
@@ -79,7 +79,7 @@ export function FloorManagerPanel() {
               </div>
             ) : (
               floors.map(f => (
-                <div key={f.id} className="rounded-lg border border-white/[0.05] bg-slate-900/40 p-2">
+                <div key={f.id} className="rounded-lg border border-white/[0.05] bg-surface-1/40 p-2">
                   <div className="flex items-center justify-between mb-1.5">
                     <div>
                       <div className="text-[11px] font-semibold text-white">{f.label}</div>
@@ -120,7 +120,7 @@ export function FloorManagerPanel() {
             </button>
             <button
               onClick={() => setLibraryOpen(true)}
-              className="flex items-center gap-1 px-2 py-1.5 rounded text-[10px] font-medium bg-purple-600/20 border border-purple-500/40 text-purple-300 hover:bg-purple-600/30"
+              className="flex items-center gap-1 px-2 py-1.5 rounded text-[10px] font-medium bg-atlas-600/20 border border-atlas-500/40 text-atlas-300 hover:bg-atlas-600/30"
             >
               <BookOpen size={11} />
               Bibliothèque
@@ -204,11 +204,11 @@ function SavePlanModal({ kind, floorId, saving, onSave, onCancel }: {
 
   return createPortal(
     <div
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 bg-surface-0/80 backdrop-blur-sm flex items-center justify-center p-4"
       style={{ zIndex: 99999 }}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel() }}
     >
-      <div className="w-full max-w-md rounded-xl bg-slate-950 border border-cyan-500/40 overflow-hidden">
+      <div className="w-full max-w-md rounded-xl bg-surface-0 border border-cyan-500/40 overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
           <h3 className="text-[13px] font-bold text-white">
             {kind === 'full' ? 'Sauvegarder le plan complet' : `Sauvegarder l'étage ${floorId ?? ''}`}
@@ -221,7 +221,7 @@ function SavePlanModal({ kind, floorId, saving, onSave, onCancel }: {
             <input
               autoFocus
               value={name} onChange={e => setName(e.target.value)}
-              className="w-full text-[12px] px-2.5 py-1.5 rounded bg-slate-900 border border-white/[0.08] text-white outline-none focus:border-cyan-500"
+              className="w-full text-[12px] px-2.5 py-1.5 rounded bg-surface-1 border border-white/[0.08] text-white outline-none focus:border-cyan-500"
             />
           </div>
           <div>
@@ -229,7 +229,7 @@ function SavePlanModal({ kind, floorId, saving, onSave, onCancel }: {
             <textarea
               value={description} onChange={e => setDescription(e.target.value)}
               rows={2}
-              className="w-full text-[11px] px-2.5 py-1.5 rounded bg-slate-900 border border-white/[0.08] text-white outline-none focus:border-cyan-500 resize-none"
+              className="w-full text-[11px] px-2.5 py-1.5 rounded bg-surface-1 border border-white/[0.08] text-white outline-none focus:border-cyan-500 resize-none"
             />
           </div>
           <div>
@@ -237,7 +237,7 @@ function SavePlanModal({ kind, floorId, saving, onSave, onCancel }: {
             <input
               value={tagsText} onChange={e => setTagsText(e.target.value)}
               placeholder="ex: rdc, parking, cosmos"
-              className="w-full text-[11px] px-2.5 py-1.5 rounded bg-slate-900 border border-white/[0.08] text-white outline-none focus:border-cyan-500"
+              className="w-full text-[11px] px-2.5 py-1.5 rounded bg-surface-1 border border-white/[0.08] text-white outline-none focus:border-cyan-500"
             />
           </div>
         </div>
@@ -327,14 +327,14 @@ function LibraryModal({ onClose, onLoad }: {
 
   return createPortal(
     <div
-      className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 bg-surface-0/85 backdrop-blur-sm flex items-center justify-center p-4"
       style={{ zIndex: 99999 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-full max-w-4xl h-[80vh] rounded-xl bg-slate-950 border border-purple-500/40 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-gradient-to-r from-purple-950/40 to-slate-950">
+      <div className="w-full max-w-4xl h-[80vh] rounded-xl bg-surface-0 border border-atlas-500/40 flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-gradient-to-r from-purple-950/40 to-surface-0">
           <div className="flex items-center gap-2">
-            <BookOpen size={16} className="text-purple-300" />
+            <BookOpen size={16} className="text-atlas-300" />
             <h3 className="text-[14px] font-bold text-white">Bibliothèque de plans</h3>
             <span className="text-[10px] text-slate-500">{plans.length} plan(s)</span>
           </div>
@@ -342,11 +342,11 @@ function LibraryModal({ onClose, onLoad }: {
         </div>
 
         {/* Toolbar */}
-        <div className="px-4 py-2 border-b border-white/[0.06] bg-slate-900/40 flex items-center gap-2">
+        <div className="px-4 py-2 border-b border-white/[0.06] bg-surface-1/40 flex items-center gap-2">
           <input
             value={query} onChange={e => setQuery(e.target.value)}
             placeholder="Rechercher (nom, description, tags)…"
-            className="flex-1 text-[11px] px-2.5 py-1.5 rounded bg-slate-900 border border-white/[0.06] text-white outline-none focus:border-purple-500"
+            className="flex-1 text-[11px] px-2.5 py-1.5 rounded bg-surface-1 border border-white/[0.06] text-white outline-none focus:border-atlas-500"
           />
           <input
             ref={fileInputRef}
@@ -385,7 +385,7 @@ function LibraryModal({ onClose, onLoad }: {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {filtered.map(p => (
-                <div key={p.id} className="rounded-lg border border-white/[0.06] bg-slate-900/40 p-3">
+                <div key={p.id} className="rounded-lg border border-white/[0.06] bg-surface-1/40 p-3">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1 min-w-0">
                       <div className="text-[12px] font-semibold text-white truncate">{p.name}</div>

@@ -92,7 +92,7 @@ export function PlanModelsLibrary({ projectId }: Props) {
           <button
             onClick={() => setSaveOpen(true)}
             disabled={!parsedPlan}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[12px] font-semibold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-atlas-500 to-purple-600 text-white text-[12px] font-semibold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
             title={parsedPlan ? 'Enregistre un snapshot du plan comme BROUILLON (pas encore final)' : 'Importez d\'abord un plan'}
           >
             <Save size={13} /> Enregistrer brouillon
@@ -101,8 +101,8 @@ export function PlanModelsLibrary({ projectId }: Props) {
 
         {/* Modale enregistrement */}
         {saveOpen && (
-          <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-center justify-center">
-            <div className="w-[460px] max-w-[95vw] rounded-xl bg-slate-900 border border-white/10 shadow-2xl overflow-hidden">
+          <div className="fixed inset-0 z-[9999] bg-surface-0/70 backdrop-blur-sm flex items-center justify-center">
+            <div className="w-[460px] max-w-[95vw] rounded-xl bg-surface-1 border border-white/10 shadow-2xl overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
                 <h3 className="text-sm font-bold text-white m-0">Enregistrer le plan</h3>
                 <button onClick={() => setSaveOpen(false)} className="text-slate-400 hover:text-white"><X size={16} /></button>
@@ -113,7 +113,7 @@ export function PlanModelsLibrary({ projectId }: Props) {
                   <input
                     value={saveName} onChange={(e) => setSaveName(e.target.value)}
                     placeholder='Ex: "V1 initial", "Après split parking"…'
-                    className="w-full bg-slate-800 text-white rounded px-3 py-2 text-sm border border-white/10 focus:border-indigo-500 outline-none"
+                    className="w-full bg-slate-800 text-white rounded px-3 py-2 text-sm border border-white/10 focus:border-atlas-500 outline-none"
                     autoFocus
                   />
                 </div>
@@ -122,7 +122,7 @@ export function PlanModelsLibrary({ projectId }: Props) {
                   <textarea
                     value={saveDesc} onChange={(e) => setSaveDesc(e.target.value)}
                     rows={3} placeholder="Modifications, raison du snapshot…"
-                    className="w-full bg-slate-800 text-white rounded px-3 py-2 text-sm border border-white/10 focus:border-indigo-500 outline-none resize-none"
+                    className="w-full bg-slate-800 text-white rounded px-3 py-2 text-sm border border-white/10 focus:border-atlas-500 outline-none resize-none"
                   />
                 </div>
                 <div className="text-[11px] text-slate-500 px-3 py-2 rounded bg-slate-800/50">
@@ -133,7 +133,7 @@ export function PlanModelsLibrary({ projectId }: Props) {
               <div className="flex justify-end gap-2 px-4 py-3 border-t border-white/10">
                 <button onClick={() => setSaveOpen(false)} className="px-3 py-1.5 rounded text-[11px] text-slate-400 hover:text-white">Annuler</button>
                 <button onClick={handleSave}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded text-[11px] font-semibold bg-indigo-600 hover:bg-indigo-500 text-white">
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded text-[11px] font-semibold bg-atlas-500 hover:bg-atlas-500 text-white">
                   <Save size={11} /> Enregistrer
                 </button>
               </div>
@@ -163,12 +163,12 @@ export function PlanModelsLibrary({ projectId }: Props) {
                 className={`rounded-xl border p-4 transition ${
                   isActive
                     ? 'border-emerald-500/50 bg-emerald-950/20 ring-1 ring-emerald-500/30'
-                    : 'border-white/10 bg-slate-900/50 hover:border-indigo-500/30'
+                    : 'border-white/10 bg-surface-1/50 hover:border-atlas-500/30'
                 }`}
               >
                 <div className="flex items-start gap-2 mb-2">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                       style={{ background: `${m.color ?? '#6366f1'}25`, color: m.color ?? '#a5b4fc' }}>
+                       style={{ background: `${m.color ?? '#b38a5a'}25`, color: m.color ?? '#d4b280' }}>
                     <Layers size={14} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -179,13 +179,13 @@ export function PlanModelsLibrary({ projectId }: Props) {
                           onChange={(e) => setEditName(e.target.value)}
                           onBlur={() => handleRename(m.id)}
                           onKeyDown={(e) => e.key === 'Enter' && handleRename(m.id)}
-                          className="flex-1 bg-slate-800 text-white rounded px-2 py-1 text-[12px] border border-indigo-500 outline-none"
+                          className="flex-1 bg-slate-800 text-white rounded px-2 py-1 text-[12px] border border-atlas-500 outline-none"
                           autoFocus
                         />
                       </div>
                     ) : (
                       <h3
-                        className="text-[13px] font-bold text-white m-0 truncate cursor-pointer hover:text-indigo-300"
+                        className="text-[13px] font-bold text-white m-0 truncate cursor-pointer hover:text-atlas-300"
                         onClick={() => { setEditingId(m.id); setEditName(m.name) }}
                         title="Cliquer pour renommer"
                       >
@@ -235,7 +235,7 @@ export function PlanModelsLibrary({ projectId }: Props) {
                   {!isActive && (
                     <button
                       onClick={() => handleActivate(m)}
-                      className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded text-[10px] font-semibold bg-indigo-600 hover:bg-indigo-500 text-white"
+                      className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded text-[10px] font-semibold bg-atlas-500 hover:bg-atlas-500 text-white"
                       title="Utiliser ce modèle dans les volumes"
                     >
                       <Check size={11} /> Activer

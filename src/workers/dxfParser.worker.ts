@@ -99,13 +99,13 @@ const LAYER_PATTERNS: LayerPattern[] = [
   { pattern: /\b(restau|food|cuisine|cafe|cantine|snack)\b/i,   type: 'restauration',   niveau: 2, color: '#f59e0b', confidence: 'high' },
   { pattern: /\b(circul|corridor|couloir|hall|galerie|passage|deambul|atrium)\b/i, type: 'circulation', niveau: 1, color: '#e5e7eb', confidence: 'high' },
   { pattern: /\b(tech|elec|cvc|plomb|meca|clim|ventil|chauff|transfo|tgbt|onduleur)\b/i, type: 'technique', niveau: 4, color: '#ef4444', confidence: 'high' },
-  { pattern: /\b(back.?off|admin|bureau.*admin|gestion|direction)\b/i, type: 'backoffice', niveau: 4, color: '#8b5cf6', confidence: 'high' },
+  { pattern: /\b(back.?off|admin|bureau.*admin|gestion|direction)\b/i, type: 'backoffice', niveau: 4, color: '#a77d4c', confidence: 'high' },
   { pattern: /\b(financ|compt|caiss|banqu|tresor|coffr|valeur)\b/i, type: 'financier', niveau: 5, color: '#dc2626', confidence: 'high' },
   { pattern: /\b(secours|urgence|evacu|issue|desserte)\b/i,     type: 'sortie_secours', niveau: 3, color: '#22c55e', confidence: 'high' },
   { pattern: /\b(loisir|cinema|jeu|entertain|detente|aire.?jeu)\b/i, type: 'loisirs', niveau: 2, color: '#06b6d4', confidence: 'high' },
   { pattern: /\b(service|info|client|accueil|reception)\b/i,    type: 'services',       niveau: 2, color: '#14b8a6', confidence: 'high' },
-  { pattern: /\b(hotel|heberge|chambre|suite|lobby)\b/i,        type: 'hotel',          niveau: 3, color: '#a855f7', confidence: 'high' },
-  { pattern: /\b(bureau|office|open.?space|salle.?reunion)\b/i, type: 'bureaux',        niveau: 3, color: '#6366f1', confidence: 'high' },
+  { pattern: /\b(hotel|heberge|chambre|suite|lobby)\b/i,        type: 'hotel',          niveau: 3, color: '#b38a5a', confidence: 'high' },
+  { pattern: /\b(bureau|office|open.?space|salle.?reunion)\b/i, type: 'bureaux',        niveau: 3, color: '#b38a5a', confidence: 'high' },
   { pattern: /\b(ext|jardin|terrass|facade|parvis|esplanade)\b/i, type: 'exterieur',   niveau: 1, color: '#84cc16', confidence: 'high' },
 
   // Medium confidence: less specific or ambiguous

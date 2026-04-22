@@ -45,7 +45,7 @@ function ARHud({ floorLabel, placed, onReset, onExit }: ARHudProps) {
 
       {/* Placement hint */}
       {!placed && (
-        <div className="absolute bottom-28 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-black/60 backdrop-blur border border-white/20 text-white text-xs font-medium pointer-events-none">
+        <div className="absolute bottom-28 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-surface-0/60 backdrop-blur border border-white/20 text-white text-xs font-medium pointer-events-none">
           Pointez vers le sol et touchez pour placer le plan
         </div>
       )}

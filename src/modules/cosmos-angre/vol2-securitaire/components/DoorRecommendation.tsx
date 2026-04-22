@@ -30,7 +30,7 @@ export default function DoorRecommendation({ zone }: DoorRecommendationProps) {
   const rec = DOOR_RULES[zone.type] ?? DOOR_RULES.commerce
 
   return (
-    <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-3">
+    <div className="bg-surface-1/50 border border-gray-800 rounded-lg p-3">
       <div className="flex items-center gap-2 mb-2">
         <DoorOpen className="w-4 h-4 text-blue-400" />
         <span className="text-xs font-semibold text-gray-200">Recommandation Porte</span>
@@ -46,7 +46,7 @@ export default function DoorRecommendation({ zone }: DoorRecommendationProps) {
           </span>
         )}
         {rec.hasBiometric && (
-          <span className="flex items-center gap-1 text-[10px] text-purple-400">
+          <span className="flex items-center gap-1 text-[10px] text-atlas-400">
             <Fingerprint className="w-3 h-3" /> Biometrie
           </span>
         )}

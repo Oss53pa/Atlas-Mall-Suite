@@ -44,7 +44,7 @@ export default function KioskSection() {
       </div>
 
       {/* Form d'ajout */}
-      <div className="rounded-xl bg-slate-900/30 border border-white/[0.04] p-4">
+      <div className="rounded-xl bg-surface-1/30 border border-white/[0.04] p-4">
         <h3 className="text-white text-sm font-medium mb-3 flex items-center gap-2">
           <Plus size={14} className="text-emerald-400" />
           Ajouter une borne
@@ -52,16 +52,16 @@ export default function KioskSection() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
           <input placeholder="Libellé (ex: Borne Mail Central)" value={form.label ?? ''}
             onChange={e => setForm({ ...form, label: e.target.value })}
-            className="px-3 py-2 rounded-lg bg-slate-950/50 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600 md:col-span-2" />
+            className="px-3 py-2 rounded-lg bg-surface-0/50 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600 md:col-span-2" />
           <input type="number" placeholder="X (m)" value={form.x ?? ''}
             onChange={e => setForm({ ...form, x: parseFloat(e.target.value) || 0 })}
-            className="px-3 py-2 rounded-lg bg-slate-950/50 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600" />
+            className="px-3 py-2 rounded-lg bg-surface-0/50 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600" />
           <input type="number" placeholder="Y (m)" value={form.y ?? ''}
             onChange={e => setForm({ ...form, y: parseFloat(e.target.value) || 0 })}
-            className="px-3 py-2 rounded-lg bg-slate-950/50 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600" />
+            className="px-3 py-2 rounded-lg bg-surface-0/50 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600" />
           <input placeholder="Étage (ex: RDC)" value={form.floorId ?? ''}
             onChange={e => setForm({ ...form, floorId: e.target.value })}
-            className="px-3 py-2 rounded-lg bg-slate-950/50 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600" />
+            className="px-3 py-2 rounded-lg bg-surface-0/50 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600" />
         </div>
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-2">
@@ -90,7 +90,7 @@ export default function KioskSection() {
           Bornes déployées · {kiosks.length}
         </h3>
         {kiosks.length === 0 ? (
-          <div className="rounded-xl bg-slate-900/30 border border-dashed border-white/[0.06] p-8 text-center">
+          <div className="rounded-xl bg-surface-1/30 border border-dashed border-white/[0.06] p-8 text-center">
             <Monitor size={32} className="text-slate-700 mx-auto mb-2" />
             <p className="text-slate-500 text-sm">Aucune borne configurée</p>
             <p className="text-slate-600 text-xs mt-1">Ajoutez au moins une borne pour activer le mode kiosk.</p>
@@ -99,7 +99,7 @@ export default function KioskSection() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {kiosks.map(k => (
               <div key={k.id} className={`rounded-xl p-4 border transition ${
-                activeKioskId === k.id ? 'bg-sky-500/10 border-sky-500/30' : 'bg-slate-900/30 border-white/[0.04]'
+                activeKioskId === k.id ? 'bg-sky-500/10 border-sky-500/30' : 'bg-surface-1/30 border-white/[0.04]'
               }`}>
                 <div className="flex items-start justify-between mb-2">
                   <div>
@@ -115,14 +115,14 @@ export default function KioskSection() {
                       {k.defaultLang}
                     </div>
                   </div>
-                  <span className="text-[9px] text-slate-600 font-mono bg-slate-950/40 px-1.5 py-0.5 rounded">{k.id}</span>
+                  <span className="text-[9px] text-slate-600 font-mono bg-surface-0/40 px-1.5 py-0.5 rounded">{k.id}</span>
                 </div>
                 <div className="flex gap-1.5 mt-3">
                   <button
                     onClick={() => setActiveKiosk(activeKioskId === k.id ? null : k.id)}
                     className={`flex-1 px-3 py-1.5 rounded-lg text-[10px] ${
                       activeKioskId === k.id ? 'bg-sky-600/20 text-sky-300 border border-sky-500/30'
-                        : 'bg-slate-950/40 text-slate-400 border border-white/[0.04]'
+                        : 'bg-surface-0/40 text-slate-400 border border-white/[0.04]'
                     }`}
                   >
                     {activeKioskId === k.id ? '● Borne active' : 'Activer cette borne'}
@@ -138,7 +138,7 @@ export default function KioskSection() {
                         // L'utilisateur naviguera vers le Designer via le menu Vol.4
                         // (intégration UI à finaliser dans Vol4Module — out of scope strict KioskSection)
                       }}
-                      className="px-3 py-1.5 rounded-lg text-[10px] bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/25 flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-lg text-[10px] bg-atlas-500/15 text-atlas-300 border border-atlas-500/30 hover:bg-atlas-500/25 flex items-center gap-1"
                       title="Charger cette borne dans le Wayfinder Designer"
                     >
                       <Palette size={10} />
@@ -165,7 +165,7 @@ export default function KioskSection() {
       </div>
 
       {/* Infos kiosk */}
-      <div className="rounded-xl bg-slate-900/30 border border-white/[0.04] p-4">
+      <div className="rounded-xl bg-surface-1/30 border border-white/[0.04] p-4">
         <h3 className="text-white text-sm font-medium mb-3">Spécifications kiosk</h3>
         <ul className="text-[11px] text-slate-400 space-y-1.5">
           <li className="flex items-start gap-2"><span className="text-sky-400 mt-0.5">•</span>Dalle tactile ≥ 32", orientation portrait ou paysage</li>

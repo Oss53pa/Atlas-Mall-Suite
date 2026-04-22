@@ -34,7 +34,7 @@ interface Props {
 
 const TYPE_META: Record<PatternType, { label: string; icon: string; color: string }> = {
   'label-correction':    { label: 'Renommage libellé',   icon: '✏', color: '#3b82f6' },
-  'category-correction': { label: 'Catégorie',            icon: '🏷', color: '#a855f7' },
+  'category-correction': { label: 'Catégorie',            icon: '🏷', color: '#b38a5a' },
   'panel-placement':     { label: 'Emplacement panneau',  icon: '📍', color: '#f59e0b' },
   'layer-classification':{ label: 'Classification calque', icon: '📚', color: '#10b981' },
   'exclusion':           { label: 'Exclusion',            icon: '⊘', color: '#ef4444' },
@@ -149,14 +149,14 @@ export function SignageMemoryPanel({ projetId, onClose }: Props) {
 
   const modal = (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-end bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-end bg-surface-0/60 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-[560px] max-w-[95vw] h-full bg-slate-900 border-l border-white/10 shadow-2xl flex flex-col">
+      <div className="w-[560px] max-w-[95vw] h-full bg-surface-1 border-l border-white/10 shadow-2xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
           <div className="flex items-center gap-2">
-            <Brain className="w-4 h-4 text-purple-400" />
+            <Brain className="w-4 h-4 text-atlas-400" />
             <h2 className="text-sm font-bold text-white">Mémoire inter-projets</h2>
             {stats && (
               <span className="text-[10px] text-slate-500">
@@ -181,7 +181,7 @@ export function SignageMemoryPanel({ projetId, onClose }: Props) {
 
         {/* Stats top */}
         {stats && (
-          <div className="px-5 py-3 border-b border-white/5 bg-slate-950/40">
+          <div className="px-5 py-3 border-b border-white/5 bg-surface-0/40">
             <div className="grid grid-cols-5 gap-2 text-[10px]">
               {(Object.keys(TYPE_META) as PatternType[]).map(t => {
                 const meta = TYPE_META[t]
@@ -204,7 +204,7 @@ export function SignageMemoryPanel({ projetId, onClose }: Props) {
             <button
               onClick={applyAll}
               disabled={applying === 'all'}
-              className="w-full py-2 rounded-lg text-[11px] font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-2 rounded-lg text-[11px] font-semibold bg-gradient-to-r from-atlas-500 to-atlas-500 text-white hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {applying === 'all'
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Application…</>
@@ -234,8 +234,8 @@ export function SignageMemoryPanel({ projetId, onClose }: Props) {
           )}
 
           {!loading && spacesSuggestions.map(entry => (
-            <div key={entry.spaceId} className="mb-3 rounded-md border border-white/10 bg-slate-950/60 overflow-hidden">
-              <div className="px-3 py-2 bg-slate-900/80 border-b border-white/5">
+            <div key={entry.spaceId} className="mb-3 rounded-md border border-white/10 bg-surface-0/60 overflow-hidden">
+              <div className="px-3 py-2 bg-surface-1/80 border-b border-white/5">
                 <div className="text-[11px] font-mono text-slate-300 truncate">{entry.spaceLabel}</div>
                 <div className="text-[9px] text-slate-600 font-mono">#{entry.spaceId.slice(0, 8)}</div>
               </div>
@@ -245,7 +245,7 @@ export function SignageMemoryPanel({ projetId, onClose }: Props) {
                   if (!best) return null
                   const meta = TYPE_META[sug.type]
                   return (
-                    <div key={sug.type} className="px-2.5 py-2 rounded bg-slate-900/60 border border-white/5">
+                    <div key={sug.type} className="px-2.5 py-2 rounded bg-surface-1/60 border border-white/5">
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-1.5">
                           <span

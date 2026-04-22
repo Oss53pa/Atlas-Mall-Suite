@@ -86,17 +86,17 @@ export function Proph3tResultPanel({ result, onApplyAction, className = '', comp
   const visibleActions = compact ? result.actions.slice(0, 3) : result.actions
 
   return (
-    <div className={`rounded-xl border border-purple-500/30 bg-gradient-to-br from-slate-950 to-purple-950/30 overflow-hidden ${className}`}>
+    <div className={`rounded-xl border border-atlas-500/30 bg-gradient-to-br from-surface-0 to-purple-950/30 overflow-hidden ${className}`}>
       {/* Header */}
       <div className="px-4 py-3 border-b border-white/[0.06] flex items-start justify-between">
         <div className="flex items-start gap-3 flex-1 min-w-0">
-          <div className="w-9 h-9 rounded-lg bg-purple-600/30 border border-purple-500/40 flex items-center justify-center flex-shrink-0">
-            <Sparkles size={16} className="text-purple-300" />
+          <div className="w-9 h-9 rounded-lg bg-atlas-600/30 border border-atlas-500/40 flex items-center justify-center flex-shrink-0">
+            <Sparkles size={16} className="text-atlas-300" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h3 className="text-[13px] font-bold text-white">PROPH3T</h3>
-              <span className="text-[9px] uppercase tracking-wider text-purple-300/80 font-mono">{result.skill}</span>
+              <span className="text-[9px] uppercase tracking-wider text-atlas-300/80 font-mono">{result.skill}</span>
               <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-800/50 border border-white/[0.06]">
                 <SourceIcon size={9} className="text-slate-400" />
                 <span className="text-[9px] text-slate-400">{sourceLabel}</span>
@@ -135,7 +135,7 @@ export function Proph3tResultPanel({ result, onApplyAction, className = '', comp
               {result.findings.map(f => {
                 const Icon = SEV_ICON[f.severity]
                 return (
-                  <div key={f.id} className="flex items-start gap-2 p-2 rounded bg-slate-900/50">
+                  <div key={f.id} className="flex items-start gap-2 p-2 rounded bg-surface-1/50">
                     <Icon size={12} style={{ color: SEV_COLOR[f.severity] }} className="flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
                       <div className="text-[11px] text-white font-medium">{f.title}</div>
@@ -165,7 +165,7 @@ export function Proph3tResultPanel({ result, onApplyAction, className = '', comp
               <div key={action.id} className={`rounded-lg border p-2.5 transition-all ${
                 applied ? 'border-emerald-500/40 bg-emerald-900/10' :
                 rejected ? 'border-red-500/30 bg-red-900/10 opacity-60' :
-                'border-white/[0.05] bg-slate-900/30 hover:border-white/[0.12]'
+                'border-white/[0.05] bg-surface-1/30 hover:border-white/[0.12]'
               }`}>
                 <div className="flex items-start gap-2">
                   <Icon size={12} style={{ color: SEV_COLOR[action.severity] }} className="flex-shrink-0 mt-0.5" />
@@ -206,7 +206,7 @@ export function Proph3tResultPanel({ result, onApplyAction, className = '', comp
                           onChange={e => setEditReason(e.target.value)}
                           onKeyDown={e => { if (e.key === 'Enter') handleReject(action); if (e.key === 'Escape') setEditingActionId(null) }}
                           placeholder="Motif du refus (pour calibrer PROPH3T)…"
-                          className="w-full text-[10px] px-2 py-1 rounded bg-slate-800 border border-white/[0.06] text-white outline-none focus:border-purple-500/50"
+                          className="w-full text-[10px] px-2 py-1 rounded bg-slate-800 border border-white/[0.06] text-white outline-none focus:border-atlas-500/50"
                         />
                         <div className="flex gap-1">
                           <button onClick={() => handleReject(action)} className="text-[10px] px-2 py-1 rounded bg-red-600/30 text-red-200">Refuser avec motif</button>

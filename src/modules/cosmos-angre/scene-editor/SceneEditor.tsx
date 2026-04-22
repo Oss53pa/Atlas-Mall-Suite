@@ -64,7 +64,7 @@ export default function SceneEditor() {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06] bg-surface-1">
         <div className="flex items-center gap-3">
-          <p className="text-[11px] tracking-[0.2em] font-medium text-purple-400">ÉDITEUR DE SCÈNE</p>
+          <p className="text-[11px] tracking-[0.2em] font-medium text-atlas-400">ÉDITEUR DE SCÈNE</p>
           <span className="text-[13px] text-white font-semibold">{sceneName}</span>
           {isDirty && <span className="text-[10px] text-amber-400">Non sauvegardé</span>}
         </div>
@@ -80,7 +80,7 @@ export default function SceneEditor() {
                   key={m.id}
                   onClick={() => setViewMode(m.id)}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded text-[11px] font-medium transition ${
-                    active ? 'bg-purple-600/30 text-purple-200' : 'text-slate-400 hover:text-white'
+                    active ? 'bg-atlas-600/30 text-atlas-200' : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   <Icon size={12} />
@@ -102,7 +102,7 @@ export default function SceneEditor() {
                 {COLOR_MODE_META[colorMode].icon} {COLOR_MODE_META[colorMode].label}
               </button>
               {colorMenuOpen && (
-                <div className="absolute top-full right-0 mt-1 w-72 rounded-lg bg-slate-900 border border-white/[0.1] shadow-2xl z-50 overflow-hidden">
+                <div className="absolute top-full right-0 mt-1 w-72 rounded-lg bg-surface-1 border border-white/[0.1] shadow-2xl z-50 overflow-hidden">
                   {(Object.keys(COLOR_MODE_META) as ColorMode[]).map(k => {
                     const meta = COLOR_MODE_META[k]
                     const active = colorMode === k
@@ -111,7 +111,7 @@ export default function SceneEditor() {
                         key={k}
                         onClick={() => { setColorMode(k); setColorMenuOpen(false) }}
                         className={`w-full text-left px-3 py-2 text-[11px] transition border-b border-white/[0.04] last:border-0 ${
-                          active ? 'bg-purple-600/20 text-purple-200' : 'text-slate-300 hover:bg-white/[0.04]'
+                          active ? 'bg-atlas-600/20 text-atlas-200' : 'text-slate-300 hover:bg-white/[0.04]'
                         }`}
                       >
                         <div className="flex items-center gap-2 font-medium">
@@ -149,7 +149,7 @@ export default function SceneEditor() {
         {/* Center — Canvas selon viewMode */}
         <div className="flex-1 flex min-w-0 relative">
           {viewMode === '2d' && (
-            <div className="flex-1 relative bg-slate-900">
+            <div className="flex-1 relative bg-surface-1">
               <React.Suspense fallback={<LoadingBlock label="Chargement éditeur 2D…" />}>
                 <PlanDrawEditor onClose={() => setViewMode('3d')} />
               </React.Suspense>
@@ -162,7 +162,7 @@ export default function SceneEditor() {
           )}
           {viewMode === 'split' && (
             <>
-              <div className="flex-1 relative border-r border-white/[0.08] bg-slate-900">
+              <div className="flex-1 relative border-r border-white/[0.08] bg-surface-1">
                 <React.Suspense fallback={<LoadingBlock label="Chargement 2D…" />}>
                   <PlanDrawEditor onClose={() => setViewMode('3d')} />
                 </React.Suspense>

@@ -133,12 +133,12 @@ export function SpaceLabelEditor({ space, autoCategory, onClose }: Props) {
 
   const modal = (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-surface-0/70 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-[520px] max-w-[95vw] max-h-[90vh] overflow-y-auto rounded-xl bg-slate-900 border border-white/10 shadow-2xl">
+      <div className="w-[520px] max-w-[95vw] max-h-[90vh] overflow-y-auto rounded-xl bg-surface-1 border border-white/10 shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 sticky top-0 bg-slate-900 z-10">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 sticky top-0 bg-surface-1 z-10">
           <div>
             <h3 className="text-sm font-semibold text-white">Corriger la labelisation</h3>
             <p className="text-[11px] text-slate-500 mt-0.5">
@@ -154,7 +154,7 @@ export function SpaceLabelEditor({ space, autoCategory, onClose }: Props) {
         </div>
 
         {/* Infos brutes */}
-        <div className="px-4 py-3 bg-slate-950/60 border-b border-white/5 text-[11px] text-slate-400 grid grid-cols-2 gap-2">
+        <div className="px-4 py-3 bg-surface-0/60 border-b border-white/5 text-[11px] text-slate-400 grid grid-cols-2 gap-2">
           <div>
             <div className="text-slate-600 uppercase text-[9px] tracking-wider">Label DXF</div>
             <div className="text-slate-300 font-mono text-[11px] truncate" title={space.label}>
@@ -189,7 +189,7 @@ export function SpaceLabelEditor({ space, autoCategory, onClose }: Props) {
               value={customLabel}
               onChange={(e) => setCustomLabel(e.target.value)}
               placeholder={space.label || 'ex : Boutique Orange'}
-              className="w-full px-3 py-2 rounded-md bg-slate-950 border border-white/10 text-slate-200 text-sm focus:outline-none focus:border-purple-500"
+              className="w-full px-3 py-2 rounded-md bg-surface-0 border border-white/10 text-slate-200 text-sm focus:outline-none focus:border-atlas-500"
             />
           </div>
 
@@ -212,7 +212,7 @@ export function SpaceLabelEditor({ space, autoCategory, onClose }: Props) {
                         ? 'border-white/30 bg-white/10'
                         : isAuto
                         ? 'border-dashed border-white/20 bg-white/[0.03] opacity-80'
-                        : 'border-white/[0.06] bg-slate-950/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200'
+                        : 'border-white/[0.06] bg-surface-0/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200'
                     }`}
                   >
                     <span
@@ -244,7 +244,7 @@ export function SpaceLabelEditor({ space, autoCategory, onClose }: Props) {
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
               placeholder="ex : en rénovation, pop-up store saisonnier…"
-              className="w-full px-3 py-2 rounded-md bg-slate-950 border border-white/10 text-slate-300 text-[11px] focus:outline-none focus:border-purple-500 resize-none"
+              className="w-full px-3 py-2 rounded-md bg-surface-0 border border-white/10 text-slate-300 text-[11px] focus:outline-none focus:border-atlas-500 resize-none"
             />
           </div>
 
@@ -266,7 +266,7 @@ export function SpaceLabelEditor({ space, autoCategory, onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-white/10 bg-slate-950/40 sticky bottom-0">
+        <div className="flex items-center justify-between px-4 py-3 border-t border-white/10 bg-surface-0/40 sticky bottom-0">
           {existing ? (
             <button
               onClick={handleReset}
@@ -287,7 +287,7 @@ export function SpaceLabelEditor({ space, autoCategory, onClose }: Props) {
             </button>
             <button
               onClick={handleSave}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-md text-[11px] font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:opacity-90"
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-md text-[11px] font-semibold bg-gradient-to-r from-atlas-500 to-atlas-700 text-white hover:opacity-90"
             >
               <Save className="w-3.5 h-3.5" />
               Enregistrer

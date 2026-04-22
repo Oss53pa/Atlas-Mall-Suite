@@ -57,13 +57,13 @@ export function QrLabelsExport({ panels, projetId, floorId, projectName, onClose
 
   const modal = (
     <div
-      className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm overflow-y-auto print:bg-white print:overflow-visible"
+      className="fixed inset-0 z-[9999] bg-surface-0/80 backdrop-blur-sm overflow-y-auto print:bg-white print:overflow-visible"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div className="min-h-screen flex items-start justify-center p-4 print:p-0">
         <div className="w-[840px] max-w-[95vw] bg-white text-slate-900 rounded-lg shadow-2xl print:w-full print:max-w-none print:shadow-none print:rounded-none">
           {/* Header (non-print) */}
-          <div className="sticky top-0 flex items-center justify-between px-6 py-3 bg-slate-900 text-white rounded-t-lg print:hidden">
+          <div className="sticky top-0 flex items-center justify-between px-6 py-3 bg-surface-1 text-white rounded-t-lg print:hidden">
             <div className="flex items-center gap-2">
               <QrCode className="w-4 h-4 text-amber-400" />
               <h2 className="text-sm font-semibold">Planche QR signalétique</h2>
@@ -126,7 +126,7 @@ export function QrLabelsExport({ panels, projetId, floorId, projectName, onClose
                       onClick={() => toggleKind(k)}
                       className={`px-2 py-1 rounded text-[10px] font-medium border ${
                         active
-                          ? 'bg-slate-900 text-white border-slate-900'
+                          ? 'bg-surface-1 text-white border-slate-900'
                           : 'bg-white text-slate-500 border-slate-300'
                       }`}
                     >

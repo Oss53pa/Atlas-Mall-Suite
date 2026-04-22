@@ -36,8 +36,8 @@ import { PmrAnalysisPanel } from '../shared/components/PmrAnalysisPanel'
 import { AbmSimulationPanel } from '../shared/components/AbmSimulationPanel'
 import type { AbmResult, TimeSlot } from '../shared/engines/plan-analysis/abmSocialForceEngine'
 import { exportWayfindingJSON } from '../shared/engines/plan-analysis/navGraphEngine'
-import { exportSignageCDC, exportCleanedDxf } from '../shared/engines/plan-analysis/signageExportEngine'
-import { generateSignagePdfReport } from '../shared/engines/plan-analysis/pdfReportEngine'
+// signageExportEngine (exceljs ~350kB gzip) + pdfReportEngine (jspdf ~150kB gzip)
+// sont lazy-loadés à la demande → bundle initial allégé ~500 kB gzip.
 import { PovGuideViewer } from '../shared/components/PovGuideViewer'
 import { QrLabelsExport } from '../shared/components/QrLabelsExport'
 import { SignageFeedbackInbox } from '../shared/components/SignageFeedbackInbox'
@@ -519,6 +519,8 @@ export default function Vol3Module() {
   const handleExportCdcExcel = useCallback(async () => {
     if (!flowResult) return
     try {
+      // Lazy-load : exceljs (~350 kB gzip) chargé uniquement à l'export
+      const { exportSignageCDC } = await import('../shared/engines/plan-analysis/signageExportEngine')
       const blob = await exportSignageCDC(flowResult, 'Cosmos Angré', activeFloor?.level ?? 'RDC')
       downloadBlob(blob, `CDC-signaletique-${Date.now()}.xlsx`)
     } catch (err) {
@@ -526,9 +528,10 @@ export default function Vol3Module() {
     }
   }, [flowResult, activeFloor])
 
-  const handleExportDxf = useCallback(() => {
+  const handleExportDxf = useCallback(async () => {
     if (!parsedPlan) return
     try {
+      const { exportCleanedDxf } = await import('../shared/engines/plan-analysis/signageExportEngine')
       const blob = exportCleanedDxf(parsedPlan, 'Cosmos Angré')
       downloadBlob(blob, `plan-nettoye-${Date.now()}.dxf`)
     } catch (err) {
@@ -539,6 +542,8 @@ export default function Vol3Module() {
   const handleExportPdfReport = useCallback(async () => {
     if (!flowResult || !parsedPlan) return
     try {
+      // Lazy-load : jspdf (~150 kB gzip) chargé uniquement à l'export PDF
+      const { generateSignagePdfReport } = await import('../shared/engines/plan-analysis/pdfReportEngine')
       const blob = await generateSignagePdfReport({
         flowResult,
         wallSegments: (parsedPlan.wallSegments ?? []).map(w => ({ x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2 })),
@@ -709,7 +714,7 @@ export default function Vol3Module() {
             label="Bibliothèque"
             active={libraryOpen}
             onClick={() => store.setLibraryOpen(!libraryOpen)}
-            activeColor="text-purple-400"
+            activeColor="text-atlas-400"
           />
 
           {/* Export PDF */}
@@ -878,10 +883,10 @@ export default function Vol3Module() {
         </aside>
 
         {/* ── Center: Floor Plan Canvas / 3D ── */}
-        <main className="flex-1 relative overflow-hidden bg-gray-900/50">
+        <main className="flex-1 relative overflow-hidden bg-surface-1/50">
           {viewMode === '3d-advanced' ? (
             <Suspense fallback={
-              <div className="w-full h-full flex items-center justify-center bg-gray-950">
+              <div className="w-full h-full flex items-center justify-center bg-surface-0">
                 <div className="flex items-center gap-2 text-gray-500 text-sm">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Chargement Vue 3D avancée...
@@ -1047,7 +1052,7 @@ export default function Vol3Module() {
                       const palette = [
                         '#34d399', '#60a5fa', '#fbbf24', '#f472b6', '#a78bfa',
                         '#fb7185', '#22d3ee', '#facc15', '#fb923c', '#c084fc',
-                        '#4ade80', '#38bdf8', '#f59e0b', '#ec4899', '#8b5cf6',
+                        '#4ade80', '#38bdf8', '#f59e0b', '#ec4899', '#a77d4c',
                         '#e11d48', '#06b6d4', '#eab308', '#ea580c', '#d946ef',
                       ]
                       const hash = (s: string) => {
@@ -1311,7 +1316,7 @@ export default function Vol3Module() {
 
           {/* Heatmap hour slider overlay */}
           {showHeatmap && (
-            <div className="absolute bottom-4 left-4 bg-gray-900/90 border border-gray-700 rounded-xl px-4 py-3 backdrop-blur-sm w-56">
+            <div className="absolute bottom-4 left-4 bg-surface-1/90 border border-gray-700 rounded-xl px-4 py-3 backdrop-blur-sm w-56">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] text-gray-400">Heure</span>
                 <span className="text-xs font-mono text-orange-300">{heatmapHour}h00</span>
@@ -1334,7 +1339,7 @@ export default function Vol3Module() {
 
           {/* Active profile info overlay */}
           {activeProfile && (
-            <div className="absolute top-3 left-3 bg-gray-900/90 border border-emerald-800/40 rounded-lg px-3 py-2 text-xs backdrop-blur-sm">
+            <div className="absolute top-3 left-3 bg-surface-1/90 border border-emerald-800/40 rounded-lg px-3 py-2 text-xs backdrop-blur-sm">
               <span className="text-emerald-400 font-semibold">{activeProfile.name}</span>
               <span className="text-gray-500 ml-2">
                 Vitesse {activeProfile.speed}x &middot; Dwell {activeProfile.dwellMultiplier}x
@@ -1346,7 +1351,7 @@ export default function Vol3Module() {
         </main>
 
         {/* ── Right Panel ── */}
-        <aside className="w-80 border-l border-gray-800 bg-gray-950 flex flex-col shrink-0 overflow-hidden">
+        <aside className="w-80 border-l border-gray-800 bg-surface-0 flex flex-col shrink-0 overflow-hidden">
           {/* Geo-notification panel */}
           {showNotifPanel && (
             <div className="border-b border-gray-800 p-3 max-h-[50%] overflow-y-auto">
@@ -1375,10 +1380,10 @@ export default function Vol3Module() {
             /* Default: Proph3t Chat */
             <div className="flex flex-col h-full">
               <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-800">
-                <div className="w-6 h-6 rounded-full bg-purple-600/30 flex items-center justify-center">
-                  <Sparkles className="w-3 h-3 text-purple-400" />
+                <div className="w-6 h-6 rounded-full bg-atlas-600/30 flex items-center justify-center">
+                  <Sparkles className="w-3 h-3 text-atlas-400" />
                 </div>
-                <h3 className="text-sm font-semibold text-purple-300">
+                <h3 className="text-sm font-semibold text-atlas-300">
                   Proph3t — Parcours Client
                 </h3>
               </div>
@@ -1428,7 +1433,7 @@ export default function Vol3Module() {
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={handleChatKeyDown}
                     placeholder="Question sur le parcours..."
-                    className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-emerald-500"
+                    className="flex-1 bg-surface-1 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-emerald-500"
                   />
                   <button
                     onClick={handleSendChat}

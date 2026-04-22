@@ -114,7 +114,7 @@ export default function Proph3tCommercialSection() {
   }, [spaces, tenants])
 
   const tabs: { id: AnalysisTab; label: string; icon: React.ElementType; color: string }[] = [
-    { id: 'mix', label: 'Tenant Mix Analyzer', icon: Brain, color: '#a855f7' },
+    { id: 'mix', label: 'Tenant Mix Analyzer', icon: Brain, color: '#b38a5a' },
     { id: 'vacancy', label: 'Vacancy Recommender', icon: Target, color: '#22c55e' },
     { id: 'rent', label: 'Rent Optimizer', icon: DollarSign, color: '#f59e0b' },
   ]
@@ -122,11 +122,11 @@ export default function Proph3tCommercialSection() {
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
       <div className="flex items-center gap-3 mb-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-600/20">
-          <Sparkles className="h-4 w-4 text-purple-400" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-atlas-600/20">
+          <Sparkles className="h-4 w-4 text-atlas-400" />
         </div>
         <div>
-          <p className="text-[11px] tracking-[0.2em] font-medium" style={{ color: '#a855f7' }}>VOL. 1 — PROPH3T COMMERCIAL</p>
+          <p className="text-[11px] tracking-[0.2em] font-medium" style={{ color: '#b38a5a' }}>VOL. 1 — PROPH3T COMMERCIAL</p>
           <h1 className="text-[28px] font-light text-white">Intelligence Commerciale</h1>
         </div>
       </div>
@@ -182,8 +182,8 @@ export default function Proph3tCommercialSection() {
                 </span>
               </div>
               <div className="flex items-center gap-2 mb-2">
-                <ArrowRight size={12} style={{ color: '#a855f7' }} />
-                <span className="text-[13px] font-semibold" style={{ color: '#a855f7' }}>Recommandation : {sectorLabels[r.recommendedSector]}</span>
+                <ArrowRight size={12} style={{ color: '#b38a5a' }} />
+                <span className="text-[13px] font-semibold" style={{ color: '#b38a5a' }}>Recommandation : {sectorLabels[r.recommendedSector]}</span>
               </div>
               <p className="text-[12px] text-slate-400 mb-2">{r.reasoning}</p>
               <p className="text-[11px]" style={{ color: '#f59e0b' }}>Loyer estime : {formatFcfa(r.estimatedRentFcfa)} FCFA/m²/an → {formatFcfa(r.estimatedRentFcfa * r.areaSqm)} FCFA/an total</p>

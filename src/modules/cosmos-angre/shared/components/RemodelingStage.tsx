@@ -178,7 +178,7 @@ export function RemodelingStage() {
 
   if (!parsedPlan) {
     return (
-      <div className="h-full flex items-center justify-center bg-slate-950">
+      <div className="h-full flex items-center justify-center bg-surface-0">
         <div className="text-center max-w-md p-8">
           <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
           <h2 className="text-lg font-bold text-white mb-2">Aucun plan importé</h2>
@@ -192,13 +192,13 @@ export function RemodelingStage() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-slate-950 text-slate-200">
+    <div className="h-full flex flex-col bg-surface-0 text-slate-200">
       {/* Header */}
       <div className="px-6 py-4 border-b border-white/10 bg-gradient-to-r from-indigo-950/40 to-purple-950/30">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] tracking-widest uppercase text-indigo-300 font-bold">
+              <span className="text-[10px] tracking-widest uppercase text-atlas-300 font-bold">
                 Phase 2 · Remodelage
               </span>
               {planValidated ? (
@@ -228,7 +228,7 @@ export function RemodelingStage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setDrawEditorOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-indigo-600 hover:bg-indigo-500 text-white"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-atlas-500 hover:bg-atlas-500 text-white"
               title="Dessiner espaces, places parking, flèches…"
             >
               <Pencil size={12} /> Dessiner
@@ -272,7 +272,7 @@ export function RemodelingStage() {
                 width: `${completionPct}%`,
                 background: completionPct === 100
                   ? 'linear-gradient(90deg, #10b981, #14b8a6)'
-                  : 'linear-gradient(90deg, #6366f1, #a855f7)',
+                  : 'linear-gradient(90deg, #b38a5a, #b38a5a)',
               }}
             />
           </div>
@@ -288,25 +288,25 @@ export function RemodelingStage() {
       </div>
 
       {/* Toolbar */}
-      <div className="px-6 py-3 border-b border-white/5 bg-slate-900/40 flex items-center gap-3">
+      <div className="px-6 py-3 border-b border-white/5 bg-surface-1/40 flex items-center gap-3">
         <div className="relative flex-1 max-w-md">
           <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher un espace…"
-            className="w-full bg-slate-900 text-white text-[12px] rounded-lg pl-9 pr-3 py-2 border border-white/10 focus:border-indigo-500 outline-none"
+            className="w-full bg-surface-1 text-white text-[12px] rounded-lg pl-9 pr-3 py-2 border border-white/10 focus:border-atlas-500 outline-none"
           />
         </div>
 
-        <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-slate-900 p-0.5">
+        <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-surface-1 p-0.5">
           <Filter size={12} className="text-slate-500 ml-2" />
           {(['all', 'pending', 'validated', 'excluded'] as const).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={`px-2.5 py-1 rounded text-[11px] font-medium transition ${
-                filter === f ? 'bg-indigo-600/30 text-indigo-200' : 'text-slate-500 hover:text-slate-300'
+                filter === f ? 'bg-atlas-500/30 text-atlas-200' : 'text-slate-500 hover:text-slate-300'
               }`}
             >
               {f === 'all' ? 'Tous' : f === 'pending' ? 'À traiter' : f === 'validated' ? 'Validés' : 'Exclus'}
@@ -348,15 +348,15 @@ export function RemodelingStage() {
                   className={`text-left rounded-lg border p-3 transition-all hover:-translate-y-0.5 hover:shadow-lg ${
                     e.validated
                       ? 'border-emerald-700/40 bg-emerald-950/20 hover:bg-emerald-950/30'
-                      : 'border-white/10 bg-slate-900/40 hover:bg-slate-900/80 hover:border-indigo-500/30'
+                      : 'border-white/10 bg-surface-1/40 hover:bg-surface-1/80 hover:border-atlas-500/30'
                   }`}
                 >
                   <div className="flex items-start gap-2.5">
                     <div
                       className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-base"
                       style={{
-                        background: `${e.color ?? typeMeta?.color ?? '#6366f1'}20`,
-                        color: e.color ?? typeMeta?.color ?? '#a5b4fc',
+                        background: `${e.color ?? typeMeta?.color ?? '#b38a5a'}20`,
+                        color: e.color ?? typeMeta?.color ?? '#d4b280',
                       }}
                     >
                       {typeMeta?.icon ?? '📐'}
@@ -388,10 +388,10 @@ export function RemodelingStage() {
 
       {/* Panneau Calques (sidebar droite) */}
       {layersPanelOpen && (
-        <aside className="w-72 border-l border-white/10 bg-slate-900/60 flex flex-col flex-shrink-0">
+        <aside className="w-72 border-l border-white/10 bg-surface-1/60 flex flex-col flex-shrink-0">
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
             <div className="flex items-center gap-2">
-              <Layers size={14} className="text-indigo-400" />
+              <Layers size={14} className="text-atlas-400" />
               <h3 className="text-[12px] font-bold text-white m-0">Calques</h3>
               <span className="text-[10px] text-slate-500">
                 {layers.length}
@@ -409,7 +409,7 @@ export function RemodelingStage() {
           <div className="px-4 py-2 border-b border-white/5 flex items-center gap-1.5">
             <button
               onClick={() => setCleaningOpen(true)}
-              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded text-[10px] font-semibold bg-gradient-to-r from-indigo-600 to-blue-600 text-white hover:opacity-90"
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded text-[10px] font-semibold bg-gradient-to-r from-atlas-500 to-blue-600 text-white hover:opacity-90"
               title="Nettoyage automatique (minimal / standard / complet)"
             >
               <Sparkles size={11} /> Nettoyer
@@ -471,7 +471,7 @@ export function RemodelingStage() {
             })}
           </div>
 
-          <div className="px-4 py-2 border-t border-white/10 bg-slate-950/50 text-[9px] text-slate-600">
+          <div className="px-4 py-2 border-t border-white/10 bg-surface-0/50 text-[9px] text-slate-600">
             <strong className="text-slate-400">Survol d'un calque</strong> : icône 🗑 pour supprimer.
             Clic œil pour masquer. Le nettoyage automatique classe les calques par rôle métier.
           </div>
@@ -524,7 +524,7 @@ export function RemodelingStage() {
 
 function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="rounded-lg border border-white/5 bg-slate-900/40 px-3 py-2">
+    <div className="rounded-lg border border-white/5 bg-surface-1/40 px-3 py-2">
       <div className="text-[9px] uppercase tracking-wider text-slate-500">{label}</div>
       <div className="text-lg font-bold tabular-nums mt-0.5" style={{ color }}>
         {value}

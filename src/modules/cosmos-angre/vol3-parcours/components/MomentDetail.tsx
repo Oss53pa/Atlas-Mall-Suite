@@ -53,7 +53,7 @@ export function MomentDetail({
         {/* Cosmos Club Action */}
         {moment.cosmosClubAction && (
           <div className="rounded-lg bg-purple-950/30 border border-purple-800/40 p-3">
-            <div className="text-xs text-purple-400 font-mono mb-1 flex items-center gap-1">
+            <div className="text-xs text-atlas-400 font-mono mb-1 flex items-center gap-1">
               <Crown className="w-3 h-3" /> Cosmos Club
             </div>
             <p className="text-gray-200">{moment.cosmosClubAction}</p>

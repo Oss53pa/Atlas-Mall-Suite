@@ -87,7 +87,7 @@ const buildNavGroups = (): NavGroup[] => [
     key: 'collaboration',
     label: 'COLLABORATION',
     icon: Send,
-    color: '#818cf8',
+    color: '#c9a068',
     separator: true,
     items: [
       { id: 'history', label: 'Historique du plan', icon: History },
@@ -204,10 +204,10 @@ export default function Vol1Module() {
         </div>
 
         {/* Proph3t badge */}
-        <div className="p-3 m-2 rounded-lg" style={{ background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.15)' }}>
+        <div className="p-3 m-2 rounded-lg" style={{ background: 'rgba(179,138,90,0.06)', border: '1px solid rgba(179,138,90,0.15)' }}>
           <div className="flex items-center gap-2 mb-1">
-            <Sparkles size={12} className="text-purple-400" />
-            <span className="text-[10px] font-medium text-purple-300">Proph3t Engine</span>
+            <Sparkles size={12} className="text-atlas-400" />
+            <span className="text-[10px] font-medium text-atlas-300">Proph3t Engine</span>
           </div>
           <p className="text-[9px] text-slate-500">IA commerciale — analyse mix, recommendations, optimisation loyers</p>
         </div>

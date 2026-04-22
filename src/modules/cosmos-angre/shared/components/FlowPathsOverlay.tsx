@@ -25,7 +25,7 @@ interface Props {
 const PATH_PALETTE = [
   '#34d399', '#60a5fa', '#fbbf24', '#f472b6', '#a78bfa',
   '#fb7185', '#22d3ee', '#facc15', '#fb923c', '#c084fc',
-  '#4ade80', '#38bdf8', '#f59e0b', '#ec4899', '#8b5cf6',
+  '#4ade80', '#38bdf8', '#f59e0b', '#ec4899', '#a77d4c',
   '#e11d48', '#06b6d4', '#eab308', '#ea580c', '#d946ef',
 ]
 
@@ -64,8 +64,8 @@ function smoothPath(points: Array<{ x: number; y: number }>, tension = 0.5): str
 const SIGNAGE_META: Record<SignageType, { color: string; icon: string; label: string }> = {
   welcome:        { color: '#10b981', icon: 'ⓘ', label: 'Accueil + plan' },
   directional:    { color: '#f59e0b', icon: '↗', label: 'Directionnel' },
-  'you-are-here': { color: '#6366f1', icon: '◉', label: 'Vous êtes ici' },
-  information:    { color: '#8b5cf6', icon: 'i',  label: 'Information' },
+  'you-are-here': { color: '#b38a5a', icon: '◉', label: 'Vous êtes ici' },
+  information:    { color: '#a77d4c', icon: 'i',  label: 'Information' },
   exit:           { color: '#ef4444', icon: '⎋', label: 'Sortie' },
 }
 
@@ -106,7 +106,7 @@ export function FlowPathsOverlay({
   return (
     <>
     {/* Légende des paires entrée → sortie (html superposé) */}
-    <div className="absolute top-2 right-2 max-w-[260px] max-h-[40vh] overflow-y-auto bg-slate-950/85 backdrop-blur rounded-lg border border-white/10 p-2 text-[10px] pointer-events-auto" style={{ zIndex: 16 }}>
+    <div className="absolute top-2 right-2 max-w-[260px] max-h-[40vh] overflow-y-auto bg-surface-0/85 backdrop-blur rounded-lg border border-white/10 p-2 text-[10px] pointer-events-auto" style={{ zIndex: 16 }}>
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-slate-300 font-bold uppercase tracking-wider">
           Flux ({visiblePaths.length}/{result.paths.length})
@@ -341,7 +341,7 @@ function EntryExitMarker({
         fontSize={9}
         fontWeight="500"
         fill="#f1f5f9"
-        stroke="#0f172a"
+        stroke="#2a2d33"
         strokeWidth={2}
         paintOrder="stroke fill"
         style={{ pointerEvents: 'none' }}

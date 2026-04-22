@@ -5,7 +5,7 @@ import EditableText from '../../shared/components/EditableText'
 
 const modules = [
   { id: 'M1', label: 'JOURNEY MAP', icon: Map, color: '#34d399' },
-  { id: 'M2', label: '4 PERSONAS', icon: Users, color: '#8b5cf6' },
+  { id: 'M2', label: '4 PERSONAS', icon: Users, color: '#a77d4c' },
   { id: 'M3', label: 'TOUCHPOINTS', icon: Grid3X3, color: '#f59e0b' },
   { id: 'M4', label: 'KPIS', icon: BarChart2, color: '#ef4444' },
   { id: 'M5', label: "PLAN D'ACTION", icon: Calendar, color: '#06b6d4' },

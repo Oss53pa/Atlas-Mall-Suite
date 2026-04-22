@@ -108,7 +108,7 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
           value={project.name}
           onChange={(e) => setProject({ ...project, name: e.target.value })}
           placeholder="Cosmos Angré Shopping Center"
-          className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-[13px] placeholder:text-slate-600 focus:outline-none focus:border-purple-500/50"
+          className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-[13px] placeholder:text-slate-600 focus:outline-none focus:border-atlas-500/50"
           autoFocus
         />
       </div>
@@ -120,7 +120,7 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
             value={project.address}
             onChange={(e) => setProject({ ...project, address: e.target.value })}
             placeholder="Boulevard Mermoz"
-            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-[13px] placeholder:text-slate-600 focus:outline-none focus:border-purple-500/50"
+            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-[13px] placeholder:text-slate-600 focus:outline-none focus:border-atlas-500/50"
           />
         </div>
         <div>
@@ -129,7 +129,7 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
             type="text"
             value={project.cityCountry}
             onChange={(e) => setProject({ ...project, cityCountry: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-[13px] placeholder:text-slate-600 focus:outline-none focus:border-purple-500/50"
+            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-[13px] placeholder:text-slate-600 focus:outline-none focus:border-atlas-500/50"
           />
         </div>
       </div>
@@ -140,7 +140,7 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
             type="number"
             value={project.glaSqm}
             onChange={(e) => setProject({ ...project, glaSqm: Number(e.target.value) })}
-            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-[13px] focus:outline-none focus:border-purple-500/50"
+            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-[13px] focus:outline-none focus:border-atlas-500/50"
           />
         </div>
         <div>
@@ -152,7 +152,7 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
             type="month"
             value={project.openingDate}
             onChange={(e) => setProject({ ...project, openingDate: e.target.value })}
-            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-[13px] focus:outline-none focus:border-purple-500/50"
+            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-[13px] focus:outline-none focus:border-atlas-500/50"
           />
         </div>
       </div>
@@ -165,7 +165,7 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
               onClick={() => setProject({ ...project, template: key, glaSqm: t.gla })}
               className={`p-3 rounded-lg border text-left transition-all ${
                 project.template === key
-                  ? 'border-purple-500/50 bg-purple-500/10'
+                  ? 'border-atlas-500/50 bg-atlas-500/10'
                   : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.04]'
               }`}
             >
@@ -185,7 +185,7 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
         className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-          planFile ? 'border-green-500/50 bg-green-500/5' : 'border-white/10 hover:border-purple-500/30'
+          planFile ? 'border-green-500/50 bg-green-500/5' : 'border-white/10 hover:border-atlas-500/30'
         }`}
       >
         <Upload size={32} className={planFile ? 'text-green-400 mx-auto mb-3' : 'text-slate-600 mx-auto mb-3'} />
@@ -213,11 +213,11 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
           onClick={() => { setPlanMode('demo'); setPlanFile(null) }}
           className={`p-4 rounded-lg border text-left transition-all ${
             planMode === 'demo' && !planFile
-              ? 'border-purple-500/50 bg-purple-500/10'
+              ? 'border-atlas-500/50 bg-atlas-500/10'
               : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.04]'
           }`}
         >
-          <Building2 size={18} className="text-purple-400 mb-2" />
+          <Building2 size={18} className="text-atlas-400 mb-2" />
           <div className="text-[12px] font-medium text-white">Plan Cosmos Angré (démo)</div>
           <div className="text-[10px] text-slate-500 mt-0.5">Données pré-configurées</div>
         </button>
@@ -225,7 +225,7 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
           onClick={() => { setPlanMode('manual'); setPlanFile(null) }}
           className={`p-4 rounded-lg border text-left transition-all ${
             planMode === 'manual' && !planFile
-              ? 'border-purple-500/50 bg-purple-500/10'
+              ? 'border-atlas-500/50 bg-atlas-500/10'
               : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.04]'
           }`}
         >
@@ -248,7 +248,7 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
             max={5}
             value={floorConfig.floorCount}
             onChange={(e) => setFloorConfig({ ...floorConfig, floorCount: Number(e.target.value) })}
-            className="flex-1 accent-purple-500"
+            className="flex-1 accent-atlas-500"
           />
           <span className="text-[20px] font-bold text-white w-8 text-center">{floorConfig.floorCount}</span>
         </div>
@@ -285,7 +285,7 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
               >
                 <div
                   className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${
-                    checked ? 'bg-purple-500 border-purple-500' : 'border-white/20'
+                    checked ? 'bg-atlas-500 border-atlas-500' : 'border-white/20'
                   }`}
                 >
                   {checked && <Check size={12} className="text-white" />}
@@ -304,8 +304,8 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
 
   const renderStep3 = () => (
     <div className="text-center space-y-5">
-      <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mx-auto">
-        <Sparkles size={28} className="text-purple-400" />
+      <div className="w-16 h-16 rounded-2xl bg-atlas-500/10 border border-atlas-500/20 flex items-center justify-center mx-auto">
+        <Sparkles size={28} className="text-atlas-400" />
       </div>
       <div>
         <h3 className="text-[18px] font-bold text-white mb-2">Je suis Proph3t</h3>
@@ -318,7 +318,7 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
         </p>
       </div>
       <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4 text-left max-w-sm mx-auto space-y-2">
-        <div className="text-[10px] font-medium text-purple-400 mb-2">Actions suggérées</div>
+        <div className="text-[10px] font-medium text-atlas-400 mb-2">Actions suggérées</div>
         {floorConfig.volumes.includes('vol2') && (
           <div className="flex items-center gap-2 text-[11px] text-slate-300">
             <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
@@ -369,20 +369,20 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
                       isDone
-                        ? 'bg-purple-500 text-white'
+                        ? 'bg-atlas-500 text-white'
                         : isActive
-                        ? 'bg-purple-500/20 border border-purple-500/50 text-purple-400'
+                        ? 'bg-atlas-500/20 border border-atlas-500/50 text-atlas-400'
                         : 'bg-white/5 text-slate-600'
                     }`}
                   >
                     {isDone ? <Check size={13} /> : <Icon size={13} />}
                   </div>
-                  <span className={`text-[10px] font-medium ${isActive ? 'text-purple-400' : 'text-slate-600'}`}>
+                  <span className={`text-[10px] font-medium ${isActive ? 'text-atlas-400' : 'text-slate-600'}`}>
                     {s.label}
                   </span>
                 </div>
                 {i < STEPS.length - 1 && (
-                  <div className={`flex-1 h-px ${i < step ? 'bg-purple-500/50' : 'bg-white/10'}`} />
+                  <div className={`flex-1 h-px ${i < step ? 'bg-atlas-500/50' : 'bg-white/10'}`} />
                 )}
               </React.Fragment>
             )
@@ -417,7 +417,7 @@ export default function OnboardingWizard({ onComplete, onSkip }: OnboardingWizar
           <button
             onClick={handleNext}
             disabled={!canProceed}
-            className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[12px] font-medium transition-colors"
+            className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-atlas-600 hover:bg-atlas-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[12px] font-medium transition-colors"
           >
             {step === 3 ? 'C\'est parti' : 'Suivant'}
             <ChevronRight size={14} />

@@ -33,7 +33,7 @@ export default function EntityPropsPanel({ entity, entityType, onUpdate, onDelet
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-950">
+    <div className="flex flex-col h-full bg-surface-0">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
         <div className="flex items-center gap-2">
@@ -57,7 +57,7 @@ export default function EntityPropsPanel({ entity, entityType, onUpdate, onDelet
               type="text"
               value={entity.label}
               onChange={(e) => handleChange('label', e.target.value)}
-              className="w-full bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
+              className="w-full bg-surface-1 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
             />
           </div>
         )}
@@ -70,7 +70,7 @@ export default function EntityPropsPanel({ entity, entityType, onUpdate, onDelet
               <select
                 value={entity.model}
                 onChange={(e) => handleChange('model', e.target.value)}
-                className="w-full bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
+                className="w-full bg-surface-1 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
               >
                 {CAMERA_MODELS.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
@@ -81,7 +81,7 @@ export default function EntityPropsPanel({ entity, entityType, onUpdate, onDelet
                 <input
                   type="number" value={entity.angle} min={0} max={360}
                   onChange={(e) => handleChange('angle', Number(e.target.value))}
-                  className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-surface-1 border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
                 />
               </div>
               <div>
@@ -89,7 +89,7 @@ export default function EntityPropsPanel({ entity, entityType, onUpdate, onDelet
                 <input
                   type="number" value={entity.fov} min={10} max={360}
                   onChange={(e) => handleChange('fov', Number(e.target.value))}
-                  className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-surface-1 border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
                 />
               </div>
               <div>
@@ -97,7 +97,7 @@ export default function EntityPropsPanel({ entity, entityType, onUpdate, onDelet
                 <input
                   type="number" value={entity.rangeM} min={1} max={50}
                   onChange={(e) => handleChange('rangeM', Number(e.target.value))}
-                  className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-surface-1 border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
                 />
               </div>
             </div>
@@ -106,7 +106,7 @@ export default function EntityPropsPanel({ entity, entityType, onUpdate, onDelet
               <select
                 value={entity.priority}
                 onChange={(e) => handleChange('priority', e.target.value)}
-                className="w-full bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
+                className="w-full bg-surface-1 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
               >
                 <option value="normale">Normale</option>
                 <option value="haute">Haute</option>
@@ -149,7 +149,7 @@ export default function EntityPropsPanel({ entity, entityType, onUpdate, onDelet
               <input
                 type="number" value={entity.widthM} min={0.6} max={3} step={0.1}
                 onChange={(e) => handleChange('widthM', Number(e.target.value))}
-                className="w-full bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
+                className="w-full bg-surface-1 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
               />
             </div>
             <div className="text-[11px] text-gray-500">
@@ -172,7 +172,7 @@ export default function EntityPropsPanel({ entity, entityType, onUpdate, onDelet
                 <input
                   type="text" value={entity.cosmosClubOffre ?? ''}
                   onChange={(e) => handleChange('cosmosClubOffre', e.target.value || undefined)}
-                  className="w-full bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-surface-1 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-blue-500"
                   placeholder="Ex: -10% prochain achat"
                 />
               </div>

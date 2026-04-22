@@ -86,7 +86,7 @@ export default function SpaceEditorSection() {
       <div className="flex items-center gap-3 px-4 py-2 border-b border-gray-800/60 shrink-0">
 
         {/* Tab switcher */}
-        <div className="flex items-center gap-0.5 bg-slate-900 border border-white/10 rounded-lg p-0.5 mr-1">
+        <div className="flex items-center gap-0.5 bg-surface-1 border border-white/10 rounded-lg p-0.5 mr-1">
           <button
             onClick={() => setTab('editor')}
             className={[
@@ -133,7 +133,7 @@ export default function SpaceEditorSection() {
                 <summary className="text-[10px] text-slate-500 hover:text-slate-300 cursor-pointer select-none px-2 py-1 rounded hover:bg-white/5">
                   Options avancées
                 </summary>
-                <div className="absolute right-0 top-full mt-1 w-64 rounded-lg bg-slate-900 border border-white/10 shadow-xl z-10 p-2">
+                <div className="absolute right-0 top-full mt-1 w-64 rounded-lg bg-surface-1 border border-white/10 shadow-xl z-10 p-2">
                   <div className="flex items-start gap-2 p-2 rounded bg-amber-950/20 border border-amber-900/30 text-[10px] text-amber-200 mb-2">
                     <AlertTriangle size={11} className="flex-shrink-0 mt-0.5" />
                     <span>Attention : le parser DXF a détecté <strong>{parsedPlan.spaces.length} polygones</strong>. Importer les ajoute TOUS d'un coup — souvent pollue le plan.</span>

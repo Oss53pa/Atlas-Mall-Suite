@@ -235,7 +235,7 @@ export default function TenantMixValidator() {
             )}
 
             <div className="flex items-start gap-2 ml-8">
-              <Sparkles size={12} className="mt-0.5 flex-shrink-0 text-purple-400" />
+              <Sparkles size={12} className="mt-0.5 flex-shrink-0 text-atlas-400" />
               <p className="text-[12px] text-slate-400">{z.recommendation}</p>
             </div>
           </div>

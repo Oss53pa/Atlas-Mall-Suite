@@ -185,7 +185,7 @@ export default function PositioningSection() {
           description="Radio map KNN (k=5) · précision cible ±2–3 m · collecte tous les 3 m"
         >
           <div className="flex gap-2 flex-wrap">
-            <label className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-[11px] text-purple-300 cursor-pointer hover:bg-purple-500/20">
+            <label className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-atlas-500/10 border border-atlas-500/20 text-[11px] text-atlas-300 cursor-pointer hover:bg-atlas-500/20">
               <Upload size={11} />
               Importer CSV
               <input type="file" accept=".csv" className="hidden"
@@ -246,15 +246,15 @@ export default function PositioningSection() {
         <div className="grid grid-cols-3 gap-2">
           <input
             type="number" placeholder="X (m)" value={manualX} onChange={e => setManualX(e.target.value)}
-            className="px-3 py-1.5 rounded-lg bg-slate-950/50 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600"
+            className="px-3 py-1.5 rounded-lg bg-surface-0/50 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600"
           />
           <input
             type="number" placeholder="Y (m)" value={manualY} onChange={e => setManualY(e.target.value)}
-            className="px-3 py-1.5 rounded-lg bg-slate-950/50 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600"
+            className="px-3 py-1.5 rounded-lg bg-surface-0/50 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600"
           />
           <input
             type="text" placeholder="Étage" value={manualFloor} onChange={e => setManualFloor(e.target.value)}
-            className="px-3 py-1.5 rounded-lg bg-slate-950/50 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600"
+            className="px-3 py-1.5 rounded-lg bg-surface-0/50 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600"
           />
         </div>
         <button onClick={setManualPosition}
@@ -265,7 +265,7 @@ export default function PositioningSection() {
 
       {/* ─── Plan de déploiement beacons ─── */}
       {beaconRecommendations.length > 0 && (
-        <div className="rounded-xl bg-slate-900/30 border border-white/[0.04] p-4">
+        <div className="rounded-xl bg-surface-1/30 border border-white/[0.04] p-4">
           <h3 className="text-white text-sm font-semibold mb-2">
             Plan de déploiement recommandé · {beaconRecommendations.length} beacons
           </h3>
@@ -274,9 +274,9 @@ export default function PositioningSection() {
           </p>
           <div className="max-h-48 overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-1.5">
             {beaconRecommendations.slice(0, 30).map(b => (
-              <div key={b.id} className="text-[10px] bg-slate-950/40 rounded px-2 py-1 flex items-center gap-1.5">
+              <div key={b.id} className="text-[10px] bg-surface-0/40 rounded px-2 py-1 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full" style={{
-                  background: b.rationale === 'transit' ? '#a855f7'
+                  background: b.rationale === 'transit' ? '#b38a5a'
                     : b.rationale === 'entrance' ? '#34d399'
                     : '#38bdf8',
                 }} />
@@ -319,7 +319,7 @@ function StatusCard({ label, value, color, icon: Icon }: {
   label: string; value: string; color: string; icon: React.FC<{ size?: number; className?: string }>
 }) {
   return (
-    <div className="rounded-xl bg-slate-900/40 border border-white/[0.04] p-3">
+    <div className="rounded-xl bg-surface-1/40 border border-white/[0.04] p-3">
       <div className="flex items-center gap-2 mb-1">
         <Icon size={12} className="text-slate-500" />
         <span className="text-[10px] uppercase tracking-wider text-slate-500">{label}</span>
@@ -334,7 +334,7 @@ function SourceCard({ icon: Icon, color, title, description, children }: {
   color: string; title: string; description: string; children: React.ReactNode
 }) {
   return (
-    <div className="rounded-xl bg-slate-900/30 border border-white/[0.04] p-4">
+    <div className="rounded-xl bg-surface-1/30 border border-white/[0.04] p-4">
       <div className="flex items-start gap-3 mb-3">
         <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
           style={{ background: `${color}18`, border: `1px solid ${color}30` }}>

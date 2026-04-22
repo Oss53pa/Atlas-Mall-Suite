@@ -284,8 +284,8 @@ export default function DXFImportModal({ open, onClose }: DXFImportModalProps) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-[640px] max-h-[85vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-0/60 backdrop-blur-sm">
+      <div className="bg-surface-1 border border-gray-700 rounded-xl shadow-2xl w-[640px] max-h-[85vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -577,7 +577,7 @@ export default function DXFImportModal({ open, onClose }: DXFImportModalProps) {
                 <div>
                   <p className="text-xs text-gray-400 mb-2">Apercu du plan</p>
                   <div
-                    className="bg-gray-950 border border-gray-800 rounded-lg p-2 max-h-48 overflow-hidden"
+                    className="bg-surface-0 border border-gray-800 rounded-lg p-2 max-h-48 overflow-hidden"
                     dangerouslySetInnerHTML={{ __html: parseResult.svgContent }}
                   />
                 </div>

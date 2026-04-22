@@ -50,7 +50,7 @@ export default function RondePlanner() {
           { label: 'Routes', value: plan.routes.length, icon: Route, color: '#38bdf8' },
           { label: 'Points de controle', value: plan.totalPoints, icon: MapPin, color: '#22c55e' },
           { label: 'Temps total', value: formatTime(plan.totalTimeSec), icon: Clock, color: '#f59e0b' },
-          { label: 'Couverture', value: `${plan.coveragePercent}%`, icon: Target, color: '#a855f7' },
+          { label: 'Couverture', value: `${plan.coveragePercent}%`, icon: Target, color: '#b38a5a' },
         ].map(k => {
           const Icon = k.icon
           return (

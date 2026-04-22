@@ -105,7 +105,7 @@ export const buildNavGroups = (): NavGroup[] => [
     key: 'personas',
     label: 'M2 — PERSONAS',
     icon: Users,
-    color: '#8b5cf6',
+    color: '#a77d4c',
     items: [
       { id: 'personas', label: '4 Personas Cosmos', icon: Users },
       { id: 'awa_moussa', label: 'Awa & Moussa', icon: Users },
@@ -181,7 +181,7 @@ export const buildNavGroups = (): NavGroup[] => [
     key: 'god_mode',
     label: 'GOD MODE · PROPH3T',
     icon: Sparkles,
-    color: '#a855f7',
+    color: '#b38a5a',
     separator: true,
     items: [
       { id: 'god_mode_signage', label: 'Signalétique (institutionnelle + pub)', icon: Sparkles },
@@ -191,7 +191,7 @@ export const buildNavGroups = (): NavGroup[] => [
     key: 'collaboration',
     label: 'COLLABORATION',
     icon: Send,
-    color: '#818cf8',
+    color: '#c9a068',
     separator: true,
     items: [
       { id: 'history', label: 'Historique du plan', icon: History },

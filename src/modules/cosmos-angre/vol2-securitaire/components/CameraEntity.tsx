@@ -25,13 +25,13 @@ const CameraEntity = memo(function CameraEntity({ camera, scale, isSelected, onC
       <circle cx={cx} cy={cy} r={5} fill={camera.color} stroke="#fff" strokeWidth={1.2} />
       <circle cx={cx} cy={cy} r={2} fill="#fff" fillOpacity={0.9} />
       {isSelected && (
-        <circle cx={cx} cy={cy} r={9} fill="none" stroke="#a855f7" strokeWidth={1.8} strokeDasharray="4 2" />
+        <circle cx={cx} cy={cy} r={9} fill="none" stroke="#b38a5a" strokeWidth={1.8} strokeDasharray="4 2" />
       )}
       <text x={cx} y={cy - 8} textAnchor="middle" fill={camera.color} fontSize={8} fontFamily="system-ui">
         {camera.label}
       </text>
       {camera.autoPlaced && (
-        <text x={cx + 7} y={cy - 5} fill="#a855f7" fontSize={6} fontFamily="system-ui">A</text>
+        <text x={cx + 7} y={cy - 5} fill="#b38a5a" fontSize={6} fontFamily="system-ui">A</text>
       )}
     </g>
   )

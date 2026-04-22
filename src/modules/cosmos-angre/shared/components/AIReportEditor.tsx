@@ -138,13 +138,13 @@ export default function AIReportEditor({ input, onValidated, onCancel }: Props) 
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-200">
+    <div className="flex flex-col h-full bg-surface-0 text-slate-200">
 
       {/* ─── Barre de paramètres ─── */}
-      <div className="border-b border-white/[0.06] bg-slate-900/40 p-4 flex flex-wrap items-center gap-3">
+      <div className="border-b border-white/[0.06] bg-surface-1/40 p-4 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
-          <Sparkles size={14} className="text-purple-400" />
-          <span className="text-[12px] font-semibold text-purple-300 uppercase tracking-wider">Proph3t · Rédacteur IA</span>
+          <Sparkles size={14} className="text-atlas-400" />
+          <span className="text-[12px] font-semibold text-atlas-300 uppercase tracking-wider">Proph3t · Rédacteur IA</span>
         </div>
 
         <div className="h-5 w-px bg-white/[0.08]" />
@@ -189,12 +189,12 @@ export default function AIReportEditor({ input, onValidated, onCancel }: Props) 
           value={recipient}
           onChange={e => setRecipient(e.target.value)}
           placeholder="Nom du destinataire (optionnel)"
-          className="px-3 py-1 rounded-lg bg-slate-950/60 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600 w-56"
+          className="px-3 py-1 rounded-lg bg-surface-0/60 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600 w-56"
         />
 
         <label className="flex items-center gap-1.5 text-[11px] text-slate-400 select-none cursor-pointer">
           <input type="checkbox" checked={useLlm} onChange={e => setUseLlm(e.target.checked)}
-            className="accent-purple-500" />
+            className="accent-atlas-500" />
           LLM (Ollama)
         </label>
 
@@ -203,7 +203,7 @@ export default function AIReportEditor({ input, onValidated, onCancel }: Props) 
         <button
           onClick={handleGenerate}
           disabled={generating}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/15 border border-purple-500/30 text-purple-300 text-[11px] hover:bg-purple-500/25 disabled:opacity-40"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-atlas-500/15 border border-atlas-500/30 text-atlas-300 text-[11px] hover:bg-atlas-500/25 disabled:opacity-40"
         >
           {generating ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
           Régénérer tout
@@ -269,7 +269,7 @@ export default function AIReportEditor({ input, onValidated, onCancel }: Props) 
       </div>
 
       {/* ─── Actions bar ─── */}
-      <div className="border-t border-white/[0.06] p-4 flex items-center justify-between bg-slate-900/60">
+      <div className="border-t border-white/[0.06] p-4 flex items-center justify-between bg-surface-1/60">
         {onCancel && (
           <button onClick={onCancel} className="text-[12px] text-slate-500 hover:text-slate-300">
             Annuler
@@ -314,12 +314,12 @@ function SectionView({
   regenerating: boolean
 }) {
   return (
-    <div className="mb-5 rounded-lg border border-white/[0.05] bg-slate-900/30 overflow-hidden">
-      <div className="flex items-center justify-between px-3 py-2 bg-slate-900/60 border-b border-white/[0.04]">
+    <div className="mb-5 rounded-lg border border-white/[0.05] bg-surface-1/30 overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-2 bg-surface-1/60 border-b border-white/[0.04]">
         <div className="flex items-center gap-2">
           <h3 className="text-[12px] font-semibold text-slate-100">{section.heading}</h3>
           {section.aiGenerated && (
-            <span className="text-[9px] font-medium text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">IA</span>
+            <span className="text-[9px] font-medium text-atlas-400 bg-atlas-500/10 px-1.5 py-0.5 rounded">IA</span>
           )}
           {section.userEdited && (
             <span className="text-[9px] font-medium text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">édité</span>
@@ -332,7 +332,7 @@ function SectionView({
             {editing ? <Check size={12} /> : <Edit3 size={12} />}
           </button>
           <button onClick={onRegenerate} disabled={regenerating}
-            className="p-1.5 rounded hover:bg-white/5 text-slate-500 hover:text-purple-300 disabled:opacity-40"
+            className="p-1.5 rounded hover:bg-white/5 text-slate-500 hover:text-atlas-300 disabled:opacity-40"
             title="Régénérer cette section">
             {regenerating ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
           </button>
@@ -343,7 +343,7 @@ function SectionView({
           <textarea
             value={section.body}
             onChange={e => onEdit(e.target.value)}
-            className="w-full min-h-[100px] p-2 rounded bg-slate-950 border border-white/[0.08] text-[12px] text-slate-200 leading-relaxed focus:outline-none focus:border-purple-500/40 resize-y"
+            className="w-full min-h-[100px] p-2 rounded bg-surface-0 border border-white/[0.08] text-[12px] text-slate-200 leading-relaxed focus:outline-none focus:border-atlas-500/40 resize-y"
           />
         ) : (
           <p className="text-[12px] text-slate-200 leading-relaxed whitespace-pre-line">{section.body}</p>
@@ -368,18 +368,18 @@ function RecommendationsBlock({
   const add = () => onChange([...recs, ''])
 
   return (
-    <div className="mb-6 rounded-lg border border-indigo-500/20 bg-indigo-500/[0.04] p-4">
-      <h3 className="text-[12px] font-semibold text-indigo-300 mb-3 flex items-center gap-2">
+    <div className="mb-6 rounded-lg border border-atlas-500/20 bg-atlas-500/[0.04] p-4">
+      <h3 className="text-[12px] font-semibold text-atlas-300 mb-3 flex items-center gap-2">
         <Sparkles size={12} />
         Recommandations PROPH3T
       </h3>
       <ul className="space-y-1.5">
         {recs.map((r, i) => (
           <li key={i} className="flex items-start gap-2">
-            <span className="text-indigo-400 mt-1">•</span>
+            <span className="text-atlas-400 mt-1">•</span>
             <input
               value={r} onChange={e => updateAt(i, e.target.value)}
-              className="flex-1 px-2 py-1 rounded bg-transparent hover:bg-slate-950/50 focus:bg-slate-950/70 border border-transparent hover:border-white/[0.06] text-[12px] text-slate-200 focus:outline-none focus:border-indigo-500/40"
+              className="flex-1 px-2 py-1 rounded bg-transparent hover:bg-surface-0/50 focus:bg-surface-0/70 border border-transparent hover:border-white/[0.06] text-[12px] text-slate-200 focus:outline-none focus:border-atlas-500/40"
             />
             <button onClick={() => removeAt(i)}
               className="text-slate-600 hover:text-red-400 text-[10px] p-1">✕</button>
@@ -387,7 +387,7 @@ function RecommendationsBlock({
         ))}
       </ul>
       <button onClick={add}
-        className="mt-2 text-[11px] text-indigo-400 hover:text-indigo-200">
+        className="mt-2 text-[11px] text-atlas-400 hover:text-atlas-200">
         + Ajouter une recommandation
       </button>
     </div>
@@ -413,7 +413,7 @@ function Select<T extends string>({
         <select
           value={value}
           onChange={e => onChange(e.target.value as T)}
-          className="appearance-none pl-2 pr-6 py-1 rounded bg-slate-950 border border-white/[0.08] text-[11px] text-slate-200 focus:outline-none focus:border-purple-500/40"
+          className="appearance-none pl-2 pr-6 py-1 rounded bg-surface-0 border border-white/[0.08] text-[11px] text-slate-200 focus:outline-none focus:border-atlas-500/40"
         >
           {options.map(o => (
             <option key={o.value} value={o.value} title={o.title}>{o.label}</option>

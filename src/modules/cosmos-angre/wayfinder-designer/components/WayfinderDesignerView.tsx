@@ -68,9 +68,9 @@ export default function WayfinderDesignerView() {
   }, [])
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-200">
+    <div className="flex flex-col h-full bg-surface-0 text-slate-200">
       {/* Header avec stepper + actions */}
-      <header className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 bg-slate-900">
+      <header className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 bg-surface-1">
         <div className="flex items-center gap-1">
           {TABS.map((t, i) => {
             const Icon = t.icon
@@ -84,7 +84,7 @@ export default function WayfinderDesignerView() {
                   onClick={() => setActiveTab(t.id)}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[12px] transition-all ${
                     isActive
-                      ? 'bg-indigo-600 text-white font-semibold'
+                      ? 'bg-atlas-500 text-white font-semibold'
                       : 'text-slate-400 hover:text-white hover:bg-slate-800'
                   }`}
                   title={t.description}
@@ -156,7 +156,7 @@ function SaveButton() {
     <button
       onClick={handleSave}
       disabled={saving}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-semibold bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50"
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-semibold bg-atlas-500 hover:bg-atlas-500 text-white disabled:opacity-50"
     >
       {saving ? <Loader2 className="animate-spin" size={12} /> : <Save size={12} />}
       Enregistrer

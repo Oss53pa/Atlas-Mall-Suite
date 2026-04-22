@@ -233,7 +233,7 @@ export default function VisitReplay({ paths, scale, activePaths }: VisitReplayPr
           {/* Playback controls */}
           <div
             style={{ pointerEvents: 'auto', position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)' }}
-            className="bg-gray-900/90 border border-gray-700 rounded-xl px-4 py-3 backdrop-blur-sm flex items-center gap-3"
+            className="bg-surface-1/90 border border-gray-700 rounded-xl px-4 py-3 backdrop-blur-sm flex items-center gap-3"
           >
             {/* Play/Pause */}
             <button
@@ -315,7 +315,7 @@ export default function VisitReplay({ paths, scale, activePaths }: VisitReplayPr
           {showAnalytics && (
             <div
               style={{ pointerEvents: 'auto', position: 'absolute', top: 12, right: 12 }}
-              className="bg-gray-900/90 border border-gray-700 rounded-xl p-4 backdrop-blur-sm w-64 space-y-3"
+              className="bg-surface-1/90 border border-gray-700 rounded-xl p-4 backdrop-blur-sm w-64 space-y-3"
             >
               <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
                 <BarChart3 className="w-3.5 h-3.5 text-blue-400" />

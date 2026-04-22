@@ -85,7 +85,7 @@ const allPersonas: PersonaData[] = [
     name: 'Pamela',
     age: '45 ans',
     subtitle: 'PA · High Net Worth',
-    color: '#8b5cf6',
+    color: '#a77d4c',
     tags: ['Cocody Ambassades', '5+ M FCFA/mois', '1×/semaine', 'Cosmos Club Platinum'],
     description: 'Personal Assistant d\'un dirigeant d\'entreprise. Résidence à Cocody quartier des Ambassades. High Net Worth, habituée aux standards internationaux (Paris, Dubai, Johannesburg). Exigeante sur la qualité de service, fidèle si le service est premium.',
     infos: [

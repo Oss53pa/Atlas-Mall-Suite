@@ -100,7 +100,7 @@ export function ObjectLibraryPanel({ spaceId, onClose }: ObjectLibraryPanelProps
   }
 
   return (
-    <div className="absolute top-0 right-0 bottom-0 w-80 bg-gray-900 border-l border-gray-700 z-30 flex flex-col shadow-2xl">
+    <div className="absolute top-0 right-0 bottom-0 w-80 bg-surface-1 border-l border-gray-700 z-30 flex flex-col shadow-2xl">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
         <h3 className="text-sm font-semibold text-white">Bibliotheque d'objets</h3>

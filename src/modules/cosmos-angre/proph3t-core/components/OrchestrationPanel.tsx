@@ -85,7 +85,7 @@ export function OrchestrationPanel({ projetId, parsedPlan }: Props) {
   if (selectedTrace) {
     return (
       <div className="h-full flex flex-col">
-        <div className="px-4 py-2 border-b border-white/10 bg-slate-900/60">
+        <div className="px-4 py-2 border-b border-white/10 bg-surface-1/60">
           <button
             onClick={() => setSelectedTrace(null)}
             className="text-[11px] text-slate-400 hover:text-white"
@@ -101,10 +101,10 @@ export function OrchestrationPanel({ projetId, parsedPlan }: Props) {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-6 bg-slate-950">
+    <div className="h-full overflow-y-auto p-6 bg-surface-0">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-2 mb-1">
-          <Sparkles className="text-purple-400" size={18} />
+          <Sparkles className="text-atlas-400" size={18} />
           <h1 className="text-lg font-bold text-white m-0">PROPH3T Orchestrateur</h1>
         </div>
         <p className="text-[11px] text-slate-500 mb-6">
@@ -113,7 +113,7 @@ export function OrchestrationPanel({ projetId, parsedPlan }: Props) {
         </p>
 
         {/* Config */}
-        <div className="rounded-lg border border-white/10 bg-slate-900/40 p-4 mb-4">
+        <div className="rounded-lg border border-white/10 bg-surface-1/40 p-4 mb-4">
           <h2 className="text-[12px] font-semibold text-white mb-3">Configuration</h2>
 
           <div className="mb-3">
@@ -132,8 +132,8 @@ export function OrchestrationPanel({ projetId, parsedPlan }: Props) {
                     disabled={running}
                     className={`px-3 py-1.5 rounded text-[11px] font-medium border transition ${
                       active
-                        ? 'bg-purple-600/30 border-purple-500 text-purple-200'
-                        : 'bg-slate-900 border-white/10 text-slate-500 hover:text-slate-300'
+                        ? 'bg-atlas-600/30 border-atlas-500 text-atlas-200'
+                        : 'bg-surface-1 border-white/10 text-slate-500 hover:text-slate-300'
                     }`}
                   >
                     {v}
@@ -159,7 +159,7 @@ export function OrchestrationPanel({ projetId, parsedPlan }: Props) {
         <button
           onClick={launch}
           disabled={running || !parsedPlan || selectedVolumes.length === 0}
-          className="w-full py-3 rounded-lg font-bold text-sm bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-4"
+          className="w-full py-3 rounded-lg font-bold text-sm bg-gradient-to-r from-atlas-500 to-atlas-500 text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-4"
         >
           {running ? (
             <><Loader2 className="animate-spin" size={16} /> Orchestration en cours…</>
@@ -188,14 +188,14 @@ export function OrchestrationPanel({ projetId, parsedPlan }: Props) {
         {progress && (
           <div className="rounded-lg border border-purple-800 bg-purple-950/20 p-4 mb-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] text-purple-200 font-semibold">
+              <span className="text-[11px] text-atlas-200 font-semibold">
                 {progress.volume} · {progress.status}
               </span>
               <span className="text-[11px] text-white tabular-nums">{progress.pct.toFixed(0)}%</span>
             </div>
             <div className="h-2 rounded-full bg-slate-800 overflow-hidden mb-2">
               <div
-                className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 transition-all duration-300"
+                className="h-full bg-gradient-to-r from-atlas-500 to-atlas-500 transition-all duration-300"
                 style={{ width: `${progress.pct}%` }}
               />
             </div>
@@ -229,7 +229,7 @@ export function OrchestrationPanel({ projetId, parsedPlan }: Props) {
         )}
 
         {/* Historique */}
-        <div className="rounded-lg border border-white/10 bg-slate-900/40 p-4">
+        <div className="rounded-lg border border-white/10 bg-surface-1/40 p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-[12px] font-semibold text-white flex items-center gap-2">
               <History size={14} />
@@ -254,7 +254,7 @@ export function OrchestrationPanel({ projetId, parsedPlan }: Props) {
               <button
                 key={t.id}
                 onClick={() => openTrace(t.id)}
-                className="w-full text-left p-2.5 rounded border border-white/5 bg-slate-950/40 hover:bg-slate-900 transition"
+                className="w-full text-left p-2.5 rounded border border-white/5 bg-surface-0/40 hover:bg-surface-1 transition"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">

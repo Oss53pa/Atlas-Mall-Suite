@@ -12,8 +12,8 @@ function typeColor(type: string): string {
   if (type.includes('totem')) return '#06b6d4'
   if (type.includes('panneau') || type.includes('banniere')) return '#3b82f6'
   if (type.includes('sortie') || type.includes('bloc') || type.includes('plan_evacuation')) return '#ef4444'
-  if (type.includes('borne')) return '#8b5cf6'
-  if (type.includes('pmr')) return '#a855f7'
+  if (type.includes('borne')) return '#a77d4c'
+  if (type.includes('pmr')) return '#b38a5a'
   if (type.includes('marquage')) return '#f59e0b'
   return '#94a3b8'
 }
@@ -48,7 +48,7 @@ const SignageEntity = memo(function SignageEntity({ signage, selected, scale, on
           cy={cy}
           r={size + 4}
           fill="none"
-          stroke="#a855f7"
+          stroke="#b38a5a"
           strokeWidth={1.5}
           strokeDasharray="3 2"
         />

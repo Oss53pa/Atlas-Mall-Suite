@@ -144,7 +144,7 @@ export function BrandTab() {
         <div className="flex gap-2 mt-3">
           <button
             onClick={handleRegenerateFromPrimary}
-            className="text-[11px] px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5"
+            className="text-[11px] px-3 py-1.5 rounded bg-atlas-500 hover:bg-atlas-500 text-white flex items-center gap-1.5"
           >
             <RotateCw size={11} /> Régénérer dark/light depuis primaire
           </button>
@@ -224,7 +224,7 @@ export function BrandTab() {
               <button
                 key={t}
                 onClick={() => useDesignerStore.getState().patchConfig({ colorBlindnessSim: t })}
-                className={`px-2.5 py-1 rounded text-[10px] ${isActive ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+                className={`px-2.5 py-1 rounded text-[10px] ${isActive ? 'bg-atlas-500 text-white' : 'bg-slate-800 text-slate-400'}`}
               >
                 {t === 'none' ? 'Aucune' : t}
               </button>
@@ -270,7 +270,7 @@ export function BrandTab() {
 function ColorPicker({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   const ratio = evaluateContrast(value, '#ffffff')
   return (
-    <div className="rounded bg-slate-900 border border-white/5 p-2">
+    <div className="rounded bg-surface-1 border border-white/5 p-2">
       <div className="text-[10px] uppercase text-slate-500 mb-1">{label}</div>
       <div className="flex items-center gap-2">
         <input
@@ -282,7 +282,7 @@ function ColorPicker({ label, value, onChange }: { label: string; value: string;
         <input
           value={value}
           onChange={e => onChange(e.target.value)}
-          className="flex-1 px-2 py-1 rounded bg-slate-950 border border-white/10 text-[11px] font-mono text-white outline-none"
+          className="flex-1 px-2 py-1 rounded bg-surface-0 border border-white/10 text-[11px] font-mono text-white outline-none"
         />
       </div>
       <div className="text-[9px] text-slate-500 mt-1">
@@ -323,9 +323,9 @@ function FontPicker({ label, font, onChange }: { label: string; font: FontDef; o
 
 function Section({ title, icon: Icon, children }: { title: string; icon: React.ComponentType<any>; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg bg-slate-900/40 border border-white/5">
-      <header className="flex items-center gap-2 px-4 py-2.5 border-b border-white/5 bg-slate-900/50">
-        <Icon size={14} className="text-indigo-400" />
+    <section className="rounded-lg bg-surface-1/40 border border-white/5">
+      <header className="flex items-center gap-2 px-4 py-2.5 border-b border-white/5 bg-surface-1/50">
+        <Icon size={14} className="text-atlas-400" />
         <h3 className="text-[12px] font-semibold text-white">{title}</h3>
       </header>
       <div className="p-4 space-y-3">{children}</div>

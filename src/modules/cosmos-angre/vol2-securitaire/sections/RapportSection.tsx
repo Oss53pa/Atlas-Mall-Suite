@@ -147,7 +147,7 @@ export default function RapportSection() {
   ]
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto bg-gray-950">
+    <div className="flex flex-col h-full overflow-y-auto bg-surface-0">
       <div className="px-4 py-3 border-b border-gray-800">
         <h2 className="text-sm font-bold text-red-400">Rapport APSAD R82</h2>
         <p className="text-[10px] text-gray-500 mt-0.5">Generation et export du rapport securitaire</p>
@@ -155,7 +155,7 @@ export default function RapportSection() {
 
       <div className="p-4 space-y-4">
         {/* Cartouche Preview */}
-        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4">
+        <div className="bg-surface-1/50 border border-gray-800 rounded-lg p-4">
           <div className="text-xs text-gray-500 font-mono mb-2">CARTOUCHE</div>
           <div className="space-y-1 text-xs">
             <div className="flex justify-between">
@@ -187,7 +187,7 @@ export default function RapportSection() {
           <div className="text-xs text-gray-500 font-mono mb-2">SECTIONS</div>
           <div className="space-y-1.5">
             {sections.map((s) => (
-              <div key={s.num} className="flex items-center gap-3 text-xs bg-gray-900/50 border border-gray-800 rounded px-3 py-2">
+              <div key={s.num} className="flex items-center gap-3 text-xs bg-surface-1/50 border border-gray-800 rounded px-3 py-2">
                 <span className="w-5 h-5 rounded-full bg-red-900/30 text-red-400 text-[10px] flex items-center justify-center font-bold shrink-0">
                   {s.num}
                 </span>

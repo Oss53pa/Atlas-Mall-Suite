@@ -85,7 +85,7 @@ export default function RapportSection() {
   const capexTotal = signageItems.reduce((sum, s) => sum + s.capexFcfa, 0)
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto bg-gray-950">
+    <div className="flex flex-col h-full overflow-y-auto bg-surface-0">
       <div className="px-4 py-3 border-b border-gray-800">
         <h2 className="text-sm font-bold text-emerald-400">Rapport Parcours Client</h2>
         <p className="text-[10px] text-gray-500 mt-0.5">Generation et export</p>
@@ -93,7 +93,7 @@ export default function RapportSection() {
 
       <div className="p-4 space-y-4">
         {/* Report Summary */}
-        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-3 space-y-2 text-xs">
+        <div className="bg-surface-1/50 border border-gray-800 rounded-lg p-3 space-y-2 text-xs">
           <div className="flex justify-between"><span className="text-gray-400">Moments-cles</span><span className="text-white">{moments.length}/7</span></div>
           <div className="flex justify-between"><span className="text-gray-400">POI total</span><span className="text-white">{pois.length}</span></div>
           <div className="flex justify-between"><span className="text-gray-400">POI PMR</span><span className="text-cyan-400">{pmrCount}</span></div>

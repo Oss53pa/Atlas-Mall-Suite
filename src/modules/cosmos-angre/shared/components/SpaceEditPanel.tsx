@@ -4,8 +4,8 @@ import type { DetectedSpace, SpaceState, SpaceStatus } from '../planReader/planE
 import { usePlanEngineStore } from '../stores/planEngineStore'
 
 const PRESET_COLORS = [
-  '#3b82f6', '#8b5cf6', '#ef4444', '#f59e0b', '#22c55e', '#06b6d4',
-  '#ec4899', '#f97316', '#14b8a6', '#84cc16', '#64748b', '#a855f7',
+  '#3b82f6', '#a77d4c', '#ef4444', '#f59e0b', '#22c55e', '#06b6d4',
+  '#ec4899', '#f97316', '#14b8a6', '#84cc16', '#64748b', '#b38a5a',
 ]
 
 interface SpaceEditPanelProps {
@@ -31,7 +31,7 @@ export function SpaceEditPanel({ space, onClose, onOpenObjectLibrary }: SpaceEdi
   }
 
   return (
-    <div className="w-72 bg-gray-900 border-l border-gray-700 flex flex-col h-full overflow-y-auto">
+    <div className="w-72 bg-surface-1 border-l border-gray-700 flex flex-col h-full overflow-y-auto">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
         <h3 className="text-sm font-semibold text-white truncate">{state.label || space.label}</h3>

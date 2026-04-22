@@ -165,7 +165,7 @@ function TransitionPanel({ tr, onClose }: { tr: TransitionNode; onClose: () => v
     <div className="p-3 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ArrowUpDown className="w-4 h-4 text-purple-400" />
+          <ArrowUpDown className="w-4 h-4 text-atlas-400" />
           <span className="text-sm font-semibold text-white">{tr.label}</span>
         </div>
         <button onClick={onClose} className="text-gray-500 hover:text-gray-300"><X className="w-4 h-4" /></button>

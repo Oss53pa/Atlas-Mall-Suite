@@ -574,7 +574,7 @@ export function commentaryToHtml(c: ReportCommentary): string {
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   }[m]!))
   return `<div class="proph3t-commentary" style="font-family:system-ui,sans-serif;line-height:1.6;max-width:720px;">
-  <h2 style="color:#0f172a;border-bottom:2px solid #818cf8;padding-bottom:8px;">${esc(c.title)}</h2>
+  <h2 style="color:#0f172a;border-bottom:2px solid #c9a068;padding-bottom:8px;">${esc(c.title)}</h2>
   <p><strong>${esc(c.greeting)}</strong></p>
   <p style="color:#475569;">${esc(c.introduction)}</p>
   ${c.sections.map(s => `

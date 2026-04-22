@@ -484,13 +484,13 @@ function getEntityDefaults(tool: CadTool, points: Point[]): Omit<CadEntity, 'id'
     case 'text':
       return {
         type: 'text', layer: 'annotations', points: [points[0]],
-        color: '#a855f7', lineWidth: 0, textContent: 'Texte',
+        color: '#b38a5a', lineWidth: 0, textContent: 'Texte',
       }
     case 'arrow':
       if (points.length < 2) return null
       return {
         type: 'arrow', layer: 'annotations', points: [points[0], points[1]],
-        color: '#a855f7', lineWidth: 2, arrowEnd: true,
+        color: '#b38a5a', lineWidth: 2, arrowEnd: true,
       }
     default:
       return null

@@ -43,10 +43,10 @@ export function PmrAnalysisPanel({
 
   const modal = (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-end bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-end bg-surface-0/60 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-[520px] max-w-[95vw] h-full bg-slate-900 border-l border-white/10 shadow-2xl flex flex-col">
+      <div className="w-[520px] max-w-[95vw] h-full bg-surface-1 border-l border-white/10 shadow-2xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
           <div className="flex items-center gap-2">
@@ -69,7 +69,7 @@ export function PmrAnalysisPanel({
         {pmr && (
           <>
             {/* Score + toggle surbrillance */}
-            <div className="px-5 py-4 border-b border-white/5 bg-slate-950/40">
+            <div className="px-5 py-4 border-b border-white/5 bg-surface-0/40">
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <div className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">
@@ -163,11 +163,11 @@ export function PmrAnalysisPanel({
                 return (
                   <div
                     key={edge.edgeId}
-                    className="mb-2 rounded-md bg-slate-950/60 border border-red-900/40 overflow-hidden"
+                    className="mb-2 rounded-md bg-surface-0/60 border border-red-900/40 overflow-hidden"
                   >
                     <button
                       onClick={() => setExpandedEdgeId(expanded ? null : edge.edgeId)}
-                      className="w-full px-3 py-2 text-left hover:bg-slate-900 transition-colors"
+                      className="w-full px-3 py-2 text-left hover:bg-surface-1 transition-colors"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 min-w-0">
@@ -225,7 +225,7 @@ export function PmrAnalysisPanel({
 
             {/* Transitions verticales + ruptures guidage */}
             {flowResult.verticalTransitions && flowResult.verticalTransitions.length > 0 && (
-              <div className="px-5 py-3 border-t border-white/5 bg-slate-950/40">
+              <div className="px-5 py-3 border-t border-white/5 bg-surface-0/40">
                 <h3 className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold mb-2">
                   Transitions verticales ({flowResult.verticalTransitions.length})
                 </h3>

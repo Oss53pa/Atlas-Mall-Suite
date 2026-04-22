@@ -19,7 +19,7 @@ function statusConfig(status: WiseFMLinkType['status']) {
 export default function WiseFMLinkComponent({ entityId: _entityId, entityType: _entityType, wisefmLink }: WiseFMLinkProps) {
   if (!wisefmLink) {
     return (
-      <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-3">
+      <div className="bg-surface-1/50 border border-gray-800 rounded-lg p-3">
         <div className="flex items-center gap-2 mb-2">
           <Wrench className="w-4 h-4 text-gray-500" />
           <span className="text-xs font-semibold text-gray-400">WiseFM</span>

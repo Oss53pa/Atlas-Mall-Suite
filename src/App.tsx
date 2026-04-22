@@ -8,8 +8,9 @@ import AppLayout from './components/AppLayout'
 import { HelpFloatingBall } from './components/HelpFloatingBall'
 import ConsentBanner from './modules/cosmos-angre/shared/components/ConsentBanner'
 
-// Landing (public, no layout)
+// Landing (public, no layout) + HomeRoute intelligent
 const LandingPage = lazy(() => import('./modules/landing/LandingPage'))
+const HomeRoute   = lazy(() => import('./modules/landing/HomeRoute'))
 
 // Auth pages (no layout)
 const LoginPage = lazy(() => import('./modules/auth/LoginPage'))
@@ -53,7 +54,7 @@ const queryClient = new QueryClient({
 })
 
 const Loading = () => (
-  <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+  <div className="min-h-screen bg-surface-0 flex items-center justify-center">
     <div className="text-gray-400 flex items-center gap-3">
       <div className="w-5 h-5 border-2 border-gray-600 border-t-purple-500 rounded-full animate-spin" />
       Chargement...
@@ -76,7 +77,10 @@ function App() {
             {/* ── Runtime borne autonome (CDC §08) ── */}
             <Route path="/kiosk/:kioskId" element={<KioskRuntime />} />
 
-            {/* ── Landing page publique ── */}
+            {/* ── Page d'accueil : Landing publique / redirect dashboard si loggé ── */}
+            <Route path="/" element={<HomeRoute />} />
+
+            {/* ── Landing page publique (URL directe) ── */}
             <Route path="/landing" element={<LandingPage />} />
 
             {/* ── Auth pages (sans AppLayout) ── */}
@@ -90,8 +94,7 @@ function App() {
 
             {/* ── Main app (with TopBar + Sidebar layout) ── */}
             <Route element={<AppLayout />}>
-              {/* Accueil = liste de projets (multi-projet) */}
-              <Route index element={<DashboardPage />} />
+              {/* Dashboard multi-projet (accessible via /dashboard — / est géré par HomeRoute) */}
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/settings/*" element={<OrgSettingsPage />} />
               {/* Transversal */}
@@ -107,8 +110,8 @@ function App() {
               <Route path="/projects/:projectId/*" element={<ProjectWorkspace />} />
             </Route>
 
-            {/* ── Everything else → dashboard (liste de projets) ── */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            {/* ── Everything else → home (landing ou dashboard selon auth) ── */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
         <HelpFloatingBall />

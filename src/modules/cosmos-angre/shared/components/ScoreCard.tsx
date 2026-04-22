@@ -12,7 +12,7 @@ export default function ScoreCard({
   label,
   value,
   max = 100,
-  color = '#818cf8',
+  color = '#c9a068',
   icon: Icon,
 }: ScoreCardProps) {
   const pct = Math.min(value / max, 1)

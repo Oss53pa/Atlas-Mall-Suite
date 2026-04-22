@@ -33,7 +33,7 @@ export function CanvasTab() {
   return (
     <div className="flex h-full">
       {/* Toolbar */}
-      <aside className="w-12 bg-slate-900 border-r border-white/10 flex flex-col items-center py-3 gap-1.5">
+      <aside className="w-12 bg-surface-1 border-r border-white/10 flex flex-col items-center py-3 gap-1.5">
         <button
           onClick={() => setZoom(z => Math.min(2, z + 0.1))}
           className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800"
@@ -58,7 +58,7 @@ export function CanvasTab() {
         <div className="w-6 h-px bg-white/10 my-1" />
         <button
           onClick={() => setLayersOpen(v => !v)}
-          className={`p-1.5 rounded ${layersOpen ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          className={`p-1.5 rounded ${layersOpen ? 'bg-atlas-500 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
           title="Calques"
         >
           <Layers size={14} />
@@ -73,7 +73,7 @@ export function CanvasTab() {
       </aside>
 
       {/* Canvas central */}
-      <main className="flex-1 overflow-auto bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-8 relative">
+      <main className="flex-1 overflow-auto bg-gradient-to-br from-surface-0 via-surface-1 to-surface-0 p-8 relative">
         <div
           className="mx-auto bg-white shadow-2xl rounded overflow-hidden"
           style={{
@@ -93,7 +93,7 @@ export function CanvasTab() {
         </div>
 
         {/* Note dimension */}
-        <div className="absolute bottom-3 right-3 bg-slate-900/80 backdrop-blur px-3 py-1.5 rounded text-[10px] text-slate-400 border border-white/5">
+        <div className="absolute bottom-3 right-3 bg-surface-1/80 backdrop-blur px-3 py-1.5 rounded text-[10px] text-slate-400 border border-white/5">
           {template.metadata.label} ·{' '}
           {template.metadata.dimensions.width}×{template.metadata.dimensions.height}
           {' '}{template.metadata.dimensions.unit}
@@ -102,7 +102,7 @@ export function CanvasTab() {
 
       {/* Sidebar calques */}
       {layersOpen && (
-        <aside className="w-72 bg-slate-900 border-l border-white/10 overflow-y-auto p-4">
+        <aside className="w-72 bg-surface-1 border-l border-white/10 overflow-y-auto p-4">
           <h3 className="text-[12px] font-bold text-white mb-3 flex items-center gap-2">
             <Layers size={13} /> Calques plan
           </h3>
@@ -177,7 +177,7 @@ function LayerToggle({ label, value, onChange }: { label: string; value: boolean
       <span className="text-[11px] text-slate-300 group-hover:text-white">{label}</span>
       <button
         onClick={() => onChange(!value)}
-        className={`w-8 h-4 rounded-full relative transition-colors ${value ? 'bg-indigo-600' : 'bg-slate-700'}`}
+        className={`w-8 h-4 rounded-full relative transition-colors ${value ? 'bg-atlas-500' : 'bg-slate-700'}`}
       >
         <span className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${value ? 'translate-x-4' : ''}`} />
       </button>

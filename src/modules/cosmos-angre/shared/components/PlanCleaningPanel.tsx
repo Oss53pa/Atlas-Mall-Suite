@@ -46,14 +46,14 @@ export function PlanCleaningPanel({ plan, onClose, onApply }: Props) {
 
   const modal = (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-surface-0/80 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-[880px] max-w-[95vw] max-h-[90vh] bg-slate-900 rounded-xl border border-white/10 shadow-2xl flex flex-col">
+      <div className="w-[880px] max-w-[95vw] max-h-[90vh] bg-surface-1 rounded-xl border border-white/10 shadow-2xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
           <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-indigo-400" />
+            <Layers className="w-4 h-4 text-atlas-400" />
             <h2 className="text-sm font-bold text-white">Nettoyage du plan</h2>
             <span className="text-[10px] text-slate-500">
               {cleaning.stats.totalLayers} calques · {cleaning.stats.keptEntities + cleaning.stats.removedEntities} entités
@@ -65,7 +65,7 @@ export function PlanCleaningPanel({ plan, onClose, onApply }: Props) {
         </div>
 
         {/* Curseur niveau */}
-        <div className="p-5 border-b border-white/5 bg-slate-950/40">
+        <div className="p-5 border-b border-white/5 bg-surface-0/40">
           <div className="text-[11px] uppercase tracking-wider text-slate-500 mb-2">Niveau de simplification</div>
           <div className="grid grid-cols-3 gap-2">
             {(Object.keys(CLEANING_LEVEL_META) as CleaningLevel[]).map(lv => {
@@ -77,13 +77,13 @@ export function PlanCleaningPanel({ plan, onClose, onApply }: Props) {
                   onClick={() => { setLevel(lv); setOverrides({}) }}
                   className={`text-left p-3 rounded-lg border transition-all ${
                     selected
-                      ? 'border-indigo-500 bg-indigo-950/40 text-white'
-                      : 'border-white/10 bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800'
+                      ? 'border-atlas-500 bg-indigo-950/40 text-white'
+                      : 'border-white/10 bg-surface-1 text-slate-400 hover:text-white hover:bg-slate-800'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-semibold">{meta.label}</span>
-                    {selected && <Check className="w-4 h-4 text-indigo-400" />}
+                    {selected && <Check className="w-4 h-4 text-atlas-400" />}
                   </div>
                   <p className="text-[11px] text-slate-500 leading-tight">{meta.description}</p>
                 </button>
@@ -93,7 +93,7 @@ export function PlanCleaningPanel({ plan, onClose, onApply }: Props) {
         </div>
 
         {/* Résumé chiffré */}
-        <div className="px-5 py-3 border-b border-white/5 bg-slate-950/20 grid grid-cols-4 gap-3 text-[11px]">
+        <div className="px-5 py-3 border-b border-white/5 bg-surface-0/20 grid grid-cols-4 gap-3 text-[11px]">
           <div>
             <div className="text-slate-500 uppercase text-[9px] tracking-wider">Conservés</div>
             <div className="text-emerald-400 font-bold text-base tabular-nums">
@@ -159,7 +159,7 @@ export function PlanCleaningPanel({ plan, onClose, onApply }: Props) {
                         <code className="font-mono text-[10px] text-slate-200 truncate" title={c.name}>
                           {c.name}
                         </code>
-                        {isOverridden && <span className="text-[8px] text-purple-400 font-bold">M</span>}
+                        {isOverridden && <span className="text-[8px] text-atlas-400 font-bold">M</span>}
                       </div>
                       <div className="text-[10px] text-slate-500 mt-0.5">
                         {meta.label} · {c.entityCount} entités
@@ -179,7 +179,7 @@ export function PlanCleaningPanel({ plan, onClose, onApply }: Props) {
             {Object.keys(overrides).length > 0 && (
               <button
                 onClick={handleReset}
-                className="text-[10px] text-purple-400 hover:text-purple-300"
+                className="text-[10px] text-atlas-400 hover:text-atlas-300"
               >
                 Réinitialiser {Object.keys(overrides).length} override(s)
               </button>
@@ -194,7 +194,7 @@ export function PlanCleaningPanel({ plan, onClose, onApply }: Props) {
             </button>
             <button
               onClick={handleApply}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-md text-[11px] font-semibold bg-gradient-to-r from-indigo-600 to-blue-600 text-white hover:opacity-90"
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-md text-[11px] font-semibold bg-gradient-to-r from-atlas-500 to-blue-600 text-white hover:opacity-90"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Appliquer le nettoyage

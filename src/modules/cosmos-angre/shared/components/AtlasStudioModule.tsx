@@ -26,7 +26,7 @@ type Tab = 'import' | 'editor' | 'models'
 
 const TABS: Array<{ id: Tab; label: string; icon: any; color: string; desc: string }> = [
   { id: 'import', label: 'Import',     icon: Upload,  color: '#0ea5e9', desc: 'Charger un plan DXF, DWG ou PDF' },
-  { id: 'editor', label: 'Éditeur',    icon: Edit3,   color: '#8b5cf6', desc: 'Dessiner, découper, corriger les espaces' },
+  { id: 'editor', label: 'Éditeur',    icon: Edit3,   color: '#a77d4c', desc: 'Dessiner, découper, corriger les espaces' },
   { id: 'models', label: 'Modèles',    icon: Archive, color: '#10b981', desc: 'Bibliothèque des plans enregistrés' },
 ]
 
@@ -65,7 +65,7 @@ export default function AtlasStudioModule() {
           >
             <ArrowLeft size={14} />
           </button>
-          <Sparkles size={16} className="text-purple-400" />
+          <Sparkles size={16} className="text-atlas-400" />
           <div>
             <h1 className="text-sm font-bold text-white m-0">Atlas Studio · Phase 0</h1>
             <p className="text-[10px] text-slate-500 m-0">
@@ -84,10 +84,10 @@ export default function AtlasStudioModule() {
           <StatusPill
             on={models.length > 0}
             label={`${models.length} modèle${models.length > 1 ? 's' : ''}`}
-            color="#6366f1"
+            color="#b38a5a"
           />
           {activeModel && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/30 text-[10px] text-purple-300">
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-atlas-500/15 border border-atlas-500/30 text-[10px] text-atlas-300">
               Actif : <strong>{activeModel.name}</strong>
             </span>
           )}
@@ -104,7 +104,7 @@ export default function AtlasStudioModule() {
       </header>
 
       {/* Tabs */}
-      <nav className="flex items-center px-4 border-b border-white/5 bg-slate-900/40 flex-shrink-0">
+      <nav className="flex items-center px-4 border-b border-white/5 bg-surface-1/40 flex-shrink-0">
         {TABS.map(t => {
           const Icon = t.icon
           const active = tab === t.id
@@ -151,7 +151,7 @@ export default function AtlasStudioModule() {
           {tab === 'import' && (
             <div className="h-full overflow-y-auto">
               <PlanImportsSection
-                volumeColor="#a855f7"
+                volumeColor="#b38a5a"
                 volumeLabel="ATLAS STUDIO · IMPORT"
                 floors={[
                   { id: 'floor-b1',  level: 'B1' as any, order: 0, widthM: 180, heightM: 120, zones: [], transitions: [] },
@@ -173,14 +173,14 @@ export default function AtlasStudioModule() {
 
       {/* Footer — CTA enregistrer */}
       {tab === 'editor' && parsedPlan && (
-        <footer className="flex-shrink-0 px-4 py-2 border-t border-white/10 bg-slate-900/60 flex items-center justify-between">
+        <footer className="flex-shrink-0 px-4 py-2 border-t border-white/10 bg-surface-1/60 flex items-center justify-between">
           <p className="text-[11px] text-slate-400 m-0">
             Une fois vos modifications terminées, enregistrez le plan comme modèle pour qu'il soit
             utilisable dans les volumes.
           </p>
           <button
             onClick={() => setTab('models')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:opacity-90"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-gradient-to-r from-atlas-500 to-purple-600 text-white hover:opacity-90"
           >
             Enregistrer comme modèle →
           </button>

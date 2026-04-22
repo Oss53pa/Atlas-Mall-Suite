@@ -12,9 +12,9 @@ interface RasterPreviewProps {
 
 const TYPE_COLORS: Record<string, string> = {
   commerce: '#22c55e', restauration: '#f97316', parking: '#3b82f6',
-  circulation: '#a855f7', technique: '#6b7280', backoffice: '#ec4899',
+  circulation: '#b38a5a', technique: '#6b7280', backoffice: '#ec4899',
   financier: '#eab308', sortie_secours: '#ef4444', loisirs: '#06b6d4',
-  services: '#84cc16', hotel: '#8b5cf6', bureaux: '#64748b', exterieur: '#10b981',
+  services: '#84cc16', hotel: '#a77d4c', bureaux: '#64748b', exterieur: '#10b981',
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -175,7 +175,7 @@ export default function RasterPreview({
         <div className="flex items-center gap-3 p-2 rounded-lg bg-gray-800/50 border border-gray-700">
           {/* Label edit */}
           {editingId === selectedId ? (
-            <input autoFocus defaultValue={selected.label} className="text-xs bg-gray-900 border border-gray-600 rounded px-2 py-1 text-white w-40 outline-none"
+            <input autoFocus defaultValue={selected.label} className="text-xs bg-surface-1 border border-gray-600 rounded px-2 py-1 text-white w-40 outline-none"
               onBlur={e => renameZone(selectedId, e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') renameZone(selectedId, (e.target as HTMLInputElement).value) }}
             />
@@ -187,7 +187,7 @@ export default function RasterPreview({
 
           {/* Type selector */}
           <select value={selected.estimatedType} onChange={e => changeType(selectedId, e.target.value as SpaceType)}
-            className="text-[10px] bg-gray-900 border border-gray-600 rounded px-2 py-1 text-white outline-none">
+            className="text-[10px] bg-surface-1 border border-gray-600 rounded px-2 py-1 text-white outline-none">
             {Object.entries(TYPE_LABELS).map(([k, v]) => (
               <option key={k} value={k}>{v}</option>
             ))}
@@ -201,7 +201,7 @@ export default function RasterPreview({
       )}
 
       {/* Preview canvas */}
-      <div className="relative bg-gray-950 rounded-lg overflow-hidden" style={{ width, height }}>
+      <div className="relative bg-surface-0 rounded-lg overflow-hidden" style={{ width, height }}>
         {/* Background image */}
         <img src={imageUrl} alt="Plan" className="absolute inset-0 w-full h-full object-contain" draggable={false} />
 
@@ -258,7 +258,7 @@ export default function RasterPreview({
         </svg>
 
         {/* Bottom bar */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gray-950/80 px-3 py-2 flex items-center justify-between">
+        <div className="absolute bottom-0 left-0 right-0 bg-surface-0/80 px-3 py-2 flex items-center justify-between">
           <span className="text-[10px] text-gray-400">{zones.length} zones | {walls.length} murs | {doors.length} portes</span>
           <span className={`text-[10px] font-medium ${result.confidence >= 0.7 ? 'text-emerald-400' : 'text-amber-400'}`}>
             Confiance : {Math.round(result.confidence * 100)}%

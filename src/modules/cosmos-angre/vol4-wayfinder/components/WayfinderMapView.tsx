@@ -74,14 +74,14 @@ export default function WayfinderMapView() {
 
   if (!parsedPlan) {
     return (
-      <div ref={containerRef} className="relative w-full h-full flex items-center justify-center bg-slate-950/50 text-slate-600 text-sm">
+      <div ref={containerRef} className="relative w-full h-full flex items-center justify-center bg-surface-0/50 text-slate-600 text-sm">
         Importez un plan pour afficher la carte
       </div>
     )
   }
 
   return (
-    <div ref={containerRef} className="relative w-full h-full overflow-hidden bg-slate-950/60">
+    <div ref={containerRef} className="relative w-full h-full overflow-hidden bg-surface-0/60">
       {/* Plan image */}
       {planImageUrl && planWidth > 0 && planHeight > 0 && (
         <img
@@ -171,7 +171,7 @@ export default function WayfinderMapView() {
 
       {/* Info overlay */}
       {currentRoute && (
-        <div className="absolute top-3 left-3 rounded-lg bg-slate-900/80 border border-sky-500/30 backdrop-blur px-3 py-2 text-[11px] text-slate-200 pointer-events-none">
+        <div className="absolute top-3 left-3 rounded-lg bg-surface-1/80 border border-sky-500/30 backdrop-blur px-3 py-2 text-[11px] text-slate-200 pointer-events-none">
           <div className="flex items-center gap-3">
             <span>{Math.round(currentRoute.lengthM)} m</span>
             <span className="text-slate-500">·</span>

@@ -37,7 +37,7 @@ type SectionId = typeof SECTIONS[number]['id']
 function Input({ value, placeholder, disabled }: { value: string; placeholder?: string; disabled?: boolean }) {
   const [v, setV] = useState(value)
   return <input value={v} onChange={e => setV(e.target.value)} placeholder={placeholder} disabled={disabled}
-    className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/[0.08] outline-none focus:border-indigo-500/50 placeholder:text-gray-600 disabled:opacity-50" />
+    className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/[0.08] outline-none focus:border-atlas-500/50 placeholder:text-gray-600 disabled:opacity-50" />
 }
 
 // ═══ 1. General ═══
@@ -65,7 +65,7 @@ function GeneralSection() {
       </div>
       <div><label className="text-[11px] text-gray-500 mb-1 block">Adresse complète</label><Input value="Angré, Cocody, Abidjan" /></div>
       <div><label className="text-[11px] text-gray-500 mb-1 block">Représentant légal</label><Input value="Cheick Sanankoua — Directeur Général" /></div>
-      <div className="flex justify-end pt-4"><button className="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors">Enregistrer</button></div>
+      <div className="flex justify-end pt-4"><button className="px-5 py-2 rounded-lg bg-atlas-500 hover:bg-atlas-500 text-white text-sm font-medium transition-colors">Enregistrer</button></div>
     </div>
   )
 }
@@ -97,7 +97,7 @@ function FinancialSection() {
           <div className="flex justify-between"><span>{"> 25 000 000 FCFA"}</span><span className="text-red-400">DG + Conseil</span></div>
         </div>
       </div>
-      <div className="flex justify-end pt-4"><button className="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors">Enregistrer</button></div>
+      <div className="flex justify-end pt-4"><button className="px-5 py-2 rounded-lg bg-atlas-500 hover:bg-atlas-500 text-white text-sm font-medium transition-colors">Enregistrer</button></div>
     </div>
   )
 }
@@ -117,14 +117,14 @@ function BrandingSection() {
       </div>
       <div><label className="text-[11px] text-gray-500 mb-1 block">Couleur d'accent</label>
         <div className="flex items-center gap-3">
-          <input type="color" defaultValue="#534AB7" className="w-10 h-10 rounded-lg border-0 cursor-pointer" />
-          <Input value="#534AB7" />
-          <div className="flex gap-1.5">{['#534AB7','#f59e0b','#38bdf8','#34d399','#ef4444','#a855f7'].map(c =>
+          <input type="color" defaultValue="#7e5e3c" className="w-10 h-10 rounded-lg border-0 cursor-pointer" />
+          <Input value="#7e5e3c" />
+          <div className="flex gap-1.5">{['#7e5e3c','#f59e0b','#38bdf8','#34d399','#ef4444','#b38a5a'].map(c =>
             <button key={c} className="w-6 h-6 rounded-full border-2 border-transparent hover:border-white/30 transition-colors" style={{ background: c }} />)}</div>
         </div>
       </div>
       <div><label className="text-[11px] text-gray-500 mb-1 block">Nom affiché</label><Input value="New Heaven SA" /></div>
-      <div className="flex justify-end pt-4"><button className="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors">Enregistrer</button></div>
+      <div className="flex justify-end pt-4"><button className="px-5 py-2 rounded-lg bg-atlas-500 hover:bg-atlas-500 text-white text-sm font-medium transition-colors">Enregistrer</button></div>
     </div>
   )
 }
@@ -140,13 +140,13 @@ function MembersSection() {
   const badges: Record<string, { label: string; color: string }> = {
     super_admin: { label: 'DG', color: '#ef4444' }, admin: { label: 'Admin', color: '#f59e0b' },
     consultant: { label: 'Consultant', color: '#38bdf8' }, enseigne: { label: 'Enseigne', color: '#34d399' },
-    investisseur: { label: 'Investisseur', color: '#a855f7' }, viewer: { label: 'Lecteur', color: '#6b7280' },
+    investisseur: { label: 'Investisseur', color: '#b38a5a' }, viewer: { label: 'Lecteur', color: '#6b7280' },
   }
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div><h3 className="text-lg font-semibold text-white">Membres & rôles</h3><p className="text-sm text-gray-500">{members.length} membres</p></div>
-        <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium"><Plus size={14} /> Inviter</button>
+        <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-atlas-500 hover:bg-atlas-500 text-white text-sm font-medium"><Plus size={14} /> Inviter</button>
       </div>
       <div className="relative"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
         <input placeholder="Rechercher..." className="w-full bg-[#141e2e] text-white text-sm rounded-lg pl-9 pr-3 py-2 border border-white/[0.08] outline-none placeholder:text-gray-600" /></div>
@@ -201,7 +201,7 @@ function PermissionsSection() {
             <tr key={p.id} className="border-b border-white/[0.03]">
               <td className="px-3 py-2 text-gray-300">{p.label}</td>
               {roles.map(r=>(<td key={r} className="px-3 py-2 text-center">
-                <div className={`w-4 h-4 rounded mx-auto border ${matrix[r]?.includes(p.id)?'bg-indigo-500 border-indigo-400':'border-gray-700'} flex items-center justify-center`}>
+                <div className={`w-4 h-4 rounded mx-auto border ${matrix[r]?.includes(p.id)?'bg-atlas-500 border-indigo-400':'border-gray-700'} flex items-center justify-center`}>
                   {matrix[r]?.includes(p.id)&&<Check size={10} className="text-white"/>}</div></td>))}
             </tr>))}</tbody>
         </table>
@@ -220,7 +220,7 @@ function ProjectsSection() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div><h3 className="text-lg font-semibold text-white">Projets de l'organisation</h3><p className="text-sm text-gray-500">{projects.length} projet(s)</p></div>
-        <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium"><Plus size={14}/> Nouveau projet</button>
+        <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-atlas-500 hover:bg-atlas-500 text-white text-sm font-medium"><Plus size={14}/> Nouveau projet</button>
       </div>
       <div className="space-y-3">{projects.map((p,i)=>(
         <div key={i} className="rounded-xl p-4 border border-white/[0.06] flex items-center gap-4" style={{ background: '#141e2e' }}>
@@ -244,12 +244,12 @@ function SubscriptionSection() {
           { name:'Pro', price:'450 000', features:['5 projets','15 utilisateurs','Tous volumes','Proph3t IA','Export illimité'], current:true },
           { name:'Enterprise', price:'Sur devis', features:['Projets illimités','Utilisateurs illimités','API dédiée','Support prioritaire','SLA 99.9%'], current:false },
         ].map(plan=>(
-          <div key={plan.name} className={`rounded-xl p-5 border ${plan.current?'border-indigo-500/40 bg-indigo-500/5':'border-white/[0.06]'}`} style={!plan.current?{background:'#141e2e'}:undefined}>
-            {plan.current&&<span className="text-[9px] font-bold text-indigo-400 uppercase tracking-wider mb-2 block">Plan actuel</span>}
+          <div key={plan.name} className={`rounded-xl p-5 border ${plan.current?'border-atlas-500/40 bg-atlas-500/5':'border-white/[0.06]'}`} style={!plan.current?{background:'#141e2e'}:undefined}>
+            {plan.current&&<span className="text-[9px] font-bold text-atlas-400 uppercase tracking-wider mb-2 block">Plan actuel</span>}
             <h4 className="text-white font-semibold text-lg">{plan.name}</h4>
             <p className="text-xl font-bold text-white mt-1">{plan.price} <span className="text-sm text-gray-500 font-normal">FCFA/mois</span></p>
             <ul className="mt-4 space-y-1.5">{plan.features.map(f=>
-              <li key={f} className="flex items-center gap-2 text-[12px] text-gray-400"><Check size={12} className={plan.current?'text-indigo-400':'text-gray-600'}/>{f}</li>)}</ul>
+              <li key={f} className="flex items-center gap-2 text-[12px] text-gray-400"><Check size={12} className={plan.current?'text-atlas-400':'text-gray-600'}/>{f}</li>)}</ul>
             {!plan.current&&<button className="mt-4 w-full py-2 rounded-lg bg-white/[0.06] border border-white/[0.08] text-sm text-gray-300 hover:text-white">{plan.name==='Enterprise'?'Contacter':'Passer au plan'}</button>}
           </div>))}
       </div>
@@ -261,7 +261,7 @@ function SubscriptionSection() {
 // ═══ 8. Integrations ═══
 function IntegrationsSection() {
   const items = [
-    { name:'PROPH3T Ollama', desc:'Moteur IA local — LLaMA 3.1 fine-tuné', on:true, color:'#a855f7' },
+    { name:'PROPH3T Ollama', desc:'Moteur IA local — LLaMA 3.1 fine-tuné', on:true, color:'#b38a5a' },
     { name:'Claude API (Fallback)', desc:'Anthropic claude-sonnet-4-20250514 — fallback premium', on:false, color:'#38bdf8' },
     { name:'Atlas Finance / LiassPilot', desc:'Comptabilité SYSCOHADA, liasses fiscales', on:false, color:'#f59e0b' },
     { name:'WiseHR', desc:'Gestion RH, paie, CNPS', on:false, color:'#34d399' },
@@ -276,7 +276,7 @@ function IntegrationsSection() {
         <div key={it.name} className="rounded-xl p-4 border border-white/[0.06] flex items-center gap-4" style={{ background: '#141e2e' }}>
           <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${it.color}15` }}><Plug size={16} style={{ color: it.color }}/></div>
           <div className="flex-1"><p className="text-white font-medium text-sm">{it.name}</p><p className="text-gray-500 text-[11px]">{it.desc}</p></div>
-          <button className={`relative w-10 h-5 rounded-full transition-colors ${it.on?'bg-indigo-600':'bg-gray-700'}`}>
+          <button className={`relative w-10 h-5 rounded-full transition-colors ${it.on?'bg-atlas-500':'bg-gray-700'}`}>
             <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${it.on?'translate-x-5':''}`}/></button>
         </div>))}</div>
     </div>
@@ -337,7 +337,7 @@ export default function OrgSettingsPage() {
   }
 
   return (
-    <div className="flex h-full" style={{ background: '#060a13', color: '#e2e8f0' }}>
+    <div className="flex h-full" style={{ background: '#1a1d23', color: '#e2e8f0' }}>
       <aside className="w-56 flex-shrink-0 border-r overflow-y-auto p-3 space-y-0.5" style={{ background: '#0a0f1a', borderColor: 'rgba(255,255,255,0.05)' }}>
         <div className="px-2 py-2 mb-2">
           <p className="text-[10px] text-gray-600 uppercase tracking-widest font-semibold">Paramètres</p>
@@ -349,7 +349,7 @@ export default function OrgSettingsPage() {
             <button key={s.id} onClick={() => setActive(s.id)}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all ${
                 active === s.id ? 'bg-white/[0.06] text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'}`}>
-              <Icon size={14} className={active === s.id ? 'text-indigo-400' : ''} />
+              <Icon size={14} className={active === s.id ? 'text-atlas-400' : ''} />
               {s.label}
             </button>
           )

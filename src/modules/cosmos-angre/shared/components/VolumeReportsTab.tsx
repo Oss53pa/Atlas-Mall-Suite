@@ -39,7 +39,7 @@ interface Props {
 type Step = 'commentary' | 'preview' | 'share'
 
 export default function VolumeReportsTab({
-  volumeId, volumeName, volumeColor = '#818cf8', projectName,
+  volumeId, volumeName, volumeColor = '#c9a068', projectName,
   keyFigures, findings, signagePlan, sectorBenchmarks,
 }: Props) {
   const parsedPlan = usePlanEngineStore((s) => s.parsedPlan)
@@ -114,10 +114,10 @@ export default function VolumeReportsTab({
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-200">
+    <div className="flex flex-col h-full bg-surface-0 text-slate-200">
 
       {/* Stepper */}
-      <div className="border-b border-white/[0.06] px-5 py-3 bg-slate-900/30">
+      <div className="border-b border-white/[0.06] px-5 py-3 bg-surface-1/30">
         <div className="flex items-center gap-2">
           <StepPill
             num={1}
@@ -174,7 +174,7 @@ export default function VolumeReportsTab({
 
         {step === 'preview' && html && (
           <div className="h-full flex flex-col">
-            <div className="border-b border-white/[0.06] p-3 flex items-center gap-2 bg-slate-900/30">
+            <div className="border-b border-white/[0.06] p-3 flex items-center gap-2 bg-surface-1/30">
               <span className="text-[12px] text-slate-400">
                 <strong className="text-slate-200">Aperçu du rapport HTML autonome</strong> — 2D interactif + annotations + boutons Valider/Corriger/Commenter
               </span>

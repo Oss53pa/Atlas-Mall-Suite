@@ -80,7 +80,7 @@ function EraserButton({ eraseMode, onToggle, disabled }: {
           : "Gomme : clic sur un pilier / hachure / faux-plafond pour le masquer individuellement"}>
         <Eraser className="w-3.5 h-3.5" />
         {eraseMode ? 'Gomme active' : 'Gommer'}
-        {hiddenCount > 0 && <span className="ml-1 px-1 rounded bg-black/30 text-[9px]">{hiddenCount}</span>}
+        {hiddenCount > 0 && <span className="ml-1 px-1 rounded bg-surface-0/30 text-[9px]">{hiddenCount}</span>}
       </button>
       {hiddenCount > 0 && (
         <button onClick={() => { if (confirm(`Reafficher les ${hiddenCount} entite(s) masquee(s) ?`)) showAll() }}
@@ -114,9 +114,9 @@ export function Vol3PlanToolbar(props: Vol3PlanToolbarProps) {
     return (
       <>
         <div className="flex-1" />
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/8 border border-purple-500/15">
-          <Sparkles className="w-3 h-3 text-purple-400" />
-          <span className="text-[10px] font-semibold text-purple-300/80">Proph3t</span>
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-atlas-500/8 border border-atlas-500/15">
+          <Sparkles className="w-3 h-3 text-atlas-400" />
+          <span className="text-[10px] font-semibold text-atlas-300/80">Proph3t</span>
         </div>
       </>
     )
@@ -324,7 +324,7 @@ export function Vol3PlanToolbar(props: Vol3PlanToolbarProps) {
       <div className="relative">
         <select value={activeProfileId ?? ''}
           onChange={(e) => onSetActiveProfile(e.target.value || null)}
-          className="appearance-none bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 pr-7 text-xs text-gray-300 focus:outline-none focus:border-emerald-500">
+          className="appearance-none bg-surface-1 border border-gray-700 rounded-lg px-3 py-1.5 pr-7 text-xs text-gray-300 focus:outline-none focus:border-emerald-500">
           <option value="">Tous profils</option>
           {visitorProfiles.map((p) => (
             <option key={p.id} value={p.id}>{p.name}{p.pmrRequired ? ' (PMR)' : ''}</option>
@@ -334,9 +334,9 @@ export function Vol3PlanToolbar(props: Vol3PlanToolbarProps) {
       </div>
 
       {/* Proph3t badge */}
-      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/8 border border-purple-500/15">
-        <Sparkles className="w-3 h-3 text-purple-400" />
-        <span className="text-[10px] font-semibold text-purple-300/80">Proph3t</span>
+      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-atlas-500/8 border border-atlas-500/15">
+        <Sparkles className="w-3 h-3 text-atlas-400" />
+        <span className="text-[10px] font-semibold text-atlas-300/80">Proph3t</span>
       </div>
     </>
   )

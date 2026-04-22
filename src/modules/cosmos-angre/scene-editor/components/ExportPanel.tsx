@@ -70,7 +70,7 @@ export function ExportPanel() {
   const formats: Array<{
     id: ExportFormat; label: string; desc: string; icon: typeof FileImage; color: string
   }> = [
-    { id: 'svg',  label: 'SVG 2D (vectoriel)',    desc: 'Plan vectoriel — impression haute qualité, édition graphique', icon: FileCode2, color: '#8b5cf6' },
+    { id: 'svg',  label: 'SVG 2D (vectoriel)',    desc: 'Plan vectoriel — impression haute qualité, édition graphique', icon: FileCode2, color: '#a77d4c' },
     { id: 'dxf',  label: 'DXF (AutoCAD)',          desc: 'Compatible architectes, logiciels CAD (AutoCAD, QCAD, FreeCAD…)', icon: Layers,    color: '#0ea5e9' },
     { id: 'glb',  label: 'GLB (3D universel)',     desc: 'Modèle 3D pour Blender, SketchFab, AR/VR — usage web & mobile', icon: FileBox,   color: '#22c55e' },
     { id: 'png',  label: 'PNG rendu 3D',           desc: 'Screenshot haute résolution (onglet Rendu)', icon: FileImage, color: '#f59e0b' },

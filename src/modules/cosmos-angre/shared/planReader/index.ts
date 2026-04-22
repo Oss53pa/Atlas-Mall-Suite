@@ -168,7 +168,7 @@ export async function importPlan(
           if (/tech|local.?tech|tgbt|transfo|electri|cvc|clim|ventil|chauff|plomb|pompe|surpress|sprinkl|group[eé].?[eé]lectro|onduleur|serveur|informatique|compt[eé]|compteur|machin|maintenance|entreti|d[eé]chet|poubelle|vide.?ordure|charge|d[eé]p[oô]t|stock|r[eé]serve|entrep[oô]t|livraison|quai|monte.?charge/i.test(l)) return { type: 'technique', niveau: 4, color: '#ef4444' }
 
           // Back-office / Administration
-          if (/bureau|office|back.?off|admin|direction|g[eé]rance|gestion|comptab|secr[eé]tari|r[eé]union|conf[eé]rence|salle.?de.?r[eé]union|open.?space|co.?working|archive/i.test(l)) return { type: 'backoffice', niveau: 4, color: '#8b5cf6' }
+          if (/bureau|office|back.?off|admin|direction|g[eé]rance|gestion|comptab|secr[eé]tari|r[eé]union|conf[eé]rence|salle.?de.?r[eé]union|open.?space|co.?working|archive/i.test(l)) return { type: 'backoffice', niveau: 4, color: '#a77d4c' }
 
           // Securite / Finance
           if (/s[eé]curit|surveillance|contr[oô]le|vigil|poste.?de.?garde|coffre|valeur|trésor|chambre.?forte|financ|caiss/i.test(l)) return { type: 'financier', niveau: 5, color: '#dc2626' }
@@ -180,7 +180,7 @@ export async function importPlan(
           if (/hall|circul|couloir|corridor|galerie|passage|d[eé]ambul|atrium|escalier|stair|ascens[eé]|escalat|rampe|passerelle|entr[eé]e|foyer|palier|sas/i.test(l)) return { type: 'circulation', niveau: 1, color: '#e5e7eb' }
 
           // Hotel
-          if (/h[oô]tel|chambre|suite|r[eé]ception.?h[oô]tel|lobby|h[eé]berg/i.test(l)) return { type: 'hotel', niveau: 3, color: '#a855f7' }
+          if (/h[oô]tel|chambre|suite|r[eé]ception.?h[oô]tel|lobby|h[eé]berg/i.test(l)) return { type: 'hotel', niveau: 3, color: '#b38a5a' }
 
           // Exterieur
           if (/ext[eé]rieur|terrass|jardin|parvis|esplanade|fa[cç]ade|toit|toiture/i.test(l)) return { type: 'exterieur', niveau: 1, color: '#84cc16' }

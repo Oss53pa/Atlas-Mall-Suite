@@ -82,10 +82,10 @@ export function AbmSimulationPanel({
 
   const modal = (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-end bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-end bg-surface-0/60 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-[560px] max-w-[95vw] h-full bg-slate-900 border-l border-white/10 shadow-2xl flex flex-col">
+      <div className="w-[560px] max-w-[95vw] h-full bg-surface-1 border-l border-white/10 shadow-2xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
           <div className="flex items-center gap-2">
@@ -98,7 +98,7 @@ export function AbmSimulationPanel({
         </div>
 
         {/* Description */}
-        <div className="px-5 py-3 border-b border-white/5 bg-slate-950/40 text-[11px] text-slate-400 leading-relaxed">
+        <div className="px-5 py-3 border-b border-white/5 bg-surface-0/40 text-[11px] text-slate-400 leading-relaxed">
           <p className="m-0">
             Simulation <strong>Social Force Model</strong> (Helbing 1995) sur les chemins calculés.
             Agents à 1,2 m/s, rayon d'interaction 2 m, pas de temps 0,1 s. Densité critique 4 pers/m².
@@ -138,7 +138,7 @@ export function AbmSimulationPanel({
                 className={`rounded-lg border transition-all ${
                   isActive
                     ? 'border-rose-500 bg-rose-950/20'
-                    : 'border-white/10 bg-slate-950/40'
+                    : 'border-white/10 bg-surface-0/40'
                 }`}
               >
                 <div className="p-3">
@@ -268,7 +268,7 @@ function StatMini({ icon, label, value, color }: {
   color: string
 }) {
   return (
-    <div className="bg-slate-950/60 rounded px-1.5 py-1">
+    <div className="bg-surface-0/60 rounded px-1.5 py-1">
       <div className="flex items-center gap-1 text-slate-600 text-[8px] uppercase tracking-wider">
         {icon} {label}
       </div>

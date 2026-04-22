@@ -71,11 +71,11 @@ export function TraceViewer({ trace, onClose }: Props) {
   }, [allDecisions, selectedVolume, selectedKind])
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-200">
+    <div className="flex flex-col h-full bg-surface-0 text-slate-200">
       {/* Header */}
       <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Award className="text-purple-400" size={16} />
+          <Award className="text-atlas-400" size={16} />
           <div>
             <h2 className="text-sm font-bold text-white">Trace d'exécution PROPH3T</h2>
             <code className="text-[10px] text-slate-500">{trace.id}</code>
@@ -104,7 +104,7 @@ export function TraceViewer({ trace, onClose }: Props) {
       </div>
 
       {/* Timeline volumes */}
-      <div className="px-5 py-4 border-b border-white/5 bg-slate-900/40">
+      <div className="px-5 py-4 border-b border-white/5 bg-surface-1/40">
         <div className="flex items-center gap-2">
           {trace.steps.map((step, idx) => {
             const meta = VOLUME_META[step.volume]
@@ -151,12 +151,12 @@ export function TraceViewer({ trace, onClose }: Props) {
       </div>
 
       {/* Filtres */}
-      <div className="px-5 py-2 border-b border-white/5 flex items-center gap-3 bg-slate-900/20">
+      <div className="px-5 py-2 border-b border-white/5 flex items-center gap-3 bg-surface-1/20">
         <Filter size={12} className="text-slate-500" />
         <select
           value={selectedVolume}
           onChange={e => setSelectedVolume(e.target.value as VolumeId | 'all')}
-          className="bg-slate-900 border border-white/10 text-[11px] text-slate-300 px-2 py-1 rounded"
+          className="bg-surface-1 border border-white/10 text-[11px] text-slate-300 px-2 py-1 rounded"
         >
           <option value="all">Tous volumes</option>
           {trace.volumes.map(v => (
@@ -166,7 +166,7 @@ export function TraceViewer({ trace, onClose }: Props) {
         <select
           value={selectedKind}
           onChange={e => setSelectedKind(e.target.value as DecisionKind | 'all')}
-          className="bg-slate-900 border border-white/10 text-[11px] text-slate-300 px-2 py-1 rounded"
+          className="bg-surface-1 border border-white/10 text-[11px] text-slate-300 px-2 py-1 rounded"
         >
           <option value="all">Tous types</option>
           {(['classification', 'prediction', 'optimization', 'placement',
@@ -199,7 +199,7 @@ export function TraceViewer({ trace, onClose }: Props) {
                 className={`w-full text-left p-2.5 rounded border transition ${
                   isSelected
                     ? 'bg-purple-950/40 border-purple-700'
-                    : 'bg-slate-900/50 border-white/5 hover:bg-slate-900/80'
+                    : 'bg-surface-1/50 border-white/5 hover:bg-surface-1/80'
                 }`}
               >
                 <div className="flex items-start gap-2">
@@ -229,7 +229,7 @@ export function TraceViewer({ trace, onClose }: Props) {
 
         {/* Détail */}
         {selectedDecision && (
-          <div className="w-[360px] border-l border-white/10 overflow-y-auto p-4 bg-slate-900/40">
+          <div className="w-[360px] border-l border-white/10 overflow-y-auto p-4 bg-surface-1/40">
             <div className="flex items-start justify-between mb-3">
               <h3 className="text-sm font-bold text-white">Détail décision</h3>
               <button
@@ -308,7 +308,7 @@ export function TraceViewer({ trace, onClose }: Props) {
               {selectedDecision.output !== undefined && (
                 <div>
                   <div className="text-[9px] uppercase text-slate-500 tracking-wider mb-1">Output</div>
-                  <pre className="text-[10px] text-slate-400 bg-slate-950 rounded p-2 overflow-auto max-h-40 m-0">
+                  <pre className="text-[10px] text-slate-400 bg-surface-0 rounded p-2 overflow-auto max-h-40 m-0">
 {JSON.stringify(selectedDecision.output, null, 2)}
                   </pre>
                 </div>

@@ -41,7 +41,7 @@ function FloorCard({ floor }: { floor: PerFloorVolumeScore }) {
   const globColor = scoreColor(floor.globalScore)
 
   return (
-    <div className="rounded-lg bg-slate-900/80 border border-white/[0.06] p-3 space-y-2.5">
+    <div className="rounded-lg bg-surface-1/80 border border-white/[0.06] p-3 space-y-2.5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -158,7 +158,7 @@ export function FloorSynthesisPanel({ analysis, compact, className = '' }: Props
 
       {/* Top priorities across all floors */}
       {topPriorities.length > 0 && (
-        <div className="rounded-lg bg-slate-900/80 border border-white/[0.06] p-3">
+        <div className="rounded-lg bg-surface-1/80 border border-white/[0.06] p-3">
           <div className="text-[9px] uppercase tracking-wider text-slate-500 mb-2">Top priorites (tous etages)</div>
           <div className="space-y-1.5">
             {topPriorities.slice(0, 8).map((p, i) => {

@@ -144,7 +144,7 @@ export function SpaceInfoOverlay({
                   cx={bottomRight.x - 6}
                   cy={topLeft.y + 6}
                   r={4}
-                  fill="#a855f7"
+                  fill="#b38a5a"
                   stroke="#fff"
                   strokeWidth={1}
                 />
@@ -226,7 +226,7 @@ export function SpaceInfoOverlay({
                   <text x={cp.x + 18} y={cp.y + 10} fontSize={9} fill="#94a3b8">
                     Dimensions : {bb.w.toFixed(1)} × {bb.h.toFixed(1)} m
                   </text>
-                  <text x={cp.x + 18} y={cp.y + 24} fontSize={9} fill={isCorrected ? '#a855f7' : '#64748b'} fontStyle="italic">
+                  <text x={cp.x + 18} y={cp.y + 24} fontSize={9} fill={isCorrected ? '#b38a5a' : '#64748b'} fontStyle="italic">
                     {isExcluded ? '⊗ Exclu des parcours' : isCorrected ? '✓ Corrigé manuellement' : 'Clic = corriger'}
                   </text>
                 </g>

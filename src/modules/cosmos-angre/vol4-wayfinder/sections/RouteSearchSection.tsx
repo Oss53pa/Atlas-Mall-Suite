@@ -185,7 +185,7 @@ export default function RouteSearchSection() {
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="Chercher une enseigne, un service, un sanitaire…"
-              className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-slate-900/60 border border-white/[0.06] text-sm text-white placeholder:text-slate-600 outline-none focus:border-sky-500/40"
+              className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-surface-1/60 border border-white/[0.06] text-sm text-white placeholder:text-slate-600 outline-none focus:border-sky-500/40"
             />
             {query && (
               <button onClick={() => setQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
@@ -196,7 +196,7 @@ export default function RouteSearchSection() {
 
           {/* Résultats */}
           {query && (
-            <div className="rounded-lg bg-slate-900/40 border border-white/[0.05] divide-y divide-white/[0.04] overflow-hidden">
+            <div className="rounded-lg bg-surface-1/40 border border-white/[0.05] divide-y divide-white/[0.04] overflow-hidden">
               {results.length === 0 && (
                 <div className="p-4 text-[12px] text-slate-500 text-center">Aucun résultat — essayez un autre terme</div>
               )}
@@ -241,7 +241,7 @@ export default function RouteSearchSection() {
                     {g.items.map(r => (
                       <button key={r.item.id}
                         onClick={() => goTo(r.item.id, r.item.label)}
-                        className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-900/30 border border-white/[0.04] hover:border-sky-500/30 text-left text-[11px]">
+                        className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-surface-1/30 border border-white/[0.04] hover:border-sky-500/30 text-left text-[11px]">
                         <span className="flex-1 text-slate-200 truncate">{r.item.label}</span>
                         {r.distanceM != null && <span className="text-sky-400 text-[10px]">{Math.round(r.distanceM)} m</span>}
                       </button>
@@ -280,7 +280,7 @@ export default function RouteSearchSection() {
               <div className="space-y-1">
                 {history.slice(0, 5).map(h => (
                   <button key={h.id} onClick={() => goTo(h.itemId, h.label)}
-                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-900/30 border border-white/[0.04] text-[11px] text-slate-300 text-left">
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-surface-1/30 border border-white/[0.04] text-[11px] text-slate-300 text-left">
                     <Clock size={10} className="text-slate-500" />
                     <span className="flex-1">{h.label}</span>
                     <span className="text-slate-600 text-[10px]">{h.count}×</span>
@@ -294,7 +294,7 @@ export default function RouteSearchSection() {
         {/* ─── Colonne droite : itinéraire courant ─── */}
         <div className="flex flex-col min-h-0">
           {currentRoute ? (
-            <div className="rounded-xl bg-slate-900/40 border border-sky-500/20 p-4 flex flex-col h-full min-h-0">
+            <div className="rounded-xl bg-surface-1/40 border border-sky-500/20 p-4 flex flex-col h-full min-h-0">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-white text-sm font-semibold flex items-center gap-2">
                   <Navigation size={14} className="text-sky-400" />
@@ -306,15 +306,15 @@ export default function RouteSearchSection() {
               </div>
 
               <div className="grid grid-cols-3 gap-2 mb-3">
-                <div className="bg-slate-950/40 rounded-lg p-2 text-center">
+                <div className="bg-surface-0/40 rounded-lg p-2 text-center">
                   <div className="text-[9px] text-slate-500 uppercase tracking-wider">Distance</div>
                   <div className="text-base text-sky-300 font-semibold">{Math.round(currentRoute.lengthM)} m</div>
                 </div>
-                <div className="bg-slate-950/40 rounded-lg p-2 text-center">
+                <div className="bg-surface-0/40 rounded-lg p-2 text-center">
                   <div className="text-[9px] text-slate-500 uppercase tracking-wider">Durée</div>
                   <div className="text-base text-sky-300 font-semibold">{Math.round(currentRoute.durationS / 60)} min</div>
                 </div>
-                <div className="bg-slate-950/40 rounded-lg p-2 text-center">
+                <div className="bg-surface-0/40 rounded-lg p-2 text-center">
                   <div className="text-[9px] text-slate-500 uppercase tracking-wider">Calcul</div>
                   <div className="text-base text-emerald-400 font-semibold">{currentRoute.computeTimeMs.toFixed(0)} ms</div>
                 </div>
@@ -326,7 +326,7 @@ export default function RouteSearchSection() {
                     <div className={`shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-semibold ${
                       ins.kind === 'start' ? 'bg-emerald-600/20 text-emerald-400' :
                       ins.kind === 'arrive' ? 'bg-amber-600/20 text-amber-400' :
-                      ins.kind === 'transit' ? 'bg-purple-600/20 text-purple-400' :
+                      ins.kind === 'transit' ? 'bg-atlas-600/20 text-atlas-400' :
                       'bg-sky-600/20 text-sky-400'
                     }`}>
                       {i + 1}
@@ -362,7 +362,7 @@ export default function RouteSearchSection() {
               )}
             </div>
           ) : (
-            <div className="rounded-xl bg-slate-900/30 border border-white/[0.04] p-8 flex flex-col items-center justify-center text-center h-full">
+            <div className="rounded-xl bg-surface-1/30 border border-white/[0.04] p-8 flex flex-col items-center justify-center text-center h-full">
               <Navigation size={32} className="text-slate-700 mb-3" />
               <h3 className="text-slate-400 text-sm">Aucun itinéraire actif</h3>
               <p className="text-slate-600 text-xs mt-1 max-w-xs">
@@ -378,7 +378,7 @@ export default function RouteSearchSection() {
 
           {/* Persona badge */}
           <div className="mt-3 text-[10px] text-slate-600 text-center">
-            Persona actif : <span className="text-purple-400">{activePersona}</span>
+            Persona actif : <span className="text-atlas-400">{activePersona}</span>
           </div>
         </div>
       </div>

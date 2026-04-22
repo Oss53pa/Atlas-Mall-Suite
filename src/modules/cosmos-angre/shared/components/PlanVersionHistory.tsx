@@ -124,14 +124,14 @@ export default function PlanVersionHistory({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl h-[85vh] rounded-xl bg-slate-950 border border-white/[0.08] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-surface-0/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="w-full max-w-6xl h-[85vh] rounded-xl bg-surface-0 border border-white/[0.08] flex flex-col overflow-hidden">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center">
-              <History size={16} className="text-indigo-300" />
+            <div className="w-9 h-9 rounded-lg bg-atlas-500/15 border border-atlas-500/30 flex items-center justify-center">
+              <History size={16} className="text-atlas-300" />
             </div>
             <div>
               <h2 className="text-white text-sm font-semibold">Historique du plan</h2>
@@ -160,10 +160,10 @@ export default function PlanVersionHistory({
             <div className="flex items-center gap-2">
               <input value={commitMessage} onChange={e => setCommitMessage(e.target.value)}
                 placeholder="Message (ex: 'Ajustement des vitrines étage R+1')"
-                className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-white/[0.06] text-[12px] text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/40" />
+                className="flex-1 px-3 py-1.5 rounded-lg bg-surface-1 border border-white/[0.06] text-[12px] text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/40" />
               <input value={commitTag} onChange={e => setCommitTag(e.target.value)}
                 placeholder="Tag (optionnel)"
-                className="w-40 px-3 py-1.5 rounded-lg bg-slate-900 border border-white/[0.06] text-[12px] text-white placeholder:text-slate-600" />
+                className="w-40 px-3 py-1.5 rounded-lg bg-surface-1 border border-white/[0.06] text-[12px] text-white placeholder:text-slate-600" />
               <button onClick={handleCreateVersion} disabled={!commitMessage.trim() || loading}
                 className="px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 text-[11px] hover:bg-emerald-500/30 disabled:opacity-40">
                 Enregistrer
@@ -192,7 +192,7 @@ export default function PlanVersionHistory({
                   return (
                     <button key={v.id} onClick={() => setSelectedId(v.id)}
                       className={`w-full text-left p-3 rounded-lg mb-1 transition border ${
-                        isSelected ? 'bg-indigo-500/10 border-indigo-500/30' : 'border-transparent hover:bg-white/[0.03]'
+                        isSelected ? 'bg-atlas-500/10 border-atlas-500/30' : 'border-transparent hover:bg-white/[0.03]'
                       }`}>
                       <div className="flex items-start gap-2.5">
                         <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold ${
@@ -265,7 +265,7 @@ export default function PlanVersionHistory({
                     <div className="flex items-center gap-1.5">
                       {!isLatest && (
                         <button onClick={() => setConfirmRevertId(v.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-[11px] hover:bg-indigo-500/25">
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-atlas-500/15 border border-atlas-500/30 text-atlas-300 text-[11px] hover:bg-atlas-500/25">
                           <RotateCcw size={12} />
                           Restaurer
                         </button>
@@ -316,7 +316,7 @@ export default function PlanVersionHistory({
                         <strong className="text-slate-300">{diff.summary}</strong>
                       </div>
                       {diff.entries.length === 0 ? (
-                        <div className="rounded-lg border border-white/[0.05] bg-slate-900/40 p-4 text-center text-[12px] text-slate-500">
+                        <div className="rounded-lg border border-white/[0.05] bg-surface-1/40 p-4 text-center text-[12px] text-slate-500">
                           Pas de différence détectée entre cette version et la version actuelle.
                         </div>
                       ) : (
@@ -330,7 +330,7 @@ export default function PlanVersionHistory({
                   )}
 
                   {/* Snapshot info */}
-                  <div className="mt-5 rounded-lg border border-white/[0.05] bg-slate-900/30 p-3 text-[11px] text-slate-400">
+                  <div className="mt-5 rounded-lg border border-white/[0.05] bg-surface-1/30 p-3 text-[11px] text-slate-400">
                     <strong className="text-slate-300">Contenu du snapshot :</strong>{' '}
                     {v.snapshot.spaces.length} espaces · {v.snapshot.wallSegments.length} murs · {v.snapshot.layers.length} calques ·
                     bounds {v.snapshot.bounds.width.toFixed(1)}×{v.snapshot.bounds.height.toFixed(1)} m
@@ -361,7 +361,7 @@ function DiffRow({ entry }: { entry: ReturnType<typeof diffPlanVersions>['entrie
     red: 'border-red-500/25 bg-red-500/[0.06] text-red-300',
     sky: 'border-sky-500/25 bg-sky-500/[0.06] text-sky-300',
     amber: 'border-amber-500/25 bg-amber-500/[0.06] text-amber-300',
-    purple: 'border-purple-500/25 bg-purple-500/[0.06] text-purple-300',
+    purple: 'border-atlas-500/25 bg-atlas-500/[0.06] text-atlas-300',
     pink: 'border-pink-500/25 bg-pink-500/[0.06] text-pink-300',
     slate: 'border-slate-500/25 bg-slate-500/[0.06] text-slate-300',
   }

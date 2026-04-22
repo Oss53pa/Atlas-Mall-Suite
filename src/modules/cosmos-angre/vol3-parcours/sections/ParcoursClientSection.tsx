@@ -22,7 +22,7 @@ export default function ParcoursClientSection() {
   }
 
   const kpis = [
-    { label: 'Personas', value: profiles.length, icon: Users, color: '#8b5cf6' },
+    { label: 'Personas', value: profiles.length, icon: Users, color: '#a77d4c' },
     { label: 'Zones', value: zones.length, icon: MapIcon, color: '#34d399' },
     { label: 'Points d\'intérêt', value: pois.length, icon: NavIcon, color: '#38bdf8' },
     { label: 'Étages', value: floors.length, icon: Route, color: '#f59e0b' },
@@ -31,7 +31,7 @@ export default function ParcoursClientSection() {
   return (
     <div className="h-full overflow-y-auto p-6 space-y-6">
       <div>
-        <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#a855f7' }}>
+        <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#b38a5a' }}>
           VOL. 3 — STUDIO · PARCOURS CLIENT
         </p>
         <h1 className="text-[24px] font-light text-white mb-2">Trajectoires sur le plan</h1>
@@ -122,9 +122,9 @@ export default function ParcoursClientSection() {
                 <div
                   className="h-8 w-8 flex-shrink-0 flex items-center justify-center rounded-full text-[11px] font-bold"
                   style={{
-                    background: 'rgba(139,92,246,0.15)',
+                    background: 'rgba(167,125,76,0.15)',
                     color: '#a78bfa',
-                    border: '1px solid rgba(139,92,246,0.3)',
+                    border: '1px solid rgba(167,125,76,0.3)',
                   }}
                 >
                   {p.name.slice(0, 2).toUpperCase()}
@@ -157,7 +157,7 @@ export default function ParcoursClientSection() {
       {/* Lien vers sections connexes */}
       <div
         className="rounded-xl p-4 flex items-center gap-3"
-        style={{ background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.15)' }}
+        style={{ background: 'rgba(179,138,90,0.06)', border: '1px solid rgba(179,138,90,0.15)' }}
       >
         <NavIcon size={16} className="text-violet-300 flex-shrink-0" />
         <div className="flex-1 text-[12px] text-slate-400">

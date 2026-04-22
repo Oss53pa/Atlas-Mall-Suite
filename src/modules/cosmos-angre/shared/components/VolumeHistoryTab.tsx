@@ -24,7 +24,7 @@ interface Props {
   volumeName: string
 }
 
-export default function VolumeHistoryTab({ volumeId, volumeColor = '#818cf8', volumeName }: Props) {
+export default function VolumeHistoryTab({ volumeId, volumeColor = '#c9a068', volumeName }: Props) {
   const parsedPlan = usePlanEngineStore((s) => s.parsedPlan)
   const setParsedPlan = usePlanEngineStore((s) => s.setParsedPlan)
 
@@ -114,7 +114,7 @@ export default function VolumeHistoryTab({ volumeId, volumeColor = '#818cf8', vo
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-200">
+    <div className="flex flex-col h-full bg-surface-0 text-slate-200">
 
       {/* Header */}
       <div className="border-b border-white/[0.06] p-4 flex items-center justify-between">
@@ -170,7 +170,7 @@ export default function VolumeHistoryTab({ volumeId, volumeColor = '#818cf8', vo
                   }`}>
                     {v.versionNumber}
                   </span>
-                  <div className="rounded-lg bg-slate-900/40 border border-white/[0.05] p-3">
+                  <div className="rounded-lg bg-surface-1/40 border border-white/[0.05] p-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
@@ -200,7 +200,7 @@ export default function VolumeHistoryTab({ volumeId, volumeColor = '#818cf8', vo
                         <button
                           onClick={() => handleQuickRevert(v.id)}
                           disabled={loading}
-                          className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-[10px] hover:bg-indigo-500/25 disabled:opacity-40"
+                          className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded bg-atlas-500/15 border border-atlas-500/30 text-atlas-300 text-[10px] hover:bg-atlas-500/25 disabled:opacity-40"
                         >
                           <RotateCcw size={10} />
                           Restaurer

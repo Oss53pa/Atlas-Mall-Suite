@@ -65,8 +65,8 @@ export const SIGNAGE_CATEGORY_META: Record<SignageCategoryKey, {
   'identification-locaux':   { label: 'Identification locaux',       icon: '🏷', color: '#3b82f6', order: 2 },
   'securite-erp':            { label: 'Sécurité & ERP',              icon: '🚨', color: '#dc2626', order: 3 },
   'information-services':    { label: 'Information & services',      icon: 'ⓘ', color: '#10b981', order: 4 },
-  'communication-promotion': { label: 'Communication & promotion',   icon: '📣', color: '#a855f7', order: 5 },
-  'wayfinding-numerique':    { label: 'Wayfinding numérique',        icon: '◉', color: '#6366f1', order: 6 },
+  'communication-promotion': { label: 'Communication & promotion',   icon: '📣', color: '#b38a5a', order: 5 },
+  'wayfinding-numerique':    { label: 'Wayfinding numérique',        icon: '◉', color: '#b38a5a', order: 6 },
 }
 
 // ─── Sous-type de signalétique ─────────────────────────
@@ -501,7 +501,7 @@ export const SIGNAGE_CATALOG: Record<string, SignageTypeMeta> = {
     code: 'COM-ECR',
     label: 'Écran dynamique',
     category: 'communication-promotion',
-    icon: '📺', color: '#a855f7',
+    icon: '📺', color: '#b38a5a',
     availableModels: ['electronique', 'lumineux'],
     defaultModel: 'lumineux',
     heightCm: { min: 150, max: 400, default: 250 },
@@ -579,7 +579,7 @@ export const SIGNAGE_CATALOG: Record<string, SignageTypeMeta> = {
     code: 'WAY-BOR',
     label: 'Borne Wayfinder',
     category: 'wayfinding-numerique',
-    icon: '◉', color: '#6366f1',
+    icon: '◉', color: '#b38a5a',
     availableModels: ['electronique'],
     defaultModel: 'electronique',
     heightCm: { min: 120, max: 140, default: 125 },

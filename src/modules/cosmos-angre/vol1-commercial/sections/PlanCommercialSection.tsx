@@ -332,7 +332,7 @@ export default function PlanCommercialSection() {
           >🗺 Wayfinder export</button>
           <button
             onClick={() => setShowOverlayPanel(v => !v)}
-            className="w-full mt-1 text-[10px] px-2 py-1.5 rounded bg-purple-600/20 border border-purple-500/40 text-purple-300 hover:bg-purple-600/30"
+            className="w-full mt-1 text-[10px] px-2 py-1.5 rounded bg-atlas-600/20 border border-atlas-500/40 text-atlas-300 hover:bg-atlas-600/30"
             title="Superposer plusieurs plans (RDC, R+1...) + consolidation"
           >📚 {showOverlayPanel ? 'Masquer' : 'Superposer'} plans</button>
           {/* M25 — Rapport directeur consolidé */}

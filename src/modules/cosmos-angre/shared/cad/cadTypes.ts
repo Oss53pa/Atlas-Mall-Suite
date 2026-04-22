@@ -96,7 +96,7 @@ export const DEFAULT_LAYERS: CadLayer[] = [
   { id: 'cameras',     name: 'Cameras',        color: '#22c55e', visible: true, opacity: 1,    locked: false },
   { id: 'doors',       name: 'Portes',         color: '#f59e0b', visible: true, opacity: 1,    locked: false },
   { id: 'cotations',   name: 'Cotations',      color: '#ef4444', visible: true, opacity: 0.8,  locked: false },
-  { id: 'annotations', name: 'Annotations',    color: '#a855f7', visible: true, opacity: 1,    locked: false },
+  { id: 'annotations', name: 'Annotations',    color: '#b38a5a', visible: true, opacity: 1,    locked: false },
   { id: 'plan',        name: 'Plan importe',   color: '#ffffff', visible: true, opacity: 0.85, locked: true },
 ]
 

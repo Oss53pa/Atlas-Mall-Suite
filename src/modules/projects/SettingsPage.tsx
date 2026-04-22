@@ -14,9 +14,9 @@ import ApiKeySection from './components/ApiKeySection'
 
 function SettingsGroup({ title, icon: Icon, children }: { title: string; icon: React.ComponentType<any>; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] overflow-hidden" style={{ background: '#0e1629' }}>
+    <div className="rounded-xl border border-white/[0.06] overflow-hidden" style={{ background: '#262a31' }}>
       <div className="flex items-center gap-2 px-5 py-3 border-b border-white/[0.04]">
-        <Icon size={15} className="text-indigo-400" />
+        <Icon size={15} className="text-atlas-400" />
         <h3 className="text-sm font-semibold text-white">{title}</h3>
       </div>
       <div className="p-5 space-y-4">{children}</div>
@@ -39,7 +39,7 @@ function SettingsRow({ label, description, children }: { label: string; descript
 function SelectInput({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)}
-      className="bg-[#141e2e] text-white text-sm rounded-lg px-3 py-1.5 border border-white/10 outline-none focus:border-indigo-500/50 min-w-[140px]">
+      className="bg-[#141e2e] text-white text-sm rounded-lg px-3 py-1.5 border border-white/10 outline-none focus:border-atlas-500/50 min-w-[140px]">
       {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
   )
@@ -48,7 +48,7 @@ function SelectInput({ value, onChange, options }: { value: string; onChange: (v
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button onClick={() => onChange(!checked)}
-      className={`relative w-10 h-5 rounded-full transition-colors ${checked ? 'bg-indigo-600' : 'bg-gray-700'}`}>
+      className={`relative w-10 h-5 rounded-full transition-colors ${checked ? 'bg-atlas-500' : 'bg-gray-700'}`}>
       <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${checked ? 'translate-x-5' : ''}`} />
     </button>
   )
@@ -59,7 +59,7 @@ export default function SettingsPage() {
   const { setSetting } = settings
 
   return (
-    <div className="h-full overflow-y-auto" style={{ background: '#060a13', color: '#e2e8f0' }}>
+    <div className="h-full overflow-y-auto" style={{ background: '#1a1d23', color: '#e2e8f0' }}>
       <div className="max-w-3xl mx-auto px-6 py-8">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-white tracking-tight">Paramètres</h1>
@@ -72,16 +72,16 @@ export default function SettingsPage() {
             <SettingsRow label="Nom d'utilisateur" description="Affiché dans les rapports et annotations">
               <input value={settings.userName} onChange={(e) => setSetting('userName', e.target.value)}
                 placeholder="Votre nom"
-                className="bg-[#141e2e] text-white text-sm rounded-lg px-3 py-1.5 border border-white/10 outline-none focus:border-indigo-500/50 w-[200px]" />
+                className="bg-[#141e2e] text-white text-sm rounded-lg px-3 py-1.5 border border-white/10 outline-none focus:border-atlas-500/50 w-[200px]" />
             </SettingsRow>
             <SettingsRow label="Rôle" description="Ex: Directeur technique, Chef de projet sécurité">
               <input value={settings.userRole} onChange={(e) => setSetting('userRole', e.target.value)}
                 placeholder="Votre rôle"
-                className="bg-[#141e2e] text-white text-sm rounded-lg px-3 py-1.5 border border-white/10 outline-none focus:border-indigo-500/50 w-[200px]" />
+                className="bg-[#141e2e] text-white text-sm rounded-lg px-3 py-1.5 border border-white/10 outline-none focus:border-atlas-500/50 w-[200px]" />
             </SettingsRow>
             <SettingsRow label="Entreprise">
               <input value={settings.companyName} onChange={(e) => setSetting('companyName', e.target.value)}
-                className="bg-[#141e2e] text-white text-sm rounded-lg px-3 py-1.5 border border-white/10 outline-none focus:border-indigo-500/50 w-[200px]" />
+                className="bg-[#141e2e] text-white text-sm rounded-lg px-3 py-1.5 border border-white/10 outline-none focus:border-atlas-500/50 w-[200px]" />
             </SettingsRow>
           </SettingsGroup>
 
@@ -142,7 +142,7 @@ export default function SettingsPage() {
               </div>
               <div className="flex justify-between">
                 <span>Moteur IA</span>
-                <span className="text-purple-400 text-xs font-medium">Proph3t Engine v2</span>
+                <span className="text-atlas-400 text-xs font-medium">Proph3t Engine v2</span>
               </div>
               <div className="flex justify-between">
                 <span>Normes supportées</span>

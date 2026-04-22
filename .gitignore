@@ -26,3 +26,10 @@ dist-ssr
 
 # Claude worktrees (references locales, pas pour le repo)
 .claude/worktrees/
+
+# Claude Code local state (per-user)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+
+# Supabase CLI temp
+supabase/.temp/

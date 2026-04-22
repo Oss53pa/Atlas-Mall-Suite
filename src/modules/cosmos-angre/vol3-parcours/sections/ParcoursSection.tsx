@@ -68,7 +68,7 @@ export default function ParcoursSection() {
       {/* Moment Cards */}
       <div className="space-y-3">
         {[...moments].sort((a, b) => a.number - b.number).map((m) => {
-          const colors = ['#3b82f6', '#06b6d4', '#22c55e', '#eab308', '#f97316', '#ec4899', '#8b5cf6']
+          const colors = ['#3b82f6', '#06b6d4', '#22c55e', '#eab308', '#f97316', '#ec4899', '#a77d4c']
           const color = colors[(m.number - 1) % colors.length]
           return (
             <div

@@ -56,7 +56,7 @@ export async function generateSignagePdfReport(input: PdfReportInput): Promise<B
   // ───────────── PAGE 3 : MINI-PLAN ANNOTÉ ─────────
   doc.addPage()
   cursorY = margin
-  cursorY = renderSectionTitle(doc, '2. Plan annoté', cursorY, margin, '#7c3aed')
+  cursorY = renderSectionTitle(doc, '2. Plan annoté', cursorY, margin, '#7e5e3c')
   cursorY = renderAnnotatedPlan(doc, input, cursorY, margin, pageW - 2 * margin)
 
   // ───────────── PAGE : TABLE SIGNALÉTIQUE ─────────
@@ -210,10 +210,10 @@ puis positionné la signalétique optimale sous double contrainte ERP + budget.`
     { label: 'Entrées', value: String(f.summary.entrancesCount), color: '#10b981' },
     { label: 'Sorties', value: String(f.summary.exitsCount), color: '#ef4444' },
     { label: 'Chemins', value: String(f.summary.pathsCount), color: '#3b82f6' },
-    { label: 'Distance moy.', value: `${f.summary.avgDistanceM.toFixed(0)} m`, color: '#8b5cf6' },
+    { label: 'Distance moy.', value: `${f.summary.avgDistanceM.toFixed(0)} m`, color: '#a77d4c' },
     { label: 'Panneaux', value: String(f.summary.signageCount), color: '#f59e0b' },
     { label: 'ERP critiques', value: String(f.summary.criticalSignageCount), color: '#dc2626' },
-    { label: 'Nœuds décision', value: String(f.summary.decisionNodes), color: '#7c3aed' },
+    { label: 'Nœuds décision', value: String(f.summary.decisionNodes), color: '#7e5e3c' },
     { label: 'Score cohérence', value: f.placement ? `${f.placement.coherence.total}/100` : '—', color: '#059669' },
   ]
   const cellW = width / 4
@@ -368,8 +368,8 @@ function renderAnnotatedPlan(doc: jsPDF, input: PdfReportInput, y: number, margi
 
   // Panneaux signalétique (points colorés par type)
   const kindColors: Record<string, string> = {
-    welcome: '#10b981', directional: '#f59e0b', 'you-are-here': '#6366f1',
-    information: '#8b5cf6', exit: '#ef4444', 'emergency-plan': '#059669',
+    welcome: '#10b981', directional: '#f59e0b', 'you-are-here': '#b38a5a',
+    information: '#a77d4c', exit: '#ef4444', 'emergency-plan': '#059669',
     'emergency-exit': '#dc2626', 'exit-direction': '#b91c1c', 'pmr-direction': '#2563eb',
   }
   if (input.flowResult.placement) {
@@ -749,7 +749,7 @@ function renderEnrichedCoverPage(doc: jsPDF, input: EnrichedPdfInput, pageW: num
     { label: 'Budget FCFA', value: formatFcfa(qp.totalFcfa), c: '#10b981' },
     { label: 'P1 obligatoires', value: String(qp.p1Count), c: '#dc2626' },
     { label: 'ERP', value: String(qp.erpCount), c: '#f59e0b' },
-    { label: 'Catégories', value: String(qp.byCategory.filter(c => c.count > 0).length), c: '#8b5cf6' },
+    { label: 'Catégories', value: String(qp.byCategory.filter(c => c.count > 0).length), c: '#a77d4c' },
     { label: 'Étages', value: String(input.floors.length), c: '#06b6d4' },
   ]
   const kpiW = (pageW - 2 * margin - 5 * 2) / 6

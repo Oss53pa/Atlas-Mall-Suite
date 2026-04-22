@@ -22,8 +22,8 @@ interface Props {
 const KIND_META: Record<PlacedPanel['kind'], { label: string; color: string; icon: string }> = {
   welcome:            { label: 'Accueil',              color: '#10b981', icon: 'ⓘ' },
   directional:        { label: 'Directionnel',         color: '#f59e0b', icon: '↗' },
-  'you-are-here':     { label: 'Vous êtes ici',        color: '#6366f1', icon: '◉' },
-  information:        { label: 'Information',          color: '#8b5cf6', icon: 'i' },
+  'you-are-here':     { label: 'Vous êtes ici',        color: '#b38a5a', icon: '◉' },
+  information:        { label: 'Information',          color: '#a77d4c', icon: 'i' },
   exit:               { label: 'Sortie',               color: '#ef4444', icon: '⎋' },
   'emergency-plan':   { label: 'Plan évacuation ERP',  color: '#059669', icon: '🗺' },
   'emergency-exit':   { label: 'Sortie secours ISO',   color: '#dc2626', icon: '🏃' },
@@ -63,10 +63,10 @@ export function SignageBudgetPanel({
 
   const modal = (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-end bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-end bg-surface-0/60 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-[520px] max-w-[95vw] h-full bg-slate-900 border-l border-white/10 shadow-2xl flex flex-col">
+      <div className="w-[520px] max-w-[95vw] h-full bg-surface-1 border-l border-white/10 shadow-2xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
           <div className="flex items-center gap-2">
@@ -79,7 +79,7 @@ export function SignageBudgetPanel({
         </div>
 
         {/* Budget slider */}
-        <div className="p-5 border-b border-white/5 bg-slate-950/40">
+        <div className="p-5 border-b border-white/5 bg-surface-0/40">
           <div className="flex items-center justify-between mb-2">
             <label className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">
               Budget panneaux optionnels
@@ -93,7 +93,7 @@ export function SignageBudgetPanel({
             min={10} max={200} step={5}
             value={signageBudget}
             onChange={(e) => onBudgetChange(Number(e.target.value))}
-            className="w-full accent-indigo-500"
+            className="w-full accent-atlas-500"
           />
           <div className="flex justify-between text-[10px] text-slate-600 mt-1">
             <span>10</span><span>50</span><span>100</span><span>200</span>
@@ -103,7 +103,7 @@ export function SignageBudgetPanel({
           </p>
           <button
             onClick={onRecompute}
-            className="mt-3 w-full py-2 rounded-md text-[11px] font-semibold bg-gradient-to-r from-indigo-600 to-blue-600 text-white hover:opacity-90"
+            className="mt-3 w-full py-2 rounded-md text-[11px] font-semibold bg-gradient-to-r from-atlas-500 to-blue-600 text-white hover:opacity-90"
           >
             Recalculer avec ce budget
           </button>
@@ -161,7 +161,7 @@ export function SignageBudgetPanel({
 
         {/* Summary panneaux */}
         {placement && (
-          <div className="px-5 py-3 border-b border-white/5 bg-slate-950/20 grid grid-cols-4 gap-2 text-[10px]">
+          <div className="px-5 py-3 border-b border-white/5 bg-surface-0/20 grid grid-cols-4 gap-2 text-[10px]">
             <Kpi label="Total" value={placement.summary.totalPanels} color="text-white" />
             <Kpi label="ERP" value={placement.summary.mandatoryPanels} color="text-red-400" />
             <Kpi label="Optionnels" value={`${placement.summary.optionalPanels}/${placement.summary.budgetMax}`} color="text-amber-400" />
@@ -188,7 +188,7 @@ export function SignageBudgetPanel({
                 {group.panels.map(p => {
                   const meta = KIND_META[p.kind]
                   return (
-                    <li key={p.id} className="px-2.5 py-2 rounded-md bg-slate-950/60 border border-white/5">
+                    <li key={p.id} className="px-2.5 py-2 rounded-md bg-surface-0/60 border border-white/5">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-start gap-2 min-w-0 flex-1">
                           <span
@@ -248,7 +248,7 @@ function ScoreRing({ value }: { value: number }) {
   const fill = c * (value / 100)
   return (
     <svg width={60} height={60} viewBox="0 0 60 60">
-      <circle cx={30} cy={30} r={r} fill="none" stroke="#1e293b" strokeWidth={4} />
+      <circle cx={30} cy={30} r={r} fill="none" stroke="#3a3d44" strokeWidth={4} />
       <circle
         cx={30} cy={30} r={r}
         fill="none"

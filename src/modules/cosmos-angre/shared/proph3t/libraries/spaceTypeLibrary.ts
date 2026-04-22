@@ -230,14 +230,14 @@ export const SPACE_TYPE_META: Record<SpaceTypeKey, SpaceTypeMeta> = {
   porte_automatique: { label: 'Porte automatique',       category: 'acces-circulation', icon: '⬌', color: '#14b8a6', expectedSqm: { min: 2, max: 15 }, erpRequired: true, description: 'Coulissante automatique (détecteur IR) — flux ERP.' },
 
   // ── Contrôle & sécurité ──
-  controle_acces:    { label: 'Contrôle d\'accès',  category: 'acces-circulation', icon: '🔐', color: '#7c3aed', expectedSqm: { min: 1, max: 20 }, description: 'Borne/lecteur badge, tourniquet, portillon.' },
+  controle_acces:    { label: 'Contrôle d\'accès',  category: 'acces-circulation', icon: '🔐', color: '#7e5e3c', expectedSqm: { min: 1, max: 20 }, description: 'Borne/lecteur badge, tourniquet, portillon.' },
   sas_securite:      { label: 'SAS de sécurité',    category: 'acces-circulation', icon: '🛡', color: '#9333ea', expectedSqm: { min: 3, max: 30 }, erpRequired: true, description: 'Sas double porte (thermique, anti-effraction).' },
-  portique_securite: { label: 'Portique détection', category: 'acces-circulation', icon: '⚠', color: '#a855f7', expectedSqm: { min: 1, max: 6  }, description: 'Portique détection métaux / antivol.' },
+  portique_securite: { label: 'Portique détection', category: 'acces-circulation', icon: '⚠', color: '#b38a5a', expectedSqm: { min: 1, max: 6  }, description: 'Portique détection métaux / antivol.' },
 
   // ── Circulation intérieure ──
-  mail_central:          { label: 'Mail central (galerie)',    category: 'acces-circulation', icon: '▬', color: '#7c3aed', expectedSqm: { min: 150, max: 8000 }, erpRequired: true, description: 'Allée marchande principale couverte — flux piéton maximal.' },
+  mail_central:          { label: 'Mail central (galerie)',    category: 'acces-circulation', icon: '▬', color: '#7e5e3c', expectedSqm: { min: 150, max: 8000 }, erpRequired: true, description: 'Allée marchande principale couverte — flux piéton maximal.' },
   atrium:                { label: 'Atrium',                    category: 'acces-circulation', icon: '◈', color: '#9333ea', expectedSqm: { min: 50,  max: 2000 }, erpRequired: true, description: 'Puits de lumière multi-niveaux — point de repère majeur.' },
-  promenade:             { label: 'Promenade principale',      category: 'acces-circulation', icon: '↔', color: '#8b5cf6', expectedSqm: { min: 100, max: 5000 }, description: 'Axe de circulation principal (mall walk).' },
+  promenade:             { label: 'Promenade principale',      category: 'acces-circulation', icon: '↔', color: '#a77d4c', expectedSqm: { min: 100, max: 5000 }, description: 'Axe de circulation principal (mall walk).' },
   couloir_secondaire:    { label: 'Couloir secondaire',        category: 'acces-circulation', icon: '→', color: '#a78bfa', expectedSqm: { min: 20,  max: 500  }, description: 'Axe de circulation secondaire vers zones de service.' },
   hall_distribution:     { label: 'Hall de distribution',     category: 'acces-circulation', icon: '⌂', color: '#c084fc', expectedSqm: { min: 30,  max: 800  }, description: 'Espace de distribution entre niveaux (rotonde).' },
   passage_pieton_couvert:{ label: 'Passage piéton couvert',   category: 'acces-circulation', icon: '⇌', color: '#a78bfa', expectedSqm: { min: 20,  max: 500  }, description: 'Galerie piétonne couverte (tunnel, passerelle).' },
@@ -269,7 +269,7 @@ export const SPACE_TYPE_META: Record<SpaceTypeKey, SpaceTypeMeta> = {
   commerce_services:          { label: 'Services',               category: 'commerces-services', icon: '🛠', color: '#06b6d4', expectedSqm: { min: 15,  max: 200   }, description: 'Pressing, photocopie, agence de voyage, cordonnerie, clé minute.' },
   commerce_beaute_sante:      { label: 'Beauté & santé',         category: 'commerces-services', icon: '💄', color: '#f472b6', expectedSqm: { min: 20,  max: 400   }, description: 'Parfumerie, pharmacie, opticien, coiffeur, spa, esthétique.' },
   commerce_cadeaux_alimentaire:{ label: 'Cadeaux & alimentaire', category: 'commerces-services', icon: '🎁', color: '#c026d3', expectedSqm: { min: 15,  max: 250   }, description: 'Librairie, papeterie, cadeaux, fleuriste, cave, épicerie fine.' },
-  commerce_multimedia:        { label: 'Multimédia',             category: 'commerces-services', icon: '📱', color: '#7c3aed', expectedSqm: { min: 30,  max: 800   }, description: 'Électronique, téléphonie, informatique, gaming, son/image.' },
+  commerce_multimedia:        { label: 'Multimédia',             category: 'commerces-services', icon: '📱', color: '#7e5e3c', expectedSqm: { min: 30,  max: 800   }, description: 'Électronique, téléphonie, informatique, gaming, son/image.' },
   // ── Bâtiments hors galerie ──
   big_box: { label: 'Big Box',      category: 'commerces-services', icon: '🏭', color: '#64748b', expectedSqm: { min: 1000, max: 20000 }, description: 'Magasin entrepôt (meubles, bricolage, sport) — accès direct parking.' },
   market:  { label: 'Marché',       category: 'commerces-services', icon: '🏘', color: '#b45309', expectedSqm: { min: 300,  max: 5000  }, description: 'Marché couvert — multiples stands/étals alimentaires ou artisanat.' },
@@ -288,7 +288,7 @@ export const SPACE_TYPE_META: Record<SpaceTypeKey, SpaceTypeMeta> = {
   },
   cinema_multiplex: {
     label: 'Cinéma multiplex',
-    category: 'commerces-services', icon: '🎬', color: '#a855f7',
+    category: 'commerces-services', icon: '🎬', color: '#b38a5a',
     expectedSqm: { min: 1000, max: 20000 }, erpRequired: true,
     description: 'Multiplexe cinéma — plusieurs salles, foyer, billetterie, restauration rapide. Anchor majeur de flux soirée/week-end.',
   },
@@ -300,7 +300,7 @@ export const SPACE_TYPE_META: Record<SpaceTypeKey, SpaceTypeMeta> = {
   },
   bureau_immeuble: {
     label: 'Immeuble de bureaux',
-    category: 'commerces-services', icon: '🏢', color: '#6366f1',
+    category: 'commerces-services', icon: '🏢', color: '#b38a5a',
     expectedSqm: { min: 500, max: 50000 },
     description: 'Tour ou bloc de bureaux intégré dans un ensemble mixte (mall + bureaux + hôtel). Plusieurs niveaux — utiliser unitId.',
   },
@@ -326,7 +326,7 @@ export const SPACE_TYPE_META: Record<SpaceTypeKey, SpaceTypeMeta> = {
   local_commerce: { label: 'Local commercial',   category: 'commerces-services', icon: '🛍', color: '#ec4899', expectedSqm: { min: 15,  max: 500  }, description: 'Local commercial standard (mode, accessoires, services).' },
   restauration:   { label: 'Restauration',        category: 'commerces-services', icon: '🍽', color: '#f59e0b', expectedSqm: { min: 20,  max: 1000 }, description: 'Restaurant, café, snacking — local individuel.' },
   food_court:     { label: 'Food court',          category: 'commerces-services', icon: '🍴', color: '#fb923c', expectedSqm: { min: 150, max: 3000 }, erpRequired: true, description: 'Zone restauration collective avec kiosques et espace commun.' },
-  loisirs:        { label: 'Loisirs',             category: 'commerces-services', icon: '🎬', color: '#a855f7', expectedSqm: { min: 100, max: 3000 }, description: 'Cinéma, bowling, salle de jeux, escape game.' },
+  loisirs:        { label: 'Loisirs',             category: 'commerces-services', icon: '🎬', color: '#b38a5a', expectedSqm: { min: 100, max: 3000 }, description: 'Cinéma, bowling, salle de jeux, escape game.' },
   services:       { label: 'Services',            category: 'commerces-services', icon: '🏦', color: '#06b6d4', expectedSqm: { min: 10,  max: 300  }, description: 'Banque, poste, pressing, coiffeur, pharmacie.' },
   grande_surface: { label: 'Grande surface',      category: 'commerces-services', icon: '🛒', color: '#14b8a6', expectedSqm: { min: 500, max: 10000}, description: 'Anchor store, hypermarché (> 500 m²).' },
   kiosque:        { label: 'Kiosque',             category: 'commerces-services', icon: '🛖', color: '#f43f5e', expectedSqm: { min: 2,   max: 30   }, description: 'Stand éphémère ou permanent en promenade.' },
@@ -369,13 +369,13 @@ export const SPACE_TYPE_META: Record<SpaceTypeKey, SpaceTypeMeta> = {
 
   bureau_direction: {
     label: 'Bureau direction',
-    category: 'bureaux-admin', icon: '💼', color: '#6366f1',
+    category: 'bureaux-admin', icon: '💼', color: '#b38a5a',
     expectedSqm: { min: 12, max: 80 },
     description: 'Bureau fermé de direction / DG / responsable — espace individuel ou petite équipe.',
   },
   bureau_open_space: {
     label: 'Open space / plateau',
-    category: 'bureaux-admin', icon: '🖥', color: '#818cf8',
+    category: 'bureaux-admin', icon: '🖥', color: '#c9a068',
     expectedSqm: { min: 30, max: 2000 },
     description: 'Plateau bureau en open space — postes de travail mutualisés ou dédiés.',
   },
@@ -387,13 +387,13 @@ export const SPACE_TYPE_META: Record<SpaceTypeKey, SpaceTypeMeta> = {
   },
   salle_conference: {
     label: 'Salle de conférence / amphithéâtre',
-    category: 'bureaux-admin', icon: '🎙', color: '#7c3aed',
+    category: 'bureaux-admin', icon: '🎙', color: '#7e5e3c',
     expectedSqm: { min: 50, max: 1000 },
     description: 'Grande salle événementielle — conférences, AG, formations (> 20 personnes).',
   },
   accueil_administratif: {
     label: 'Accueil administratif',
-    category: 'bureaux-admin', icon: '🗂', color: '#c4b5fd',
+    category: 'bureaux-admin', icon: '🗂', color: '#e2ccaa',
     expectedSqm: { min: 5, max: 60 },
     description: 'Réception administrative du personnel ou des prestataires (distinct accueil visiteurs).',
   },
@@ -471,7 +471,7 @@ export const SPACE_TYPE_META: Record<SpaceTypeKey, SpaceTypeMeta> = {
   },
   borne_wayfinder: {
     label: 'Borne wayfinder',
-    category: 'equipements', icon: '◉', color: '#6366f1',
+    category: 'equipements', icon: '◉', color: '#b38a5a',
     expectedSqm: { min: 1, max: 5 },
     description: 'Borne interactive tactile de navigation (Vol.4 Wayfinder).',
   },
@@ -495,7 +495,7 @@ export const SPACE_TYPE_META: Record<SpaceTypeKey, SpaceTypeMeta> = {
   },
   cabine_photomaton: {
     label: 'Cabine photomaton',
-    category: 'equipements', icon: '📷', color: '#8b5cf6',
+    category: 'equipements', icon: '📷', color: '#a77d4c',
     expectedSqm: { min: 1, max: 4 },
     description: 'Cabine photo identité, passeport, permis.',
   },
@@ -694,7 +694,7 @@ export const SPACE_TYPE_META: Record<SpaceTypeKey, SpaceTypeMeta> = {
   // ── Terrasses non marchandes ──
   terrasse_toit: {
     label: 'Terrasse de toit',
-    category: 'paysage-exterieur', icon: '🏙', color: '#7c3aed',
+    category: 'paysage-exterieur', icon: '🏙', color: '#7e5e3c',
     expectedSqm: { min: 20, max: 5000 },
     description: 'Terrasse accessible en toiture (rooftop) — jardin, bar, zone de détente en hauteur.',
   },
@@ -827,9 +827,9 @@ export const SPACE_TYPES_BY_CATEGORY: Record<SpaceTypeCategory, SpaceTypeKey[]> 
 }
 
 export const SPACE_CATEGORY_META: Record<SpaceTypeCategory, { label: string; color: string; icon: string }> = {
-  'acces-circulation':  { label: 'Accès & Circulation',    color: '#8b5cf6', icon: '🚪' },
+  'acces-circulation':  { label: 'Accès & Circulation',    color: '#a77d4c', icon: '🚪' },
   'commerces-services': { label: 'Commerces & Services',   color: '#ec4899', icon: '🛍' },
-  'bureaux-admin':      { label: 'Bureaux & Administration',color: '#6366f1', icon: '💼' },
+  'bureaux-admin':      { label: 'Bureaux & Administration',color: '#b38a5a', icon: '💼' },
   'equipements':        { label: 'Équipements',            color: '#f59e0b', icon: '⚡' },
   'locaux-techniques':  { label: 'Locaux Techniques',      color: '#475569', icon: '⚙' },
   'parking-voirie':     { label: 'Parking & Voirie',       color: '#3b82f6', icon: '🅿' },

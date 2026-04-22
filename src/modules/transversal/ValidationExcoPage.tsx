@@ -77,11 +77,11 @@ export default function ValidationExcoPage() {
   const st = STATUS_CFG[doc.status]
 
   return (
-    <div className="flex h-full" style={{ background: '#060a13', color: '#e2e8f0' }}>
+    <div className="flex h-full" style={{ background: '#1a1d23', color: '#e2e8f0' }}>
       {/* Left: Document list */}
       <div className="w-80 flex-shrink-0 border-r border-white/[0.05] overflow-y-auto" style={{ background: '#0a0f1a' }}>
         <div className="p-4 border-b border-white/[0.04]">
-          <div className="flex items-center gap-2 mb-1"><ClipboardList size={16} className="text-indigo-400" /><h2 className="text-sm font-semibold text-white">Validation Exco</h2></div>
+          <div className="flex items-center gap-2 mb-1"><ClipboardList size={16} className="text-atlas-400" /><h2 className="text-sm font-semibold text-white">Validation Exco</h2></div>
           <p className="text-[11px] text-gray-500">{DOCS.filter(d => d.status === 'en_attente').length} document(s) en attente</p>
         </div>
         {DOCS.map(d => {
@@ -114,7 +114,7 @@ export default function ValidationExcoPage() {
           </div>
 
           {/* Approval workflow */}
-          <div className="rounded-xl border border-white/[0.06] p-5 mb-6" style={{ background: '#0e1629' }}>
+          <div className="rounded-xl border border-white/[0.06] p-5 mb-6" style={{ background: '#262a31' }}>
             <h3 className="text-sm font-semibold text-white mb-4">Circuit de validation</h3>
             <div className="space-y-3">
               {doc.approvals.map((a, i) => (
@@ -154,7 +154,7 @@ export default function ValidationExcoPage() {
           )}
 
           {/* Comments */}
-          <div className="rounded-xl border border-white/[0.06] p-5" style={{ background: '#0e1629' }}>
+          <div className="rounded-xl border border-white/[0.06] p-5" style={{ background: '#262a31' }}>
             <h3 className="text-sm font-semibold text-white mb-4">Commentaires ({doc.comments.length})</h3>
             {doc.comments.length === 0 && <p className="text-[12px] text-gray-600">Aucun commentaire</p>}
             {doc.comments.map((c, i) => (
@@ -170,7 +170,7 @@ export default function ValidationExcoPage() {
             <div className="flex gap-2 mt-3">
               <input value={comment} onChange={e => setComment(e.target.value)} placeholder="Ajouter un commentaire..."
                 className="flex-1 bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/[0.08] outline-none placeholder:text-gray-600" />
-              <button className="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"><Send size={14} /></button>
+              <button className="px-3 py-2 rounded-lg bg-atlas-500 hover:bg-atlas-500 text-white transition-colors"><Send size={14} /></button>
             </div>
           </div>
         </div>

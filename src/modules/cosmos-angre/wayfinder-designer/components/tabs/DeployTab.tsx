@@ -39,11 +39,11 @@ export function DeployTab() {
     <div className="overflow-y-auto p-6 max-w-4xl mx-auto space-y-5">
 
       {/* Statut actuel */}
-      <section className="rounded-lg bg-slate-900/40 border border-white/5 p-5">
+      <section className="rounded-lg bg-surface-1/40 border border-white/5 p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-[12px] font-semibold text-white flex items-center gap-2">
-              <Server size={14} className="text-indigo-400" />
+              <Server size={14} className="text-atlas-400" />
               Statut de publication
             </h3>
             <p className="text-[10px] text-slate-500 mt-0.5">
@@ -71,9 +71,9 @@ export function DeployTab() {
       </section>
 
       {/* Bornes déployées */}
-      <section className="rounded-lg bg-slate-900/40 border border-white/5 p-5">
+      <section className="rounded-lg bg-surface-1/40 border border-white/5 p-5">
         <h3 className="text-[12px] font-semibold text-white mb-3 flex items-center gap-2">
-          <Monitor size={14} className="text-indigo-400" />
+          <Monitor size={14} className="text-atlas-400" />
           Bornes déployées · {deployedKioskIds.length}
         </h3>
 
@@ -83,13 +83,13 @@ export function DeployTab() {
             value={newKioskId}
             onChange={e => setNewKioskId(e.target.value)}
             placeholder="ID de la borne (ex: kiosk-mail-central)"
-            className="flex-1 px-3 py-2 rounded bg-slate-950 border border-white/10 text-[12px] text-white outline-none font-mono"
+            className="flex-1 px-3 py-2 rounded bg-surface-0 border border-white/10 text-[12px] text-white outline-none font-mono"
             onKeyDown={(e) => e.key === 'Enter' && handleAddKiosk()}
           />
           <button
             onClick={handleAddKiosk}
             disabled={!newKioskId.trim()}
-            className="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold disabled:opacity-50"
+            className="px-3 py-2 rounded bg-atlas-500 hover:bg-atlas-500 text-white text-[11px] font-semibold disabled:opacity-50"
           >
             <Plus size={14} className="inline mr-1" /> Associer
           </button>
@@ -109,9 +109,9 @@ export function DeployTab() {
       </section>
 
       {/* Historique versions */}
-      <section className="rounded-lg bg-slate-900/40 border border-white/5 p-5">
+      <section className="rounded-lg bg-surface-1/40 border border-white/5 p-5">
         <h3 className="text-[12px] font-semibold text-white mb-3 flex items-center gap-2">
-          <History size={14} className="text-indigo-400" />
+          <History size={14} className="text-atlas-400" />
           Historique versions
         </h3>
         {(currentProject?.versionHistory ?? []).length === 0 ? (
@@ -121,7 +121,7 @@ export function DeployTab() {
         ) : (
           <ul className="space-y-1">
             {(currentProject?.versionHistory ?? []).slice().reverse().map((v, i) => (
-              <li key={i} className="flex items-center justify-between px-3 py-2 rounded bg-slate-950/40 border border-white/5">
+              <li key={i} className="flex items-center justify-between px-3 py-2 rounded bg-surface-0/40 border border-white/5">
                 <div>
                   <span className="text-[11px] font-mono text-emerald-400">v{v.version}</span>
                   <span className="text-[10px] text-slate-500 ml-2">{new Date(v.publishedAt).toLocaleString('fr-FR')}</span>
@@ -161,7 +161,7 @@ function KioskRow({ kioskId, onRemove }: { kioskId: string; projectId: string; o
   const [showQr, setShowQr] = useState(false)
 
   return (
-    <div className="rounded bg-slate-950/40 border border-white/5">
+    <div className="rounded bg-surface-0/40 border border-white/5">
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -172,7 +172,7 @@ function KioskRow({ kioskId, onRemove }: { kioskId: string; projectId: string; o
             href={kioskUrl}
             target="_blank"
             rel="noreferrer"
-            className="text-[10px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1 mt-0.5"
+            className="text-[10px] text-atlas-400 hover:text-atlas-300 flex items-center gap-1 mt-0.5"
           >
             <ExternalLink size={10} /> {kioskUrl}
           </a>

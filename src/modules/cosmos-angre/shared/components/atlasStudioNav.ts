@@ -24,7 +24,7 @@ export const ATLAS_STUDIO_GROUP_META = {
   key: 'studio',
   label: 'ATLAS STUDIO · PHASE 0',
   icon: Sparkles,
-  color: '#a855f7',
+  color: '#b38a5a',
 } as const
 
 // Sections that MUST exist in every volume's Studio phase.

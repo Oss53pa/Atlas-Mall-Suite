@@ -33,7 +33,7 @@ export default function DwellTimeOptimizer() {
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
       <div>
-        <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#8b5cf6' }}>VOL. 3 — PARCOURS CLIENT</p>
+        <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#a77d4c' }}>VOL. 3 — PARCOURS CLIENT</p>
         <h1 className="text-[28px] font-light text-white mb-2">Dwell Time Optimizer</h1>
         <p className="text-[13px]" style={{ color: '#4a5568' }}>Analyse du temps de presence par zone, detection des zones de decrochage et recommandations d'intervention.</p>
       </div>
@@ -41,7 +41,7 @@ export default function DwellTimeOptimizer() {
       {/* Global stats */}
       <div className="grid grid-cols-4 gap-4">
         <div className="rounded-xl p-4 text-center" style={{ background: '#141e2e', border: '1px solid #1e2a3a' }}>
-          <Clock size={18} className="mx-auto mb-2" style={{ color: '#8b5cf6' }} />
+          <Clock size={18} className="mx-auto mb-2" style={{ color: '#a77d4c' }} />
           <p className="text-2xl font-bold text-white">{totalEstimated} min</p>
           <p className="text-[10px]" style={{ color: '#4a5568' }}>Presence totale estimee</p>
         </div>

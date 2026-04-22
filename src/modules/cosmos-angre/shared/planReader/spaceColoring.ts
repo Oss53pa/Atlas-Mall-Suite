@@ -18,7 +18,7 @@ export type ColorMode = 'type' | 'vol1-revenue' | 'vol2-erp' | 'vol3-flow' | 'fl
 
 const FLOOR_PALETTE = [
   '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
-  '#a855f7', '#06b6d4', '#84cc16', '#f97316',
+  '#b38a5a', '#06b6d4', '#84cc16', '#f97316',
 ]
 
 interface AtlasAttrs {
@@ -176,7 +176,7 @@ export function getLegendForMode(mode: ColorMode): Array<{ label: string; color:
   switch (mode) {
     case 'type':
       return [
-        { label: 'Accès / circulation',  color: '#8b5cf6' },
+        { label: 'Accès / circulation',  color: '#a77d4c' },
         { label: 'Commerces & services', color: '#ec4899' },
         { label: 'Équipements',          color: '#f59e0b' },
         { label: 'Infrastructure',       color: '#64748b' },

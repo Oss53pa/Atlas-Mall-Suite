@@ -138,7 +138,7 @@ export default function VirtualTourEngine({
     // Waypoint markers
     for (const wp of filteredWP) {
       const geo = new THREE.OctahedronGeometry(0.4, 0)
-      const mat = new THREE.MeshStandardMaterial({ color: '#818cf8', emissive: '#818cf8', emissiveIntensity: 0.5 })
+      const mat = new THREE.MeshStandardMaterial({ color: '#c9a068', emissive: '#c9a068', emissiveIntensity: 0.5 })
       const mesh = new THREE.Mesh(geo, mat)
       mesh.position.set(...wp.position)
       mesh.userData = { waypointId: wp.id }
@@ -251,38 +251,38 @@ export default function VirtualTourEngine({
   const contextLabel = context === 'vol1' ? 'Commercial' : context === 'vol2' ? 'Sécurité' : context === 'vol3' ? 'Parcours' : 'Présentation'
 
   return (
-    <div className="flex h-full" style={{ background: '#060a13' }}>
+    <div className="flex h-full" style={{ background: '#1a1d23' }}>
       {/* 3D viewport */}
       <div className="flex-1 relative">
         <div ref={containerRef} className="w-full h-full" />
 
         {/* Mode toolbar */}
-        <div className="absolute top-3 left-3 flex gap-1 bg-black/60 backdrop-blur-sm rounded-lg p-1">
+        <div className="absolute top-3 left-3 flex gap-1 bg-surface-0/60 backdrop-blur-sm rounded-lg p-1">
           {([['orbit', 'Orbite'], ['fps', 'FPS (ZQSD)'], ['guided', 'Guidée']] as [TourMode, string][]).map(([m, label]) => (
             <button key={m} onClick={() => setMode(m)}
               className={`px-3 py-1.5 rounded-md text-[10px] font-medium transition-colors ${
-                mode === m ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+                mode === m ? 'bg-atlas-500 text-white' : 'text-gray-400 hover:text-white'}`}>
               {label}
             </button>
           ))}
         </div>
 
-        <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-sm text-[10px] font-semibold text-indigo-300">
+        <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-surface-0/60 backdrop-blur-sm text-[10px] font-semibold text-atlas-300">
           Visite {contextLabel}
         </div>
 
         {mode === 'fps' && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-sm rounded-lg px-4 py-2 text-[11px] text-gray-300">
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-surface-0/70 backdrop-blur-sm rounded-lg px-4 py-2 text-[11px] text-gray-300">
             ZQSD/Flèches pour se déplacer · Clic pour capturer la souris · Échap pour libérer
           </div>
         )}
 
         {mode === 'guided' && filteredWP.length > 0 && (
-          <div className="absolute bottom-3 left-3 right-3 bg-black/60 backdrop-blur-sm rounded-lg p-3">
+          <div className="absolute bottom-3 left-3 right-3 bg-surface-0/60 backdrop-blur-sm rounded-lg p-3">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-[10px] text-gray-400">Étape {activeWP + 1}/{filteredWP.length}</span>
               <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${((activeWP + 1) / filteredWP.length) * 100}%` }} />
+                <div className="h-full bg-atlas-500 rounded-full transition-all" style={{ width: `${((activeWP + 1) / filteredWP.length) * 100}%` }} />
               </div>
               <span className="text-[10px] text-white font-medium">{filteredWP[activeWP]?.label}</span>
             </div>
@@ -290,7 +290,7 @@ export default function VirtualTourEngine({
               <button onClick={() => goToWaypoint(Math.max(0, activeWP - 1))} disabled={activeWP === 0}
                 className="px-3 py-1 rounded text-[10px] bg-white/10 text-gray-300 hover:text-white disabled:opacity-30">Précédent</button>
               <button onClick={() => goToWaypoint(Math.min(filteredWP.length - 1, activeWP + 1))} disabled={activeWP >= filteredWP.length - 1}
-                className="px-3 py-1 rounded text-[10px] bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-30">Suivant</button>
+                className="px-3 py-1 rounded text-[10px] bg-atlas-500 text-white hover:bg-atlas-500 disabled:opacity-30">Suivant</button>
             </div>
           </div>
         )}
@@ -307,10 +307,10 @@ export default function VirtualTourEngine({
             {filteredWP.map((wp, i) => (
               <button key={wp.id} onClick={() => goToWaypoint(i)}
                 className={`w-full text-left p-3 rounded-lg transition-colors ${
-                  i === activeWP ? 'bg-indigo-500/10 border border-indigo-500/20' : 'hover:bg-white/[0.03]'}`}>
+                  i === activeWP ? 'bg-atlas-500/10 border border-atlas-500/20' : 'hover:bg-white/[0.03]'}`}>
                 <div className="flex items-center gap-2">
                   <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${
-                    i === activeWP ? 'bg-indigo-500 text-white' : 'bg-white/10 text-gray-500'}`}>
+                    i === activeWP ? 'bg-atlas-500 text-white' : 'bg-white/10 text-gray-500'}`}>
                     {wp.order}
                   </span>
                   <span className="text-[11px] font-medium text-white">{wp.label}</span>

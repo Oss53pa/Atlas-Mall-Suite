@@ -18,7 +18,7 @@ export default function StaffingPlanner() {
   const periodConfig = {
     jour: { icon: Sun, color: '#f59e0b', label: 'Jour (6h-14h)' },
     soir: { icon: Sunset, color: '#f97316', label: 'Soir (14h-22h)' },
-    nuit: { icon: Moon, color: '#6366f1', label: 'Nuit (22h-6h)' },
+    nuit: { icon: Moon, color: '#b38a5a', label: 'Nuit (22h-6h)' },
   }
 
   const formatFcfa = (n: number) => new Intl.NumberFormat('fr-FR').format(n)

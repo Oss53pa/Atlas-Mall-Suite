@@ -111,14 +111,14 @@ export function PolygonVertexEditor({ polygon, worldToScreen, screenToWorld, onS
             className="w-4 h-4 rounded-full bg-cyan-500 border-2 border-white shadow-lg cursor-grab active:cursor-grabbing"
             title={`Sommet ${i + 1}/${verts.length} — drag pour déplacer · clic-droit pour supprimer`}
           />
-          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-1.5 py-0.5 rounded bg-slate-900 border border-cyan-500/40 text-[9px] font-mono text-cyan-300 whitespace-nowrap">
+          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-1.5 py-0.5 rounded bg-surface-1 border border-cyan-500/40 text-[9px] font-mono text-cyan-300 whitespace-nowrap">
             {verts[i][0].toFixed(1)}, {verts[i][1].toFixed(1)}
           </div>
         </div>
       ))}
 
       {/* Toolbar */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-950 border border-cyan-500/40 shadow-2xl">
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-0 border border-cyan-500/40 shadow-2xl">
         <span className="text-[10px] uppercase tracking-wider text-cyan-300 mr-1">Édition contours</span>
         <span className="text-[10px] text-slate-400">{verts.length} sommets</span>
         <div className="w-px h-4 bg-white/[0.1] mx-1" />
@@ -144,7 +144,7 @@ export function PolygonVertexEditor({ polygon, worldToScreen, screenToWorld, onS
       </div>
 
       {/* Instructions */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg bg-slate-950/90 border border-white/[0.06] text-[10px] text-slate-400 pointer-events-none">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg bg-surface-0/90 border border-white/[0.06] text-[10px] text-slate-400 pointer-events-none">
         <strong className="text-cyan-300">Drag</strong> sommet · <strong className="text-cyan-300">Double-clic</strong> milieu d'arête pour ajouter · <strong className="text-cyan-300">Clic-droit</strong> sommet pour supprimer
       </div>
     </div>

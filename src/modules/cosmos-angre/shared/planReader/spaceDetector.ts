@@ -229,13 +229,13 @@ export function spaceTypeColor(type: SpaceType): string {
     services: '#14b8a6',
     loisirs: '#06b6d4',
     technique: '#ef4444',
-    backoffice: '#8b5cf6',
+    backoffice: '#a77d4c',
     financier: '#dc2626',
     sortie_secours: '#22c55e',
     circulation: '#e5e7eb',
-    hotel: '#a855f7',
+    hotel: '#b38a5a',
     exterieur: '#84cc16',
-    bureaux: '#8b5cf6',
+    bureaux: '#a77d4c',
   }
   return colors[type] ?? '#3b82f6'
 }

@@ -35,7 +35,7 @@ export function TouchKeyboard({ layout, value, onChange }: Props) {
   const clear = () => onChange('')
 
   return (
-    <div className="border-t bg-slate-50 dark:bg-slate-900 p-3"
+    <div className="border-t bg-slate-50 dark:bg-surface-1 p-3"
       style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
       {rows.map((row, i) => (
         <div key={i} className="flex justify-center gap-1.5 mb-1.5">

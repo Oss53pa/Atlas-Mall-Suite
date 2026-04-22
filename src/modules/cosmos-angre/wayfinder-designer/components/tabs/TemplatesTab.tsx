@@ -20,16 +20,16 @@ export function TemplatesTab() {
     <div className="overflow-y-auto p-6 max-w-5xl mx-auto">
       <header className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <LayoutGrid className="text-indigo-400" size={16} />
+          <LayoutGrid className="text-atlas-400" size={16} />
           <h2 className="text-sm font-semibold text-white">Galerie de templates</h2>
         </div>
-        <div className="flex items-center gap-1 bg-slate-900 rounded p-0.5">
+        <div className="flex items-center gap-1 bg-surface-1 rounded p-0.5">
           <Filter size={11} className="text-slate-500 ml-2" />
           {(['all', 'digital', 'print'] as FilterKind[]).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3 py-1 rounded text-[11px] ${filter === f ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+              className={`px-3 py-1 rounded text-[11px] ${filter === f ? 'bg-atlas-500 text-white' : 'text-slate-400 hover:text-white'}`}
             >
               {f === 'all' ? 'Tous' : f === 'digital' ? 'Digital' : 'Print'}
             </button>
@@ -69,11 +69,11 @@ function TemplateCard({
     <button
       onClick={onSelect}
       className={`text-left rounded-lg border-2 overflow-hidden transition-all ${
-        selected ? 'border-indigo-500 ring-2 ring-indigo-500/30' : 'border-white/10 hover:border-white/30'
+        selected ? 'border-atlas-500 ring-2 ring-indigo-500/30' : 'border-white/10 hover:border-white/30'
       }`}
     >
       {/* Aperçu mini avec ratio */}
-      <div className="aspect-video bg-slate-900 flex items-center justify-center p-4 relative">
+      <div className="aspect-video bg-surface-1 flex items-center justify-center p-4 relative">
         <div
           className="bg-white border border-slate-300 shadow-lg"
           style={{
@@ -85,21 +85,21 @@ function TemplateCard({
           }}
         >
           <div className="w-full h-full flex flex-col">
-            <div className="h-2 bg-indigo-500" />
+            <div className="h-2 bg-atlas-500" />
             <div className="flex-1 flex items-center justify-center text-slate-300 text-[8px]">
               {meta.format}
             </div>
           </div>
         </div>
         {selected && (
-          <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center">
+          <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-atlas-500 flex items-center justify-center">
             <Check className="text-white" size={14} />
           </div>
         )}
       </div>
 
       {/* Infos */}
-      <div className="p-3 bg-slate-950">
+      <div className="p-3 bg-surface-0">
         <div className="flex items-start justify-between gap-2">
           <h4 className="text-[12px] font-semibold text-white truncate flex-1">{meta.label}</h4>
           <code className="text-[8px] text-slate-600 font-mono uppercase flex-shrink-0">

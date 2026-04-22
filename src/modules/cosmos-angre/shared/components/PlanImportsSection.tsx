@@ -53,11 +53,11 @@ function formatDate(iso: string): string {
 
 const sourceTypeConfig: Record<PlanSourceType, { icon: React.ElementType; label: string; color: string }> = {
   dxf: { icon: FileCode2, label: 'DXF', color: '#38bdf8' },
-  dwg: { icon: FileCode2, label: 'DWG', color: '#6366f1' },
+  dwg: { icon: FileCode2, label: 'DWG', color: '#b38a5a' },
   ifc: { icon: Layers, label: 'IFC / BIM', color: '#22c55e' },
   pdf: { icon: FileText, label: 'PDF vectoriel', color: '#ef4444' },
   image_raster: { icon: Image, label: 'Image (scan)', color: '#f59e0b' },
-  svg: { icon: FileCode2, label: 'SVG', color: '#8b5cf6' },
+  svg: { icon: FileCode2, label: 'SVG', color: '#a77d4c' },
 }
 
 const statusConfig: Record<ImportStatus, { icon: React.ElementType; label: string; color: string }> = {
@@ -178,7 +178,7 @@ export default function PlanImportsSection({
         <SummaryCard
           label="Formats"
           value={String(new Set(imports.map((r) => r.sourceType)).size)}
-          color="#8b5cf6"
+          color="#a77d4c"
         />
       </div>
 
@@ -387,7 +387,7 @@ function ImportCard({
               <SrcIcon size={18} style={{ color: srcCfg.color }} />
             </div>
           )}
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
+          <div className="absolute inset-0 bg-surface-0/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
             <Eye size={14} className="text-white" />
           </div>
         </div>
@@ -490,7 +490,7 @@ function ImportCard({
           <div className="flex justify-end gap-2 pt-1">
               <button
                 onClick={(e) => { e.stopPropagation(); onPreview() }}
-                className="flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg text-indigo-400 hover:bg-indigo-400/10 transition-colors"
+                className="flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-lg text-atlas-400 hover:bg-indigo-400/10 transition-colors"
               >
                 <Maximize2 size={12} />
                 Prévisualiser
@@ -536,11 +536,11 @@ function PlanPreviewModal({ record, onClose }: { record: PlanImportRecord; onClo
   const confColor = record.calibrationConfidence >= 0.8 ? '#22c55e' : record.calibrationConfidence >= 0.5 ? '#f59e0b' : '#ef4444'
 
   return (
-    <div className="fixed inset-0 z-50 flex bg-black/80 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex bg-surface-0/80 backdrop-blur-sm" onClick={onClose}>
       <div className="flex w-full h-full" onClick={(e) => e.stopPropagation()}>
 
         {/* ── Sidebar gauche : donnees du plan ── */}
-        <div className="w-80 flex-shrink-0 h-full flex flex-col border-r border-white/[0.06] overflow-y-auto" style={{ background: '#0e1629' }}>
+        <div className="w-80 flex-shrink-0 h-full flex flex-col border-r border-white/[0.06] overflow-y-auto" style={{ background: '#262a31' }}>
           {/* Header sidebar */}
           <div className="px-5 py-4 border-b border-white/[0.06]">
             <div className="flex items-center gap-2 mb-3">
@@ -615,7 +615,7 @@ function PlanPreviewModal({ record, onClose }: { record: PlanImportRecord; onClo
         </div>
 
         {/* ── Zone principale : viewer avec zoom/pan ── */}
-        <div className="flex-1 flex flex-col h-full" style={{ background: '#080c14' }}>
+        <div className="flex-1 flex flex-col h-full" style={{ background: '#1a1d23' }}>
           {/* Toolbar */}
           <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06] flex-shrink-0" style={{ background: '#0a0f1a' }}>
             <span className="text-[11px] text-slate-500">{record.floorLevel} — {record.fileName}</span>

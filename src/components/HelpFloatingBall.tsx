@@ -133,8 +133,8 @@ export function HelpFloatingBall() {
         pulse ? 'animate-pulse' : ''
       }`}
       style={{
-        background: 'radial-gradient(circle at 30% 30%, #a855f7, #6366f1 60%, #4338ca)',
-        boxShadow: '0 10px 30px rgba(99,102,241,0.5), inset 0 -4px 10px rgba(0,0,0,0.3)',
+        background: 'radial-gradient(circle at 30% 30%, #b38a5a, #b38a5a 60%, #4338ca)',
+        boxShadow: '0 10px 30px rgba(179,138,90,0.5), inset 0 -4px 10px rgba(0,0,0,0.3)',
       }}
     >
       <HelpCircle size={26} />
@@ -156,15 +156,15 @@ export function HelpFloatingBall() {
     <>
       {ball}
       <div
-        className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-end bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-end bg-surface-0/60 backdrop-blur-sm"
         onClick={(e) => { if (e.target === e.currentTarget) setOpen(false) }}
       >
-        <div className="w-full sm:w-[640px] max-w-[95vw] h-[88vh] sm:h-[80vh] sm:mr-6 bg-slate-950 border border-purple-900/50 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="w-full sm:w-[640px] max-w-[95vw] h-[88vh] sm:h-[80vh] sm:mr-6 bg-surface-0 border border-purple-900/50 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
           {/* Header */}
           <div className="px-5 py-4 border-b border-white/10 bg-gradient-to-r from-purple-950/40 to-indigo-950/40 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-full flex items-center justify-center"
-                   style={{ background: 'radial-gradient(circle at 30% 30%, #a855f7, #4338ca)' }}>
+                   style={{ background: 'radial-gradient(circle at 30% 30%, #b38a5a, #4338ca)' }}>
                 <Sparkles className="text-white" size={18} />
               </div>
               <div>
@@ -176,7 +176,7 @@ export function HelpFloatingBall() {
               <Link
                 to="/notice"
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded text-[11px] font-semibold bg-purple-600 hover:bg-purple-500 text-white"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded text-[11px] font-semibold bg-atlas-600 hover:bg-atlas-500 text-white"
                 title="Ouvrir la notice complète (imprimable)"
               >
                 <BookOpen size={12} />
@@ -193,7 +193,7 @@ export function HelpFloatingBall() {
           </div>
 
           {/* Tabs */}
-          <div className="flex items-center gap-1 px-3 py-2 border-b border-white/5 bg-slate-900/40 overflow-x-auto">
+          <div className="flex items-center gap-1 px-3 py-2 border-b border-white/5 bg-surface-1/40 overflow-x-auto">
             {([
               { id: 'overview',  label: 'Vue d\'ensemble',     icon: Sparkles },
               { id: 'notice',    label: 'Notice d\'utilisation', icon: BookOpen },
@@ -211,7 +211,7 @@ export function HelpFloatingBall() {
                   onClick={() => setSection(t.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium whitespace-nowrap transition ${
                     active
-                      ? 'bg-purple-600/30 text-purple-200 border border-purple-500/50'
+                      ? 'bg-atlas-600/30 text-atlas-200 border border-atlas-500/50'
                       : 'text-slate-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
@@ -233,7 +233,7 @@ export function HelpFloatingBall() {
                 </p>
                 <p>
                   L'application combine <strong className="text-white">4 volumes métier</strong> et un
-                  <strong className="text-purple-300"> orchestrateur transversal IA (PROPH3T)</strong> qui
+                  <strong className="text-atlas-300"> orchestrateur transversal IA (PROPH3T)</strong> qui
                   les enchaîne automatiquement à partir d'un plan importé (DXF/DWG/PDF).
                 </p>
                 <p className="text-[11px] text-slate-400">
@@ -243,8 +243,8 @@ export function HelpFloatingBall() {
                 </p>
                 <div className="rounded-lg border border-purple-800 bg-purple-950/20 p-3 mt-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <Sparkles className="text-purple-400" size={14} />
-                    <strong className="text-purple-200 text-[11px]">Comment commencer ?</strong>
+                    <Sparkles className="text-atlas-400" size={14} />
+                    <strong className="text-atlas-200 text-[11px]">Comment commencer ?</strong>
                   </div>
                   <ol className="text-[11px] text-slate-300 space-y-0.5 m-0 pl-5 list-decimal">
                     <li>Ouvrez un volume → onglet <em>Plans importés</em></li>
@@ -283,7 +283,7 @@ export function HelpFloatingBall() {
                 {/* §1 — Démarrer */}
                 <section>
                   <h3 className="text-white text-[13px] font-bold m-0 mb-2 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-purple-600 text-white text-[11px] font-bold flex items-center justify-center">1</span>
+                    <span className="w-5 h-5 rounded-full bg-atlas-600 text-white text-[11px] font-bold flex items-center justify-center">1</span>
                     Démarrer une session
                   </h3>
                   <ul className="text-[11px] text-slate-300 m-0 pl-5 list-disc space-y-1">
@@ -298,7 +298,7 @@ export function HelpFloatingBall() {
                 {/* §2 — Importer un plan */}
                 <section>
                   <h3 className="text-white text-[13px] font-bold m-0 mb-2 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-purple-600 text-white text-[11px] font-bold flex items-center justify-center">2</span>
+                    <span className="w-5 h-5 rounded-full bg-atlas-600 text-white text-[11px] font-bold flex items-center justify-center">2</span>
                     Importer un plan (étape obligatoire)
                   </h3>
                   <ol className="text-[11px] text-slate-300 m-0 pl-5 list-decimal space-y-1">
@@ -318,7 +318,7 @@ export function HelpFloatingBall() {
                 {/* §3 — Manipuler le plan */}
                 <section>
                   <h3 className="text-white text-[13px] font-bold m-0 mb-2 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-purple-600 text-white text-[11px] font-bold flex items-center justify-center">3</span>
+                    <span className="w-5 h-5 rounded-full bg-atlas-600 text-white text-[11px] font-bold flex items-center justify-center">3</span>
                     Manipuler le plan interactif
                   </h3>
                   <ul className="text-[11px] text-slate-300 m-0 pl-5 list-disc space-y-1">
@@ -334,11 +334,11 @@ export function HelpFloatingBall() {
                 {/* §4 — Lancer PROPH3T */}
                 <section>
                   <h3 className="text-white text-[13px] font-bold m-0 mb-2 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-purple-600 text-white text-[11px] font-bold flex items-center justify-center">4</span>
+                    <span className="w-5 h-5 rounded-full bg-atlas-600 text-white text-[11px] font-bold flex items-center justify-center">4</span>
                     Lancer l'orchestrateur PROPH3T
                   </h3>
                   <ol className="text-[11px] text-slate-300 m-0 pl-5 list-decimal space-y-1">
-                    <li>Vol.4 → menu <em className="text-purple-300">PROPH3T → Orchestrateur 4 vol.</em></li>
+                    <li>Vol.4 → menu <em className="text-atlas-300">PROPH3T → Orchestrateur 4 vol.</em></li>
                     <li>Cochez les volumes à exécuter (par défaut : tous).</li>
                     <li>Laissez <strong>Web Worker</strong> coché (l'UI reste fluide).</li>
                     <li>Cliquez <strong>Lancer orchestration</strong>.</li>
@@ -420,7 +420,7 @@ export function HelpFloatingBall() {
                 {/* §9 — Sauvegardes & exports */}
                 <section>
                   <h3 className="text-white text-[13px] font-bold m-0 mb-2 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-purple-600 text-white text-[11px] font-bold flex items-center justify-center">9</span>
+                    <span className="w-5 h-5 rounded-full bg-atlas-600 text-white text-[11px] font-bold flex items-center justify-center">9</span>
                     <Save size={12} /> Sauvegardes & exports
                   </h3>
                   <ul className="text-[11px] text-slate-300 m-0 pl-5 list-disc space-y-1">
@@ -435,7 +435,7 @@ export function HelpFloatingBall() {
                 {/* §10 — Boucle d'apprentissage */}
                 <section>
                   <h3 className="text-white text-[13px] font-bold m-0 mb-2 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-purple-600 text-white text-[11px] font-bold flex items-center justify-center">10</span>
+                    <span className="w-5 h-5 rounded-full bg-atlas-600 text-white text-[11px] font-bold flex items-center justify-center">10</span>
                     Boucle d'apprentissage terrain
                   </h3>
                   <ul className="text-[11px] text-slate-300 m-0 pl-5 list-disc space-y-1">
@@ -461,7 +461,7 @@ export function HelpFloatingBall() {
                       { p: 'Données perdues', s: 'Ne videz JAMAIS le localStorage du navigateur. Exportez régulièrement (DCE).' },
                       { p: 'Export CMJN échoue', s: 'Le service Ghostscript doit tourner (Cloud Run ou Docker local sur port 8080).' },
                     ].map((d, i) => (
-                      <div key={i} className="px-3 py-2 rounded bg-slate-900/40 border border-white/5">
+                      <div key={i} className="px-3 py-2 rounded bg-surface-1/40 border border-white/5">
                         <div className="text-[11px] text-red-300 font-semibold m-0">→ {d.p}</div>
                         <div className="text-[10px] text-slate-400 m-0 mt-0.5">{d.s}</div>
                       </div>
@@ -485,7 +485,7 @@ export function HelpFloatingBall() {
                 <h3 className="text-white text-sm font-bold m-0 mb-2">Parcours type d'un projet</h3>
                 {[
                   { n: 1, t: 'Importer le plan', d: 'DXF/DWG/PDF → calibration échelle. Le plan est partagé entre tous les volumes.', icon: Upload, color: '#0ea5e9' },
-                  { n: 2, t: 'Orchestration PROPH3T', d: 'Vol.4 → Orchestrateur. Pré-remplit classification, audits, suggestions.', icon: Workflow, color: '#a855f7' },
+                  { n: 2, t: 'Orchestration PROPH3T', d: 'Vol.4 → Orchestrateur. Pré-remplit classification, audits, suggestions.', icon: Workflow, color: '#b38a5a' },
                   { n: 3, t: 'Vol.1 — Mix commercial', d: 'Vérifier types d\'enseignes, lancer prévisions CA, comparer scénarios.', icon: ShoppingBag, color: '#10b981' },
                   { n: 4, t: 'Vol.2 — Sécurité', d: 'Audit ERP automatique, placer caméras, simuler incidents.', icon: ShieldAlert, color: '#ef4444' },
                   { n: 5, t: 'Vol.3 — Parcours client', d: 'Personas Abidjan, ABM, détection goulots, audit PMR.', icon: Footprints, color: '#f59e0b' },
@@ -493,7 +493,7 @@ export function HelpFloatingBall() {
                 ].map(s => {
                   const I = s.icon
                   return (
-                    <div key={s.n} className="flex gap-3 p-2.5 rounded-lg bg-slate-900/40 border border-white/5">
+                    <div key={s.n} className="flex gap-3 p-2.5 rounded-lg bg-surface-1/40 border border-white/5">
                       <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-[11px]"
                            style={{ background: `${s.color}25`, color: s.color }}>
                         {s.n}
@@ -533,10 +533,10 @@ export function HelpFloatingBall() {
               <div className="space-y-3 text-[12px]">
                 <h3 className="text-white text-sm font-bold m-0">Qu'est-ce que PROPH3T ?</h3>
                 <p>
-                  PROPH3T est l'<strong className="text-purple-300">IA transversale</strong> d'Atlas.
+                  PROPH3T est l'<strong className="text-atlas-300">IA transversale</strong> d'Atlas.
                   Elle expose une façade unique :
                 </p>
-                <pre className="text-[10px] bg-slate-950 border border-white/10 rounded p-2 text-slate-300 overflow-auto">
+                <pre className="text-[10px] bg-surface-0 border border-white/10 rounded p-2 text-slate-300 overflow-auto">
 {`proph3t.analyze(plan)             // classification + audit topologique
 proph3t.orchestrate(input)        // enchaîne les 4 volumes
 proph3t.predict(ctx, type)        // CA / footfall / temps intervention
@@ -574,8 +574,8 @@ proph3t.feedback(qrCode, data)    // boucle apprentissage terrain`}
                   ['F',         'Recadrer plan (fit)'],
                   ['Espace',    'Pan (maintenir)'],
                 ].map(([k, d]) => (
-                  <div key={k} className="flex items-center justify-between px-3 py-1.5 rounded bg-slate-900/40 border border-white/5">
-                    <kbd className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-purple-300 border border-purple-900/40">
+                  <div key={k} className="flex items-center justify-between px-3 py-1.5 rounded bg-surface-1/40 border border-white/5">
+                    <kbd className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-atlas-300 border border-purple-900/40">
                       {k}
                     </kbd>
                     <span className="text-[11px] text-slate-400">{d}</span>
@@ -587,7 +587,7 @@ proph3t.feedback(qrCode, data)    // boucle apprentissage terrain`}
             {section === 'context' && (
               <div className="space-y-3 text-[12px]">
                 <div className="rounded-lg border border-purple-800 bg-purple-950/20 p-3">
-                  <div className="text-[10px] uppercase text-purple-400 tracking-wider mb-1">
+                  <div className="text-[10px] uppercase text-atlas-400 tracking-wider mb-1">
                     Page courante
                   </div>
                   <h3 className="text-white text-sm font-bold m-0">{ctx.title}</h3>
@@ -609,7 +609,7 @@ proph3t.feedback(qrCode, data)    // boucle apprentissage terrain`}
           </div>
 
           {/* Footer */}
-          <div className="px-5 py-2.5 border-t border-white/10 bg-slate-900/60 flex items-center justify-between text-[10px] text-slate-500">
+          <div className="px-5 py-2.5 border-t border-white/10 bg-surface-1/60 flex items-center justify-between text-[10px] text-slate-500">
             <span>Atlas Mall Suite · plateforme multi-projets · pilote : Cosmos Angré</span>
             <span>Esc pour fermer</span>
           </div>

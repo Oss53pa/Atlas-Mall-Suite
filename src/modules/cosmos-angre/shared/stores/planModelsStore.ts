@@ -83,7 +83,7 @@ function genId(): string {
   return `pm-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-const DEFAULT_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#a855f7', '#84cc16']
+const DEFAULT_COLORS = ['#b38a5a', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', '#b38a5a', '#84cc16']
 
 // ─── Store ──────────────────────────────
 

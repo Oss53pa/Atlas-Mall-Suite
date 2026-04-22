@@ -40,10 +40,10 @@ const TYPE_VISUAL: Record<AnnotationType, AnnotationVisual> = {
     emoji: '',
   },
   promo: {
-    bg: 'linear-gradient(135deg, #7c3aed 0%, #db2777 100%)',
+    bg: 'linear-gradient(135deg, #7e5e3c 0%, #db2777 100%)',
     text: '#ffffff',
     border: 'rgba(255,255,255,0.25)',
-    shadow: '0 4px 20px rgba(124,58,237,0.5)',
+    shadow: '0 4px 20px rgba(126,94,60,0.5)',
     emoji: '🏷',
   },
   works: {
@@ -333,7 +333,7 @@ export function AnnotationsLayer({
       {/* Pulse keyframes injected once */}
       <style>{`
         @keyframes atlas-pulse {
-          0%, 100% { box-shadow: 0 4px 20px rgba(124,58,237,0.5); transform: translate(-50%,-50%) scale(1); }
+          0%, 100% { box-shadow: 0 4px 20px rgba(126,94,60,0.5); transform: translate(-50%,-50%) scale(1); }
           50%       { box-shadow: 0 6px 28px rgba(219,39,119,0.7); transform: translate(-50%,-50%) scale(1.04); }
         }
       `}</style>

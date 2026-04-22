@@ -34,7 +34,7 @@ export const CATEGORY_META: Record<SpaceCategory, { label: string; color: string
   mode:           { label: 'Mode / Textile',      color: '#ec4899', icon: '👗' },
   restauration:   { label: 'Restauration',        color: '#f59e0b', icon: '🍽' },
   services:       { label: 'Services',            color: '#06b6d4', icon: '🏛' },
-  loisirs:        { label: 'Loisirs / Culture',   color: '#a855f7', icon: '🎬' },
+  loisirs:        { label: 'Loisirs / Culture',   color: '#b38a5a', icon: '🎬' },
   alimentaire:    { label: 'Alimentaire',         color: '#10b981', icon: '🛒' },
   beaute:         { label: 'Beauté / Santé',      color: '#f43f5e', icon: '💄' },
   enfants:        { label: 'Enfants / Jouets',    color: '#f97316', icon: '🧸' },

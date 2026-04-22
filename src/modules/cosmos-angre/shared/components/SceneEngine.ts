@@ -261,8 +261,8 @@ export class SceneEngine {
     const colors: Record<string, string> = {
       parking: '#64748b', restauration: '#f59e0b', commerce: '#3b82f6',
       services: '#14b8a6', loisirs: '#06b6d4', technique: '#ef4444',
-      backoffice: '#8b5cf6', financier: '#dc2626', sortie_secours: '#22c55e',
-      circulation: '#e5e7eb', hotel: '#a855f7', exterieur: '#84cc16',
+      backoffice: '#a77d4c', financier: '#dc2626', sortie_secours: '#22c55e',
+      circulation: '#e5e7eb', hotel: '#b38a5a', exterieur: '#84cc16',
     }
     return colors[type] ?? '#3b82f6'
   }

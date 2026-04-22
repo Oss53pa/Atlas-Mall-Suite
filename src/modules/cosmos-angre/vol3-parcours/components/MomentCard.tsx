@@ -14,7 +14,7 @@ export default function MomentCard({ moment, isSelected, onClick }: MomentCardPr
       className={`w-full text-left rounded-lg p-3 transition-colors ${
         isSelected
           ? 'bg-emerald-950/30 border border-emerald-500/40'
-          : 'bg-gray-900/50 border border-gray-800 hover:border-emerald-500/20'
+          : 'bg-surface-1/50 border border-gray-800 hover:border-emerald-500/20'
       }`}
     >
       <div className="flex items-center gap-2 mb-2">
@@ -44,7 +44,7 @@ export default function MomentCard({ moment, isSelected, onClick }: MomentCardPr
         </div>
         {moment.cosmosClubAction && (
           <div className="flex items-start gap-1.5">
-            <Crown className="w-3 h-3 text-purple-400 shrink-0 mt-0.5" />
+            <Crown className="w-3 h-3 text-atlas-400 shrink-0 mt-0.5" />
             <span className="text-gray-400">{moment.cosmosClubAction}</span>
           </div>
         )}

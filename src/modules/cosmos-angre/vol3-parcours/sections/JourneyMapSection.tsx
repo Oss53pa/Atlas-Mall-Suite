@@ -6,7 +6,7 @@ import type { JourneyStage } from '../store/journeyStore'
 
 const uid = () => `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
 
-const PRESET_COLORS = ['#34d399', '#38bdf8', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899']
+const PRESET_COLORS = ['#34d399', '#38bdf8', '#a77d4c', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899']
 
 const EMOJI_CYCLE = ['\u{1F914}', '\u{1F60C}', '\u{1F62E}', '\u{1F929}', '\u{1F60A}', '\u{1F604}', '\u{2764}\u{FE0F}', '\u{1F44D}', '\u{1F389}', '\u{1F31F}', '\u{1F525}', '\u{1F4A1}', '\u{1F60D}', '\u{1F622}', '\u{1F620}', '\u{1F610}']
 

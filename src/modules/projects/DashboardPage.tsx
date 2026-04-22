@@ -81,8 +81,8 @@ function NewProjectModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-2xl rounded-2xl border border-white/[0.08] overflow-hidden" style={{ background: '#0e1629' }} onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-0/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-2xl rounded-2xl border border-white/[0.08] overflow-hidden" style={{ background: '#262a31' }} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
           <h2 className="text-white font-semibold text-lg">Nouveau projet</h2>
@@ -99,8 +99,8 @@ function NewProjectModal({ onClose }: { onClose: () => void }) {
                   onClick={() => { setSelectedTemplate(tpl.id); setStep('details') }}
                   className="text-left p-4 rounded-xl border transition-all hover:-translate-y-0.5"
                   style={{
-                    background: selectedTemplate === tpl.id ? 'rgba(99,102,241,0.08)' : 'rgba(255,255,255,0.02)',
-                    borderColor: selectedTemplate === tpl.id ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.06)',
+                    background: selectedTemplate === tpl.id ? 'rgba(179,138,90,0.08)' : 'rgba(255,255,255,0.02)',
+                    borderColor: selectedTemplate === tpl.id ? 'rgba(179,138,90,0.3)' : 'rgba(255,255,255,0.06)',
                   }}
                 >
                   <div className="flex items-center gap-2 mb-2">
@@ -134,44 +134,44 @@ function NewProjectModal({ onClose }: { onClose: () => void }) {
               <label className="text-[11px] text-gray-500 mb-1 block">Nom du projet *</label>
               <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Ex: Cosmos Angré Shopping Center"
-                className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/10 outline-none focus:border-indigo-500/50" />
+                className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/10 outline-none focus:border-atlas-500/50" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-[11px] text-gray-500 mb-1 block">Client</label>
                 <input value={form.client} onChange={(e) => setForm({ ...form, client: e.target.value })}
                   placeholder="Nom du client"
-                  className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/10 outline-none focus:border-indigo-500/50" />
+                  className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/10 outline-none focus:border-atlas-500/50" />
               </div>
               <div>
                 <label className="text-[11px] text-gray-500 mb-1 block">Surface (m²)</label>
                 <input type="number" value={form.surface_m2 || ''} onChange={(e) => setForm({ ...form, surface_m2: +e.target.value })}
                   placeholder="30000"
-                  className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/10 outline-none focus:border-indigo-500/50" />
+                  className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/10 outline-none focus:border-atlas-500/50" />
               </div>
             </div>
             <div>
               <label className="text-[11px] text-gray-500 mb-1 block">Adresse</label>
               <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })}
                 placeholder="Ville, Pays"
-                className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/10 outline-none focus:border-indigo-500/50" />
+                className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/10 outline-none focus:border-atlas-500/50" />
             </div>
             <div>
               <label className="text-[11px] text-gray-500 mb-1 block">Date d'ouverture prévue</label>
               <input type="date" value={form.opening_date} onChange={(e) => setForm({ ...form, opening_date: e.target.value })}
-                className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/10 outline-none focus:border-indigo-500/50" />
+                className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/10 outline-none focus:border-atlas-500/50" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-[11px] text-gray-500 mb-1 block">Nombre d'étages</label>
                 <input type="number" min={1} max={20} value={form.floor_count}
                   onChange={(e) => setForm({ ...form, floor_count: +e.target.value })}
-                  className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/10 outline-none focus:border-indigo-500/50" />
+                  className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/10 outline-none focus:border-atlas-500/50" />
               </div>
               <div>
                 <label className="text-[11px] text-gray-500 mb-1 block">Pays</label>
                 <select value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })}
-                  className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/10 outline-none focus:border-indigo-500/50">
+                  className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/10 outline-none focus:border-atlas-500/50">
                   <option value="CI">Côte d'Ivoire</option>
                   <option value="SN">Sénégal</option>
                   <option value="BF">Burkina Faso</option>
@@ -190,8 +190,8 @@ function NewProjectModal({ onClose }: { onClose: () => void }) {
             {/* Résumé config locale */}
             <div className="rounded-lg border border-indigo-900/40 bg-indigo-950/20 px-3 py-2.5">
               <div className="flex items-center justify-between text-[11px]">
-                <span className="text-indigo-300 font-semibold">Configuration automatique</span>
-                <span className="text-indigo-400 tabular-nums">
+                <span className="text-atlas-300 font-semibold">Configuration automatique</span>
+                <span className="text-atlas-400 tabular-nums">
                   {countryDefaults.currency} · TVA {countryDefaults.vat}%
                 </span>
               </div>
@@ -210,7 +210,7 @@ function NewProjectModal({ onClose }: { onClose: () => void }) {
             <div className="flex justify-end gap-3 pt-2">
               <button onClick={onClose} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition">Annuler</button>
               <button onClick={handleCreate}
-                className="px-5 py-2 text-sm font-medium rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition">
+                className="px-5 py-2 text-sm font-medium rounded-lg bg-atlas-500 hover:bg-atlas-400 text-white transition">
                 Créer le projet
               </button>
             </div>
@@ -266,16 +266,16 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto" style={{ background: '#060a13', color: '#e2e8f0' }}>
+    <div className="h-full overflow-y-auto" style={{ background: '#1a1d23', color: '#e2e8f0' }}>
       {/* Hero bandeau : positionnement plateforme */}
       <div className="border-b border-white/[0.06]" style={{
-        background: 'linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(168,85,247,0.06) 50%, transparent 100%)',
+        background: 'linear-gradient(135deg, rgba(179,138,90,0.08) 0%, rgba(179,138,90,0.06) 50%, transparent 100%)',
       }}>
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-start justify-between gap-6">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-[10px] tracking-widest uppercase text-indigo-300 font-bold">
+                <span className="text-[10px] tracking-widest uppercase text-atlas-300 font-bold">
                   Atlas Mall Suite
                 </span>
                 <span className="text-[10px] text-slate-500">·</span>
@@ -284,19 +284,17 @@ export default function DashboardPage() {
                 </span>
               </div>
               <h1 className="text-3xl font-bold text-white tracking-tight m-0">
-                Bienvenue sur votre espace projets
+                Mes projets
               </h1>
               <p className="text-sm text-slate-400 mt-2 max-w-2xl">
-                Gérez autant de projets de malls que nécessaire — conception, audit réglementaire,
-                signalétique, exploitation. Chaque projet est isolé (multi-tenant) et configurable
-                (pays, devise, référentiels). Le projet pilote <strong className="text-emerald-300">Cosmos Angré</strong> est
-                préchargé pour démonstration.
+                Ouvrez un projet pour accéder à ses volumes (Plan commercial, Sécurité, Parcours client, Wayfinder).
+                Chaque projet est isolé et configurable.
               </p>
             </div>
             <button
               onClick={() => setShowNewProject(true)}
-              className="flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm font-semibold transition-all hover:-translate-y-0.5 shadow-lg shadow-indigo-500/30"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm font-semibold transition-all hover:-translate-y-0.5 shadow-lg shadow-bronze/30"
+              style={{ background: 'linear-gradient(135deg, #b38a5a, #a77d4c)' }}
             >
               <Plus size={18} />
               Nouveau projet
@@ -310,7 +308,6 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-6 py-5">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-lg font-bold text-white tracking-tight m-0">Mes projets</h2>
               <p className="text-[11px] text-gray-500 mt-0.5">
                 {stats.total} projet{stats.total > 1 ? 's' : ''} · {(stats.totalSurface / 1000).toFixed(0)}k m² cumulés
               </p>
@@ -320,7 +317,7 @@ export default function DashboardPage() {
           {/* Stats cards */}
           <div className="grid grid-cols-5 gap-3">
             {[
-              { label: 'Total', value: stats.total, icon: FolderOpen, color: '#8b5cf6' },
+              { label: 'Total', value: stats.total, icon: FolderOpen, color: '#a77d4c' },
               { label: 'Conception', value: stats.conception, icon: Edit3, color: '#3b82f6' },
               { label: 'Déploiement', value: stats.deploiement, icon: TrendingUp, color: '#f59e0b' },
               { label: 'Ouverts', value: stats.ouvert, icon: Building2, color: '#22c55e' },
@@ -328,7 +325,7 @@ export default function DashboardPage() {
             ].map((stat) => {
               const Icon = stat.icon
               return (
-                <div key={stat.label} className="rounded-xl p-3.5 border border-white/[0.06]" style={{ background: '#0e1629' }}>
+                <div key={stat.label} className="rounded-xl p-3.5 border border-white/[0.06]" style={{ background: '#262a31' }}>
                   <div className="flex items-center gap-2 mb-2">
                     <Icon size={14} style={{ color: stat.color }} />
                     <span className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">{stat.label}</span>
@@ -348,10 +345,10 @@ export default function DashboardPage() {
           <input
             value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher un projet..."
-            className="w-full bg-[#0e1629] text-white text-sm rounded-lg pl-9 pr-3 py-2 border border-white/[0.08] outline-none focus:border-indigo-500/40 placeholder:text-gray-600"
+            className="w-full bg-[#262a31] text-white text-sm rounded-lg pl-9 pr-3 py-2 border border-white/[0.08] outline-none focus:border-atlas-500/40 placeholder:text-gray-600"
           />
         </div>
-        <div className="flex items-center gap-1 rounded-lg border border-white/[0.08] p-0.5" style={{ background: '#0e1629' }}>
+        <div className="flex items-center gap-1 rounded-lg border border-white/[0.08] p-0.5" style={{ background: '#262a31' }}>
           {(['all', 'conception', 'deploiement', 'ouvert', 'archive'] as const).map((s) => (
             <button key={s} onClick={() => setFilterStatus(s)}
               className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
@@ -361,7 +358,7 @@ export default function DashboardPage() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-0.5 rounded-lg border border-white/[0.08] p-0.5 ml-auto" style={{ background: '#0e1629' }}>
+        <div className="flex items-center gap-0.5 rounded-lg border border-white/[0.08] p-0.5 ml-auto" style={{ background: '#262a31' }}>
           <button onClick={() => setViewType('grid')} className={`p-1.5 rounded ${viewType === 'grid' ? 'bg-white/10 text-white' : 'text-gray-500'}`}><LayoutGrid size={14} /></button>
           <button onClick={() => setViewType('list')} className={`p-1.5 rounded ${viewType === 'list' ? 'bg-white/10 text-white' : 'text-gray-500'}`}><List size={14} /></button>
         </div>
@@ -373,7 +370,7 @@ export default function DashboardPage() {
           <div className="text-center py-20">
             <FolderOpen size={40} className="text-gray-700 mx-auto mb-3" />
             <p className="text-gray-500 text-sm">Aucun projet trouvé</p>
-            <button onClick={() => setShowNewProject(true)} className="mt-3 text-indigo-400 text-sm hover:text-indigo-300 transition">
+            <button onClick={() => setShowNewProject(true)} className="mt-3 text-atlas-400 text-sm hover:text-atlas-300 transition">
               + Créer un projet
             </button>
           </div>
@@ -388,8 +385,8 @@ export default function DashboardPage() {
                   onClick={() => handleOpenProject(project)}
                   className="group relative cursor-pointer rounded-xl p-5 border transition-all hover:-translate-y-0.5"
                   style={{
-                    background: isActive ? 'rgba(99,102,241,0.05)' : '#0e1629',
-                    borderColor: isActive ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.06)',
+                    background: isActive ? 'rgba(179,138,90,0.05)' : '#262a31',
+                    borderColor: isActive ? 'rgba(179,138,90,0.2)' : 'rgba(255,255,255,0.06)',
                   }}
                 >
                   <div className="absolute top-3 right-3 flex items-center gap-1.5">
@@ -399,9 +396,9 @@ export default function DashboardPage() {
                       </div>
                     )}
                     {isActive && (
-                      <div className="flex items-center gap-1 rounded-full bg-indigo-500/15 border border-indigo-500/25 px-2 py-0.5">
+                      <div className="flex items-center gap-1 rounded-full bg-atlas-400/15 border border-atlas-500/25 px-2 py-0.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                        <span className="text-[9px] font-semibold text-indigo-400 tracking-wide">ACTIF</span>
+                        <span className="text-[9px] font-semibold text-atlas-400 tracking-wide">ACTIF</span>
                       </div>
                     )}
                   </div>
@@ -432,7 +429,7 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="mt-4 flex items-center justify-between border-t border-white/[0.04] pt-3">
-                    <button className="flex items-center gap-1.5 text-[12px] font-medium text-indigo-400 hover:text-indigo-300 transition group-hover:gap-2">
+                    <button className="flex items-center gap-1.5 text-[12px] font-medium text-atlas-400 hover:text-atlas-300 transition group-hover:gap-2">
                       Ouvrir <ArrowRight size={12} />
                     </button>
                     {project.id !== 'cosmos-angre' && (
@@ -456,8 +453,8 @@ export default function DashboardPage() {
                   onClick={() => handleOpenProject(project)}
                   className="group cursor-pointer rounded-xl p-4 border flex items-center gap-4 transition-all hover:border-white/10"
                   style={{
-                    background: isActive ? 'rgba(99,102,241,0.05)' : '#0e1629',
-                    borderColor: isActive ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.06)',
+                    background: isActive ? 'rgba(179,138,90,0.05)' : '#262a31',
+                    borderColor: isActive ? 'rgba(179,138,90,0.2)' : 'rgba(255,255,255,0.06)',
                   }}
                 >
                   <span className="text-xl">{TYPE_ICONS[project.type]}</span>
@@ -469,7 +466,7 @@ export default function DashboardPage() {
                   <span className={`${status.bg} ${status.text} text-[10px] font-medium px-2 py-0.5 rounded-full`}>{status.label}</span>
                   <span className="text-gray-600 text-[11px]">{project.surface_m2.toLocaleString('fr-FR')} m²</span>
                   {isActive && (
-                    <span className="text-[9px] font-bold text-indigo-400 tracking-wider">ACTIF</span>
+                    <span className="text-[9px] font-bold text-atlas-400 tracking-wider">ACTIF</span>
                   )}
                   <ArrowRight size={14} className="text-gray-600 group-hover:text-white transition" />
                 </div>

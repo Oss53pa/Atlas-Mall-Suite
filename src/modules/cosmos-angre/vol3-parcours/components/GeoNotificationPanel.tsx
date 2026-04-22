@@ -28,7 +28,7 @@ export default function GeoNotificationPanel({
   const TYPE_CONFIG: Record<GeoNotification['type'], { icon: typeof Bell; color: string; label: string }> = {
     promo: { icon: Gift, color: 'text-amber-400', label: 'Promotion' },
     info: { icon: Info, color: 'text-blue-400', label: 'Information' },
-    cosmos_club: { icon: MapPin, color: 'text-purple-400', label: 'Cosmos Club' },
+    cosmos_club: { icon: MapPin, color: 'text-atlas-400', label: 'Cosmos Club' },
     navigation: { icon: Navigation, color: 'text-emerald-400', label: 'Navigation' },
   }
 
@@ -87,7 +87,7 @@ export default function GeoNotificationPanel({
             <select
               value={form.zoneId}
               onChange={e => setForm(f => ({ ...f, zoneId: e.target.value }))}
-              className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-white"
+              className="w-full bg-surface-1 border border-gray-700 rounded px-2 py-1 text-xs text-white"
             >
               <option value="">Selectionner une zone...</option>
               {zones.map(z => (
@@ -124,7 +124,7 @@ export default function GeoNotificationPanel({
               value={form.message}
               onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
               placeholder="Ex: -20% sur votre prochain achat!"
-              className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-white placeholder:text-gray-600"
+              className="w-full bg-surface-1 border border-gray-700 rounded px-2 py-1 text-xs text-white placeholder:text-gray-600"
             />
           </div>
 
@@ -137,7 +137,7 @@ export default function GeoNotificationPanel({
                 onChange={e => setForm(f => ({ ...f, triggerRadius: Number(e.target.value) }))}
                 min={1}
                 max={50}
-                className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-white"
+                className="w-full bg-surface-1 border border-gray-700 rounded px-2 py-1 text-xs text-white"
               />
             </div>
             {form.type === 'cosmos_club' && (
@@ -148,7 +148,7 @@ export default function GeoNotificationPanel({
                   value={form.cosmosClubPoints}
                   onChange={e => setForm(f => ({ ...f, cosmosClubPoints: Number(e.target.value) }))}
                   min={0}
-                  className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-xs text-white"
+                  className="w-full bg-surface-1 border border-gray-700 rounded px-2 py-1 text-xs text-white"
                 />
               </div>
             )}
@@ -180,7 +180,7 @@ export default function GeoNotificationPanel({
               className={`flex items-start gap-2 p-2 rounded-lg border transition-colors ${
                 notif.active
                   ? 'bg-gray-800/60 border-gray-700/50'
-                  : 'bg-gray-900/40 border-gray-800/30 opacity-50'
+                  : 'bg-surface-1/40 border-gray-800/30 opacity-50'
               }`}
             >
               <Icon className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${cfg.color}`} />
@@ -191,7 +191,7 @@ export default function GeoNotificationPanel({
                 </div>
                 <p className="text-[10px] text-gray-400 truncate">{notif.message}</p>
                 {notif.cosmosClubPoints && (
-                  <span className="text-[9px] text-purple-400">+{notif.cosmosClubPoints} pts Cosmos Club</span>
+                  <span className="text-[9px] text-atlas-400">+{notif.cosmosClubPoints} pts Cosmos Club</span>
                 )}
               </div>
               <div className="flex items-center gap-1 shrink-0">

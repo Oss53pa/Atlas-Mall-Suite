@@ -39,7 +39,7 @@ export default function ControlRoom() {
     { label: 'Cameras en ligne', value: `${onlineCameras}/${onlineCameras}`, icon: Camera, color: '#22c55e' },
     { label: 'Incidents ouverts', value: LIVE_INCIDENTS.filter(i => i.status === 'ouvert').length, icon: AlertTriangle, color: '#ef4444' },
     { label: 'Couverture', value: `${totalCoverage}%`, icon: Shield, color: '#38bdf8' },
-    { label: 'Equipes actives', value: '—', icon: Users, color: '#a855f7' },
+    { label: 'Equipes actives', value: '—', icon: Users, color: '#b38a5a' },
   ]
 
   const filtered = filter === 'all' ? LIVE_INCIDENTS : LIVE_INCIDENTS.filter(i => i.status === filter)

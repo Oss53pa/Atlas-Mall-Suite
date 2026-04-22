@@ -100,10 +100,10 @@ export default function AccesSection() {
         </div>
       </div>
 
-      <div className="rounded-[10px] p-6" style={{ background: 'rgba(126,34,206,0.06)', border: '1px solid rgba(168,85,247,0.15)' }}>
+      <div className="rounded-[10px] p-6" style={{ background: 'rgba(126,94,60,0.06)', border: '1px solid rgba(179,138,90,0.15)' }}>
         <div className="flex items-center gap-3 mb-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: 'rgba(126,34,206,0.2)' }}><Sparkles size={16} className="text-purple-400" /></div>
-          <h3 className="font-semibold text-purple-300">Proph3t — Recommandations portes</h3>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: 'rgba(126,94,60,0.2)' }}><Sparkles size={16} className="text-atlas-400" /></div>
+          <h3 className="font-semibold text-atlas-300">Proph3t — Recommandations portes</h3>
         </div>
         <ul className="space-y-1 text-[13px]" style={{ color: '#94a3b8' }}>
           <li>• PC Sécurité : porte blindée A2P BP3 + lecteur biométrique Morpho — réf. GUNNEBO SecureLine</li>

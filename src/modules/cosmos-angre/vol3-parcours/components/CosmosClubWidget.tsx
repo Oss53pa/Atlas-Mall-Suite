@@ -17,10 +17,10 @@ export default function CosmosClubWidget({ pois }: CosmosClubWidgetProps) {
   const cosmosClubDesk = pois.find((p) => p.type === 'cosmos_club')
 
   return (
-    <div className="bg-gray-900/50 border border-purple-800/30 rounded-lg p-3">
+    <div className="bg-surface-1/50 border border-purple-800/30 rounded-lg p-3">
       <div className="flex items-center gap-2 mb-3">
-        <Crown className="w-4 h-4 text-purple-400" />
-        <span className="text-xs font-semibold text-purple-300">Programme Cosmos Club</span>
+        <Crown className="w-4 h-4 text-atlas-400" />
+        <span className="text-xs font-semibold text-atlas-300">Programme Cosmos Club</span>
       </div>
 
       {/* Tiers */}
@@ -43,7 +43,7 @@ export default function CosmosClubWidget({ pois }: CosmosClubWidgetProps) {
           <div className="space-y-1">
             {cosmosClubPois.map((poi) => (
               <div key={poi.id} className="text-[11px] bg-purple-950/20 rounded px-2 py-1">
-                <span className="text-purple-400">{poi.label}</span>
+                <span className="text-atlas-400">{poi.label}</span>
                 <span className="text-gray-500 ml-1">— {poi.cosmosClubOffre}</span>
               </div>
             ))}
@@ -54,9 +54,9 @@ export default function CosmosClubWidget({ pois }: CosmosClubWidgetProps) {
       {/* QR Enrollment */}
       {cosmosClubDesk && (
         <div className="mt-3 flex items-center gap-2 bg-purple-900/20 rounded-lg px-3 py-2">
-          <QrCode className="w-5 h-5 text-purple-400" />
+          <QrCode className="w-5 h-5 text-atlas-400" />
           <div>
-            <div className="text-[11px] text-purple-300 font-medium">Inscrivez-vous</div>
+            <div className="text-[11px] text-atlas-300 font-medium">Inscrivez-vous</div>
             <div className="text-[10px] text-gray-500">{cosmosClubDesk.label}</div>
           </div>
         </div>

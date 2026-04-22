@@ -110,7 +110,7 @@ const buildNavGroups = (): NavGroup[] => [
     key: 'proph3t-core',
     label: 'PROPH3T',
     icon: Sparkles,
-    color: '#a855f7',
+    color: '#b38a5a',
     separator: true,
     items: [
       { id: 'orchestration', label: 'Orchestrateur 4 vol.', icon: Workflow },
@@ -121,7 +121,7 @@ const buildNavGroups = (): NavGroup[] => [
     key: 'collaboration',
     label: 'COLLABORATION',
     icon: Send,
-    color: '#818cf8',
+    color: '#c9a068',
     separator: true,
     items: [
       { id: 'history', label: 'Historique du plan', icon: History },
@@ -199,7 +199,7 @@ export default function Vol4Module() {
         {/* Platform switcher */}
         <div className="px-3 py-3 border-b" style={{ borderColor: '#1e2a3a' }}>
           <div className="text-[9px] text-slate-500 tracking-wider uppercase mb-1.5">Plateforme</div>
-          <div className="flex gap-1 bg-slate-950/40 rounded-lg p-1">
+          <div className="flex gap-1 bg-surface-0/40 rounded-lg p-1">
             {([
               { id: 'mobile', icon: Smartphone, label: 'Mobile' },
               { id: 'web',    icon: Globe, label: 'Web' },
@@ -277,10 +277,10 @@ export default function Vol4Module() {
 
         {/* Proph3t badge */}
         <div className="p-3 m-2 rounded-lg"
-          style={{ background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.15)' }}>
+          style={{ background: 'rgba(179,138,90,0.06)', border: '1px solid rgba(179,138,90,0.15)' }}>
           <div className="flex items-center gap-2 mb-1">
-            <Sparkles size={12} className="text-purple-400" />
-            <span className="text-[10px] font-medium text-purple-300">Proph3t Wayfinder</span>
+            <Sparkles size={12} className="text-atlas-400" />
+            <span className="text-[10px] font-medium text-atlas-300">Proph3t Wayfinder</span>
           </div>
           <p className="text-[9px] text-slate-500">
             A* bidirectionnel · EKF WiFi+BLE+PDR · CUSUM flux
@@ -327,7 +327,7 @@ export default function Vol4Module() {
                 </div>
 
                 {/* Sub-view toggle */}
-                <div className="flex items-center gap-0.5 bg-slate-900 border border-white/[0.08] rounded-lg p-0.5">
+                <div className="flex items-center gap-0.5 bg-surface-1 border border-white/[0.08] rounded-lg p-0.5">
                   <button
                     onClick={() => setPlanSubView('wayfinder')}
                     className={[

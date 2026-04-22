@@ -21,7 +21,7 @@ interface Props {
   compact?: boolean
 }
 
-export function PlanModelSelector({ projectId, accentColor = '#a855f7', compact = false }: Props) {
+export function PlanModelSelector({ projectId, accentColor = '#b38a5a', compact = false }: Props) {
   const navigate = useNavigate()
   const setParsedPlan = usePlanEngineStore(s => s.setParsedPlan)
 
@@ -112,11 +112,11 @@ export function PlanModelSelector({ projectId, accentColor = '#a855f7', compact 
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 mt-1 w-80 rounded-lg bg-slate-900 border border-white/10 shadow-2xl z-[100] overflow-hidden">
+        <div className="absolute top-full right-0 mt-1 w-80 rounded-lg bg-surface-1 border border-white/10 shadow-2xl z-[100] overflow-hidden">
           {/* Header */}
           <div className="px-3 py-2 border-b border-white/5 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <Sparkles size={11} className="text-purple-400" />
+              <Sparkles size={11} className="text-atlas-400" />
               <span className="text-[10px] font-bold text-white uppercase tracking-wider">Modèles de plan</span>
             </div>
             <span className="text-[9px] text-slate-500">{models.length} dispo</span>
@@ -137,7 +137,7 @@ export function PlanModelSelector({ projectId, accentColor = '#a855f7', compact 
                   <div className="flex items-start gap-2">
                     <div
                       className="w-7 h-7 rounded-md flex-shrink-0 flex items-center justify-center"
-                      style={{ background: `${m.color ?? '#6366f1'}25`, color: m.color ?? '#a5b4fc' }}
+                      style={{ background: `${m.color ?? '#b38a5a'}25`, color: m.color ?? '#d4b280' }}
                     >
                       <Layers size={12} />
                     </div>
@@ -177,7 +177,7 @@ export function PlanModelSelector({ projectId, accentColor = '#a855f7', compact 
             </button>
             <button
               onClick={() => { setOpen(false); navigate(`/projects/${projectId}/studio`) }}
-              className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded text-[10px] font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:opacity-90"
+              className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded text-[10px] font-semibold bg-gradient-to-r from-atlas-500 to-atlas-500 text-white hover:opacity-90"
             >
               <Plus size={10} /> Nouveau modèle
             </button>

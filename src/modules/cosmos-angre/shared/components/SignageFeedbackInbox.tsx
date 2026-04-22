@@ -33,7 +33,7 @@ const STATUS_META: Record<FeedbackStatus, { label: string; color: string; icon: 
   illisible:      { label: 'Illisible',       color: '#f59e0b', icon: '🔍' },
   absent:         { label: 'Absent',          color: '#ef4444', icon: '✗' },
   'mal-oriente':  { label: 'Mal orienté',     color: '#f97316', icon: '↪' },
-  degrade:        { label: 'Dégradé',         color: '#a855f7', icon: '🖌' },
+  degrade:        { label: 'Dégradé',         color: '#b38a5a', icon: '🖌' },
   obsolete:       { label: 'Obsolète',        color: '#3b82f6', icon: '⏰' },
   autre:          { label: 'Autre',           color: '#64748b', icon: '·' },
 }
@@ -80,10 +80,10 @@ export function SignageFeedbackInbox({ projetId, onClose }: Props) {
 
   const modal = (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-end bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-end bg-surface-0/60 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-[520px] max-w-[95vw] h-full bg-slate-900 border-l border-white/10 shadow-2xl flex flex-col">
+      <div className="w-[520px] max-w-[95vw] h-full bg-surface-1 border-l border-white/10 shadow-2xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
           <div className="flex items-center gap-2">
@@ -110,7 +110,7 @@ export function SignageFeedbackInbox({ projetId, onClose }: Props) {
         </div>
 
         {/* Filtres */}
-        <div className="px-5 py-3 border-b border-white/5 bg-slate-950/40 flex items-center gap-2">
+        <div className="px-5 py-3 border-b border-white/5 bg-surface-0/40 flex items-center gap-2">
           <Filter className="w-3.5 h-3.5 text-slate-500" />
           {(['all', 'unresolved', 'critical'] as const).map(f => (
             <button
@@ -149,13 +149,13 @@ export function SignageFeedbackInbox({ projetId, onClose }: Props) {
                 key={item.id}
                 className={`mb-2 rounded-md border overflow-hidden ${
                   item.resolved
-                    ? 'border-white/5 bg-slate-950/30 opacity-60'
-                    : 'border-white/10 bg-slate-950/60'
+                    ? 'border-white/5 bg-surface-0/30 opacity-60'
+                    : 'border-white/10 bg-surface-0/60'
                 }`}
               >
                 <button
                   onClick={() => setExpandedId(expanded ? null : item.id)}
-                  className="w-full px-3 py-2 text-left hover:bg-slate-900 transition-colors"
+                  className="w-full px-3 py-2 text-left hover:bg-surface-1 transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     <span

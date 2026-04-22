@@ -902,11 +902,11 @@ export function SpaceEditorCanvas({
   const editingSpace = editingSpaceId ? spaces.find(s => s.id === editingSpaceId) : null
 
   return (
-    <div className="h-full w-full flex flex-col bg-slate-950">
+    <div className="h-full w-full flex flex-col bg-surface-0">
       {/* Toolbar */}
-      <div className="flex items-center gap-1 px-3 py-2 border-b border-white/10 bg-slate-900">
+      <div className="flex items-center gap-1 px-3 py-2 border-b border-white/10 bg-surface-1">
         {/* Mode selectors */}
-        <div className="flex items-center gap-0.5 p-0.5 bg-slate-950 rounded">
+        <div className="flex items-center gap-0.5 p-0.5 bg-surface-0 rounded">
           {([
             { m: 'select', icon: MousePointer, label: 'Sélection' },
             { m: 'poly',   icon: Hexagon,      label: 'Polygone (dble-clic ferme)' },
@@ -917,7 +917,7 @@ export function SpaceEditorCanvas({
             <button key={o.m}
               onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null) }}
               className={`p-1.5 rounded text-[11px] flex items-center gap-1.5 ${
-                mode === o.m ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+                mode === o.m ? 'bg-atlas-500 text-white' : 'text-slate-400 hover:text-white'
               }`}
               title={o.label}
             >
@@ -930,7 +930,7 @@ export function SpaceEditorCanvas({
           <select
             value={wallThicknessCm}
             onChange={(e) => setWallThicknessCm(Number(e.target.value))}
-            className="bg-slate-950 text-[10px] text-slate-300 rounded px-1.5 py-1 border border-white/10"
+            className="bg-surface-0 text-[10px] text-slate-300 rounded px-1.5 py-1 border border-white/10"
           >
             <option value={15}>15 cm</option>
             <option value={20}>20 cm</option>
@@ -941,7 +941,7 @@ export function SpaceEditorCanvas({
         <div className="h-5 w-px bg-white/10 mx-1" />
 
         {/* ─── Templates parking (clic = pose) ─── */}
-        <div className="flex items-center gap-0.5 p-0.5 bg-slate-950 rounded" title="Places de parking (clic = pose un rectangle aux dimensions)">
+        <div className="flex items-center gap-0.5 p-0.5 bg-surface-0 rounded" title="Places de parking (clic = pose un rectangle aux dimensions)">
           {([
             { m: 'parking-standard',  icon: Car,           title: 'Place standard 2.5×5 m',    color: '#60a5fa' },
             { m: 'parking-pmr',       icon: Accessibility, title: 'Place PMR 3.3×5 m',         color: '#3b82f6' },
@@ -953,7 +953,7 @@ export function SpaceEditorCanvas({
             <button key={o.m}
               onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null) }}
               className={`p-1.5 rounded text-[11px] flex items-center gap-1.5 ${
-                mode === o.m ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+                mode === o.m ? 'bg-atlas-500 text-white' : 'text-slate-400 hover:text-white'
               }`}
               title={o.title}
             >
@@ -966,7 +966,7 @@ export function SpaceEditorCanvas({
         <button
           onClick={() => { setMode('arrow-flow'); setDraftPoints([]); setDragStart(null); setSplitLine(null) }}
           className={`p-1.5 rounded text-[11px] flex items-center gap-1.5 ${
-            mode === 'arrow-flow' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+            mode === 'arrow-flow' ? 'bg-atlas-500 text-white' : 'text-slate-400 hover:text-white'
           }`}
           title="Flèche de sens (2 clics : origine → pointe)"
         >
@@ -987,7 +987,7 @@ export function SpaceEditorCanvas({
         <div className="h-5 w-px bg-white/10 mx-1" />
 
         {/* ─── Templates portes (clic = pose) ─── */}
-        <div className="flex items-center gap-0.5 p-0.5 bg-slate-950 rounded" title="Portes & ouvertures (clic = pose rectangle)">
+        <div className="flex items-center gap-0.5 p-0.5 bg-surface-0 rounded" title="Portes & ouvertures (clic = pose rectangle)">
           {([
             { m: 'door-entree',      icon: DoorOpen,          title: 'Porte d\'entrée 1m × 20cm',       color: '#10b981' },
             { m: 'door-double',      icon: DoorOpen,          title: 'Porte double 1.8m × 20cm',        color: '#059669' },
@@ -999,7 +999,7 @@ export function SpaceEditorCanvas({
             <button key={o.m}
               onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null) }}
               className={`p-1.5 rounded text-[11px] flex items-center gap-1.5 ${
-                mode === o.m ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+                mode === o.m ? 'bg-atlas-500 text-white' : 'text-slate-400 hover:text-white'
               }`}
               title={o.title}
             >
@@ -1062,14 +1062,14 @@ export function SpaceEditorCanvas({
         {/* Options */}
         <button
           onClick={() => setShowGrid(!showGrid)}
-          className={`p-1.5 rounded ${showGrid ? 'text-indigo-400' : 'text-slate-500'}`}
+          className={`p-1.5 rounded ${showGrid ? 'text-atlas-400' : 'text-slate-500'}`}
           title="Afficher grille"
         >
           <Grid3X3 className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={() => setSnapEnabled(!snapEnabled)}
-          className={`px-2 py-1 rounded text-[10px] font-bold ${snapEnabled ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}
+          className={`px-2 py-1 rounded text-[10px] font-bold ${snapEnabled ? 'bg-atlas-500 text-white' : 'text-slate-500'}`}
           title="Snap grille 50 cm"
         >
           SNAP
@@ -1109,7 +1109,7 @@ export function SpaceEditorCanvas({
         <select
           value={activeFloor}
           onChange={(e) => onFloorChange(e.target.value as FloorLevelKey)}
-          className="bg-slate-950 text-[11px] text-slate-300 rounded px-2 py-1 border border-white/10"
+          className="bg-surface-0 text-[11px] text-slate-300 rounded px-2 py-1 border border-white/10"
         >
           {(Object.keys(FLOOR_LEVEL_META) as FloorLevelKey[])
             .sort((a, b) => FLOOR_LEVEL_META[a].order - FLOOR_LEVEL_META[b].order)
@@ -1119,7 +1119,7 @@ export function SpaceEditorCanvas({
         </select>
         <button
           onClick={() => setShowOnlyActiveFloor(!showOnlyActiveFloor)}
-          className={`px-2 py-1 rounded text-[10px] font-bold ${showOnlyActiveFloor ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}
+          className={`px-2 py-1 rounded text-[10px] font-bold ${showOnlyActiveFloor ? 'bg-atlas-500 text-white' : 'bg-slate-800 text-slate-400'}`}
           title="Filtrer sur niveau actif"
         >
           {showOnlyActiveFloor ? '◉ Niv actif' : '◎ Tous niv.'}
@@ -1135,7 +1135,7 @@ export function SpaceEditorCanvas({
         <svg
           ref={svgRef}
           className="w-full h-full"
-          style={{ cursor, background: '#0f172a' }}
+          style={{ cursor, background: '#2a2d33' }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -1160,7 +1160,7 @@ export function SpaceEditorCanvas({
           {/* Grille */}
           {showGrid && gridLines.map((l, i) => (
             <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
-              stroke="#1e293b" strokeWidth={0.5} />
+              stroke="#3a3d44" strokeWidth={0.5} />
           ))}
 
           {/* Contour plan */}
@@ -1342,7 +1342,7 @@ export function SpaceEditorCanvas({
                     <g transform="translate(14, 11)" style={{ cursor: 'pointer' }}
                        onClick={(e) => { e.stopPropagation(); setEditingSpaceId(s.id) }}>
                       <title>Éditer — ou double-clic sur l'espace</title>
-                      <circle r={9} fill="#6366f1" />
+                      <circle r={9} fill="#b38a5a" />
                       <text textAnchor="middle" dominantBaseline="central" fontSize={10} fill="#fff">✏</text>
                     </g>
                     {/* × Supprimer */}
@@ -1368,11 +1368,11 @@ export function SpaceEditorCanvas({
             <g>
               <polyline
                 points={draftPoints.map(p => worldToScreen(p.x, p.y)).map(s => `${s.x},${s.y}`).join(' ')}
-                fill="none" stroke="#818cf8" strokeWidth={1.5} strokeDasharray="4 2"
+                fill="none" stroke="#c9a068" strokeWidth={1.5} strokeDasharray="4 2"
               />
               {draftPoints.map((p, i) => {
                 const s = worldToScreen(p.x, p.y)
-                return <circle key={i} cx={s.x} cy={s.y} r={3} fill="#818cf8" />
+                return <circle key={i} cx={s.x} cy={s.y} r={3} fill="#c9a068" />
               })}
             </g>
           )}
@@ -1386,7 +1386,7 @@ export function SpaceEditorCanvas({
               y={0}
               width={10}
               height={10}
-              fill="none" stroke="#818cf8" strokeWidth={1.5} strokeDasharray="4 2"
+              fill="none" stroke="#c9a068" strokeWidth={1.5} strokeDasharray="4 2"
             />
           )}
 
@@ -1395,7 +1395,7 @@ export function SpaceEditorCanvas({
             <circle
               cx={worldToScreen(dragStart.x, dragStart.y).x}
               cy={worldToScreen(dragStart.x, dragStart.y).y}
-              r={5} fill="#818cf8"
+              r={5} fill="#c9a068"
             />
           )}
 
@@ -1482,7 +1482,7 @@ export function SpaceEditorCanvas({
 
         {/* ─── Annotation type selector (annotate mode) ─── */}
         {mode === 'annotate' && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-1.5 bg-[#0f172a]/95 backdrop-blur border border-white/15 rounded-xl px-3 py-2 shadow-xl z-20">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-1.5 bg-[#2a2d33]/95 backdrop-blur border border-white/15 rounded-xl px-3 py-2 shadow-xl z-20">
             {(['note', 'title', 'promo', 'works', 'info'] as AnnotationType[]).map((t) => (
               <button
                 key={t}
@@ -1512,17 +1512,17 @@ export function SpaceEditorCanvas({
 
         {/* Aide flottante en mode select */}
         {mode === 'select' && selectedIds.size === 0 && spaces.length > 0 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg bg-slate-900/95 border border-white/10 text-[10px] text-slate-300 shadow-xl pointer-events-none">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg bg-surface-1/95 border border-white/10 text-[10px] text-slate-300 shadow-xl pointer-events-none">
             💡 Clic espace = sélectionner · Glisser zone vide = déplacer le plan · Sommet = déformer · Double-clic = éditer
           </div>
         )}
         {mode === 'select' && spaces.length === 0 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg bg-slate-900/95 border border-white/10 text-[10px] text-slate-300 shadow-xl pointer-events-none">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg bg-surface-1/95 border border-white/10 text-[10px] text-slate-300 shadow-xl pointer-events-none">
             💡 Glisser pour déplacer le plan · Molette = zoom · F = recadrer · Passer en mode Rect/Polygone pour dessiner
           </div>
         )}
         {mode === 'select' && selectedIds.size > 0 && !editingSpace && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg bg-indigo-900/80 border border-indigo-500/40 text-[10px] text-indigo-200 shadow-xl pointer-events-none flex items-center gap-3">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg bg-indigo-900/80 border border-atlas-500/40 text-[10px] text-atlas-200 shadow-xl pointer-events-none flex items-center gap-3">
             <span><strong>{selectedIds.size}</strong> espace{selectedIds.size > 1 ? 's' : ''} sélectionné{selectedIds.size > 1 ? 's' : ''}</span>
             <span className="text-slate-400">·</span>
             <span>✏ bouton bleu = infos · ✓ vert = valider · ⧉ = dupliquer · × = supprimer · <kbd className="bg-slate-800 px-1 rounded">Delete</kbd> = effacer</span>
@@ -1581,7 +1581,7 @@ function SpaceMetadataPanel({
     || type === 'big_box' || type === 'grande_surface' || type === 'loisirs'
 
   return (
-    <div className="absolute right-4 top-4 w-[340px] bg-slate-900 border border-white/10 rounded-lg shadow-2xl flex flex-col max-h-[calc(100%-2rem)] overflow-hidden">
+    <div className="absolute right-4 top-4 w-[340px] bg-surface-1 border border-white/10 rounded-lg shadow-2xl flex flex-col max-h-[calc(100%-2rem)] overflow-hidden">
       <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/10">
         <h3 className="text-sm font-bold text-white">Éditer espace</h3>
         <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
@@ -1603,7 +1603,7 @@ function SpaceMetadataPanel({
               if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur()
             }}
             placeholder="ex: Entrée principale Nord, Local A12 Restauration"
-            className="w-full px-2 py-1.5 rounded bg-slate-950 border border-white/10 text-sm text-white focus:border-indigo-500 outline-none"
+            className="w-full px-2 py-1.5 rounded bg-surface-0 border border-white/10 text-sm text-white focus:border-atlas-500 outline-none"
             autoFocus
           />
         </div>
@@ -1613,7 +1613,7 @@ function SpaceMetadataPanel({
           <label className="block text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1">
             Type sémantique
           </label>
-          <div className="space-y-2 max-h-52 overflow-y-auto bg-slate-950 rounded border border-white/5 p-2">
+          <div className="space-y-2 max-h-52 overflow-y-auto bg-surface-0 rounded border border-white/5 p-2">
             {(Object.keys(SPACE_TYPES_BY_CATEGORY) as SpaceTypeCategory[]).map(cat => {
               const catMeta = SPACE_CATEGORY_META[cat]
               return (
@@ -1649,7 +1649,7 @@ function SpaceMetadataPanel({
 
         {/* ── Section commerciale — visible uniquement pour les locaux commerciaux ── */}
         {isCommercial && (
-          <div className="rounded-lg border border-white/10 bg-slate-950 overflow-hidden">
+          <div className="rounded-lg border border-white/10 bg-surface-0 overflow-hidden">
             {/* En-tête segment avec couleur */}
             <div className="flex items-center gap-2 px-3 py-2 border-b border-white/10"
                  style={{ background: `${SPACE_TYPE_META[type].color}18` }}>
@@ -1679,7 +1679,7 @@ function SpaceMetadataPanel({
                   value={localNumber}
                   onChange={(e) => setLocalNumber(e.target.value)}
                   placeholder="ex: A-012, RDC-24, B2-007"
-                  className="w-full px-2 py-1.5 rounded bg-slate-900 border border-white/10 text-sm text-white font-mono focus:border-indigo-500 outline-none"
+                  className="w-full px-2 py-1.5 rounded bg-surface-1 border border-white/10 text-sm text-white font-mono focus:border-atlas-500 outline-none"
                 />
               </div>
 
@@ -1717,7 +1717,7 @@ function SpaceMetadataPanel({
                     value={tenant}
                     onChange={(e) => setTenant(e.target.value)}
                     placeholder="ex: H&M, McDonald's, Pharmacie Centrale…"
-                    className="w-full px-2 py-1.5 rounded bg-slate-900 border border-white/10 text-sm text-white focus:border-indigo-500 outline-none"
+                    className="w-full px-2 py-1.5 rounded bg-surface-1 border border-white/10 text-sm text-white focus:border-atlas-500 outline-none"
                   />
                 </div>
               )}
@@ -1733,7 +1733,7 @@ function SpaceMetadataPanel({
           <select
             value={floorLevel}
             onChange={(e) => setFloorLevel(e.target.value as FloorLevelKey)}
-            className="w-full px-2 py-1.5 rounded bg-slate-950 border border-white/10 text-sm text-white"
+            className="w-full px-2 py-1.5 rounded bg-surface-0 border border-white/10 text-sm text-white"
           >
             {(Object.keys(FLOOR_LEVEL_META) as FloorLevelKey[])
               .sort((a, b) => FLOOR_LEVEL_META[a].order - FLOOR_LEVEL_META[b].order)
@@ -1745,11 +1745,11 @@ function SpaceMetadataPanel({
 
         {/* Surface */}
         <div className="grid grid-cols-2 gap-2 text-[11px]">
-          <div className="px-2 py-1.5 rounded bg-slate-950 border border-white/5">
+          <div className="px-2 py-1.5 rounded bg-surface-0 border border-white/5">
             <div className="text-[9px] text-slate-600 uppercase">Surface</div>
             <div className="text-white font-bold tabular-nums">{areaSqm.toFixed(1)} m²</div>
           </div>
-          <div className="px-2 py-1.5 rounded bg-slate-950 border border-white/5">
+          <div className="px-2 py-1.5 rounded bg-surface-0 border border-white/5">
             <div className="text-[9px] text-slate-600 uppercase">Vertex</div>
             <div className="text-white font-bold tabular-nums">{space.polygon.length}</div>
           </div>
@@ -1765,9 +1765,9 @@ function SpaceMetadataPanel({
 
         {/* ── Multi-niveau & mezzanine (Big Box, locaux sur plusieurs niveaux) ── */}
         {showMultiNiveauSection && (
-          <div className="rounded-lg border border-indigo-900/40 bg-slate-950 overflow-hidden">
+          <div className="rounded-lg border border-indigo-900/40 bg-surface-0 overflow-hidden">
             <div className="px-3 py-2 border-b border-white/5 bg-indigo-950/20">
-              <div className="text-[10px] font-bold text-indigo-300">🏢 Multi-niveau / Mezzanine</div>
+              <div className="text-[10px] font-bold text-atlas-300">🏢 Multi-niveau / Mezzanine</div>
             </div>
             <div className="p-3 space-y-3">
               {/* ID d'unité (lien entre niveaux) */}
@@ -1779,7 +1779,7 @@ function SpaceMetadataPanel({
                   value={unitId}
                   onChange={(e) => setUnitId(e.target.value)}
                   placeholder="ex: BIGBOX-CARREFOUR, IKEA-NORD"
-                  className="w-full px-2 py-1.5 rounded bg-slate-900 border border-white/10 text-sm text-white font-mono focus:border-indigo-500 outline-none"
+                  className="w-full px-2 py-1.5 rounded bg-surface-1 border border-white/10 text-sm text-white font-mono focus:border-atlas-500 outline-none"
                 />
                 <p className="text-[9px] text-slate-600 mt-1">
                   Les espaces avec le même ID sont considérés comme un seul tenant multi-niveaux.
@@ -1791,7 +1791,7 @@ function SpaceMetadataPanel({
                   type="checkbox"
                   checked={hasMezzanine}
                   onChange={(e) => setHasMezzanine(e.target.checked)}
-                  className="accent-indigo-500"
+                  className="accent-atlas-500"
                 />
                 <span className="text-[11px] text-slate-300">Ce local possède une mezzanine</span>
               </label>
@@ -1806,10 +1806,10 @@ function SpaceMetadataPanel({
                     value={mezzanineSqm || ''}
                     onChange={(e) => setMezzanineSqm(Number(e.target.value))}
                     placeholder="ex: 45"
-                    className="w-full px-2 py-1.5 rounded bg-slate-900 border border-white/10 text-sm text-white tabular-nums focus:border-indigo-500 outline-none"
+                    className="w-full px-2 py-1.5 rounded bg-surface-1 border border-white/10 text-sm text-white tabular-nums focus:border-atlas-500 outline-none"
                   />
                   {mezzanineSqm > 0 && (
-                    <p className="text-[10px] text-indigo-300 mt-1">
+                    <p className="text-[10px] text-atlas-300 mt-1">
                       Surface totale avec mezzanine : <strong>{(areaSqm + mezzanineSqm).toFixed(0)} m²</strong>
                     </p>
                   )}
@@ -1822,7 +1822,7 @@ function SpaceMetadataPanel({
         {!showMultiNiveauSection && (
           <button
             onClick={() => setShowMultiNiveau(true)}
-            className="w-full text-left text-[10px] text-slate-600 hover:text-indigo-400 py-1 flex items-center gap-1.5 transition-colors"
+            className="w-full text-left text-[10px] text-slate-600 hover:text-atlas-400 py-1 flex items-center gap-1.5 transition-colors"
           >
             <span className="opacity-60">+</span> Ajouter info multi-niveau / mezzanine
           </button>
@@ -1837,12 +1837,12 @@ function SpaceMetadataPanel({
             value={notes} onChange={(e) => setNotes(e.target.value)}
             rows={2}
             placeholder="Informations complémentaires…"
-            className="w-full px-2 py-1.5 rounded bg-slate-950 border border-white/10 text-xs text-white resize-none"
+            className="w-full px-2 py-1.5 rounded bg-surface-0 border border-white/10 text-xs text-white resize-none"
           />
         </div>
 
         {/* Validated */}
-        <label className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer bg-slate-950 border border-white/5">
+        <label className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer bg-surface-0 border border-white/5">
           <input
             type="checkbox"
             checked={validated}
@@ -1857,7 +1857,7 @@ function SpaceMetadataPanel({
       </div>
 
       {/* Actions — sticky en bas */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-t border-white/10 bg-slate-950/40">
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-t border-white/10 bg-surface-0/40">
         <button onClick={onDelete}
           className="text-[11px] text-red-400 hover:text-red-300 flex items-center gap-1">
           <Trash2 className="w-3.5 h-3.5" /> Supprimer
@@ -1879,7 +1879,7 @@ function SpaceMetadataPanel({
               hasMezzanine: hasMezzanine || undefined,
               mezzanineSqm: (hasMezzanine && mezzanineSqm > 0) ? mezzanineSqm : undefined,
             })}
-            className="px-4 py-1.5 rounded text-[11px] font-semibold bg-gradient-to-r from-indigo-600 to-blue-600 text-white hover:opacity-90"
+            className="px-4 py-1.5 rounded text-[11px] font-semibold bg-gradient-to-r from-atlas-500 to-blue-600 text-white hover:opacity-90"
           >
             Enregistrer
           </button>

@@ -14,7 +14,7 @@ interface OrgNode {
 const nodes: OrgNode[] = [
   { id: 'dir', initials: 'DS', title: 'Directeur Sûreté', description: 'Pilotage global, audits, relation préfecture', count: 1, color: '#38bdf8', x: 400, y: 40, width: 240 },
   { id: 'cpj', initials: 'CJ', title: 'Chef de poste Jour', description: 'Coordination équipes, gestion PC sécurité', count: 1, color: '#22c55e', x: 200, y: 200, width: 240 },
-  { id: 'cpn', initials: 'CN', title: 'Chef de poste Nuit', description: 'Coordination équipes, gestion PC sécurité', count: 1, color: '#8b5cf6', x: 600, y: 200, width: 240 },
+  { id: 'cpn', initials: 'CN', title: 'Chef de poste Nuit', description: 'Coordination équipes, gestion PC sécurité', count: 1, color: '#a77d4c', x: 600, y: 200, width: 240 },
   { id: 'agents', initials: 'AG', title: 'Agents de sécurité SSIAP', description: 'Rondes, contrôle accès, intervention', count: '12 agents', color: '#f59e0b', x: 200, y: 360, width: 240 },
   { id: 'maint', initials: 'MT', title: 'Maintenance SSI', description: 'Vérification trimestrielle, conformité ERP', count: 'Ext.', color: '#64748b', x: 600, y: 360, width: 240 },
 ]

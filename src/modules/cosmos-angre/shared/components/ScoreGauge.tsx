@@ -7,7 +7,7 @@ interface ScoreGaugeProps {
   size?: number
 }
 
-export default function ScoreGauge({ value, max = 100, label, color = '#818cf8', size = 80 }: ScoreGaugeProps) {
+export default function ScoreGauge({ value, max = 100, label, color = '#c9a068', size = 80 }: ScoreGaugeProps) {
   const pct = Math.min(value / max, 1)
   const r = (size - 8) / 2
   const circumference = 2 * Math.PI * r

@@ -45,7 +45,7 @@ export default function BenchmarkPage() {
   const topMetrics = ['nps', 'coverage', 'revenueM2']
 
   return (
-    <div className="h-full overflow-y-auto p-6" style={{ background: '#060a13', color: '#e2e8f0' }}>
+    <div className="h-full overflow-y-auto p-6" style={{ background: '#1a1d23', color: '#e2e8f0' }}>
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -57,7 +57,7 @@ export default function BenchmarkPage() {
           </div>
           <div className="flex items-center gap-2">
             <Filter size={13} className="text-gray-500" />
-            <div className="flex gap-1 bg-[#0e1629] rounded-lg p-0.5 border border-white/[0.06]">
+            <div className="flex gap-1 bg-[#262a31] rounded-lg p-0.5 border border-white/[0.06]">
               {REGIONS.map(r => (
                 <button key={r} onClick={() => setRegion(r)}
                   className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-colors ${
@@ -75,7 +75,7 @@ export default function BenchmarkPage() {
             const meta = METRICS.find(m => m.key === key)!
             const maxVal = Math.max(...MALLS.map(m => m.metrics[key] ?? 0))
             return (
-              <div key={key} className="rounded-xl p-5 border border-white/[0.06]" style={{ background: '#0e1629' }}>
+              <div key={key} className="rounded-xl p-5 border border-white/[0.06]" style={{ background: '#262a31' }}>
                 <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-3">{meta.label}</p>
                 <div className="space-y-2">
                   {MALLS.slice().sort((a, b) => (b.metrics[key] ?? 0) - (a.metrics[key] ?? 0)).slice(0, 4).map(m => {
@@ -84,13 +84,13 @@ export default function BenchmarkPage() {
                     return (
                       <div key={m.name}>
                         <div className="flex items-center justify-between text-[10px] mb-0.5">
-                          <span className={m.isOurs ? 'text-indigo-400 font-semibold' : 'text-gray-400'}>{m.name}</span>
+                          <span className={m.isOurs ? 'text-atlas-400 font-semibold' : 'text-gray-400'}>{m.name}</span>
                           <span className="text-white font-medium">{v}{meta.unit && ` ${meta.unit}`}</span>
                         </div>
                         <div className="h-1.5 bg-white/[0.04] rounded-full overflow-hidden">
                           <div className="h-full rounded-full transition-all" style={{
                             width: `${pct}%`,
-                            background: m.isOurs ? '#818cf8' : 'rgba(255,255,255,0.15)',
+                            background: m.isOurs ? '#c9a068' : 'rgba(255,255,255,0.15)',
                           }} />
                         </div>
                       </div>
@@ -103,7 +103,7 @@ export default function BenchmarkPage() {
         </div>
 
         {/* Comparison table */}
-        <div className="rounded-xl border border-white/[0.06] overflow-hidden" style={{ background: '#0e1629' }}>
+        <div className="rounded-xl border border-white/[0.06] overflow-hidden" style={{ background: '#262a31' }}>
           <div className="px-5 py-3 border-b border-white/[0.04] flex items-center justify-between">
             <h3 className="text-sm font-semibold text-white">Tableau comparatif</h3>
             <p className="text-[10px] text-gray-500">Cliquez sur un en-tête pour trier</p>
@@ -117,7 +117,7 @@ export default function BenchmarkPage() {
                   {METRICS.map(m => (
                     <th key={m.key} onClick={() => setSortKey(m.key)}
                       className={`text-center px-3 py-2.5 text-[10px] uppercase font-medium cursor-pointer transition-colors ${
-                        sortKey === m.key ? 'text-indigo-400' : 'text-gray-500 hover:text-gray-300'}`}>
+                        sortKey === m.key ? 'text-atlas-400' : 'text-gray-500 hover:text-gray-300'}`}>
                       {m.label}
                     </th>
                   ))}
@@ -125,10 +125,10 @@ export default function BenchmarkPage() {
               </thead>
               <tbody>
                 {filtered.map(mall => (
-                  <tr key={mall.name} className={`border-b border-white/[0.03] ${mall.isOurs ? 'bg-indigo-500/[0.04]' : 'hover:bg-white/[0.02]'}`}>
+                  <tr key={mall.name} className={`border-b border-white/[0.03] ${mall.isOurs ? 'bg-atlas-500/[0.04]' : 'hover:bg-white/[0.02]'}`}>
                     <td className="px-4 py-3">
-                      <span className={`font-medium ${mall.isOurs ? 'text-indigo-400' : 'text-white'}`}>{mall.name}</span>
-                      {mall.isOurs && <span className="ml-2 text-[8px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded-full font-semibold">NOTRE PROJET</span>}
+                      <span className={`font-medium ${mall.isOurs ? 'text-atlas-400' : 'text-white'}`}>{mall.name}</span>
+                      {mall.isOurs && <span className="ml-2 text-[8px] bg-atlas-500/20 text-atlas-300 px-1.5 py-0.5 rounded-full font-semibold">NOTRE PROJET</span>}
                     </td>
                     <td className="px-3 py-3 text-gray-500 text-[11px]">{mall.city}, {mall.country}</td>
                     {METRICS.map(met => {
@@ -138,7 +138,7 @@ export default function BenchmarkPage() {
                       return (
                         <td key={met.key} className="px-3 py-3 text-center">
                           <span className={`text-[12px] font-medium ${
-                            mall.isOurs ? 'text-indigo-300' : better ? 'text-emerald-400' : 'text-gray-400'}`}>
+                            mall.isOurs ? 'text-atlas-300' : better ? 'text-emerald-400' : 'text-gray-400'}`}>
                             {v}
                           </span>
                         </td>

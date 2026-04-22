@@ -51,7 +51,7 @@ const DEMO_ORG: Organization = {
   sector: 'Immobilier commercial', accounting_standard: 'SYSCOHADA',
   currency_primary: 'XOF', currency_secondary: 'EUR',
   fiscal_year_start: '01-01', vat_rate: 18.0,
-  logo_url: null, accent_color: '#534AB7', plan: 'pro',
+  logo_url: null, accent_color: '#7e5e3c', plan: 'pro',
   plan_expires_at: null, created_at: '2025-01-15', updated_at: '2025-08-01',
 }
 
@@ -60,7 +60,7 @@ const DEMO_PROJECT: Project = {
   slug: 'cosmos-angre', phase: 'pre_opening', opening_date: '2026-10-16',
   total_area_sqm: 30000, city: 'Abidjan', country: 'CI',
   status: 'active', volumes_enabled: ['vol1','vol2','vol3'],
-  color: '#534AB7', created_at: '2025-01-15',
+  color: '#7e5e3c', created_at: '2025-01-15',
 }
 
 export const useAppStore = create<AppState>()(

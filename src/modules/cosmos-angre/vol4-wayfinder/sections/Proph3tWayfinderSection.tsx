@@ -48,7 +48,7 @@ export default function Proph3tWayfinderSection() {
     <div className="flex flex-col h-full overflow-y-auto px-6 py-6 gap-6">
       <div>
         <h2 className="text-white text-xl font-semibold flex items-center gap-2">
-          <BarChart2 size={20} className="text-purple-400" />
+          <BarChart2 size={20} className="text-atlas-400" />
           Analyse PROPH3T · Wayfinder
         </h2>
         <p className="text-[11px] text-slate-500 mt-1">
@@ -58,7 +58,7 @@ export default function Proph3tWayfinderSection() {
 
       {/* Qualité du graphe */}
       {qualityReport && (
-        <div className="rounded-xl bg-slate-900/30 border border-white/[0.04] p-5">
+        <div className="rounded-xl bg-surface-1/30 border border-white/[0.04] p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-white text-sm font-semibold flex items-center gap-2">
               <MapPin size={14} className="text-emerald-400" />
@@ -85,7 +85,7 @@ export default function Proph3tWayfinderSection() {
           )}
 
           {qualityReport.longEdgeIds.length > 0 && (
-            <div className="rounded-lg bg-slate-950/30 border border-white/[0.04] px-3 py-2 text-[11px] text-slate-400">
+            <div className="rounded-lg bg-surface-0/30 border border-white/[0.04] px-3 py-2 text-[11px] text-slate-400">
               <div className="flex items-center gap-2 mb-1.5">
                 <strong className="text-slate-300">Arêtes trop longues (&gt; 20 m)</strong>
                 <span className="text-slate-600">— ajouter un nœud intermédiaire</span>
@@ -105,7 +105,7 @@ export default function Proph3tWayfinderSection() {
 
       {/* Rapport d'usage */}
       {usageReport && (
-        <div className="rounded-xl bg-slate-900/30 border border-white/[0.04] p-5">
+        <div className="rounded-xl bg-surface-1/30 border border-white/[0.04] p-5">
           <h3 className="text-white text-sm font-semibold flex items-center gap-2 mb-4">
             <TrendingUp size={14} className="text-sky-400" />
             Usage réel
@@ -163,7 +163,7 @@ export default function Proph3tWayfinderSection() {
 
               {/* Zones jamais traversées */}
               {usageReport.untouchedNodeIds.length > 0 && (
-                <div className="mt-4 rounded-lg bg-slate-950/30 border border-white/[0.04] px-3 py-2 text-[11px] text-slate-400">
+                <div className="mt-4 rounded-lg bg-surface-0/30 border border-white/[0.04] px-3 py-2 text-[11px] text-slate-400">
                   <strong className="text-slate-300">{usageReport.untouchedNodeIds.length}</strong> destination{usageReport.untouchedNodeIds.length > 1 ? 's' : ''}
                   {' '}jamais recherchée{usageReport.untouchedNodeIds.length > 1 ? 's' : ''}
                   {' '}· opportunité marketing / signalétique
@@ -175,7 +175,7 @@ export default function Proph3tWayfinderSection() {
       )}
 
       {/* Info */}
-      <div className="rounded-lg bg-purple-500/10 border border-purple-500/20 px-4 py-3 text-[11px] text-purple-200 flex items-start gap-2">
+      <div className="rounded-lg bg-atlas-500/10 border border-atlas-500/20 px-4 py-3 text-[11px] text-atlas-200 flex items-start gap-2">
         <RefreshCw size={14} className="shrink-0 mt-0.5" />
         <div>
           <strong>Recalibration hebdomadaire automatique.</strong> PROPH3T ajuste les poids du graphe
@@ -189,7 +189,7 @@ export default function Proph3tWayfinderSection() {
 
 function Stat({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="rounded-lg bg-slate-950/40 p-3 text-center">
+    <div className="rounded-lg bg-surface-0/40 p-3 text-center">
       <div className="text-[9px] text-slate-500 uppercase tracking-wider">{label}</div>
       <div className="text-lg font-semibold mt-0.5" style={{ color }}>{value}</div>
     </div>

@@ -33,7 +33,7 @@ export default function GraphBuilder({ graph, showLabels }: GraphBuilderProps) {
           <circle
             cx={node.x} cy={node.y}
             r={node.poiId ? 2 : 1}
-            fill={node.isTransition ? '#8b5cf6' : node.poiId ? '#10b981' : '#6b7280'}
+            fill={node.isTransition ? '#a77d4c' : node.poiId ? '#10b981' : '#6b7280'}
             opacity={0.7}
           />
           {showLabels && node.label && (

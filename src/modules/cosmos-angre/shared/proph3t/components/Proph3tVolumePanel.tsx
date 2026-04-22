@@ -114,11 +114,11 @@ export function Proph3tVolumePanel({
     return (
       <button
         onClick={() => setOpen(true)}
-        className={`fixed ${position === 'right' ? 'right-2' : 'left-2'} top-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2 px-2 py-3 rounded-lg bg-slate-950/90 border ${cfg.border} text-slate-300 hover:bg-slate-900`}
+        className={`fixed ${position === 'right' ? 'right-2' : 'left-2'} top-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2 px-2 py-3 rounded-lg bg-surface-0/90 border ${cfg.border} text-slate-300 hover:bg-surface-1`}
         style={{ writingMode: 'vertical-rl' }}
         title="Ouvrir PROPH3T"
       >
-        <Sparkles size={14} className="text-purple-300" />
+        <Sparkles size={14} className="text-atlas-300" />
         <span className="text-[10px] uppercase tracking-wider">PROPH3T · {cfg.label}</span>
         {position === 'right' ? <ChevronLeft size={12} /> : <ChevronRight size={12} />}
       </button>
@@ -134,12 +134,12 @@ export function Proph3tVolumePanel({
 
   return (
     <aside
-      className={`fixed ${position === 'right' ? 'right-0' : 'left-0'} top-16 bottom-4 w-[380px] z-20 rounded-l-xl ${position === 'left' ? 'rounded-l-none rounded-r-xl' : ''} bg-slate-950/95 border ${cfg.border} flex flex-col overflow-hidden shadow-2xl`}
+      className={`fixed ${position === 'right' ? 'right-0' : 'left-0'} top-16 bottom-4 w-[380px] z-20 rounded-l-xl ${position === 'left' ? 'rounded-l-none rounded-r-xl' : ''} bg-surface-0/95 border ${cfg.border} flex flex-col overflow-hidden shadow-2xl`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/[0.06] bg-gradient-to-r from-purple-950/30 to-slate-950">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/[0.06] bg-gradient-to-r from-purple-950/30 to-surface-0">
         <div className="flex items-center gap-2">
-          <Sparkles size={14} className="text-purple-300" />
+          <Sparkles size={14} className="text-atlas-300" />
           <div>
             <div className="text-[12px] font-bold text-white">{title ?? `PROPH3T · ${cfg.label}`}</div>
             <div className="text-[9px] text-slate-500">Suggestions · évaluations · audit</div>
@@ -152,7 +152,7 @@ export function Proph3tVolumePanel({
 
       {/* Score snapshot */}
       {result && (
-        <div className="px-3 py-2 border-b border-white/[0.06] bg-slate-900/40 flex items-center gap-3">
+        <div className="px-3 py-2 border-b border-white/[0.06] bg-surface-1/40 flex items-center gap-3">
           <div className={`w-12 h-12 rounded-lg border-2 flex items-center justify-center ${
             qualityScore !== undefined && qualityScore >= 75 ? 'border-emerald-500/60 bg-emerald-900/20' :
             qualityScore !== undefined && qualityScore >= 50 ? 'border-amber-500/60 bg-amber-900/20' :
@@ -176,7 +176,7 @@ export function Proph3tVolumePanel({
         <button
           onClick={() => execute('eval')}
           disabled={!!running}
-          className={`flex flex-col items-center gap-1 px-2 py-2 rounded text-[10px] font-medium border bg-slate-900 border-white/[0.06] text-slate-200 hover:bg-slate-800 disabled:opacity-40`}
+          className={`flex flex-col items-center gap-1 px-2 py-2 rounded text-[10px] font-medium border bg-surface-1 border-white/[0.06] text-slate-200 hover:bg-slate-800 disabled:opacity-40`}
         >
           {running === 'eval' ? <Loader2 size={12} className="animate-spin" /> : <Gauge size={12} />}
           {running === 'eval' ? 'Calcul…' : 'Évaluer'}

@@ -20,11 +20,11 @@ const DoorEntity = memo(function DoorEntity({ door, scale, isSelected, onClick }
         width={10} height={6} rx={1}
         fill={fill}
         fillOpacity={0.8}
-        stroke={isSelected ? '#a855f7' : '#fff'}
+        stroke={isSelected ? '#b38a5a' : '#fff'}
         strokeWidth={isSelected ? 1.5 : 0.5}
       />
       {door.hasBiometric && (
-        <circle cx={x + 7} cy={y} r={2} fill="#8b5cf6" stroke="#fff" strokeWidth={0.5} />
+        <circle cx={x + 7} cy={y} r={2} fill="#a77d4c" stroke="#fff" strokeWidth={0.5} />
       )}
       {door.hasSas && (
         <rect x={x - 7} y={y - 5} width={14} height={10} rx={2} fill="none" stroke="#f59e0b" strokeWidth={0.5} strokeDasharray="2 1" />

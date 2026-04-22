@@ -19,7 +19,7 @@ export default function KpiDashboard({ pois, signageItems, moments, navGraph }: 
   pois.forEach((p) => { poiByType[p.type] = (poiByType[p.type] || 0) + 1 })
 
   return (
-    <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 space-y-4">
+    <div className="bg-surface-1/50 border border-gray-800 rounded-lg p-4 space-y-4">
       <div className="flex items-center gap-2">
         <BarChart3 className="w-4 h-4 text-emerald-400" />
         <h3 className="text-xs font-semibold text-gray-200">KPI Dashboard</h3>

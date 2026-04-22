@@ -67,7 +67,7 @@ export default function AnalyseSection() {
   const criticalBlindSpots = blindSpots.filter((b) => b.severity === 'critique')
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto bg-gray-950">
+    <div className="flex flex-col h-full overflow-y-auto bg-surface-0">
       <div className="px-4 py-3 border-b border-gray-800">
         <h2 className="text-sm font-bold text-red-400">Analyse Securitaire</h2>
         <p className="text-[10px] text-gray-500 mt-0.5">Score APSAD R82 et recommandations</p>
@@ -90,7 +90,7 @@ export default function AnalyseSection() {
 
         {/* Score Breakdown */}
         {score && (
-          <div className="space-y-3 bg-gray-900/50 rounded-lg p-3 border border-gray-800">
+          <div className="space-y-3 bg-surface-1/50 rounded-lg p-3 border border-gray-800">
             <ScoreBar label="Cameras" value={score.camScore} max={40} icon={Camera} />
             <ScoreBar label="Zones" value={score.zoneScore} max={20} icon={Shield} />
             <ScoreBar label="Acces" value={score.doorScore} max={20} icon={DoorOpen} />
@@ -154,7 +154,7 @@ export default function AnalyseSection() {
           <h3 className="text-xs font-semibold text-gray-300 mb-2">Inventaire Zones ({zones.length})</h3>
           <div className="space-y-1">
             {zones.map((z) => (
-              <div key={z.id} className="flex items-center gap-2 text-xs py-1 px-2 rounded bg-gray-900/50">
+              <div key={z.id} className="flex items-center gap-2 text-xs py-1 px-2 rounded bg-surface-1/50">
                 <div className={`w-2 h-2 rounded-full ${z.niveau >= 4 ? 'bg-red-500' : z.niveau >= 3 ? 'bg-amber-500' : 'bg-green-500'}`} />
                 <span className="flex-1 text-gray-300">{z.label}</span>
                 <span className="text-gray-500">N{z.niveau}</span>
@@ -172,7 +172,7 @@ export default function AnalyseSection() {
               const rec = DOOR_RECS[z.type]
               if (!rec) return null
               return (
-                <div key={z.id} className="text-xs bg-gray-900/50 border border-gray-800 rounded p-2">
+                <div key={z.id} className="text-xs bg-surface-1/50 border border-gray-800 rounded p-2">
                   <div className="font-medium text-gray-200">{z.label}</div>
                   <div className="text-gray-400 mt-0.5">{rec.type} — {rec.ref}</div>
                   <div className="text-gray-500 text-[10px]">{rec.normRef}</div>
@@ -183,7 +183,7 @@ export default function AnalyseSection() {
         </div>
 
         {/* CAPEX Summary */}
-        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-3">
+        <div className="bg-surface-1/50 border border-gray-800 rounded-lg p-3">
           <h3 className="text-xs font-semibold text-gray-300 mb-3 flex items-center gap-1.5">
             <Banknote className="w-3.5 h-3.5 text-green-400" /> Synthese CAPEX
           </h3>

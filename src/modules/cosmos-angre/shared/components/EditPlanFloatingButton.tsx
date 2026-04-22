@@ -45,10 +45,10 @@ export function EditPlanFloatingButton() {
         className="flex items-center gap-2 pl-2.5 pr-4 py-2.5 text-white text-[12px] font-semibold transition-transform hover:scale-105 rounded-full shadow-2xl relative"
         style={{
           background: planValidated
-            ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+            ? 'linear-gradient(135deg, #b38a5a, #a77d4c)'
             : 'linear-gradient(135deg, #f59e0b, #ef4444)',
           boxShadow: planValidated
-            ? '0 10px 30px rgba(99,102,241,0.45)'
+            ? '0 10px 30px rgba(179,138,90,0.45)'
             : '0 10px 30px rgba(245,158,11,0.45)',
         }}
       >

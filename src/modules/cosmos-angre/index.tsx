@@ -27,7 +27,7 @@ const EditPlanFloatingButton = React.lazy(() =>
 const AtlasStudioModule = React.lazy(() => import('./shared/components/AtlasStudioModule'))
 
 const LoadingFallback = () => (
-  <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+  <div className="min-h-screen bg-surface-0 flex items-center justify-center">
     <div className="text-gray-400 flex items-center gap-3">
       <div className="w-5 h-5 border-2 border-gray-600 border-t-purple-500 rounded-full animate-spin" />
       Chargement du module...
@@ -107,7 +107,7 @@ function BaselineGuard({
 
   if (!parsedPlan) {
     return (
-      <div className="h-full flex items-center justify-center bg-slate-950 p-8">
+      <div className="h-full flex items-center justify-center bg-surface-0 p-8">
         <div className="text-center max-w-md">
           <AlertCircle className="w-14 h-14 text-amber-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-white mb-2">Aucun plan importé</h2>
@@ -116,7 +116,7 @@ function BaselineGuard({
           </p>
           <button
             onClick={() => navigate(`/projects/${projectId ?? 'cosmos-angre'}/remodelage`)}
-            className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold"
+            className="px-5 py-2.5 rounded-lg bg-atlas-500 hover:bg-atlas-500 text-white text-sm font-semibold"
           >
             Importer un plan →
           </button>
@@ -127,7 +127,7 @@ function BaselineGuard({
 
   if (!planValidated) {
     return (
-      <div className="h-full flex items-center justify-center bg-slate-950 p-8">
+      <div className="h-full flex items-center justify-center bg-surface-0 p-8">
         <div className="text-center max-w-md">
           <Lock className="w-14 h-14 text-amber-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-white mb-2">Base de travail non verrouillée</h2>

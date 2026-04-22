@@ -34,7 +34,7 @@ export default function SimulationPlayer({
   label = 'Simulation',
 }: SimulationPlayerProps) {
   return (
-    <div className="flex items-center gap-3 px-4 py-2 bg-gray-900 border-t border-gray-800">
+    <div className="flex items-center gap-3 px-4 py-2 bg-surface-1 border-t border-gray-800">
       <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wide min-w-[80px]">
         {label}
       </span>

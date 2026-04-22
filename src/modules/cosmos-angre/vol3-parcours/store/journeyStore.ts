@@ -111,7 +111,7 @@ function _uid(prefix: string): string {
 const INIT_STAGES: JourneyStage[] = [
   { id: 'stage-1', label: 'Approche',      color: '#34d399', duration: '~10 min', durationPct: 8 },
   { id: 'stage-2', label: 'Parking',       color: '#38bdf8', duration: '~5 min',  durationPct: 4 },
-  { id: 'stage-3', label: 'Entrée',        color: '#8b5cf6', duration: '~3 min',  durationPct: 3 },
+  { id: 'stage-3', label: 'Entrée',        color: '#a77d4c', duration: '~3 min',  durationPct: 3 },
   { id: 'stage-4', label: 'Hall central',  color: '#f59e0b', duration: '~15 min', durationPct: 13 },
   { id: 'stage-5', label: 'Shopping',      color: '#ef4444', duration: '~45 min', durationPct: 38 },
   { id: 'stage-6', label: 'Restauration',  color: '#06b6d4', duration: '~40 min', durationPct: 34 },

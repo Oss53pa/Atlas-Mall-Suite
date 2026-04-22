@@ -116,7 +116,7 @@ export default function SignageFeedbackPage() {
 
   if (!valid) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-surface-0 text-white flex items-center justify-center p-4">
         <div className="max-w-sm text-center">
           <XCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
           <h1 className="text-lg font-bold mb-2">QR code invalide</h1>
@@ -150,7 +150,7 @@ export default function SignageFeedbackPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-4 pb-16">
+    <div className="min-h-screen bg-surface-0 text-white p-4 pb-16">
       <div className="max-w-md mx-auto">
         {/* Header */}
         <header className="mb-5">
@@ -178,7 +178,7 @@ export default function SignageFeedbackPage() {
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${
                   status === opt.value
                     ? `${opt.color} border-white/30 text-white shadow-lg scale-[0.98]`
-                    : 'border-white/10 bg-slate-900 text-slate-300 hover:border-white/20'
+                    : 'border-white/10 bg-surface-1 text-slate-300 hover:border-white/20'
                 }`}
               >
                 <span className="text-2xl">{opt.emoji}</span>
@@ -200,7 +200,7 @@ export default function SignageFeedbackPage() {
             placeholder="Précisez la nature du problème…"
             maxLength={500}
             rows={3}
-            className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-amber-500 resize-none"
+            className="w-full px-3 py-2 rounded-lg bg-surface-1 border border-white/10 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-amber-500 resize-none"
           />
           <div className="text-right text-[10px] text-slate-600 mt-1">{note.length}/500</div>
         </section>
@@ -212,16 +212,16 @@ export default function SignageFeedbackPage() {
           </label>
           {photoBase64 ? (
             <div className="relative">
-              <img src={photoBase64} alt="Preview" className="w-full rounded-lg border border-white/10 max-h-64 object-contain bg-slate-900" />
+              <img src={photoBase64} alt="Preview" className="w-full rounded-lg border border-white/10 max-h-64 object-contain bg-surface-1" />
               <button
                 onClick={() => setPhotoBase64(null)}
-                className="absolute top-2 right-2 p-1 rounded-full bg-black/60 text-white"
+                className="absolute top-2 right-2 p-1 rounded-full bg-surface-0/60 text-white"
               >
                 <XCircle className="w-4 h-4" />
               </button>
             </div>
           ) : (
-            <label className="flex flex-col items-center justify-center gap-2 py-6 rounded-lg border-2 border-dashed border-white/15 bg-slate-900 text-slate-400 cursor-pointer hover:border-amber-500/40">
+            <label className="flex flex-col items-center justify-center gap-2 py-6 rounded-lg border-2 border-dashed border-white/15 bg-surface-1 text-slate-400 cursor-pointer hover:border-amber-500/40">
               <Camera className="w-6 h-6" />
               <span className="text-sm">Prendre une photo</span>
               <span className="text-[10px] text-slate-600">Max 5 Mo</span>
@@ -246,7 +246,7 @@ export default function SignageFeedbackPage() {
             onChange={(e) => setAgentName(e.target.value)}
             placeholder="ex: Kouassi Jean"
             maxLength={100}
-            className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-white/10 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-amber-500"
+            className="w-full px-3 py-2 rounded-lg bg-surface-1 border border-white/10 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-amber-500"
           />
         </section>
 

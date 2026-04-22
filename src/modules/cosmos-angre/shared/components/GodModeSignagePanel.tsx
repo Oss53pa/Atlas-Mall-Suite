@@ -29,7 +29,7 @@ interface Props {
   onPlanGenerated?: (result: GodModeResult) => void
 }
 
-export default function GodModeSignagePanel({ buildInput, volumeColor = '#a855f7', onPlanGenerated }: Props) {
+export default function GodModeSignagePanel({ buildInput, volumeColor = '#b38a5a', onPlanGenerated }: Props) {
   const campaigns = useAdvertisingCampaignStore((s) => s.campaigns)
   const addCampaign = useAdvertisingCampaignStore((s) => s.addCampaign)
   const updateCampaign = useAdvertisingCampaignStore((s) => s.updateCampaign)
@@ -83,7 +83,7 @@ export default function GodModeSignagePanel({ buildInput, volumeColor = '#a855f7
   const selectedPlacement = result?.placements.find(p => p.id === selectedId) ?? null
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-200">
+    <div className="flex flex-col h-full bg-surface-0 text-slate-200">
       {/* Header */}
       <div className="border-b border-white/[0.06] p-4">
         <div className="flex items-center justify-between mb-3">
@@ -95,7 +95,7 @@ export default function GodModeSignagePanel({ buildInput, volumeColor = '#a855f7
             <div>
               <h2 className="text-white text-sm font-semibold flex items-center gap-2">
                 GOD MODE Signalétique
-                <span className="text-[9px] font-bold bg-purple-600/20 text-purple-300 px-2 py-0.5 rounded uppercase tracking-wider">
+                <span className="text-[9px] font-bold bg-atlas-600/20 text-atlas-300 px-2 py-0.5 rounded uppercase tracking-wider">
                   PROPH3T
                 </span>
               </h2>
@@ -108,7 +108,7 @@ export default function GodModeSignagePanel({ buildInput, volumeColor = '#a855f7
             <button
               onClick={handleCompute}
               disabled={computing}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/15 border border-purple-500/40 text-purple-300 text-[11px] hover:bg-purple-500/25 disabled:opacity-40"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-atlas-500/15 border border-atlas-500/40 text-atlas-300 text-[11px] hover:bg-atlas-500/25 disabled:opacity-40"
             >
               <Wand2 size={12} />
               {computing ? 'Calcul…' : 'Générer le plan'}
@@ -144,7 +144,7 @@ export default function GodModeSignagePanel({ buildInput, volumeColor = '#a855f7
           <CampaignForm onAdd={addCampaign} />
 
           {campaigns.length === 0 ? (
-            <div className="mt-3 rounded-lg bg-slate-900/30 border border-dashed border-white/[0.06] p-6 text-center text-[11px] text-slate-500">
+            <div className="mt-3 rounded-lg bg-surface-1/30 border border-dashed border-white/[0.06] p-6 text-center text-[11px] text-slate-500">
               Aucune campagne enregistrée
             </div>
           ) : (
@@ -166,7 +166,7 @@ export default function GodModeSignagePanel({ buildInput, volumeColor = '#a855f7
 
           {/* Filtres + stats */}
           {result && (
-            <div className="p-4 border-b border-white/[0.06] bg-slate-900/30">
+            <div className="p-4 border-b border-white/[0.06] bg-surface-1/30">
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-1">
                   {(['all', 'institutional', 'advertising'] as const).map(f => (
@@ -177,8 +177,8 @@ export default function GodModeSignagePanel({ buildInput, volumeColor = '#a855f7
                         filter === f
                           ? f === 'institutional' ? 'bg-sky-500/15 border-sky-500/30 text-sky-300'
                             : f === 'advertising' ? 'bg-pink-500/15 border-pink-500/30 text-pink-300'
-                            : 'bg-purple-500/15 border-purple-500/30 text-purple-300'
-                          : 'bg-slate-900 border-white/[0.06] text-slate-400 hover:text-white'
+                            : 'bg-atlas-500/15 border-atlas-500/30 text-atlas-300'
+                          : 'bg-surface-1 border-white/[0.06] text-slate-400 hover:text-white'
                       }`}
                     >
                       {f === 'all' ? 'Tous' : f === 'institutional' ? 'Institutionnel' : 'Publicitaire'}
@@ -227,9 +227,9 @@ export default function GodModeSignagePanel({ buildInput, volumeColor = '#a855f7
 
             {/* Détails du panneau sélectionné */}
             {selectedPlacement && (
-              <div className="mt-4 rounded-lg border border-purple-500/30 bg-purple-500/[0.05] p-4">
+              <div className="mt-4 rounded-lg border border-atlas-500/30 bg-atlas-500/[0.05] p-4">
                 <h4 className="text-white text-[13px] font-semibold flex items-center gap-2 mb-2">
-                  <Sparkles size={12} className="text-purple-400" />
+                  <Sparkles size={12} className="text-atlas-400" />
                   Justification PROPH3T
                 </h4>
                 <p className="text-[12px] text-slate-300 leading-relaxed">{selectedPlacement.rationale}</p>
@@ -300,39 +300,39 @@ function CampaignForm({ onAdd }: { onAdd: (c: Omit<AdvertisingCampaign, 'id'>) =
   }
 
   return (
-    <div className="rounded-lg bg-slate-900/40 border border-white/[0.05] p-3 space-y-2">
+    <div className="rounded-lg bg-surface-1/40 border border-white/[0.05] p-3 space-y-2">
       <div className="text-[11px] font-semibold text-slate-300 mb-1">Nouvelle campagne</div>
       <input
         placeholder="Annonceur"
         value={form.advertiser ?? ''}
         onChange={e => setForm({ ...form, advertiser: e.target.value })}
-        className="w-full px-2 py-1 rounded bg-slate-950 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600"
+        className="w-full px-2 py-1 rounded bg-surface-0 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600"
       />
       <input
         placeholder="Titre (ex : Soldes été 2026)"
         value={form.title ?? ''}
         onChange={e => setForm({ ...form, title: e.target.value })}
-        className="w-full px-2 py-1 rounded bg-slate-950 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600"
+        className="w-full px-2 py-1 rounded bg-surface-0 border border-white/[0.06] text-[11px] text-white placeholder:text-slate-600"
       />
       <div className="grid grid-cols-2 gap-2">
         <input
           type="date"
           value={form.startDate ?? ''}
           onChange={e => setForm({ ...form, startDate: e.target.value })}
-          className="px-2 py-1 rounded bg-slate-950 border border-white/[0.06] text-[11px] text-white"
+          className="px-2 py-1 rounded bg-surface-0 border border-white/[0.06] text-[11px] text-white"
         />
         <input
           type="date"
           value={form.endDate ?? ''}
           onChange={e => setForm({ ...form, endDate: e.target.value })}
-          className="px-2 py-1 rounded bg-slate-950 border border-white/[0.06] text-[11px] text-white"
+          className="px-2 py-1 rounded bg-surface-0 border border-white/[0.06] text-[11px] text-white"
         />
       </div>
       <div className="grid grid-cols-3 gap-2">
         <select
           value={form.category ?? 'mode'}
           onChange={e => setForm({ ...form, category: e.target.value })}
-          className="px-2 py-1 rounded bg-slate-950 border border-white/[0.06] text-[11px] text-white"
+          className="px-2 py-1 rounded bg-surface-0 border border-white/[0.06] text-[11px] text-white"
         >
           {['mode', 'restauration', 'tech', 'loisirs', 'beaute', 'sante'].map(c => (
             <option key={c} value={c}>{c}</option>
@@ -342,12 +342,12 @@ function CampaignForm({ onAdd }: { onAdd: (c: Omit<AdvertisingCampaign, 'id'>) =
           type="number" min="1" max="10" placeholder="Panneaux"
           value={form.requestedPanels ?? 2}
           onChange={e => setForm({ ...form, requestedPanels: parseInt(e.target.value) || 1 })}
-          className="px-2 py-1 rounded bg-slate-950 border border-white/[0.06] text-[11px] text-white"
+          className="px-2 py-1 rounded bg-surface-0 border border-white/[0.06] text-[11px] text-white"
         />
         <select
           value={form.priority ?? 3}
           onChange={e => setForm({ ...form, priority: parseInt(e.target.value) as 1 | 2 | 3 | 4 | 5 })}
-          className="px-2 py-1 rounded bg-slate-950 border border-white/[0.06] text-[11px] text-white"
+          className="px-2 py-1 rounded bg-surface-0 border border-white/[0.06] text-[11px] text-white"
         >
           {[1, 2, 3, 4, 5].map(p => <option key={p} value={p}>Prio {p}</option>)}
         </select>
@@ -376,7 +376,7 @@ function CampaignRow({
   const active = campaign.startDate <= now && campaign.endDate >= now
 
   return (
-    <li className={`rounded-lg border p-2.5 ${active ? 'border-emerald-500/25 bg-emerald-500/[0.05]' : 'border-white/[0.05] bg-slate-900/30'}`}>
+    <li className={`rounded-lg border p-2.5 ${active ? 'border-emerald-500/25 bg-emerald-500/[0.05]' : 'border-white/[0.05] bg-surface-1/30'}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -423,7 +423,7 @@ function PlacementRow({
     <button
       onClick={onSelect}
       className={`w-full text-left rounded-lg border p-2.5 transition ${
-        selected ? 'border-white/20 bg-slate-900/70' : 'border-white/[0.05] bg-slate-900/30 hover:border-white/10'
+        selected ? 'border-white/20 bg-surface-1/70' : 'border-white/[0.05] bg-surface-1/30 hover:border-white/10'
       }`}
     >
       <div className="flex items-start gap-3">

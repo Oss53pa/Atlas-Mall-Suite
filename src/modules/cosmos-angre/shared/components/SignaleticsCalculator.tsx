@@ -68,7 +68,7 @@ export default function SignaleticsCalculator({ onApply }: SignaleticsCalculator
   }, [readingDistance, corridorWidth, ceilingHeight, lux])
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 space-y-4">
+    <div className="bg-surface-1 border border-gray-800 rounded-xl p-4 space-y-4">
       <div className="flex items-center gap-2 text-sm font-semibold text-white">
         <Calculator className="w-4 h-4 text-emerald-400" />
         Calculateur Signalétique

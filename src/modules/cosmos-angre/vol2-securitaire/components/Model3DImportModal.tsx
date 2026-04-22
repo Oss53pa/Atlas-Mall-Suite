@@ -160,8 +160,8 @@ export default function Model3DImportModal({ open, onClose }: Model3DImportModal
   const formatLabel = state.format ? MODEL_FORMAT_LABELS[state.format] : ''
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-[640px] max-h-[85vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-0/60 backdrop-blur-sm">
+      <div className="bg-surface-1 border border-gray-700 rounded-xl shadow-2xl w-[640px] max-h-[85vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
           <div className="flex items-center gap-3">

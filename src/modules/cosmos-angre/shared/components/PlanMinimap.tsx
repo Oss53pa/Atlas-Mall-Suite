@@ -60,7 +60,7 @@ export function PlanMinimap({ plan, viewport, onViewportChange, canvasW, canvasH
   }, [viewport, mmScale, mmOffX, mmOffY, canvasW, canvasH, onViewportChange])
 
   return (
-    <div className="absolute bottom-8 right-3 z-20 bg-gray-900/90 border border-gray-700 rounded-lg overflow-hidden shadow-xl">
+    <div className="absolute bottom-8 right-3 z-20 bg-surface-1/90 border border-gray-700 rounded-lg overflow-hidden shadow-xl">
       <svg
         ref={ref}
         width={MINIMAP_W}
@@ -68,7 +68,7 @@ export function PlanMinimap({ plan, viewport, onViewportChange, canvasW, canvasH
         onClick={handleMinimapClick}
         style={{ cursor: 'crosshair' }}
       >
-        <rect width={MINIMAP_W} height={MINIMAP_H} fill="#0f172a" />
+        <rect width={MINIMAP_W} height={MINIMAP_H} fill="#2a2d33" />
 
         {/* Simplified plan entities */}
         <g transform={`translate(${mmOffX}, ${mmOffY}) scale(${mmScale})`}>

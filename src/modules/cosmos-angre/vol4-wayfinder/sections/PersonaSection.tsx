@@ -48,7 +48,7 @@ export default function PersonaSection() {
       {/* Persona grid */}
       <div>
         <h3 className="text-white text-sm font-medium mb-3 flex items-center gap-2">
-          <User size={14} className="text-purple-400" />
+          <User size={14} className="text-atlas-400" />
           Profil visiteur
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -57,10 +57,10 @@ export default function PersonaSection() {
             return (
               <button key={p} onClick={() => setPersona(p)}
                 className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all border ${
-                  active ? 'bg-purple-600/15 border-purple-500/40' : 'bg-slate-900/30 border-white/[0.04] hover:border-purple-500/20'
+                  active ? 'bg-atlas-600/15 border-atlas-500/40' : 'bg-surface-1/30 border-white/[0.04] hover:border-atlas-500/20'
                 }`}>
                 <span className="text-2xl">{PERSONA_ICONS[p]}</span>
-                <span className={`text-[11px] font-medium ${active ? 'text-purple-300' : 'text-slate-400'}`}>{PERSONA_LABELS[p]}</span>
+                <span className={`text-[11px] font-medium ${active ? 'text-atlas-300' : 'text-slate-400'}`}>{PERSONA_LABELS[p]}</span>
               </button>
             )
           })}
@@ -69,21 +69,21 @@ export default function PersonaSection() {
           <div className="mt-3 text-[10px] text-slate-500">
             Boost :{' '}
             {profile.boostedCategories.map(c => (
-              <span key={c} className="inline-block mx-1 px-2 py-0.5 rounded bg-purple-500/10 text-purple-300">{c}</span>
+              <span key={c} className="inline-block mx-1 px-2 py-0.5 rounded bg-atlas-500/10 text-atlas-300">{c}</span>
             ))}
           </div>
         )}
       </div>
 
       {/* PMR / Accessibilité */}
-      <div className="rounded-xl bg-slate-900/30 border border-white/[0.04] p-4">
+      <div className="rounded-xl bg-surface-1/30 border border-white/[0.04] p-4">
         <h3 className="text-white text-sm font-medium mb-3 flex items-center gap-2">
           <Accessibility size={14} className="text-cyan-400" />
           Accessibilité
         </h3>
         <button onClick={() => setPmrMode(!pmrMode)}
           className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition ${
-            pmrMode ? 'bg-cyan-600/15 border border-cyan-500/40 text-cyan-300' : 'bg-slate-950/30 border border-white/[0.04] text-slate-300'
+            pmrMode ? 'bg-cyan-600/15 border border-cyan-500/40 text-cyan-300' : 'bg-surface-0/30 border border-white/[0.04] text-slate-300'
           }`}>
           <div className="flex items-center gap-2">
             <Accessibility size={16} />
@@ -99,7 +99,7 @@ export default function PersonaSection() {
       </div>
 
       {/* Taille (PDR) */}
-      <div className="rounded-xl bg-slate-900/30 border border-white/[0.04] p-4">
+      <div className="rounded-xl bg-surface-1/30 border border-white/[0.04] p-4">
         <h3 className="text-white text-sm font-medium mb-3 flex items-center gap-2">
           <Ruler size={14} className="text-sky-400" />
           Calibration de pas (PDR)
@@ -124,7 +124,7 @@ export default function PersonaSection() {
       </div>
 
       {/* Langue */}
-      <div className="rounded-xl bg-slate-900/30 border border-white/[0.04] p-4">
+      <div className="rounded-xl bg-surface-1/30 border border-white/[0.04] p-4">
         <h3 className="text-white text-sm font-medium mb-3 flex items-center gap-2">
           <Languages size={14} className="text-amber-400" />
           Langue du guidage
@@ -134,7 +134,7 @@ export default function PersonaSection() {
             <button key={l} onClick={() => setLang(l)}
               className={`flex-1 px-3 py-2 rounded-lg text-[12px] font-medium transition ${
                 preferredLang === l ? 'bg-amber-500/15 border border-amber-500/40 text-amber-300'
-                  : 'bg-slate-950/30 border border-white/[0.04] text-slate-400 hover:border-amber-500/20'
+                  : 'bg-surface-0/30 border border-white/[0.04] text-slate-400 hover:border-amber-500/20'
               }`}>
               {l === 'fr' ? 'Français' : l === 'en' ? 'English' : 'Dioula'}
             </button>
@@ -143,14 +143,14 @@ export default function PersonaSection() {
       </div>
 
       {/* Vocal */}
-      <div className="rounded-xl bg-slate-900/30 border border-white/[0.04] p-4">
+      <div className="rounded-xl bg-surface-1/30 border border-white/[0.04] p-4">
         <h3 className="text-white text-sm font-medium mb-3 flex items-center gap-2">
           <Volume2 size={14} className="text-emerald-400" />
           Guidage vocal
         </h3>
         <button onClick={() => setVoiceGuidance(!voiceGuidance)}
           className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition ${
-            voiceGuidance ? 'bg-emerald-600/15 border border-emerald-500/40 text-emerald-300' : 'bg-slate-950/30 border border-white/[0.04] text-slate-300'
+            voiceGuidance ? 'bg-emerald-600/15 border border-emerald-500/40 text-emerald-300' : 'bg-surface-0/30 border border-white/[0.04] text-slate-300'
           }`}>
           <div className="flex items-center gap-2">
             <Volume2 size={16} />
@@ -166,7 +166,7 @@ export default function PersonaSection() {
       </div>
 
       {/* Default mode */}
-      <div className="rounded-xl bg-slate-900/30 border border-white/[0.04] p-4">
+      <div className="rounded-xl bg-surface-1/30 border border-white/[0.04] p-4">
         <h3 className="text-white text-sm font-medium mb-3 flex items-center gap-2">
           <Navigation size={14} className="text-sky-400" />
           Mode par défaut
@@ -176,7 +176,7 @@ export default function PersonaSection() {
             <button key={m} onClick={() => setDefaultMode(m)}
               className={`px-3 py-2 rounded-lg text-[11px] font-medium capitalize ${
                 defaultMode === m ? 'bg-sky-500/15 border border-sky-500/40 text-sky-300'
-                  : 'bg-slate-950/30 border border-white/[0.04] text-slate-400'
+                  : 'bg-surface-0/30 border border-white/[0.04] text-slate-400'
               }`}>
               {m}
             </button>

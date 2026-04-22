@@ -21,13 +21,13 @@ const PERSONA_COLORS: Record<string, string> = {
   'persona-famille': '#10b981',   // emerald
   'persona-pro': '#3b82f6',       // blue
   'persona-shopping': '#ec4899',  // pink
-  'persona-soir': '#a855f7',      // purple
+  'persona-soir': '#b38a5a',      // purple
   'persona-senior': '#f59e0b',    // amber
 }
 
 function colorFor(personaId: string, index: number): string {
   if (PERSONA_COLORS[personaId]) return PERSONA_COLORS[personaId]
-  const fallback = ['#10b981', '#3b82f6', '#ec4899', '#a855f7', '#f59e0b', '#14b8a6', '#f97316']
+  const fallback = ['#10b981', '#3b82f6', '#ec4899', '#b38a5a', '#f59e0b', '#14b8a6', '#f97316']
   return fallback[index % fallback.length]
 }
 
@@ -116,7 +116,7 @@ export function DetailedJourneysOverlay({ journeys, worldToScreen, width, height
       </svg>
 
       {/* Légende interactive */}
-      <div className="absolute bottom-3 left-3 z-20 rounded-lg bg-slate-950/90 border border-white/[0.08] p-2 max-w-xs pointer-events-auto">
+      <div className="absolute bottom-3 left-3 z-20 rounded-lg bg-surface-0/90 border border-white/[0.08] p-2 max-w-xs pointer-events-auto">
         <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1.5">
           Parcours personas (PROPH3T)
         </div>
@@ -131,7 +131,7 @@ export function DetailedJourneysOverlay({ journeys, worldToScreen, width, height
                 onMouseEnter={() => setHoveredPersona(j.personaId)}
                 onMouseLeave={() => setHoveredPersona(null)}
                 className={`w-full flex items-center gap-2 px-1.5 py-1 rounded text-[10px] transition-colors ${
-                  isVisible ? 'text-slate-200 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-900'
+                  isVisible ? 'text-slate-200 hover:bg-slate-800' : 'text-slate-600 hover:bg-surface-1'
                 }`}
               >
                 <div

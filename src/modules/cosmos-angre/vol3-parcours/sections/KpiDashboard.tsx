@@ -39,7 +39,7 @@ const kpiGroups: KpiGroup[] = [
   },
   {
     title: 'Cosmos Club — Fidélisation',
-    color: '#8b5cf6',
+    color: '#a77d4c',
     kpis: [
       { label: 'Membres actifs', cible: '12 000 à M+6', frequence: 'Mensuel', source: 'CRM HubSpot', status: 'en_cours', progress: 65 },
       { label: 'Upgrade Silver → Gold', cible: '> 15% à 6 mois', frequence: 'Trimestriel', source: 'CRM', status: 'en_cours', progress: 55 },

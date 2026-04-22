@@ -81,7 +81,7 @@ interface ValidationHubProps {
   volumeColor?: string
 }
 
-export default function ValidationHub({ volumeColor = '#a855f7' }: ValidationHubProps) {
+export default function ValidationHub({ volumeColor = '#b38a5a' }: ValidationHubProps) {
   const [documents, setDocuments] = useState<ValidationDocument[]>([])
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
   const [newComment, setNewComment] = useState('')
@@ -136,7 +136,7 @@ export default function ValidationHub({ volumeColor = '#a855f7' }: ValidationHub
       </div>
 
       {documents.length === 0 && !loading && (
-        <div className="rounded-xl border border-dashed border-white/[0.08] bg-slate-900/20 p-10 text-center">
+        <div className="rounded-xl border border-dashed border-white/[0.08] bg-surface-1/20 p-10 text-center">
           <FileText size={36} className="text-slate-600 mx-auto mb-3" />
           <p className="text-slate-400 text-sm">Aucun rapport partagé pour validation.</p>
           <p className="text-slate-500 text-xs mt-1">
@@ -265,10 +265,10 @@ export default function ValidationHub({ volumeColor = '#a855f7' }: ValidationHub
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Ajouter un commentaire..."
-                  className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-[12px] text-white placeholder:text-slate-600 outline-none focus:border-purple-500/50"
+                  className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-[12px] text-white placeholder:text-slate-600 outline-none focus:border-atlas-500/50"
                 />
                 <button
-                  className="px-3 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-medium transition-colors flex items-center gap-1"
+                  className="px-3 py-2 rounded-lg bg-atlas-600 hover:bg-atlas-500 text-white text-[11px] font-medium transition-colors flex items-center gap-1"
                   disabled={!newComment.trim()}
                 >
                   <Send size={12} />

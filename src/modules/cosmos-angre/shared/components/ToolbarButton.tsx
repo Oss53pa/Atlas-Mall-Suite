@@ -26,7 +26,7 @@ export default function ToolbarButton({
       className={`
         relative w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-150
         ${active
-          ? `bg-white/[0.08] border border-white/[0.1] shadow-sm ${activeColor ?? 'text-indigo-400'}`
+          ? `bg-white/[0.08] border border-white/[0.1] shadow-sm ${activeColor ?? 'text-atlas-400'}`
           : 'text-gray-500 hover:bg-white/[0.04] hover:text-gray-300 border border-transparent'
         }
         ${className}

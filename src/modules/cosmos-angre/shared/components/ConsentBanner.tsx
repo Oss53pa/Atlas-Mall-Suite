@@ -123,12 +123,12 @@ export default function ConsentBanner() {
       role="dialog"
       aria-labelledby="consent-title"
       aria-describedby="consent-desc"
-      className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-2xl rounded-xl bg-slate-900/95 backdrop-blur-md border border-white/10 shadow-2xl"
+      className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-2xl rounded-xl bg-surface-1/95 backdrop-blur-md border border-white/10 shadow-2xl"
     >
       <div className="p-5">
         <div className="flex items-start gap-3 mb-3">
-          <div className="shrink-0 w-10 h-10 rounded-lg bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center">
-            <Shield size={18} className="text-indigo-300" />
+          <div className="shrink-0 w-10 h-10 rounded-lg bg-atlas-500/15 border border-atlas-500/30 flex items-center justify-center">
+            <Shield size={18} className="text-atlas-300" />
           </div>
           <div className="flex-1">
             <h2 id="consent-title" className="text-white text-sm font-semibold">
@@ -151,7 +151,7 @@ export default function ConsentBanner() {
         </div>
 
         {customizing && (
-          <div className="space-y-2 my-4 rounded-lg bg-slate-950/40 border border-white/[0.04] p-3">
+          <div className="space-y-2 my-4 rounded-lg bg-surface-0/40 border border-white/[0.04] p-3">
             <ConsentRow
               category="essential"
               title="Essentiels"
@@ -210,7 +210,7 @@ export default function ConsentBanner() {
           ) : (
             <button
               onClick={acceptAll}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 text-[12px] font-medium text-indigo-200"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-atlas-500/20 hover:bg-atlas-500/30 border border-atlas-500/40 text-[12px] font-medium text-atlas-200"
             >
               <Check size={12} />
               Tout accepter
@@ -247,7 +247,7 @@ function ConsentRow({
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange?.(e.target.checked)}
-        className="mt-0.5 accent-indigo-500"
+        className="mt-0.5 accent-atlas-500"
       />
       <div className="flex-1">
         <div className="text-[12px] font-medium text-slate-200">{title}</div>

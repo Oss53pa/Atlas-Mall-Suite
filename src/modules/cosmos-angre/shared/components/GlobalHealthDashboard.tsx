@@ -43,7 +43,7 @@ export default function GlobalHealthDashboard({ commercial, security, experience
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-6">
       <div>
-        <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#a855f7' }}>ATLAS MALL SUITE — VUE TRANSVERSALE</p>
+        <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#b38a5a' }}>ATLAS MALL SUITE — VUE TRANSVERSALE</p>
         <h1 className="text-[28px] font-light text-white mb-2">Sante Globale du Mall</h1>
         <p className="text-[13px]" style={{ color: '#4a5568' }}>Vue consolidee des 3 volumes — score global, alertes croisees, metriques cles.</p>
       </div>
@@ -95,7 +95,7 @@ export default function GlobalHealthDashboard({ commercial, security, experience
       {crossAlerts.length > 0 && (
         <div className="rounded-xl p-5" style={{ background: '#141e2e', border: '1px solid #1e2a3a' }}>
           <div className="flex items-center gap-2 mb-4">
-            <Bell size={16} className="text-purple-400" />
+            <Bell size={16} className="text-atlas-400" />
             <h3 className="text-white font-semibold">Alertes Croisees Inter-Volumes</h3>
           </div>
           <div className="space-y-2">
@@ -107,7 +107,7 @@ export default function GlobalHealthDashboard({ commercial, security, experience
                   <p className="text-[12px] text-slate-300 flex-1">{alert.message}</p>
                   <div className="flex gap-1 flex-shrink-0">
                     {alert.volumes.map(v => (
-                      <span key={v} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(168,85,247,0.1)', color: '#a855f7' }}>{v}</span>
+                      <span key={v} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(179,138,90,0.1)', color: '#b38a5a' }}>{v}</span>
                     ))}
                   </div>
                 </div>

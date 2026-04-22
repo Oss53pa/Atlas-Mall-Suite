@@ -94,7 +94,7 @@ export default function PlanCanvas2D({
           <circle cx={cam.x * S} cy={cam.y * S} r={5} fill={cam.color} stroke="#fff" strokeWidth={1.2} />
           <circle cx={cam.x * S} cy={cam.y * S} r={2} fill="#fff" fillOpacity={0.9} />
           {selectedEntityId === cam.id && (
-            <circle cx={cam.x * S} cy={cam.y * S} r={9} fill="none" stroke="#a855f7" strokeWidth={1.8} strokeDasharray="4 2" />
+            <circle cx={cam.x * S} cy={cam.y * S} r={9} fill="none" stroke="#b38a5a" strokeWidth={1.8} strokeDasharray="4 2" />
           )}
           <text x={cam.x * S} y={cam.y * S - 8} textAnchor="middle" fill={cam.color} fontSize={8} fontFamily="system-ui">
             {cam.label}
@@ -125,7 +125,7 @@ export default function PlanCanvas2D({
             width={10} height={6} rx={1}
             fill={door.isExit ? '#22c55e' : door.hasBadge ? '#3b82f6' : '#94a3b8'}
             fillOpacity={0.8}
-            stroke={selectedEntityId === door.id ? '#a855f7' : '#fff'}
+            stroke={selectedEntityId === door.id ? '#b38a5a' : '#fff'}
             strokeWidth={selectedEntityId === door.id ? 1.5 : 0.5}
           />
           <text x={door.x * S} y={door.y * S - 6} textAnchor="middle" fill="#94a3b8" fontSize={6} fontFamily="system-ui">

@@ -23,6 +23,7 @@ import {
 import { useProjectStore } from '../modules/projects/projectStore'
 import { useSettingsStore } from '../modules/projects/settingsStore'
 import { useAppStore } from '../stores/appStore'
+import BackButton from './BackButton'
 
 // ── Dropdown ──
 function Dropdown({ trigger, children }: { trigger: React.ReactNode; children: React.ReactNode }) {
@@ -38,7 +39,7 @@ function Dropdown({ trigger, children }: { trigger: React.ReactNode; children: R
       <div onClick={() => setOpen(!open)}>{trigger}</div>
       {open && (
         <div className="absolute left-full top-0 ml-2 min-w-[220px] rounded-xl border border-white/[0.08] py-1 z-[100] shadow-2xl"
-          style={{ background: '#0e1629' }} onClick={() => setOpen(false)}>{children}</div>
+          style={{ background: '#262a31' }} onClick={() => setOpen(false)}>{children}</div>
       )}
     </div>
   )
@@ -74,7 +75,7 @@ const TRANSVERSAL_ITEMS = [
 
 const TOOL_ITEMS = [
   { id: 'tour', label: 'Visite & Plan 3D', icon: Box, color: '#38bdf8', path: '/virtual-tour' },
-  { id: 'ai', label: 'PROPH3T AI', icon: Sparkles, color: '#a855f7', path: '/proph3t' },
+  { id: 'ai', label: 'PROPH3T AI', icon: Sparkles, color: '#b38a5a', path: '/proph3t' },
   { id: 'export', label: 'Export / Rapports', icon: FileText, path: '/export' },
 ]
 
@@ -121,7 +122,7 @@ export default function AppLayout() {
   const userInitial = settings.userName ? settings.userName[0].toUpperCase() : 'U'
 
   return (
-    <div className="flex h-screen" style={{ background: '#060a13' }}>
+    <div className="flex h-screen" style={{ background: '#1a1d23' }}>
 
       {/* ═══ SIDEBAR PERMANENTE ═══ */}
       <aside
@@ -146,7 +147,7 @@ export default function AppLayout() {
           <div className="px-2 pt-3 pb-1">
             <Dropdown trigger={
               <button className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] text-gray-400 hover:text-white hover:bg-white/[0.04] transition-colors">
-                <Globe2 size={13} className="text-indigo-400 flex-shrink-0" />
+                <Globe2 size={13} className="text-atlas-400 flex-shrink-0" />
                 <span className="truncate flex-1 text-left font-medium">{appActiveOrg?.name || settings.companyName || 'Organisation'}</span>
                 <ChevronDown size={10} className="text-gray-600 flex-shrink-0" />
               </button>
@@ -158,12 +159,12 @@ export default function AppLayout() {
                   icon={Globe2}
                   label={org.name}
                   active={appActiveOrg?.id === org.id}
-                  accent="#818cf8"
+                  accent="#c9a068"
                   onClick={() => appSetActiveOrg(org)}
                 />
               ))}
               {appUserOrgs.length === 0 && (
-                <DropItem icon={Globe2} label={settings.companyName || 'New Heaven SA'} active accent="#818cf8" />
+                <DropItem icon={Globe2} label={settings.companyName || 'New Heaven SA'} active accent="#c9a068" />
               )}
               <div className="border-t border-white/[0.04] my-1" />
               <DropItem icon={Settings} label="Parametres org" onClick={() => navigate('/settings')} />
@@ -196,7 +197,7 @@ export default function AppLayout() {
         {!isInsideVolume && (
           <div className="px-3 pb-3 border-b border-white/[0.04]">
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-full text-[9px] font-semibold tracking-wider w-fit"
-              style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)', color: '#a5b4fc' }}>
+              style={{ background: 'rgba(179,138,90,0.08)', border: '1px solid rgba(179,138,90,0.15)', color: '#d4b280' }}>
               <Zap size={9} /> ADMIN
             </div>
           </div>
@@ -215,30 +216,14 @@ export default function AppLayout() {
               </button>
             </div>
 
-            {/* Volumes — UNIQUEMENT hors projet (sinon la sidebar projet affiche déjà tout) */}
-            {!isInProject && (
-              <div className="px-2 pt-3">
-                <p className="text-[9px] text-gray-600 uppercase tracking-widest font-semibold px-2 mb-1.5">
-                  Volumes (projet actif)
-                </p>
-                {VOLUME_ITEMS.map(item => {
-                  const Icon = item.icon
-                  const isActive = currentVolPath === item.id
-                  return (
-                    <button key={item.id}
-                      onClick={() => navigate(`/projects/${activeProject?.id}/${item.path}`)}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all mb-0.5"
-                      style={{
-                        background: isActive ? `${item.color}10` : 'transparent',
-                        color: isActive ? item.color : '#4a5568',
-                        border: `1px solid ${isActive ? `${item.color}25` : 'transparent'}`,
-                      }}>
-                      <Icon size={13} /> {item.label}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
+            {/* NOTE : les Volumes apparaissaient ici "hors projet" — suppression
+                intentionnelle (2026-04-22) : la notion de "projet actif" sur
+                un dashboard multi-projets est confuse. Les volumes sont
+                maintenant uniquement accessibles :
+                  1. Via clic sur une carte projet dans la liste (/dashboard)
+                  2. Dans la section "PHASES DU PROJET" quand on est dans
+                     /projects/:id/* (sidebar contextuelle ci-dessous).
+            */}
 
             {/* Transversal — visible uniquement hors projet */}
             {!isInProject && (
@@ -252,7 +237,7 @@ export default function AppLayout() {
                     onClick={() => navigate(item.path)}
                     className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] font-medium transition-colors mb-0.5 ${
                       isActive ? 'bg-white/[0.06] text-white' : 'text-gray-600 hover:text-gray-300 hover:bg-white/[0.03]'}`}>
-                    <Icon size={13} className={isActive ? 'text-indigo-400' : ''} /> {item.label}
+                    <Icon size={13} className={isActive ? 'text-atlas-400' : ''} /> {item.label}
                   </button>
                 )
               })}
@@ -271,7 +256,7 @@ export default function AppLayout() {
                     onClick={() => navigate(item.path)}
                     className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] font-medium transition-colors mb-0.5 ${
                       isActive ? 'bg-white/[0.06] text-white' : 'text-gray-600 hover:text-gray-300 hover:bg-white/[0.03]'}`}>
-                    <Icon size={13} style={item.color ? { color: item.color } : undefined} className={isActive && !item.color ? 'text-indigo-400' : ''} /> {item.label}
+                    <Icon size={13} style={item.color ? { color: item.color } : undefined} className={isActive && !item.color ? 'text-atlas-400' : ''} /> {item.label}
                   </button>
                 )
               })}
@@ -289,17 +274,17 @@ export default function AppLayout() {
                   className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-[11px] font-semibold transition-all mb-1"
                   style={{
                     background: location.pathname.includes('/studio')
-                      ? 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(99,102,241,0.15))'
-                      : 'rgba(168,85,247,0.06)',
-                    color: '#c4b5fd',
-                    border: `1px solid ${location.pathname.includes('/studio') ? 'rgba(168,85,247,0.4)' : 'rgba(168,85,247,0.15)'}`,
+                      ? 'linear-gradient(135deg, rgba(179,138,90,0.15), rgba(179,138,90,0.15))'
+                      : 'rgba(179,138,90,0.06)',
+                    color: '#e2ccaa',
+                    border: `1px solid ${location.pathname.includes('/studio') ? 'rgba(179,138,90,0.4)' : 'rgba(179,138,90,0.15)'}`,
                   }}
                   title="Atlas Studio — Import plan, éditeur espaces, bibliothèque de modèles"
                 >
                   <span className="text-base">✨</span>
                   <div className="flex-1 text-left min-w-0">
                     <div className="font-bold">Atlas Studio</div>
-                    <div className="text-[9px] text-purple-400/70 font-normal">Import · Éditeur · Modèles</div>
+                    <div className="text-[9px] text-atlas-400/70 font-normal">Import · Éditeur · Modèles</div>
                   </div>
                 </button>
 
@@ -323,8 +308,8 @@ export default function AppLayout() {
                   )
                 })}
 
-                <div className="mx-0 mt-4 p-3 rounded-lg border border-indigo-500/20 bg-indigo-500/[0.05]">
-                  <p className="text-[10px] text-indigo-300 font-semibold mb-1">💡 Workflow</p>
+                <div className="mx-0 mt-4 p-3 rounded-lg border border-atlas-500/20 bg-atlas-400/[0.05]">
+                  <p className="text-[10px] text-atlas-300 font-semibold mb-1">💡 Workflow</p>
                   <p className="text-[10px] text-gray-400 leading-relaxed">
                     1. Atlas Studio → importer + éditer + <strong>enregistrer le modèle</strong><br />
                     2. Activer un modèle → débloquer les volumes<br />
@@ -397,7 +382,7 @@ export default function AppLayout() {
 
           {/* User */}
           <div className={`${isInsideVolume ? 'pt-1' : 'flex items-center gap-2 px-2 py-2 mt-1 rounded-lg border border-white/[0.04]'}`}>
-            <div className={`${isInsideVolume ? 'w-7 h-7 mx-auto' : 'w-7 h-7'} rounded-full bg-indigo-600 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0`}>
+            <div className={`${isInsideVolume ? 'w-7 h-7 mx-auto' : 'w-7 h-7'} rounded-full bg-atlas-500 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0`}>
               {userInitial}
             </div>
             {!isInsideVolume && (
@@ -411,8 +396,19 @@ export default function AppLayout() {
       </aside>
 
       {/* ═══ MAIN CONTENT ═══ */}
-      <main className="flex-1 overflow-hidden">
-        <Outlet />
+      <main className="flex-1 overflow-hidden flex flex-col min-w-0">
+        {/* Topbar global : bouton Retour + raccourci Accueil */}
+        {!isHome && (
+          <div className="flex items-center gap-1 px-4 py-2 border-b border-white/[0.04] bg-surface-0/50 backdrop-blur-sm flex-shrink-0">
+            <BackButton />
+            {location.pathname !== '/dashboard' && (
+              <BackButton toHome label="Accueil" className="ml-1" />
+            )}
+          </div>
+        )}
+        <div className="flex-1 overflow-hidden">
+          <Outlet />
+        </div>
       </main>
     </div>
   )

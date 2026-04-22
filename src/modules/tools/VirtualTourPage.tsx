@@ -13,7 +13,7 @@ const DEMO_ZONES: TourZone[] = [
   { id: 'z3', name: 'Sephora', polygon: [[82,10],[95,10],[95,25],[82,25]], height: 4, color: '#ec4899', type: 'commerce', tenantName: 'Sephora', status: 'Signé' },
   { id: 'z4', name: 'Food Court', polygon: [[20,32],[60,32],[60,50],[20,50]], height: 5, color: '#f59e0b', type: 'restauration', tenantName: 'KFC + Brioche Dorée' },
   { id: 'z5', name: 'Carrefour', polygon: [[10,55],[70,55],[70,80],[10,80]], height: 4, color: '#22c55e', type: 'alimentaire', tenantName: 'Carrefour Market', status: 'Signé' },
-  { id: 'z6', name: 'Pathé Cinéma', polygon: [[72,32],[95,32],[95,55],[72,55]], height: 6, color: '#a855f7', type: 'loisirs', tenantName: 'Pathé', status: 'Signé' },
+  { id: 'z6', name: 'Pathé Cinéma', polygon: [[72,32],[95,32],[95,55],[72,55]], height: 6, color: '#b38a5a', type: 'loisirs', tenantName: 'Pathé', status: 'Signé' },
   { id: 'z7', name: 'Cellule vacante', polygon: [[82,26],[95,26],[95,30],[82,30]], height: 4, color: '#ef4444', type: 'commerce', status: 'Vacant' },
 ]
 
@@ -32,14 +32,14 @@ export default function VirtualTourPage() {
   const [activeWP, setActiveWP] = useState<Waypoint | null>(null)
 
   return (
-    <div className="h-full flex flex-col" style={{ background: '#060a13' }}>
+    <div className="h-full flex flex-col" style={{ background: '#1a1d23' }}>
       {/* Role selector */}
-      <div className="flex items-center gap-3 px-4 py-2 border-b border-white/[0.05]" style={{ background: '#0b1120' }}>
+      <div className="flex items-center gap-3 px-4 py-2 border-b border-white/[0.05]" style={{ background: '#202329' }}>
         <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Scénario :</span>
         {(['investisseur', 'enseigne', 'fm'] as ScenarioRole[]).map(r => (
           <button key={r} onClick={() => setRole(r)}
             className={`px-3 py-1 rounded-lg text-[11px] font-medium transition-colors ${
-              role === r ? 'bg-indigo-600 text-white' : 'text-gray-500 hover:text-gray-300 bg-white/[0.04]'}`}>
+              role === r ? 'bg-atlas-500 text-white' : 'text-gray-500 hover:text-gray-300 bg-white/[0.04]'}`}>
             {r === 'investisseur' ? 'Investisseur' : r === 'enseigne' ? 'Enseigne' : 'Facility Manager'}
           </button>
         ))}

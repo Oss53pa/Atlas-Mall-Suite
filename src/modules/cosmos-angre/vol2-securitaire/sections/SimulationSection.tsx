@@ -8,7 +8,7 @@ const SCENARIOS = [
   { id: 'vol_etalage', name: 'Vol à l\'étalage', icon: Target, color: '#f59e0b', desc: 'Simulation de vols dans les zones commerce' },
   { id: 'intrusion_nocturne', name: 'Intrusion nocturne', icon: Shield, color: '#ef4444', desc: 'Tentatives d\'intrusion hors horaires' },
   { id: 'incendie', name: 'Incendie', icon: Flame, color: '#dc2626', desc: 'Départ de feu avec évacuation' },
-  { id: 'mouvement_foule', name: 'Mouvement de foule', icon: Users, color: '#8b5cf6', desc: 'Densité critique aux heures de pointe' },
+  { id: 'mouvement_foule', name: 'Mouvement de foule', icon: Users, color: '#a77d4c', desc: 'Densité critique aux heures de pointe' },
   { id: 'pickpocket', name: 'Pickpocket', icon: AlertTriangle, color: '#f97316', desc: 'Analyse de vulnérabilité aux zones denses' },
 ] as const
 

@@ -37,7 +37,7 @@ interface Props {
 const STATUS_META: Record<ReportShare['status'], { label: string; color: string; icon: React.ReactNode }> = {
   draft:    { label: 'Brouillon',             color: '#64748b', icon: <FileText size={11} /> },
   sent:     { label: 'Envoyé',                color: '#0ea5e9', icon: <Send size={11} /> },
-  opened:   { label: 'Ouvert par destinataire', color: '#8b5cf6', icon: <Eye size={11} /> },
+  opened:   { label: 'Ouvert par destinataire', color: '#a77d4c', icon: <Eye size={11} /> },
   approved: { label: 'Validé ✓',              color: '#10b981', icon: <CheckCircle2 size={11} /> },
   rejected: { label: 'Corrections demandées', color: '#f59e0b', icon: <AlertCircle size={11} /> },
   commented:{ label: 'Commenté',              color: '#ec4899', icon: <MessageCircle size={11} /> },
@@ -45,7 +45,7 @@ const STATUS_META: Record<ReportShare['status'], { label: string; color: string;
 }
 
 export default function ReportShareManager({
-  volumeId, defaultTitle, reportHtml, onComposeReport, volumeColor = '#818cf8',
+  volumeId, defaultTitle, reportHtml, onComposeReport, volumeColor = '#c9a068',
 }: Props) {
 
   const [shares, setShares] = useState<ReportShare[]>([])
@@ -79,7 +79,7 @@ export default function ReportShareManager({
   }
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-200">
+    <div className="flex flex-col h-full bg-surface-0 text-slate-200">
 
       {/* Header */}
       <div className="border-b border-white/[0.06] p-4 flex items-center justify-between">
@@ -114,7 +114,7 @@ export default function ReportShareManager({
 
       {/* Summary */}
       {summary && summary.total > 0 && (
-        <div className="border-b border-white/[0.06] p-3 bg-slate-900/40 flex items-center gap-4 text-[11px] text-slate-400">
+        <div className="border-b border-white/[0.06] p-3 bg-surface-1/40 flex items-center gap-4 text-[11px] text-slate-400">
           <span>Total : <strong className="text-slate-200">{summary.total}</strong></span>
           <span>Validés : <strong className="text-emerald-400">{summary.byStatus.approved}</strong></span>
           <span>En attente : <strong className="text-sky-400">{summary.byStatus.sent + summary.byStatus.opened}</strong></span>
@@ -247,12 +247,12 @@ function ShareDetail({ share, events }: { share: ReportShare; events: ShareEvent
       </div>
 
       {/* URL */}
-      <div className="mb-4 rounded-lg border border-white/[0.05] bg-slate-900/30 p-3">
+      <div className="mb-4 rounded-lg border border-white/[0.05] bg-surface-1/30 p-3">
         <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
           <LinkIcon size={10} /> Lien du rapport
         </div>
         <div className="flex items-center gap-2">
-          <code className="flex-1 min-w-0 truncate text-[11px] text-sky-300 bg-slate-950 px-2 py-1 rounded">{share.url}</code>
+          <code className="flex-1 min-w-0 truncate text-[11px] text-sky-300 bg-surface-0 px-2 py-1 rounded">{share.url}</code>
           <button onClick={copyLink} className="shrink-0 p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300">
             {copied ? <Check size={11} /> : <Copy size={11} />}
           </button>
@@ -270,7 +270,7 @@ function ShareDetail({ share, events }: { share: ReportShare; events: ShareEvent
         </div>
         <ul className="space-y-1">
           {share.recipients.map((r, i) => (
-            <li key={i} className="flex items-center gap-2 text-[11px] bg-slate-900/30 border border-white/[0.04] rounded px-2.5 py-1.5">
+            <li key={i} className="flex items-center gap-2 text-[11px] bg-surface-1/30 border border-white/[0.04] rounded px-2.5 py-1.5">
               <Users size={10} className="text-slate-500" />
               <span className="text-slate-200">{r.name}</span>
               {r.email && <span className="text-slate-500">&lt;{r.email}&gt;</span>}
@@ -286,7 +286,7 @@ function ShareDetail({ share, events }: { share: ReportShare; events: ShareEvent
           <Clock size={10} /> Timeline ({events.length})
         </div>
         {events.length === 0 ? (
-          <div className="text-[11px] text-slate-500 bg-slate-900/30 border border-dashed border-white/[0.06] rounded p-3 text-center">
+          <div className="text-[11px] text-slate-500 bg-surface-1/30 border border-dashed border-white/[0.06] rounded p-3 text-center">
             Aucun événement encore enregistré.
           </div>
         ) : (
@@ -294,7 +294,7 @@ function ShareDetail({ share, events }: { share: ReportShare; events: ShareEvent
             {[...events].sort((a, b) => b.at.localeCompare(a.at)).map(e => {
               const eMeta: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
                 sent: { color: '#0ea5e9', icon: <Send size={10} />, label: 'Envoyé' },
-                opened: { color: '#8b5cf6', icon: <Eye size={10} />, label: 'Ouvert' },
+                opened: { color: '#a77d4c', icon: <Eye size={10} />, label: 'Ouvert' },
                 approved: { color: '#10b981', icon: <CheckCircle2 size={10} />, label: 'Validé' },
                 corrections_requested: { color: '#f59e0b', icon: <AlertCircle size={10} />, label: 'Corrections demandées' },
                 commented: { color: '#ec4899', icon: <MessageCircle size={10} />, label: 'Commentaire' },
@@ -302,7 +302,7 @@ function ShareDetail({ share, events }: { share: ReportShare; events: ShareEvent
               }
               const em = eMeta[e.type] ?? { color: '#64748b', icon: <Clock size={10} />, label: e.type }
               return (
-                <li key={e.id} className="flex items-start gap-2.5 rounded-lg bg-slate-900/30 border border-white/[0.04] p-2.5">
+                <li key={e.id} className="flex items-start gap-2.5 rounded-lg bg-surface-1/30 border border-white/[0.04] p-2.5">
                   <div className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
                     style={{ background: `${em.color}18`, color: em.color, border: `1px solid ${em.color}30` }}>
                     {em.icon}
@@ -379,8 +379,8 @@ function CreateShareModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur flex items-center justify-center p-4">
-      <div className="w-full max-w-lg rounded-xl bg-slate-950 border border-white/10 overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-surface-0/80 backdrop-blur flex items-center justify-center p-4">
+      <div className="w-full max-w-lg rounded-xl bg-surface-0 border border-white/10 overflow-hidden">
         <div className="p-5 border-b border-white/[0.06]">
           <h3 className="text-white text-[14px] font-semibold">Nouveau partage de rapport</h3>
           <p className="text-[11px] text-slate-500 mt-0.5">
@@ -392,7 +392,7 @@ function CreateShareModal({
           <div>
             <label className="block text-[11px] text-slate-400 uppercase tracking-wider mb-1">Titre</label>
             <input value={title} onChange={e => setTitle(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-white/[0.08] text-[12px] text-white" />
+              className="w-full px-3 py-2 rounded-lg bg-surface-1 border border-white/[0.08] text-[12px] text-white" />
           </div>
 
           <div>
@@ -400,14 +400,14 @@ function CreateShareModal({
             <div className="flex gap-2">
               <button onClick={() => setChannel('email')}
                 className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-[12px] ${
-                  channel === 'email' ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300' : 'bg-slate-900 border-white/[0.06] text-slate-400'
+                  channel === 'email' ? 'bg-atlas-500/15 border-atlas-500/40 text-atlas-300' : 'bg-surface-1 border-white/[0.06] text-slate-400'
                 }`}>
                 <Mail size={12} />
                 E-mail (mailto)
               </button>
               <button onClick={() => setChannel('link')}
                 className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-[12px] ${
-                  channel === 'link' ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300' : 'bg-slate-900 border-white/[0.06] text-slate-400'
+                  channel === 'link' ? 'bg-atlas-500/15 border-atlas-500/40 text-atlas-300' : 'bg-surface-1 border-white/[0.06] text-slate-400'
                 }`}>
                 <LinkIcon size={12} />
                 Lien partageable
@@ -422,13 +422,13 @@ function CreateShareModal({
                 <div key={i} className="flex gap-1.5">
                   <input value={r.name} onChange={e => {
                     const next = [...recipients]; next[i] = { ...next[i], name: e.target.value }; setRecipients(next)
-                  }} placeholder="Nom" className="flex-1 px-2 py-1.5 rounded bg-slate-900 border border-white/[0.06] text-[11px] text-white" />
+                  }} placeholder="Nom" className="flex-1 px-2 py-1.5 rounded bg-surface-1 border border-white/[0.06] text-[11px] text-white" />
                   <input value={r.email} onChange={e => {
                     const next = [...recipients]; next[i] = { ...next[i], email: e.target.value }; setRecipients(next)
-                  }} placeholder="Email" className="flex-1 px-2 py-1.5 rounded bg-slate-900 border border-white/[0.06] text-[11px] text-white" />
+                  }} placeholder="Email" className="flex-1 px-2 py-1.5 rounded bg-surface-1 border border-white/[0.06] text-[11px] text-white" />
                   <input value={r.role ?? ''} onChange={e => {
                     const next = [...recipients]; next[i] = { ...next[i], role: e.target.value }; setRecipients(next)
-                  }} placeholder="Rôle" className="w-24 px-2 py-1.5 rounded bg-slate-900 border border-white/[0.06] text-[11px] text-white" />
+                  }} placeholder="Rôle" className="w-24 px-2 py-1.5 rounded bg-surface-1 border border-white/[0.06] text-[11px] text-white" />
                   {recipients.length > 1 && (
                     <button onClick={() => setRecipients(recipients.filter((_, k) => k !== i))}
                       className="p-1.5 text-slate-500 hover:text-red-400"><Trash2 size={11} /></button>
@@ -447,7 +447,7 @@ function CreateShareModal({
             </label>
             <input type="number" min="1" max="365" value={expiresAtDays}
               onChange={e => setExpiresAtDays(parseInt(e.target.value) || 30)}
-              className="w-24 px-3 py-2 rounded-lg bg-slate-900 border border-white/[0.08] text-[12px] text-white" />
+              className="w-24 px-3 py-2 rounded-lg bg-surface-1 border border-white/[0.08] text-[12px] text-white" />
           </div>
         </div>
 

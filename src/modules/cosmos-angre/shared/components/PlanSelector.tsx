@@ -17,11 +17,11 @@ const FORMAT_ICON: Record<PlanSourceType, typeof FileCode2> = {
 
 const FORMAT_COLOR: Record<PlanSourceType, string> = {
   dxf: '#38bdf8',
-  dwg: '#6366f1',
+  dwg: '#b38a5a',
   ifc: '#22c55e',
   pdf: '#ef4444',
   image_raster: '#f59e0b',
-  svg: '#8b5cf6',
+  svg: '#a77d4c',
 }
 
 export function PlanSelector() {
@@ -119,7 +119,7 @@ export function PlanSelector() {
 
       {/* Dropdown */}
       {open && (
-        <div className="mt-1 w-64 rounded-lg bg-gray-900 border border-white/[0.08] shadow-xl overflow-hidden">
+        <div className="mt-1 w-64 rounded-lg bg-surface-1 border border-white/[0.08] shadow-xl overflow-hidden">
           <div className="px-3 py-2 border-b border-white/[0.06]">
             <span className="text-[9px] uppercase tracking-wider text-gray-500 font-medium">Plans importes</span>
           </div>

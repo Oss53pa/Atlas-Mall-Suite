@@ -66,7 +66,7 @@ export function ConsolidatedReportButton({
     <button
       onClick={onClick}
       disabled={busy}
-      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-purple-600/20 border border-purple-500/40 text-purple-300 text-[10px] font-medium hover:bg-purple-600/30 transition-colors disabled:opacity-50 ${className}`}
+      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-atlas-600/20 border border-atlas-500/40 text-atlas-300 text-[10px] font-medium hover:bg-atlas-600/30 transition-colors disabled:opacity-50 ${className}`}
       title="Générer le rapport directeur cross-volume (Commercial · Sécurité · Parcours + Finance)"
     >
       {busy ? '⏳' : '📑'} {busy ? 'Génération…' : 'Rapport directeur'}

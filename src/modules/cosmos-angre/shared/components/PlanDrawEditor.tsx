@@ -697,9 +697,9 @@ export function PlanDrawEditor({ onClose, floorId }: Props) {
   const viewH = containerRef.current?.clientHeight ?? 600
 
   return (
-    <div className="fixed inset-0 z-[9999] flex flex-col bg-slate-950">
+    <div className="fixed inset-0 z-[9999] flex flex-col bg-surface-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-white/10 bg-slate-900 flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-white/10 bg-surface-1 flex-shrink-0">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-bold text-white m-0">Éditeur de dessin</h2>
           <span className="text-[10px] text-slate-500">
@@ -720,7 +720,7 @@ export function PlanDrawEditor({ onClose, floorId }: Props) {
 
       <div className="flex-1 flex min-h-0">
         {/* Barre d'outils */}
-        <aside className="w-52 flex-shrink-0 border-r border-white/10 bg-slate-900/60 overflow-y-auto p-2 space-y-3">
+        <aside className="w-52 flex-shrink-0 border-r border-white/10 bg-surface-1/60 overflow-y-auto p-2 space-y-3">
           <ToolSection title="Sélection">
             <ToolBtn icon={MousePointer} label="Sélection simple" active={tool === 'select'} onClick={() => setTool('select')} hint="Cliquer un espace pour le sélectionner" />
           </ToolSection>
@@ -757,7 +757,7 @@ export function PlanDrawEditor({ onClose, floorId }: Props) {
             {tool === 'merge' && mergeSelection.size >= 2 && (
               <button
                 onClick={mergeSelectedSpaces}
-                className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded text-[10px] font-bold bg-purple-600 hover:bg-purple-500 text-white"
+                className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded text-[10px] font-bold bg-atlas-600 hover:bg-atlas-500 text-white"
               >
                 <GitMerge size={11} /> Fusionner {mergeSelection.size} espaces
               </button>
@@ -828,7 +828,7 @@ export function PlanDrawEditor({ onClose, floorId }: Props) {
                 {[0, 0.1, 0.25, 0.5, 1].map(v => (
                   <button key={v} onClick={() => setSnapGrid(v)}
                     className={`flex-1 px-1 py-0.5 rounded text-[9px] font-mono ${
-                      snapGrid === v ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'
+                      snapGrid === v ? 'bg-atlas-500 text-white' : 'bg-slate-800 text-slate-400'
                     }`}>
                     {v === 0 ? 'off' : v >= 1 ? `${v}m` : `${v*100}cm`}
                   </button>
@@ -909,8 +909,8 @@ export function PlanDrawEditor({ onClose, floorId }: Props) {
               return (
                 <g key={sp.id}>
                   <path d={d}
-                    fill={inMerge ? 'rgba(168,85,247,0.25)' : isSelected ? 'rgba(52,211,153,0.20)' : patched ? 'rgba(251,191,36,0.12)' : 'rgba(99,102,241,0.06)'}
-                    stroke={inMerge ? '#a855f7' : isSelected ? '#10b981' : patched ? '#fbbf24' : 'rgba(99,102,241,0.35)'}
+                    fill={inMerge ? 'rgba(179,138,90,0.25)' : isSelected ? 'rgba(52,211,153,0.20)' : patched ? 'rgba(251,191,36,0.12)' : 'rgba(179,138,90,0.06)'}
+                    stroke={inMerge ? '#b38a5a' : isSelected ? '#10b981' : patched ? '#fbbf24' : 'rgba(179,138,90,0.35)'}
                     strokeWidth={isSelected || inMerge ? 2 : patched ? 1.5 : 1}
                     style={{ cursor: (tool === 'select' || tool === 'edit-vertex' || tool === 'move-space' || tool === 'split' || tool === 'merge') ? 'pointer' : 'default' }}
                   />
@@ -976,8 +976,8 @@ export function PlanDrawEditor({ onClose, floorId }: Props) {
               return (
                 <g key={s.id}>
                   <path d={d}
-                    fill={inMerge ? 'rgba(168,85,247,0.35)' : `${renderColor}${s.isFurniture ? '90' : '60'}`}
-                    stroke={inMerge ? '#a855f7' : isSelected ? '#10b981' : renderColor}
+                    fill={inMerge ? 'rgba(179,138,90,0.35)' : `${renderColor}${s.isFurniture ? '90' : '60'}`}
+                    stroke={inMerge ? '#b38a5a' : isSelected ? '#10b981' : renderColor}
                     strokeWidth={isSelected || inMerge ? 3 : 2}
                     strokeDasharray={s.isFurniture ? '4,2' : undefined}
                     style={{ cursor: (tool === 'select' || tool === 'edit-vertex' || tool === 'move-space' || tool === 'split' || tool === 'merge') ? 'pointer' : 'default' }}
@@ -1037,11 +1037,11 @@ export function PlanDrawEditor({ onClose, floorId }: Props) {
                     const s = worldToScreen(v[0], v[1])
                     return `${s.x},${s.y}`
                   }).concat(hoverPoint ? [`${worldToScreen(hoverPoint[0], hoverPoint[1]).x},${worldToScreen(hoverPoint[0], hoverPoint[1]).y}`] : []).join(' ')}
-                  fill="rgba(168,85,247,0.15)" stroke="#a855f7" strokeWidth={2} strokeDasharray="5,3"
+                  fill="rgba(179,138,90,0.15)" stroke="#b38a5a" strokeWidth={2} strokeDasharray="5,3"
                 />
                 {currentVerts.map((v, i) => {
                   const s = worldToScreen(v[0], v[1])
-                  return <circle key={i} cx={s.x} cy={s.y} r={4} fill="#a855f7" />
+                  return <circle key={i} cx={s.x} cy={s.y} r={4} fill="#b38a5a" />
                 })}
               </g>
             )}
@@ -1053,7 +1053,7 @@ export function PlanDrawEditor({ onClose, floorId }: Props) {
               return (
                 <rect x={Math.min(p1.x, p2.x)} y={Math.min(p1.y, p2.y)}
                       width={Math.abs(p2.x - p1.x)} height={Math.abs(p2.y - p1.y)}
-                      fill="rgba(168,85,247,0.15)" stroke="#a855f7" strokeWidth={2} strokeDasharray="5,3" />
+                      fill="rgba(179,138,90,0.15)" stroke="#b38a5a" strokeWidth={2} strokeDasharray="5,3" />
               )
             })()}
 
@@ -1084,7 +1084,7 @@ export function PlanDrawEditor({ onClose, floorId }: Props) {
             {/* Point de hover (feedback snap) */}
             {hoverPoint && tool !== 'select' && (() => {
               const s = worldToScreen(hoverPoint[0], hoverPoint[1])
-              return <circle cx={s.x} cy={s.y} r={3} fill="#a855f7" opacity={0.9} />
+              return <circle cx={s.x} cy={s.y} r={3} fill="#b38a5a" opacity={0.9} />
             })()}
 
             <defs>
@@ -1101,19 +1101,19 @@ export function PlanDrawEditor({ onClose, floorId }: Props) {
 
           {/* Zoom controls */}
           <div className="absolute bottom-4 right-4 flex flex-col gap-1">
-            <button onClick={() => zoomTo(1.25)} className="p-2 rounded bg-slate-900/90 text-white hover:bg-slate-800" title="Zoom +">
+            <button onClick={() => zoomTo(1.25)} className="p-2 rounded bg-surface-1/90 text-white hover:bg-slate-800" title="Zoom +">
               <ZoomIn size={14} />
             </button>
-            <button onClick={() => zoomTo(0.8)} className="p-2 rounded bg-slate-900/90 text-white hover:bg-slate-800" title="Zoom -">
+            <button onClick={() => zoomTo(0.8)} className="p-2 rounded bg-surface-1/90 text-white hover:bg-slate-800" title="Zoom -">
               <ZoomOut size={14} />
             </button>
-            <button onClick={fitView} className="p-2 rounded bg-slate-900/90 text-white hover:bg-slate-800" title="Recadrer (F)">
+            <button onClick={fitView} className="p-2 rounded bg-surface-1/90 text-white hover:bg-slate-800" title="Recadrer (F)">
               <Maximize size={14} />
             </button>
           </div>
 
           {/* Status bar */}
-          <div className="absolute bottom-4 left-4 px-3 py-1.5 rounded-lg bg-slate-900/95 text-[10px] text-slate-300 flex items-center gap-3 border border-white/10">
+          <div className="absolute bottom-4 left-4 px-3 py-1.5 rounded-lg bg-surface-1/95 text-[10px] text-slate-300 flex items-center gap-3 border border-white/10">
             {hoverPoint && (
               <span className="font-mono tabular-nums">
                 ({hoverPoint[0].toFixed(2)}, {hoverPoint[1].toFixed(2)}) m
@@ -1121,7 +1121,7 @@ export function PlanDrawEditor({ onClose, floorId }: Props) {
             )}
             <span>Zoom : {(scale).toFixed(0)} px/m</span>
             {tool !== 'select' && (
-              <span className="text-indigo-300">
+              <span className="text-atlas-300">
                 Outil : {tool}
                 {tool === 'polygon' && currentVerts.length > 0 && ` · ${currentVerts.length} sommet(s)`}
               </span>
@@ -1129,7 +1129,7 @@ export function PlanDrawEditor({ onClose, floorId }: Props) {
           </div>
 
           {/* Aide raccourcis */}
-          <div className="absolute top-4 left-4 px-3 py-2 rounded-lg bg-slate-900/90 text-[10px] text-slate-400 border border-white/10 max-w-xs">
+          <div className="absolute top-4 left-4 px-3 py-2 rounded-lg bg-surface-1/90 text-[10px] text-slate-400 border border-white/10 max-w-xs">
             <div className="font-bold text-white mb-1">Raccourcis</div>
             <div>• <kbd className="bg-slate-800 px-1 rounded">Esc</kbd> annuler l'outil en cours</div>
             <div>• <kbd className="bg-slate-800 px-1 rounded">Enter</kbd> fermer le polygone</div>
@@ -1190,7 +1190,7 @@ function ToolBtn({
     <button onClick={onClick} title={hint}
       className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-[10px] text-left transition ${
         active
-          ? 'bg-indigo-600/30 text-white border border-indigo-500/50'
+          ? 'bg-atlas-500/30 text-white border border-atlas-500/50'
           : 'text-slate-300 hover:bg-white/5 border border-transparent'
       }`}>
       <Icon size={12} style={{ color: active ? undefined : iconColor }} />

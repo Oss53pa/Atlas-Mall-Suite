@@ -168,8 +168,8 @@ export default function PlanImportWizard({
   const isReviewing = state.step === 'reviewing'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className={`bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden flex flex-col ${
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-0/70 backdrop-blur-sm">
+      <div className={`bg-surface-1 border border-gray-700 rounded-xl shadow-2xl overflow-hidden flex flex-col ${
         isReviewing ? 'w-[95vw] h-[92vh]' : 'w-[900px] max-h-[90vh] overflow-y-auto'
       }`}>
         {/* Header */}
@@ -226,7 +226,7 @@ export default function PlanImportWizard({
             <div className="flex flex-1 overflow-hidden">
 
               {/* ── Sidebar gauche : donnees ── */}
-              <div className="w-80 flex-shrink-0 border-r border-gray-800 overflow-y-auto bg-gray-900/80 flex flex-col">
+              <div className="w-80 flex-shrink-0 border-r border-gray-800 overflow-y-auto bg-surface-1/80 flex flex-col">
                 <div className="p-4 space-y-4 flex-1">
                   <PlanReaderProgress state={state} />
 
@@ -450,7 +450,7 @@ function ZoomPanImage({ src }: { src: string }) {
       >
         <img src={src} alt="Plan" className="max-w-full max-h-full object-contain select-none pointer-events-none" draggable={false} />
       </div>
-      <div className="absolute top-3 right-3 flex gap-1 bg-black/60 backdrop-blur rounded-md p-1 text-[11px] text-gray-300">
+      <div className="absolute top-3 right-3 flex gap-1 bg-surface-0/60 backdrop-blur rounded-md p-1 text-[11px] text-gray-300">
         <button onClick={() => setScale(s => Math.min(80, s * 1.25))} className="px-2 py-1 hover:bg-white/10 rounded">+</button>
         <button onClick={() => setScale(s => Math.max(0.05, s / 1.25))} className="px-2 py-1 hover:bg-white/10 rounded">−</button>
         <button onClick={reset} className="px-2 py-1 hover:bg-white/10 rounded">Reset</button>

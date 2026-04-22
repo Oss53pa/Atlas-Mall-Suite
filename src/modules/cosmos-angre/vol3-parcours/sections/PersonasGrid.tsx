@@ -15,7 +15,7 @@ function initials(name: string): string {
   return (parts[0][0] + parts[1][0]).toUpperCase()
 }
 
-const COLORS = ['#34d399', '#38bdf8', '#8b5cf6', '#ec4899', '#f59e0b', '#22c55e']
+const COLORS = ['#34d399', '#38bdf8', '#a77d4c', '#ec4899', '#f59e0b', '#22c55e']
 const colorFor = (id: string) => {
   let h = 0
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
@@ -31,7 +31,7 @@ export default function PersonasGrid({ onSelectPersona }: Props) {
     <div className="p-8 max-w-6xl mx-auto space-y-8">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#8b5cf6' }}>VOL. 3 — M2 PERSONAS</p>
+          <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#a77d4c' }}>VOL. 3 — M2 PERSONAS</p>
           <h1 className="text-[28px] font-light text-white mb-3">Personas</h1>
           <p className="text-[13px] leading-[1.7]" style={{ color: '#4a5568' }}>
             Profils types de visiteurs du centre commercial — saisissez ceux que vous ciblez.

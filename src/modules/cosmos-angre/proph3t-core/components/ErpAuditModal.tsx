@@ -61,12 +61,12 @@ export function ErpAuditModal({ audit, onClose, onFocusIssue }: Props) {
 
   const modal = (
     <div
-      className="fixed inset-0 z-[9999] flex items-start justify-center bg-black/85 overflow-y-auto py-6 print:bg-white"
+      className="fixed inset-0 z-[9999] flex items-start justify-center bg-surface-0/85 overflow-y-auto py-6 print:bg-white"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-[1100px] max-w-[95vw] bg-slate-950 rounded-lg border border-white/10 shadow-2xl print:w-full print:max-w-none print:rounded-none print:border-0">
+      <div className="w-[1100px] max-w-[95vw] bg-surface-0 rounded-lg border border-white/10 shadow-2xl print:w-full print:max-w-none print:rounded-none print:border-0">
         {/* Header */}
-        <header className="sticky top-0 z-10 flex items-center justify-between px-6 py-3 bg-slate-900 border-b border-white/10 rounded-t-lg print:hidden">
+        <header className="sticky top-0 z-10 flex items-center justify-between px-6 py-3 bg-surface-1 border-b border-white/10 rounded-t-lg print:hidden">
           <div className="flex items-center gap-2">
             <ShieldAlert className="text-amber-400" size={18} />
             <h2 className="text-sm font-bold text-white">Audit Conformité ERP</h2>
@@ -86,7 +86,7 @@ export function ErpAuditModal({ audit, onClose, onFocusIssue }: Props) {
         </header>
 
         {/* En-tête imprimable */}
-        <div className="hidden print:block bg-slate-900 text-white p-6">
+        <div className="hidden print:block bg-surface-1 text-white p-6">
           <h1 className="text-2xl font-bold m-0">Audit Conformité ERP</h1>
           <p className="text-sm m-0 mt-1 opacity-80">
             {audit.reportRef} · Généré le {new Date(audit.generatedAt).toLocaleDateString('fr-FR')}
@@ -137,7 +137,7 @@ export function ErpAuditModal({ audit, onClose, onFocusIssue }: Props) {
             <select
               value={filterCrit}
               onChange={e => setFilterCrit(e.target.value as Criticality | 'all')}
-              className="bg-slate-900 border border-white/10 text-[11px] text-slate-300 px-2 py-1 rounded"
+              className="bg-surface-1 border border-white/10 text-[11px] text-slate-300 px-2 py-1 rounded"
             >
               <option value="all">Toutes criticités</option>
               <option value="critical">Critique uniquement</option>
@@ -148,7 +148,7 @@ export function ErpAuditModal({ audit, onClose, onFocusIssue }: Props) {
             <select
               value={filterCat}
               onChange={e => setFilterCat(e.target.value as NonConformity['category'] | 'all')}
-              className="bg-slate-900 border border-white/10 text-[11px] text-slate-300 px-2 py-1 rounded"
+              className="bg-surface-1 border border-white/10 text-[11px] text-slate-300 px-2 py-1 rounded"
             >
               <option value="all">Toutes catégories</option>
               {(Object.keys(audit.byCategory) as NonConformity['category'][])
@@ -169,7 +169,7 @@ export function ErpAuditModal({ audit, onClose, onFocusIssue }: Props) {
               return (
                 <div
                   key={nc.id}
-                  className="rounded border-l-4 border border-white/10 bg-slate-900/50"
+                  className="rounded border-l-4 border border-white/10 bg-surface-1/50"
                   style={{ borderLeftColor: meta.color }}
                 >
                   <button
@@ -206,7 +206,7 @@ export function ErpAuditModal({ audit, onClose, onFocusIssue }: Props) {
                   </button>
 
                   {isOpen && (
-                    <div className="border-t border-white/5 px-3 py-3 space-y-2 bg-slate-950/40">
+                    <div className="border-t border-white/5 px-3 py-3 space-y-2 bg-surface-0/40">
                       {nc.requiredValue && (
                         <Detail label="Exigé">{nc.requiredValue}</Detail>
                       )}

@@ -147,8 +147,8 @@ interface SpaceDetailAttrs {
 }
 
 const PRESET_COLORS = [
-  '#3b82f6', '#8b5cf6', '#ef4444', '#f59e0b', '#22c55e', '#06b6d4',
-  '#ec4899', '#f97316', '#14b8a6', '#84cc16', '#64748b', '#a855f7',
+  '#3b82f6', '#a77d4c', '#ef4444', '#f59e0b', '#22c55e', '#06b6d4',
+  '#ec4899', '#f97316', '#14b8a6', '#84cc16', '#64748b', '#b38a5a',
 ]
 
 // Détermine quelles sections/onglets afficher selon le type
@@ -289,23 +289,23 @@ export function SpaceDetailModal({ space, onClose, onValidated }: Props) {
 
   const modal = (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-surface-0/75 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-[960px] max-w-[95vw] h-[90vh] bg-slate-900 rounded-xl border border-white/10 shadow-2xl flex flex-col overflow-hidden">
+      <div className="w-[960px] max-w-[95vw] h-[90vh] bg-surface-1 rounded-xl border border-white/10 shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-gradient-to-r from-indigo-950/40 to-purple-950/40 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
-              style={{ background: `${color ?? '#6366f1'}25`, color: color ?? '#a5b4fc' }}
+              style={{ background: `${color ?? '#b38a5a'}25`, color: color ?? '#d4b280' }}
             >
               {typeMeta?.icon ?? '📐'}
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-sm font-bold text-white truncate m-0">
                 {label || 'Espace sans nom'}
-                {attrs.numero && <span className="text-indigo-300 ml-2">· {attrs.numero}</span>}
+                {attrs.numero && <span className="text-atlas-300 ml-2">· {attrs.numero}</span>}
               </h2>
               <p className="text-[10px] text-slate-400 m-0 truncate">
                 {space.id.slice(0, 8)} · {typeMeta?.label ?? space.type} · {space.areaSqm.toFixed(1)} m²
@@ -320,7 +320,7 @@ export function SpaceDetailModal({ space, onClose, onValidated }: Props) {
 
         <div className="flex-1 flex min-h-0">
           {/* Sidebar onglets */}
-          <aside className="w-48 flex-shrink-0 border-r border-white/10 bg-slate-950/60 overflow-y-auto py-2">
+          <aside className="w-48 flex-shrink-0 border-r border-white/10 bg-surface-0/60 overflow-y-auto py-2">
             {visibleTabs.map(t => {
               const meta = TAB_META[t]
               const Icon = meta.icon
@@ -331,7 +331,7 @@ export function SpaceDetailModal({ space, onClose, onValidated }: Props) {
                   onClick={() => setActiveTab(t)}
                   className={`w-full flex items-center gap-2 px-3 py-2 text-left text-[11px] transition ${
                     active
-                      ? 'bg-indigo-600/20 text-indigo-200 border-l-2 border-indigo-500'
+                      ? 'bg-atlas-500/20 text-atlas-200 border-l-2 border-atlas-500'
                       : 'text-slate-400 hover:text-white hover:bg-white/5 border-l-2 border-transparent'
                   }`}
                 >
@@ -396,7 +396,7 @@ export function SpaceDetailModal({ space, onClose, onValidated }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-white/10 bg-slate-900/60 flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-3 border-t border-white/10 bg-surface-1/60 flex-shrink-0">
           <div className="flex items-center gap-2 text-[11px]">
             {attrs.validated ? (
               <><CheckCircle2 size={14} className="text-emerald-400" />
@@ -583,7 +583,7 @@ function TabGeometrie({ attrs, updateAttr, space, perimeterM }: {
             <summary className="text-[10px] text-slate-500 cursor-pointer hover:text-slate-300">
               Voir coordonnées ({space.polygon.length} points)
             </summary>
-            <pre className="text-[9px] text-slate-400 bg-slate-950 rounded p-2 mt-1 max-h-32 overflow-auto m-0">
+            <pre className="text-[9px] text-slate-400 bg-surface-0 rounded p-2 mt-1 max-h-32 overflow-auto m-0">
 {space.polygon.map(([x, y]) => `(${x.toFixed(2)}, ${y.toFixed(2)})`).join('\n')}
             </pre>
           </details>
@@ -1099,7 +1099,7 @@ function TabParcours({ attrs, updateAttr }: { attrs: SpaceDetailAttrs; updateAtt
                 }}
                 className={`px-2 py-1.5 rounded text-[10px] font-medium border transition ${
                   on
-                    ? 'bg-indigo-600/30 border-indigo-500/50 text-indigo-200'
+                    ? 'bg-atlas-500/30 border-atlas-500/50 text-atlas-200'
                     : 'bg-slate-800 border-white/10 text-slate-400 hover:text-white'
                 }`}>
                 {s}
@@ -1224,7 +1224,7 @@ function TabNotes({ freeNote, setFreeNote }: { freeNote: string; setFreeNote: (v
 // ═══ Primitives UI ═══
 // ══════════════════════════════════════════════════════
 
-const inputCls = 'w-full bg-slate-800 text-white rounded px-3 py-2 text-[12px] border border-white/10 focus:border-indigo-500 outline-none'
+const inputCls = 'w-full bg-slate-800 text-white rounded px-3 py-2 text-[12px] border border-white/10 focus:border-atlas-500 outline-none'
 
 function Field({ label, span = 1, children }: {
   label: string; span?: 1 | 2 | 3; children: React.ReactNode

@@ -44,18 +44,18 @@ const CLIENTS_LOGOS = [
 
 const PRICING = [
   {
-    name: 'Starter', price: '150 000', period: '/mois',
-    features: ['1 projet', '3 utilisateurs', 'Vol.1 uniquement', 'Export PDF', 'Support email'],
-    cta: 'Commencer', popular: false,
+    name: 'Étude', price: '2 500 000', period: '/ projet',
+    features: ['1 centre commercial', 'Conception & audit réglementaire', 'Vol.1 Commercial + Vol.2 Sécurité', 'Export PDF & DWG', 'Livraison sous 4 semaines'],
+    cta: 'Démarrer un projet', popular: false,
   },
   {
-    name: 'Pro', price: '450 000', period: '/mois',
-    features: ['5 projets', '15 utilisateurs', 'Tous les volumes', 'Proph3t IA illimité', 'Export PDF/Excel/DWG', 'Support prioritaire', 'API accès'],
-    cta: 'Essai gratuit 14 jours', popular: true,
+    name: 'Complet', price: '6 500 000', period: '/ projet',
+    features: ['1 centre commercial', 'Les 4 volumes complets', 'Proph3t IA illimité', 'Wayfinder (mobile + bornes)', 'Visites guidées & rapports partageables', '6 mois de support après livraison', 'Formation équipe'],
+    cta: 'Demander un devis', popular: true,
   },
   {
-    name: 'Enterprise', price: 'Sur devis', period: '',
-    features: ['Projets illimités', 'Utilisateurs illimités', 'API dédiée', 'SSO / SAML', 'SLA 99.9%', 'Déploiement on-premise', 'Formation sur site'],
+    name: 'Portefeuille', price: 'Sur devis', period: '',
+    features: ['Plusieurs centres commerciaux', 'Licence pluriannuelle', 'API dédiée', 'SSO / SAML', 'SLA 99.9% avec pénalités', 'Déploiement on-premise possible', 'Équipe consultants sur site'],
     cta: 'Contacter l\'équipe', popular: false,
   },
 ]
@@ -75,7 +75,7 @@ export default function LandingPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen text-white" style={{ background: '#060a13' }}>
+    <div className="min-h-screen text-white" style={{ background: '#1a1d23' }}>
 
       {/* ═══ NAVBAR ═══ */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/[0.04] backdrop-blur-xl" style={{ background: 'rgba(6,10,19,0.85)' }}>
@@ -91,7 +91,7 @@ export default function LandingPage() {
               Connexion
             </button>
             <button onClick={() => navigate('/register')}
-              className="text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl transition-colors">
+              className="text-sm font-medium bg-atlas-500 hover:bg-atlas-400 text-white px-4 py-2 rounded-xl transition-colors">
               Essai gratuit
             </button>
           </div>
@@ -102,7 +102,7 @@ export default function LandingPage() {
       <section className="relative pt-32 pb-20 overflow-hidden">
         {/* Background effects */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-20 left-1/4 w-[700px] h-[700px] rounded-full opacity-[0.06] blur-[150px]" style={{ background: '#534AB7' }} />
+          <div className="absolute top-20 left-1/4 w-[700px] h-[700px] rounded-full opacity-[0.06] blur-[150px]" style={{ background: '#7e5e3c' }} />
           <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full opacity-[0.04] blur-[120px]" style={{ background: '#38bdf8' }} />
           <div className="absolute top-1/2 left-0 w-[400px] h-[400px] rounded-full opacity-[0.03] blur-[100px]" style={{ background: '#34d399' }} />
           <div className="absolute inset-0 opacity-[0.02]" style={{
@@ -114,14 +114,14 @@ export default function LandingPage() {
         <div className="relative max-w-6xl mx-auto px-6 text-center">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-8 text-[12px] font-medium"
-            style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', color: '#a5b4fc' }}>
+            style={{ background: 'rgba(179,138,90,0.08)', border: '1px solid rgba(179,138,90,0.2)', color: '#d4b280' }}>
             <Zap size={12} />
             Propulsé par Proph3t — IA conversationnelle à mémoire longue
           </div>
 
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
             Pilotez vos centres{' '}
-            <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-atlas-300 via-atlas-400 to-atlas-600 bg-clip-text text-transparent">
               commerciaux
             </span>
             <br />
@@ -135,11 +135,12 @@ export default function LandingPage() {
 
           <div className="flex items-center justify-center gap-4 mb-16">
             <button onClick={() => navigate('/register')}
-              className="flex items-center gap-2 px-7 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-[15px] transition-all hover:-translate-y-0.5 shadow-lg shadow-indigo-500/20">
+              className="flex items-center gap-2 px-7 py-3.5 rounded-xl bg-atlas-500 hover:bg-atlas-400 text-white font-medium text-[15px] transition-all hover:-translate-y-0.5 shadow-lg shadow-bronze/20">
               Démarrer gratuitement <ArrowRight size={18} />
             </button>
-            <button className="flex items-center gap-2 px-6 py-3.5 rounded-xl border border-white/[0.1] text-gray-300 hover:text-white hover:border-white/20 font-medium text-[15px] transition-all">
-              <Play size={16} /> Voir la démo
+            <button onClick={() => navigate('/dashboard')}
+              className="flex items-center gap-2 px-6 py-3.5 rounded-xl border border-white/[0.1] text-gray-300 hover:text-white hover:border-white/20 font-medium text-[15px] transition-all">
+              <Play size={16} /> Mode démo (sans compte)
             </button>
           </div>
 
@@ -147,7 +148,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto">
             {STATS.map(s => (
               <div key={s.label} className="text-center">
-                <div className="text-3xl font-bold text-white">{s.value}<span className="text-indigo-400">{s.suffix}</span></div>
+                <div className="text-3xl font-bold text-white">{s.value}<span className="text-atlas-400">{s.suffix}</span></div>
                 <div className="text-[12px] text-gray-500 mt-1 uppercase tracking-wider">{s.label}</div>
               </div>
             ))}
@@ -173,7 +174,7 @@ export default function LandingPage() {
       <section id="features" className="py-24">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <p className="text-[11px] text-indigo-400 uppercase tracking-[0.2em] font-semibold mb-3">3 Volumes métier</p>
+            <p className="text-[11px] text-atlas-400 uppercase tracking-[0.2em] font-semibold mb-3">3 Volumes métier</p>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
               Tout ce dont vous avez besoin,<br />dans une seule plateforme
             </h2>
@@ -187,7 +188,7 @@ export default function LandingPage() {
               const Icon = f.icon
               return (
                 <div key={f.title} className="group rounded-2xl p-7 border border-white/[0.06] transition-all hover:-translate-y-1 hover:border-white/[0.1]"
-                  style={{ background: '#0e1629' }}>
+                  style={{ background: '#262a31' }}>
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-transform group-hover:scale-110"
                     style={{ background: `${f.color}12`, border: `1px solid ${f.color}20` }}>
                     <Icon size={22} style={{ color: f.color }} />
@@ -200,11 +201,11 @@ export default function LandingPage() {
           </div>
 
           {/* Proph3t section */}
-          <div className="mt-16 rounded-2xl p-8 border border-purple-500/15 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(126,34,206,0.06), rgba(99,102,241,0.04))' }}>
-            <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-purple-500/[0.06] blur-3xl" />
+          <div className="mt-16 rounded-2xl p-8 border border-atlas-500/15 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(126,94,60,0.06), rgba(179,138,90,0.04))' }}>
+            <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-atlas-500/[0.06] blur-3xl" />
             <div className="relative flex flex-col md:flex-row items-start gap-6">
-              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-purple-500/10 border border-purple-500/20">
-                <Sparkles className="h-7 w-7 text-purple-400" />
+              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-atlas-500/10 border border-atlas-500/20">
+                <Sparkles className="h-7 w-7 text-atlas-400" />
               </div>
               <div>
                 <h3 className="text-xl font-bold text-white mb-2">Proph3t — L'expert qui vit dans votre projet</h3>
@@ -214,8 +215,8 @@ export default function LandingPage() {
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {['APSAD R82', 'NF S 61-938', 'ISO 7010', 'NF X 08-003', 'EN 62676', 'SYSCOHADA'].map(norm => (
-                    <span key={norm} className="rounded-lg px-2.5 py-1 text-[10px] font-semibold text-purple-300/80"
-                      style={{ background: 'rgba(126,34,206,0.1)', border: '1px solid rgba(126,34,206,0.2)' }}>{norm}</span>
+                    <span key={norm} className="rounded-lg px-2.5 py-1 text-[10px] font-semibold text-atlas-300/80"
+                      style={{ background: 'rgba(126,94,60,0.1)', border: '1px solid rgba(126,94,60,0.2)' }}>{norm}</span>
                   ))}
                 </div>
               </div>
@@ -240,8 +241,8 @@ export default function LandingPage() {
             ].map(item => {
               const Icon = item.icon
               return (
-                <div key={item.title} className="rounded-xl p-5 border border-white/[0.06]" style={{ background: '#0e1629' }}>
-                  <Icon size={18} className="text-indigo-400 mb-3" />
+                <div key={item.title} className="rounded-xl p-5 border border-white/[0.06]" style={{ background: '#262a31' }}>
+                  <Icon size={18} className="text-atlas-400 mb-3" />
                   <h4 className="text-sm font-semibold text-white mb-1">{item.title}</h4>
                   <p className="text-[12px] text-gray-500 leading-relaxed">{item.desc}</p>
                 </div>
@@ -255,7 +256,7 @@ export default function LandingPage() {
       <section id="pricing" className="py-24">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <p className="text-[11px] text-indigo-400 uppercase tracking-[0.2em] font-semibold mb-3">Tarification</p>
+            <p className="text-[11px] text-atlas-400 uppercase tracking-[0.2em] font-semibold mb-3">Tarification</p>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
               Un plan pour chaque ambition
             </h2>
@@ -266,11 +267,11 @@ export default function LandingPage() {
             {PRICING.map(plan => (
               <div key={plan.name}
                 className={`rounded-2xl p-7 border transition-all hover:-translate-y-1 ${
-                  plan.popular ? 'border-indigo-500/40 bg-indigo-500/[0.04] ring-1 ring-indigo-500/20' : 'border-white/[0.06]'
+                  plan.popular ? 'border-atlas-500/40 bg-atlas-400/[0.04] ring-1 ring-indigo-500/20' : 'border-white/[0.06]'
                 }`}
-                style={!plan.popular ? { background: '#0e1629' } : undefined}>
+                style={!plan.popular ? { background: '#262a31' } : undefined}>
                 {plan.popular && (
-                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-indigo-400 uppercase tracking-wider mb-3">
+                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-atlas-400 uppercase tracking-wider mb-3">
                     <Star size={10} /> Le plus populaire
                   </span>
                 )}
@@ -282,7 +283,7 @@ export default function LandingPage() {
                 <ul className="space-y-2.5 mb-8">
                   {plan.features.map(f => (
                     <li key={f} className="flex items-center gap-2.5 text-[13px] text-gray-400">
-                      <CheckCircle2 size={14} className={plan.popular ? 'text-indigo-400' : 'text-gray-600'} />
+                      <CheckCircle2 size={14} className={plan.popular ? 'text-atlas-400' : 'text-gray-600'} />
                       {f}
                     </li>
                   ))}
@@ -290,7 +291,7 @@ export default function LandingPage() {
                 <button onClick={() => navigate('/register')}
                   className={`w-full py-2.5 rounded-xl text-sm font-medium transition-colors ${
                     plan.popular
-                      ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                      ? 'bg-atlas-500 hover:bg-atlas-400 text-white'
                       : 'bg-white/[0.06] border border-white/[0.08] text-gray-300 hover:text-white hover:bg-white/[0.1]'
                   }`}>
                   {plan.cta}
@@ -309,7 +310,7 @@ export default function LandingPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {TESTIMONIALS.map((t, i) => (
-              <div key={i} className="rounded-2xl p-6 border border-white/[0.06]" style={{ background: '#0e1629' }}>
+              <div key={i} className="rounded-2xl p-6 border border-white/[0.06]" style={{ background: '#262a31' }}>
                 <p className="text-[14px] text-gray-300 leading-relaxed mb-5 italic">"{t.quote}"</p>
                 <div>
                   <p className="text-sm font-semibold text-white">{t.author}</p>
@@ -324,7 +325,7 @@ export default function LandingPage() {
       {/* ═══ CTA ═══ */}
       <section className="py-24">
         <div className="max-w-3xl mx-auto px-6 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 mx-auto mb-6 shadow-lg shadow-indigo-500/20">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-atlas-500 to-purple-600 mx-auto mb-6 shadow-lg shadow-bronze/20">
             <Sparkles className="h-8 w-8 text-white" />
           </div>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
@@ -335,7 +336,7 @@ export default function LandingPage() {
           </p>
           <div className="flex items-center justify-center gap-4">
             <button onClick={() => navigate('/register')}
-              className="flex items-center gap-2 px-8 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-[15px] transition-all hover:-translate-y-0.5">
+              className="flex items-center gap-2 px-8 py-3.5 rounded-xl bg-atlas-500 hover:bg-atlas-400 text-white font-medium text-[15px] transition-all hover:-translate-y-0.5">
               Créer mon compte <ArrowRight size={18} />
             </button>
             <button onClick={() => navigate('/login')}

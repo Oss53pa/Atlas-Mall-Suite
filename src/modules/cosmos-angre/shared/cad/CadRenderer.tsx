@@ -38,7 +38,7 @@ export default function CadRenderer({ entities, layers, selectedIds, onEntityCli
 }
 
 function renderEntity(e: CadEntity, selected: boolean) {
-  const selStroke = selected ? '#a855f7' : undefined
+  const selStroke = selected ? '#b38a5a' : undefined
   const selWidth = selected ? e.lineWidth + 2 : undefined
 
   switch (e.type) {
@@ -103,7 +103,7 @@ function ZoneRenderer({ entity: e, selected }: { entity: CadEntity; selected: bo
         d={d}
         fill={e.fillColor ?? e.color}
         fillOpacity={e.fillOpacity ?? 0.15}
-        stroke={selected ? '#a855f7' : e.color}
+        stroke={selected ? '#b38a5a' : e.color}
         strokeWidth={selected ? 3 : e.lineWidth}
         strokeDasharray={selected ? '8 4' : undefined}
       />
@@ -132,7 +132,7 @@ function ZoneRenderer({ entity: e, selected }: { entity: CadEntity; selected: bo
         <rect
           key={i}
           x={p.x - 4} y={p.y - 4} width={8} height={8}
-          fill="#a855f7" stroke="#ffffff" strokeWidth={1}
+          fill="#b38a5a" stroke="#ffffff" strokeWidth={1}
           className="cursor-nwse-resize"
         />
       ))}
@@ -180,7 +180,7 @@ function TextRenderer({ entity: e, selected }: { entity: CadEntity; selected: bo
     <>
       {selected && (
         <rect x={p.x - 4} y={p.y - 16} width={120} height={24}
-          fill="none" stroke="#a855f7" strokeWidth={1} strokeDasharray="4 2" />
+          fill="none" stroke="#b38a5a" strokeWidth={1} strokeDasharray="4 2" />
       )}
       <text
         x={p.x} y={p.y}

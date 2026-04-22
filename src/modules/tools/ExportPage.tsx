@@ -27,7 +27,7 @@ const EXPORTS: Record<string, ExportItem[]> = {
   ],
   'Transversal': [
     { id: 'e11', title: 'Rapport de synthèse global', format: 'PDF', formatColor: '#ef4444', volume: 'all', size: '~25 Mo', icon: FileText },
-    { id: 'e12', title: 'Export données complètes', format: 'JSON', formatColor: '#a855f7', volume: 'all', size: '~5 Mo', icon: Code2 },
+    { id: 'e12', title: 'Export données complètes', format: 'JSON', formatColor: '#b38a5a', volume: 'all', size: '~5 Mo', icon: Code2 },
     { id: 'e13', title: 'Présentation investisseurs', format: 'PPTX', formatColor: '#f59e0b', volume: 'all', size: '~30 Mo', icon: Presentation },
     { id: 'e14', title: 'Rendu 3D isométrique', format: 'SVG', formatColor: '#38bdf8', volume: 'all', size: '~2 Mo', icon: Image },
   ],
@@ -56,7 +56,7 @@ export default function ExportPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-6" style={{ background: '#060a13', color: '#e2e8f0' }}>
+    <div className="h-full overflow-y-auto p-6" style={{ background: '#1a1d23', color: '#e2e8f0' }}>
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
           <FileText size={20} className="text-amber-400" />
@@ -75,7 +75,7 @@ export default function ExportPage() {
                 const Icon = item.icon
                 const isGen = generating === item.id
                 return (
-                  <div key={item.id} className="rounded-xl p-4 border border-white/[0.06] flex flex-col" style={{ background: '#0e1629' }}>
+                  <div key={item.id} className="rounded-xl p-4 border border-white/[0.06] flex flex-col" style={{ background: '#262a31' }}>
                     <div className="flex items-start justify-between mb-3">
                       <Icon size={18} className="text-gray-400" />
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: `${item.formatColor}15`, color: item.formatColor }}>
@@ -96,7 +96,7 @@ export default function ExportPage() {
         ))}
 
         {/* Recent exports */}
-        <div className="rounded-xl border border-white/[0.06] overflow-hidden" style={{ background: '#0e1629' }}>
+        <div className="rounded-xl border border-white/[0.06] overflow-hidden" style={{ background: '#262a31' }}>
           <div className="px-5 py-3 border-b border-white/[0.04] flex items-center gap-2">
             <Clock size={14} className="text-gray-500" />
             <h3 className="text-sm font-semibold text-white">Exports récents</h3>
@@ -110,7 +110,7 @@ export default function ExportPage() {
                   <td className="px-3 py-3 text-[11px] text-gray-500">{r.date}</td>
                   <td className="px-3 py-3 text-[11px] text-gray-500">{r.size}</td>
                   <td className="px-3 py-3 text-right">
-                    <button className="flex items-center gap-1 text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors ml-auto">
+                    <button className="flex items-center gap-1 text-[11px] text-atlas-400 hover:text-atlas-300 transition-colors ml-auto">
                       <Download size={11} /> Télécharger
                     </button>
                   </td>

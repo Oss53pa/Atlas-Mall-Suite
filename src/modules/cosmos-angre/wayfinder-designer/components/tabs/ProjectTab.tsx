@@ -96,7 +96,7 @@ export function ProjectTab() {
         <div className="flex gap-4 items-start">
           <div
             onClick={() => fileRef.current?.click()}
-            className="w-32 h-32 rounded-lg border-2 border-dashed border-white/15 flex items-center justify-center cursor-pointer hover:border-indigo-400 bg-slate-900/50 overflow-hidden flex-shrink-0"
+            className="w-32 h-32 rounded-lg border-2 border-dashed border-white/15 flex items-center justify-center cursor-pointer hover:border-indigo-400 bg-surface-1/50 overflow-hidden flex-shrink-0"
           >
             {project.logoUrl ? (
               <img src={project.logoUrl} alt="Logo" className="max-w-full max-h-full object-contain" />
@@ -139,9 +139,9 @@ export function ProjectTab() {
                 className={`text-left flex items-center justify-between px-3 py-2 rounded text-[11px] border transition-all ${
                   enabled
                     ? isActive
-                      ? 'border-indigo-500 bg-indigo-950/40 text-white'
-                      : 'border-white/15 bg-slate-900 text-slate-200'
-                    : 'border-white/5 bg-slate-950/40 text-slate-500 hover:text-slate-300'
+                      ? 'border-atlas-500 bg-indigo-950/40 text-white'
+                      : 'border-white/15 bg-surface-1 text-slate-200'
+                    : 'border-white/5 bg-surface-0/40 text-slate-500 hover:text-slate-300'
                 }`}
               >
                 <span>
@@ -154,7 +154,7 @@ export function ProjectTab() {
                       e.stopPropagation()
                       patchProject({ activeLocale: loc.code, dir: dirFromLocale(loc.code) })
                     }}
-                    className={`text-[9px] px-1.5 py-0.5 rounded ${isActive ? 'bg-indigo-500 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
+                    className={`text-[9px] px-1.5 py-0.5 rounded ${isActive ? 'bg-atlas-500 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
                   >
                     {isActive ? 'PREVIEW' : 'preview'}
                   </button>
@@ -191,9 +191,9 @@ function Section({
   title, icon: Icon, children,
 }: { title: string; icon: React.ComponentType<any>; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg bg-slate-900/40 border border-white/5 overflow-hidden">
-      <header className="flex items-center gap-2 px-4 py-2.5 border-b border-white/5 bg-slate-900/50">
-        <Icon size={14} className="text-indigo-400" />
+    <section className="rounded-lg bg-surface-1/40 border border-white/5 overflow-hidden">
+      <header className="flex items-center gap-2 px-4 py-2.5 border-b border-white/5 bg-surface-1/50">
+        <Icon size={14} className="text-atlas-400" />
         <h3 className="text-[12px] font-semibold text-white">{title}</h3>
       </header>
       <div className="p-4 space-y-3">{children}</div>
@@ -215,14 +215,14 @@ function Field({
         .input {
           width: 100%;
           padding: 8px 12px;
-          background: #0f172a;
+          background: #2a2d33;
           border: 1px solid rgba(255,255,255,0.1);
           color: #f1f5f9;
           border-radius: 6px;
           font-size: 12px;
           outline: none;
         }
-        .input:focus { border-color: #6366f1; }
+        .input:focus { border-color: #b38a5a; }
       `}</style>
     </div>
   )

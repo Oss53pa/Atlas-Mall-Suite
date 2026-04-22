@@ -112,7 +112,7 @@ export function ExportTab() {
     <div className="overflow-y-auto p-6 max-w-4xl mx-auto space-y-5">
 
       {/* Sélection format */}
-      <section className="rounded-lg bg-slate-900/40 border border-white/5 p-5">
+      <section className="rounded-lg bg-surface-1/40 border border-white/5 p-5">
         <h3 className="text-[12px] font-semibold text-white mb-3">Choisir le format d'export</h3>
         {(['digital', 'print', 'extra'] as const).map(group => (
           <div key={group} className="mb-3">
@@ -129,8 +129,8 @@ export function ExportTab() {
                     onClick={() => { setSelected(f.format); setOpts(o => ({ ...o, format: f.format })) }}
                     className={`text-left p-3 rounded-lg border transition-all ${
                       isSel
-                        ? 'border-indigo-500 bg-indigo-950/30'
-                        : 'border-white/10 bg-slate-950/40 hover:border-white/30'
+                        ? 'border-atlas-500 bg-indigo-950/30'
+                        : 'border-white/10 bg-surface-0/40 hover:border-white/30'
                     }`}
                   >
                     <Icon size={16} />
@@ -145,7 +145,7 @@ export function ExportTab() {
       </section>
 
       {/* Options avancées contextuelles */}
-      <section className="rounded-lg bg-slate-900/40 border border-white/5 p-5">
+      <section className="rounded-lg bg-surface-1/40 border border-white/5 p-5">
         <h3 className="text-[12px] font-semibold text-white mb-3">Options avancées</h3>
         <div className="grid grid-cols-2 gap-4">
 
@@ -237,11 +237,11 @@ export function ExportTab() {
       </section>
 
       {/* Action */}
-      <div className="rounded-lg bg-slate-900/40 border border-white/5 p-5">
+      <div className="rounded-lg bg-surface-1/40 border border-white/5 p-5">
         <button
           onClick={handleExport}
           disabled={running || !template}
-          className="w-full py-3 rounded-lg bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-sm font-bold flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
+          className="w-full py-3 rounded-lg bg-gradient-to-r from-atlas-500 to-blue-600 text-white text-sm font-bold flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
         >
           {running ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
           {running ? 'Génération en cours…' : `Exporter en ${ALL_FORMATS.find(f => f.format === selected)?.label}`}
@@ -275,11 +275,11 @@ export function ExportTab() {
       <style>{`
         .input {
           width: 100%; padding: 8px 12px;
-          background: #0f172a; border: 1px solid rgba(255,255,255,0.1);
+          background: #2a2d33; border: 1px solid rgba(255,255,255,0.1);
           color: #f1f5f9; border-radius: 6px;
           font-size: 12px; outline: none;
         }
-        .input:focus { border-color: #6366f1; }
+        .input:focus { border-color: #b38a5a; }
       `}</style>
     </div>
   )

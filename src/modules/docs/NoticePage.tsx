@@ -19,18 +19,18 @@ interface Section {
 }
 
 const SECTIONS: Section[] = [
-  { id: 'intro',        title: '1. Introduction',              icon: BookOpen,     color: '#a855f7' },
+  { id: 'intro',        title: '1. Introduction',              icon: BookOpen,     color: '#b38a5a' },
   { id: 'install',      title: '2. Prérequis & installation',  icon: Download,     color: '#64748b' },
-  { id: 'session',      title: '3. Démarrer une session',      icon: Sparkles,     color: '#a855f7' },
+  { id: 'session',      title: '3. Démarrer une session',      icon: Sparkles,     color: '#b38a5a' },
   { id: 'import',       title: '4. Importer un plan',          icon: Upload,       color: '#0ea5e9' },
   { id: 'plan',         title: '5. Manipuler le plan',         icon: Layers,       color: '#0ea5e9' },
-  { id: 'orchestrate',  title: '6. Orchestrateur PROPH3T',     icon: Workflow,     color: '#a855f7' },
+  { id: 'orchestrate',  title: '6. Orchestrateur PROPH3T',     icon: Workflow,     color: '#b38a5a' },
   { id: 'vol1',         title: '7. Vol.1 — Commercial',        icon: ShoppingBag,  color: '#10b981' },
   { id: 'vol2',         title: '8. Vol.2 — Sécurité (ERP)',    icon: ShieldAlert,  color: '#ef4444' },
   { id: 'vol3',         title: '9. Vol.3 — Parcours client',   icon: Footprints,   color: '#f59e0b' },
   { id: 'vol4',         title: '10. Vol.4 — Wayfinder',        icon: Navigation,   color: '#0ea5e9' },
   { id: 'save',         title: '11. Sauvegardes & exports',    icon: Save,         color: '#64748b' },
-  { id: 'learning',     title: '12. Boucle d\'apprentissage',  icon: Brain,        color: '#a855f7' },
+  { id: 'learning',     title: '12. Boucle d\'apprentissage',  icon: Brain,        color: '#b38a5a' },
   { id: 'shortcuts',    title: '13. Raccourcis clavier',       icon: Keyboard,     color: '#64748b' },
   { id: 'troubleshoot', title: '14. Dépannage',                icon: AlertCircle,  color: '#ef4444' },
   { id: 'refs',         title: '15. Référentiels',             icon: BookOpen,     color: '#64748b' },
@@ -62,9 +62,9 @@ export default function NoticePage() {
   const handlePrint = () => window.print()
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 print:bg-white print:text-black">
+    <div className="min-h-screen bg-surface-0 text-slate-200 print:bg-white print:text-black">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur border-b border-white/10 print:hidden">
+      <header className="sticky top-0 z-40 bg-surface-1/95 backdrop-blur border-b border-white/10 print:hidden">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
@@ -76,7 +76,7 @@ export default function NoticePage() {
             </Link>
             <span className="text-slate-600">·</span>
             <div className="flex items-center gap-2">
-              <BookOpen size={16} className="text-purple-400" />
+              <BookOpen size={16} className="text-atlas-400" />
               <span className="text-sm font-bold text-white">Notice d'utilisation</span>
               <span className="text-[10px] text-slate-500">v1.0</span>
             </div>
@@ -84,7 +84,7 @@ export default function NoticePage() {
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-semibold bg-purple-600 hover:bg-purple-500 text-white"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-semibold bg-atlas-600 hover:bg-atlas-500 text-white"
             >
               <Printer size={12} /> Imprimer / PDF
             </button>
@@ -119,7 +119,7 @@ export default function NoticePage() {
                   key={s.id}
                   onClick={() => scrollTo(s.id)}
                   className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-[11px] transition ${
-                    active ? 'bg-purple-600/20 text-purple-200 border-l-2 border-purple-500' : 'text-slate-400 hover:bg-white/5 hover:text-white border-l-2 border-transparent'
+                    active ? 'bg-atlas-600/20 text-atlas-200 border-l-2 border-atlas-500' : 'text-slate-400 hover:bg-white/5 hover:text-white border-l-2 border-transparent'
                   }`}
                   style={{ paddingLeft: active ? 8 : 10 }}
                 >
@@ -135,7 +135,7 @@ export default function NoticePage() {
         <main className="flex-1 min-w-0 max-w-3xl print:max-w-none">
           {/* Intro */}
           <section id="intro" className="mb-12 scroll-mt-24">
-            <SectionHeader icon={BookOpen} color="#a855f7">1. Introduction</SectionHeader>
+            <SectionHeader icon={BookOpen} color="#b38a5a">1. Introduction</SectionHeader>
             <p className="text-[13px] leading-relaxed">
               <strong className="text-white">Atlas Mall Suite</strong> est une plateforme
               <strong className="text-emerald-400"> générique de pilotage pour centres commerciaux</strong>
@@ -185,7 +185,7 @@ export default function NoticePage() {
 
           {/* Session */}
           <section id="session" className="mb-12 scroll-mt-24">
-            <SectionHeader icon={Sparkles} color="#a855f7">3. Démarrer une session</SectionHeader>
+            <SectionHeader icon={Sparkles} color="#b38a5a">3. Démarrer une session</SectionHeader>
             <ol className="text-[13px] space-y-2 pl-5 list-decimal">
               <li>
                 <strong>Nouveau projet</strong> : passez par l'onboarding (nom, pays, devise, surface totale,
@@ -243,13 +243,13 @@ export default function NoticePage() {
 
           {/* Orchestrate */}
           <section id="orchestrate" className="mb-12 scroll-mt-24">
-            <SectionHeader icon={Workflow} color="#a855f7">6. Orchestrateur PROPH3T</SectionHeader>
+            <SectionHeader icon={Workflow} color="#b38a5a">6. Orchestrateur PROPH3T</SectionHeader>
             <p className="text-[13px] mb-3">
               L'orchestrateur enchaîne automatiquement les 4 volumes sur le plan importé et trace chaque
               décision pour auditabilité complète.
             </p>
             <ol className="text-[13px] space-y-2 pl-5 list-decimal">
-              <li>Vol.4 → menu <em className="text-purple-300">PROPH3T → Orchestrateur 4 vol.</em></li>
+              <li>Vol.4 → menu <em className="text-atlas-300">PROPH3T → Orchestrateur 4 vol.</em></li>
               <li>Cochez les volumes à exécuter (par défaut : tous).</li>
               <li>Laissez <strong>Web Worker</strong> coché pour que l'UI reste fluide.</li>
               <li>Cliquez <strong>Lancer orchestration</strong>.</li>
@@ -335,7 +335,7 @@ export default function NoticePage() {
 
           {/* Learning */}
           <section id="learning" className="mb-12 scroll-mt-24">
-            <SectionHeader icon={Brain} color="#a855f7">12. Boucle d'apprentissage terrain</SectionHeader>
+            <SectionHeader icon={Brain} color="#b38a5a">12. Boucle d'apprentissage terrain</SectionHeader>
             <ol className="text-[13px] space-y-2 pl-5 list-decimal">
               <li>Chaque panneau imprimé contient un <strong>QR code</strong> de feedback.</li>
               <li>L'agent terrain scanne → page mobile <code className="text-blue-300">/feedback</code>.</li>
@@ -359,8 +359,8 @@ export default function NoticePage() {
                 ['F',         'Recadrer plan (fit)'],
                 ['Espace',    'Pan (maintenir)'],
               ].map(([k, d]) => (
-                <div key={k} className="flex items-center justify-between px-3 py-2 rounded bg-slate-900/40 border border-white/5 print:border-slate-300 print:bg-white">
-                  <kbd className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-purple-300 border border-purple-900/40 print:bg-slate-100 print:text-black print:border-slate-400">
+                <div key={k} className="flex items-center justify-between px-3 py-2 rounded bg-surface-1/40 border border-white/5 print:border-slate-300 print:bg-white">
+                  <kbd className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-atlas-300 border border-purple-900/40 print:bg-slate-100 print:text-black print:border-slate-400">
                     {k}
                   </kbd>
                   <span className="text-[11px] text-slate-400 print:text-black">{d}</span>
@@ -382,7 +382,7 @@ export default function NoticePage() {
                 { p: 'Import DXF illisible', s: 'Enregistrez depuis AutoCAD en version DXF R2013 (ASCII). Les versions trop récentes peuvent échouer.' },
                 { p: 'Performances dégradées', s: 'Plan > 10 000 entités : activez le mode simplifié dans les options du visualiseur.' },
               ].map((d, i) => (
-                <div key={i} className="px-4 py-3 rounded-lg bg-slate-900/40 border border-white/5 print:border-slate-300 print:bg-white">
+                <div key={i} className="px-4 py-3 rounded-lg bg-surface-1/40 border border-white/5 print:border-slate-300 print:bg-white">
                   <div className="text-[12px] text-red-300 font-semibold m-0 flex items-center gap-1 print:text-red-700">
                     <ChevronRight size={12} /> {d.p}
                   </div>

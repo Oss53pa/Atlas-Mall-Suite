@@ -41,10 +41,10 @@ const COLOR_MAP: Record<SpaceType, { bg: string; text: string; border: string }>
   backoffice: { bg: 'bg-zinc-800/60', text: 'text-zinc-300', border: 'border-zinc-600/40' },
   financier: { bg: 'bg-emerald-900/40', text: 'text-emerald-300', border: 'border-emerald-600/40' },
   sortie_secours: { bg: 'bg-red-900/40', text: 'text-red-300', border: 'border-red-600/40' },
-  loisirs: { bg: 'bg-purple-900/40', text: 'text-purple-300', border: 'border-purple-600/40' },
+  loisirs: { bg: 'bg-purple-900/40', text: 'text-atlas-300', border: 'border-purple-600/40' },
   services: { bg: 'bg-cyan-900/40', text: 'text-cyan-300', border: 'border-cyan-600/40' },
   hotel: { bg: 'bg-rose-900/40', text: 'text-rose-300', border: 'border-rose-600/40' },
-  bureaux: { bg: 'bg-indigo-900/40', text: 'text-indigo-300', border: 'border-indigo-600/40' },
+  bureaux: { bg: 'bg-indigo-900/40', text: 'text-atlas-300', border: 'border-indigo-600/40' },
   exterieur: { bg: 'bg-green-900/40', text: 'text-green-300', border: 'border-green-600/40' },
 }
 

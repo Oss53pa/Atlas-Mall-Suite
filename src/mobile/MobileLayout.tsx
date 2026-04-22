@@ -27,7 +27,7 @@ export default function MobileLayout({ children, activeTab, onTabChange, project
   ]
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-slate-900">
+    <div className="fixed inset-0 flex flex-col bg-surface-1">
       {!isTerrainMode && (
         <header className="flex items-center justify-between px-3 py-2 bg-slate-800 border-b border-slate-700">
           <span className="text-sm font-medium text-white truncate">{projectName}</span>

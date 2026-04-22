@@ -30,7 +30,7 @@ const actions: Action[] = [
 ]
 
 const allPhases: Phase[] = ['Pré-ouverture', 'Ouverture', 'Post-ouverture', 'Croisière']
-const phaseColors: Record<Phase, string> = { 'Pré-ouverture': '#3b82f6', 'Ouverture': '#22c55e', 'Post-ouverture': '#f59e0b', 'Croisière': '#8b5cf6' }
+const phaseColors: Record<Phase, string> = { 'Pré-ouverture': '#3b82f6', 'Ouverture': '#22c55e', 'Post-ouverture': '#f59e0b', 'Croisière': '#a77d4c' }
 const prioriteColors: Record<Priority, string> = { haute: '#ef4444', moyenne: '#f59e0b' }
 
 export default function PlanAction() {

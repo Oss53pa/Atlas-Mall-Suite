@@ -25,7 +25,7 @@ export default function WayfindingSection() {
   }, [fromPoi, toPoi, pmrOnly, navGraph, calculateWayfinding, buildGraph])
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto bg-gray-950">
+    <div className="flex flex-col h-full overflow-y-auto bg-surface-0">
       <div className="px-4 py-3 border-b border-gray-800">
         <h2 className="text-sm font-bold text-emerald-400 flex items-center gap-2">
           <Route className="w-4 h-4" /> Wayfinding
@@ -41,7 +41,7 @@ export default function WayfindingSection() {
             <select
               value={fromPoi}
               onChange={(e) => setFromPoi(e.target.value)}
-              className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-surface-1 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-emerald-500"
             >
               <option value="">Selectionner un POI...</option>
               {pois.map((p) => (
@@ -54,7 +54,7 @@ export default function WayfindingSection() {
             <select
               value={toPoi}
               onChange={(e) => setToPoi(e.target.value)}
-              className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-surface-1 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-emerald-500"
             >
               <option value="">Selectionner un POI...</option>
               {pois.map((p) => (
@@ -86,7 +86,7 @@ export default function WayfindingSection() {
 
         {/* Path Result */}
         {currentPath && (
-          <div className="bg-gray-900/50 border border-emerald-800/30 rounded-lg p-3 space-y-3">
+          <div className="bg-surface-1/50 border border-emerald-800/30 rounded-lg p-3 space-y-3">
             <div className="text-xs font-semibold text-emerald-400">Itineraire calcule</div>
 
             <div className="grid grid-cols-3 gap-2">
@@ -142,7 +142,7 @@ export default function WayfindingSection() {
 
         {/* Graph Stats */}
         {navGraph && (
-          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-3">
+          <div className="bg-surface-1/50 border border-gray-800 rounded-lg p-3">
             <div className="text-[10px] text-gray-500 font-mono mb-2">GRAPHE NAVIGATION</div>
             <div className="space-y-1 text-xs">
               <div className="flex justify-between">

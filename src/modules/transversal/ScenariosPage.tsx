@@ -38,7 +38,7 @@ const SCENARIOS: Scenario[] = [
   },
   {
     id: 'D', name: 'Scénario D — Optimal', description: 'Combinaison Sécurité+ et Expérience+. Budget maximum mais ROI optimisé.',
-    color: '#a855f7', status: 'brouillon',
+    color: '#b38a5a', status: 'brouillon',
     metrics: { occupancy: 96, revenue: 5100000000, securityScore: 92, cameraCoverage: 96, capex: 235000000, nps: 88, dwell: 115, signage: 6.5 },
   },
 ]
@@ -65,10 +65,10 @@ export default function ScenariosPage() {
   const scB = SCENARIOS.find(s => s.id === compareIds[1])!
 
   return (
-    <div className="h-full overflow-y-auto p-6" style={{ background: '#060a13', color: '#e2e8f0' }}>
+    <div className="h-full overflow-y-auto p-6" style={{ background: '#1a1d23', color: '#e2e8f0' }}>
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <Layers size={20} className="text-indigo-400" />
+          <Layers size={20} className="text-atlas-400" />
           <div>
             <h1 className="text-xl font-bold text-white">Scénarios</h1>
             <p className="text-sm text-gray-500">Comparez les configurations A/B/C/D de votre centre commercial</p>
@@ -83,7 +83,7 @@ export default function ScenariosPage() {
               <button key={sc.id} onClick={() => toggle(sc.id)}
                 className={`text-left rounded-xl p-4 border transition-all ${selected ? 'ring-1' : 'hover:-translate-y-0.5'}`}
                 style={{
-                  background: selected ? `${sc.color}08` : '#0e1629',
+                  background: selected ? `${sc.color}08` : '#262a31',
                   borderColor: selected ? `${sc.color}40` : 'rgba(255,255,255,0.06)',
                   ...(selected ? { ringColor: `${sc.color}30` } : {}),
                 }}>
@@ -104,7 +104,7 @@ export default function ScenariosPage() {
         </div>
 
         {/* Comparison table */}
-        <div className="rounded-xl border border-white/[0.06] overflow-hidden mb-6" style={{ background: '#0e1629' }}>
+        <div className="rounded-xl border border-white/[0.06] overflow-hidden mb-6" style={{ background: '#262a31' }}>
           <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.04]">
             <h3 className="text-sm font-semibold text-white">Comparaison détaillée</h3>
             <button className="flex items-center gap-1.5 text-[11px] text-gray-400 hover:text-white transition-colors">
@@ -151,7 +151,7 @@ export default function ScenariosPage() {
 
         {/* Actions */}
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-atlas-500 hover:bg-atlas-500 text-white text-sm font-medium transition-colors">
             <Plus size={14} /> Nouveau scénario
           </button>
           <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/[0.06] border border-white/[0.08] text-gray-300 hover:text-white text-sm transition-colors">

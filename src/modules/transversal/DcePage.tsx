@@ -68,7 +68,7 @@ export default function DcePage() {
   const st = STATUS_CFG[lot.status]
 
   return (
-    <div className="flex h-full" style={{ background: '#060a13', color: '#e2e8f0' }}>
+    <div className="flex h-full" style={{ background: '#1a1d23', color: '#e2e8f0' }}>
       {/* Left: Lots list */}
       <div className="w-80 flex-shrink-0 border-r border-white/[0.05] overflow-y-auto" style={{ background: '#0a0f1a' }}>
         <div className="p-4 border-b border-white/[0.04]">
@@ -100,7 +100,7 @@ export default function DcePage() {
               <h2 className="text-lg font-bold text-white">{lot.title}</h2>
             </div>
             <div className="flex gap-2">
-              <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors">
+              <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-atlas-500 hover:bg-atlas-500 text-white text-sm font-medium transition-colors">
                 <Download size={13} /> Générer DCE (PDF)
               </button>
               <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/[0.06] border border-white/[0.08] text-gray-300 hover:text-white text-sm transition-colors">
@@ -116,7 +116,7 @@ export default function DcePage() {
               { icon: Calendar, label: 'Date limite', value: lot.deadline, color: '#38bdf8' },
               { icon: Users, label: 'Réponses', value: `${lot.responses} fournisseur(s)`, color: '#34d399' },
             ].map(k => (
-              <div key={k.label} className="rounded-xl p-4 border border-white/[0.06]" style={{ background: '#0e1629' }}>
+              <div key={k.label} className="rounded-xl p-4 border border-white/[0.06]" style={{ background: '#262a31' }}>
                 <k.icon size={14} style={{ color: k.color }} className="mb-2" />
                 <p className="text-[10px] text-gray-500 uppercase tracking-wider">{k.label}</p>
                 <p className="text-sm font-semibold text-white mt-0.5">{k.value}</p>
@@ -125,19 +125,19 @@ export default function DcePage() {
           </div>
 
           {/* Specs */}
-          <div className="rounded-xl border border-white/[0.06] p-5 mb-6" style={{ background: '#0e1629' }}>
+          <div className="rounded-xl border border-white/[0.06] p-5 mb-6" style={{ background: '#262a31' }}>
             <h3 className="text-sm font-semibold text-white mb-3">Cahier des charges</h3>
             <ul className="space-y-2">
               {lot.specs.map((s, i) => (
                 <li key={i} className="flex items-start gap-2 text-[12px] text-gray-300">
-                  <CheckCircle2 size={13} className="text-indigo-400 mt-0.5 flex-shrink-0" /> {s}
+                  <CheckCircle2 size={13} className="text-atlas-400 mt-0.5 flex-shrink-0" /> {s}
                 </li>
               ))}
             </ul>
           </div>
 
           {/* Vendor responses */}
-          <div className="rounded-xl border border-white/[0.06] overflow-hidden" style={{ background: '#0e1629' }}>
+          <div className="rounded-xl border border-white/[0.06] overflow-hidden" style={{ background: '#262a31' }}>
             <div className="px-5 py-3 border-b border-white/[0.04]">
               <h3 className="text-sm font-semibold text-white">Réponses fournisseurs</h3>
             </div>

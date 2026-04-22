@@ -112,12 +112,12 @@ function VolumeCard({ vol }: { vol: VolumeConfig }) {
       navigator.clipboard.writeText(url).then(() => {
         toast.success('Lien copié !', {
           style: {
-            background: '#131d35',
+            background: '#2d323b',
             color: '#e2e8f0',
             border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: '12px',
           },
-          iconTheme: { primary: vol.accent, secondary: '#131d35' },
+          iconTheme: { primary: vol.accent, secondary: '#2d323b' },
         })
       })
     },
@@ -146,7 +146,7 @@ function VolumeCard({ vol }: { vol: VolumeConfig }) {
       {/* Card inner */}
       <div
         className="relative rounded-2xl p-7 h-full overflow-hidden"
-        style={{ background: 'linear-gradient(145deg, #0e1629, #0a1021)' }}
+        style={{ background: 'linear-gradient(145deg, #262a31, #202329)' }}
       >
         {/* Decorative gradient orb */}
         <div
@@ -250,13 +250,13 @@ function VolumeCard({ vol }: { vol: VolumeConfig }) {
 
 export default function VolumesNav() {
   return (
-    <div className="h-full text-white relative overflow-auto" style={{ background: '#060a13' }}>
+    <div className="h-full text-white relative overflow-auto" style={{ background: '#1a1d23' }}>
       {/* Background gradient mesh */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full opacity-[0.03] blur-[120px]"
           style={{ background: 'radial-gradient(circle, #38bdf8, transparent)' }} />
         <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full opacity-[0.03] blur-[100px]"
-          style={{ background: 'radial-gradient(circle, #a855f7, transparent)' }} />
+          style={{ background: 'radial-gradient(circle, #b38a5a, transparent)' }} />
         <div className="absolute top-1/2 left-0 w-[400px] h-[400px] rounded-full opacity-[0.02] blur-[80px]"
           style={{ background: 'radial-gradient(circle, #34d399, transparent)' }} />
         {/* Grid overlay */}
@@ -308,24 +308,24 @@ export default function VolumesNav() {
       {/* Proph3t section */}
       <div className="relative mx-auto max-w-6xl px-6 pb-16 pt-4">
         <div className="relative rounded-2xl p-[1px] overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(168,85,247,0.02))' }}
+          style={{ background: 'linear-gradient(135deg, rgba(179,138,90,0.15), rgba(179,138,90,0.02))' }}
         >
-          <div className="rounded-2xl p-7 relative" style={{ background: 'linear-gradient(145deg, #0e1629, #0a1021)' }}>
+          <div className="rounded-2xl p-7 relative" style={{ background: 'linear-gradient(145deg, #262a31, #202329)' }}>
             {/* Decorative */}
-            <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-purple-500/[0.05] blur-3xl" />
+            <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-atlas-500/[0.05] blur-3xl" />
 
             <div className="relative flex items-center gap-3.5 mb-4">
               <div className="relative">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20">
-                  <Sparkles className="h-5 w-5 text-purple-400" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-atlas-500/10 border border-atlas-500/20">
+                  <Sparkles className="h-5 w-5 text-atlas-400" />
                 </div>
-                <div className="absolute -inset-1 rounded-xl bg-purple-500/20 blur-md opacity-50" />
+                <div className="absolute -inset-1 rounded-xl bg-atlas-500/20 blur-md opacity-50" />
               </div>
               <div>
                 <h3 className="font-bold text-white text-sm tracking-tight">
                   Proph3t &mdash; Expert Vivant
                 </h3>
-                <p className="text-[11px] text-purple-400/70 font-medium">Moteur IA conversationnel à mémoire longue</p>
+                <p className="text-[11px] text-atlas-400/70 font-medium">Moteur IA conversationnel à mémoire longue</p>
               </div>
             </div>
 
@@ -340,10 +340,10 @@ export default function VolumesNav() {
                 (norm) => (
                   <span
                     key={norm}
-                    className="rounded-lg px-2.5 py-1 text-[10px] font-semibold tracking-wide text-purple-300/80 transition-colors duration-200 hover:text-purple-200"
+                    className="rounded-lg px-2.5 py-1 text-[10px] font-semibold tracking-wide text-atlas-300/80 transition-colors duration-200 hover:text-atlas-200"
                     style={{
-                      background: 'rgba(126,34,206,0.08)',
-                      border: '1px solid rgba(126,34,206,0.15)',
+                      background: 'rgba(126,94,60,0.08)',
+                      border: '1px solid rgba(126,94,60,0.15)',
                     }}
                   >
                     {norm}

@@ -602,7 +602,7 @@ export function PlanCanvasV2({
       import('./Plan3DView').then(m => ({ default: m.Plan3DView }))
     )
     return (
-      <div className={`relative w-full h-full flex overflow-hidden bg-gray-950 ${className}`}>
+      <div className={`relative w-full h-full flex overflow-hidden bg-surface-0 ${className}`}>
         <React.Suspense fallback={
           <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
             <div className="w-4 h-4 border-2 border-gray-600 border-t-purple-500 rounded-full animate-spin mr-2" />
@@ -641,7 +641,7 @@ export function PlanCanvasV2({
     // Attend la rehydratation avant de rendre DxfViewerCanvas
     if (!rehydratedDxfUrl && !rehydrateError) {
       return (
-        <div className={`relative w-full h-full flex items-center justify-center bg-gray-950 ${className}`}>
+        <div className={`relative w-full h-full flex items-center justify-center bg-surface-0 ${className}`}>
           <div className="text-center">
             <div className="text-gray-400 text-sm flex items-center gap-2 justify-center">
               <div className="w-4 h-4 border-2 border-gray-600 border-t-purple-500 rounded-full animate-spin" />
@@ -655,7 +655,7 @@ export function PlanCanvasV2({
                   setRehydratedDxfUrl(plan.dxfBlobUrl)
                 }
               }}
-              className="mt-4 text-[10px] text-slate-500 hover:text-purple-400 underline"
+              className="mt-4 text-[10px] text-slate-500 hover:text-atlas-400 underline"
             >
               Continuer sans attendre
             </button>
@@ -665,7 +665,7 @@ export function PlanCanvasV2({
     }
     if (rehydrateError) {
       return (
-        <div className={`relative w-full h-full flex items-center justify-center bg-gray-950 ${className}`}>
+        <div className={`relative w-full h-full flex items-center justify-center bg-surface-0 ${className}`}>
           <div className="text-red-400 text-sm max-w-md text-center">
             ⚠ {rehydrateError}
           </div>
@@ -673,7 +673,7 @@ export function PlanCanvasV2({
       )
     }
     return (
-      <div className={`relative w-full h-full flex overflow-hidden bg-gray-950 ${className}`}>
+      <div className={`relative w-full h-full flex overflow-hidden bg-surface-0 ${className}`}>
         <DxfViewerCanvas
           dxfUrl={rehydratedDxfUrl!}
           planImageUrl={plan.planImageUrl}
@@ -708,7 +708,7 @@ export function PlanCanvasV2({
   }
 
   return (
-    <div className={`relative w-full h-full flex overflow-hidden bg-gray-950 ${className}`}>
+    <div className={`relative w-full h-full flex overflow-hidden bg-surface-0 ${className}`}>
       {/* Main canvas area */}
       <div ref={containerRef} className="flex-1 relative overflow-hidden">
         <svg
@@ -821,7 +821,7 @@ export function PlanCanvasV2({
         />
 
         {/* Cursor coordinates bar */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gray-950/80 px-3 py-1 flex items-center gap-4 text-[10px] font-mono text-gray-400 z-10">
+        <div className="absolute bottom-0 left-0 right-0 bg-surface-0/80 px-3 py-1 flex items-center gap-4 text-[10px] font-mono text-gray-400 z-10">
           <span>X: {cursorWorld.x.toFixed(2)} m</span>
           <span>Y: {cursorWorld.y.toFixed(2)} m</span>
           <span className="text-gray-600">|</span>
@@ -957,7 +957,7 @@ function LayerPanel({ layers, onToggle }: { layers: PlanLayer[]; onToggle: (name
       </button>
 
       {open && (
-        <div className="absolute bottom-10 left-0 w-56 max-h-80 overflow-y-auto rounded-lg bg-gray-900 border border-white/[0.08] shadow-xl">
+        <div className="absolute bottom-10 left-0 w-56 max-h-80 overflow-y-auto rounded-lg bg-surface-1 border border-white/[0.08] shadow-xl">
           <div className="px-3 py-2 border-b border-white/[0.06] flex items-center justify-between">
             <span className="text-[9px] uppercase tracking-wider text-gray-500 font-medium">Calques DXF</span>
             <div className="flex gap-1">
@@ -973,7 +973,7 @@ function LayerPanel({ layers, onToggle }: { layers: PlanLayer[]; onToggle: (name
           </div>
           {Array.from(byCategory.entries()).map(([cat, catLayers]) => (
             <div key={cat}>
-              <div className="px-3 py-1 text-[8px] uppercase tracking-wider text-gray-600 bg-gray-950/50">
+              <div className="px-3 py-1 text-[8px] uppercase tracking-wider text-gray-600 bg-surface-0/50">
                 {CATEGORY_LABELS[cat] ?? cat}
               </div>
               {catLayers.map(l => (

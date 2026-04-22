@@ -111,11 +111,11 @@ export default function FeedbackModule() {
       </div>
 
       {/* Insights Proph3t */}
-      <div className="rounded-xl p-5 border border-purple-500/20 bg-purple-900/10">
+      <div className="rounded-xl p-5 border border-atlas-500/20 bg-purple-900/10">
         <div className="flex items-center gap-2 mb-3">
-          <Sparkles size={16} className="text-purple-400" />
-          <h3 className="text-[13px] font-semibold text-purple-300">Insights Proph3t</h3>
-          {isAnalyzing && <Loader2 size={12} className="animate-spin text-purple-400 ml-2" />}
+          <Sparkles size={16} className="text-atlas-400" />
+          <h3 className="text-[13px] font-semibold text-atlas-300">Insights Proph3t</h3>
+          {isAnalyzing && <Loader2 size={12} className="animate-spin text-atlas-400 ml-2" />}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>

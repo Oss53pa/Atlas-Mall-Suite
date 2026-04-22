@@ -90,7 +90,7 @@ export default function HeatmapSection() {
       </p>
 
       {/* Visual heatmap */}
-      <div className="relative bg-gray-900 border border-gray-800 rounded-xl p-4" style={{ minHeight: 300 }}>
+      <div className="relative bg-surface-1 border border-gray-800 rounded-xl p-4" style={{ minHeight: 300 }}>
         <svg viewBox="0 0 400 280" className="w-full h-auto">
           {heatData.map((d) => (
             <g key={d.zone.id}>

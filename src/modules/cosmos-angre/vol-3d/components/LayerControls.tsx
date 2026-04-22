@@ -6,7 +6,7 @@ const LAYERS: { key: 'showZones' | 'showCameras' | 'showCameraFOV' | 'showPOI' |
   { key: 'showCameraFOV', label: 'Cones FOV', color: '#60a5fa' },
   { key: 'showPOI', label: 'Points interet', color: '#f59e0b' },
   { key: 'showSignage', label: 'Signaletique', color: '#06b6d4' },
-  { key: 'showTransitions', label: 'Transitions', color: '#a855f7' },
+  { key: 'showTransitions', label: 'Transitions', color: '#b38a5a' },
   { key: 'showFloorLabels', label: 'Labels', color: '#94a3b8' },
 ]
 

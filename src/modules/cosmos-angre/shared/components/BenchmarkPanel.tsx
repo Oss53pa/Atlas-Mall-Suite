@@ -52,7 +52,7 @@ export default function BenchmarkPanel({ projectMetrics, isOpen, onClose }: Benc
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-y-0 right-0 w-96 bg-gray-900 border-l border-gray-800 shadow-2xl z-50 flex flex-col">
+    <div className="fixed inset-y-0 right-0 w-96 bg-surface-1 border-l border-gray-800 shadow-2xl z-50 flex flex-col">
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
         <div className="flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-cyan-400" />

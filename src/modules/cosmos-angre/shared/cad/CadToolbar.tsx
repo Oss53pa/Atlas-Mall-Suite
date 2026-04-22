@@ -41,7 +41,7 @@ export default function CadToolbar() {
   }
 
   return (
-    <div className="flex flex-col h-full w-11 bg-gray-900/80 border-r border-white/[0.04] py-2 gap-0.5 overflow-y-auto">
+    <div className="flex flex-col h-full w-11 bg-surface-1/80 border-r border-white/[0.04] py-2 gap-0.5 overflow-y-auto">
       {/* Tool groups */}
       {groups.map(group => {
         const tools = TOOL_CONFIGS.filter(t => t.group === group)
@@ -59,7 +59,7 @@ export default function CadToolbar() {
                   key={tool.id}
                   onClick={() => setTool(tool.id)}
                   className={`w-full flex items-center justify-center py-1.5 transition-colors ${
-                    isActive ? 'bg-indigo-500/20 text-indigo-400' : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
+                    isActive ? 'bg-atlas-500/20 text-atlas-400' : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
                   }`}
                   title={`${tool.label}${tool.shortcut ? ` (${tool.shortcut})` : ''}`}
                 >
@@ -129,7 +129,7 @@ export default function CadToolbar() {
       {/* Layers panel toggle */}
       <button
         onClick={() => setShowLayers(!showLayers)}
-        className={`w-full flex items-center justify-center py-1.5 ${showLayers ? 'text-purple-400' : 'text-gray-500 hover:text-gray-300'}`}
+        className={`w-full flex items-center justify-center py-1.5 ${showLayers ? 'text-atlas-400' : 'text-gray-500 hover:text-gray-300'}`}
         title="Calques">
         <Layers size={14} />
       </button>
@@ -167,7 +167,7 @@ function LayersPanel({ onClose }: { onClose: () => void }) {
   const handleAdd = () => {
     const name = prompt('Nom du nouveau calque :', 'Calque ' + (layers.length + 1))
     if (!name) return
-    const palette = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#a855f7', '#06b6d4', '#ec4899', '#eab308']
+    const palette = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#b38a5a', '#06b6d4', '#ec4899', '#eab308']
     const color = palette[layers.length % palette.length]
     addLayer({ name, color })
   }
@@ -196,7 +196,7 @@ function LayersPanel({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="absolute left-12 bottom-4 z-50 w-72 rounded-lg bg-gray-900 border border-white/10 shadow-xl p-3">
+    <div className="absolute left-12 bottom-4 z-50 w-72 rounded-lg bg-surface-1 border border-white/10 shadow-xl p-3">
       <div className="flex items-center justify-between mb-2">
         <span className="text-[10px] font-bold text-white tracking-wider">
           CALQUES ({layers.length})
@@ -247,7 +247,7 @@ function LayersPanel({ onClose }: { onClose: () => void }) {
                       if (e.key === 'Enter') commitRename()
                       if (e.key === 'Escape') { setRenamingId(null); setRenameValue('') }
                     }}
-                    className="flex-1 min-w-0 bg-slate-800 text-white text-[11px] rounded px-1.5 py-0.5 border border-indigo-500 outline-none"
+                    className="flex-1 min-w-0 bg-slate-800 text-white text-[11px] rounded px-1.5 py-0.5 border border-atlas-500 outline-none"
                   />
                 ) : (
                   <span
@@ -275,7 +275,7 @@ function LayersPanel({ onClose }: { onClose: () => void }) {
               <input
                 type="range" min={0} max={1} step={0.05} value={l.opacity}
                 onChange={e => setOpacity(l.id, parseFloat(e.target.value))}
-                className="w-full h-1 mt-1 accent-indigo-500"
+                className="w-full h-1 mt-1 accent-atlas-500"
                 title={`Opacité : ${Math.round(l.opacity * 100)}%`}
               />
 
@@ -326,7 +326,7 @@ function LayersPanel({ onClose }: { onClose: () => void }) {
       {layers.length === 0 && (
         <div className="text-center py-6 text-[11px] text-slate-500">
           Aucun calque.
-          <button onClick={handleAdd} className="block mx-auto mt-1 text-indigo-400 hover:text-indigo-300">
+          <button onClick={handleAdd} className="block mx-auto mt-1 text-atlas-400 hover:text-atlas-300">
             + Créer un calque
           </button>
         </div>
@@ -369,11 +369,11 @@ function DeleteLayerDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-surface-0/60 backdrop-blur-sm"
       onClick={onCancel}
     >
       <div
-        className="w-[440px] max-w-[92vw] rounded-lg bg-slate-900 border border-red-900/50 shadow-2xl"
+        className="w-[440px] max-w-[92vw] rounded-lg bg-surface-1 border border-red-900/50 shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         <div className="px-5 py-3 border-b border-white/10 flex items-center gap-2">

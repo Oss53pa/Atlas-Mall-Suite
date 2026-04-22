@@ -15,7 +15,7 @@ export const SPACE_STATUS_COLORS: Record<SpaceStatus, string> = {
   occupied: '#22c55e',
   vacant: '#ef4444',
   reserved: '#f59e0b',
-  under_works: '#6366f1',
+  under_works: '#b38a5a',
 }
 
 // ── Vol.2 : Statuts de conformite ──

@@ -18,7 +18,7 @@ function showToast(message: string, duration = 3500): void {
     position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
     z-index:100000; background:rgba(15,23,42,0.95); color:#fff;
     padding:12px 20px; border-radius:10px; font-size:13px; font-weight:500;
-    border:1px solid rgba(168,85,247,0.5); box-shadow:0 10px 40px rgba(0,0,0,0.4);
+    border:1px solid rgba(179,138,90,0.5); box-shadow:0 10px 40px rgba(0,0,0,0.4);
     max-width:90vw; text-align:center; font-family:system-ui,sans-serif;
   `
   document.body.appendChild(el)
@@ -112,19 +112,19 @@ export function Proph3tImportModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 bg-surface-0/85 backdrop-blur-sm flex items-center justify-center p-4"
       style={{ zIndex: 99999 }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div
-        className="w-full max-w-5xl h-[92vh] rounded-xl bg-slate-950 border border-purple-500/30 flex flex-col overflow-hidden shadow-2xl"
+        className="w-full max-w-5xl h-[92vh] rounded-xl bg-surface-0 border border-atlas-500/30 flex flex-col overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] bg-gradient-to-r from-purple-950/40 to-slate-950">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] bg-gradient-to-r from-purple-950/40 to-surface-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-purple-600/30 border border-purple-500/40 flex items-center justify-center">
-              <Sparkles size={18} className="text-purple-300" />
+            <div className="w-10 h-10 rounded-lg bg-atlas-600/30 border border-atlas-500/40 flex items-center justify-center">
+              <Sparkles size={18} className="text-atlas-300" />
             </div>
             <div>
               <h2 className="text-[16px] font-bold text-white">PROPH3T · Préparation du plan</h2>
@@ -143,9 +143,9 @@ export function Proph3tImportModal({
         </div>
 
         {/* Workflow indicator */}
-        <div className="px-5 py-2 border-b border-white/[0.06] bg-slate-900/30 flex items-center gap-4 text-[10px]">
-          <div className="flex items-center gap-1.5 text-purple-300">
-            <div className="w-5 h-5 rounded-full bg-purple-600 text-white text-[10px] font-bold flex items-center justify-center">1</div>
+        <div className="px-5 py-2 border-b border-white/[0.06] bg-surface-1/30 flex items-center gap-4 text-[10px]">
+          <div className="flex items-center gap-1.5 text-atlas-300">
+            <div className="w-5 h-5 rounded-full bg-atlas-600 text-white text-[10px] font-bold flex items-center justify-center">1</div>
             <span className="font-medium">Préparation</span>
           </div>
           <div className="flex-1 h-px bg-slate-700" />
@@ -161,7 +161,7 @@ export function Proph3tImportModal({
         </div>
 
         {/* Action toolbar */}
-        <div className="px-5 py-3 border-b border-white/[0.06] bg-slate-900/40 flex items-center gap-2 flex-wrap">
+        <div className="px-5 py-3 border-b border-white/[0.06] bg-surface-1/40 flex items-center gap-2 flex-wrap">
           <button onClick={handleRefresh} disabled={refreshing}
             className="flex items-center gap-1 px-3 py-1.5 rounded text-[11px] font-medium bg-slate-800 border border-white/[0.06] text-slate-300 hover:bg-slate-700 disabled:opacity-40">
             <RotateCw size={11} className={refreshing ? 'animate-spin' : ''} />
@@ -184,7 +184,7 @@ export function Proph3tImportModal({
           </div>
           <button
             onClick={handleValidate}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded text-[11px] font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:opacity-90"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded text-[11px] font-bold bg-gradient-to-r from-atlas-500 to-atlas-700 text-white hover:opacity-90"
             title="Valider le plan et passer au travail dans les volumes (Commercial / Sécurité / Parcours)"
           >
             <CheckCircle2 size={12} />

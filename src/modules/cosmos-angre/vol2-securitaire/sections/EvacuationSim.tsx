@@ -48,7 +48,7 @@ export default function EvacuationSim({
   const conformNF = evacResult?.conformNFS61938 ?? false
 
   return (
-    <div className="flex flex-col h-full bg-gray-950">
+    <div className="flex flex-col h-full bg-surface-0">
       {/* Controls */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-800">
         <h3 className="text-sm font-semibold text-red-400">Simulation Evacuation</h3>

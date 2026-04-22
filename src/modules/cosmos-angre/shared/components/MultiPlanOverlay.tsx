@@ -191,9 +191,9 @@ export function MultiPlanOverlay({ floorId, className = '', onConsolidated }: Mu
   const visibleCount = layers.filter(l => l.visible).length
 
   return (
-    <div ref={containerRef} className={`relative bg-slate-950 border border-white/[0.06] rounded-xl overflow-hidden ${className}`}>
+    <div ref={containerRef} className={`relative bg-surface-0 border border-white/[0.06] rounded-xl overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06] bg-slate-900/50">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06] bg-surface-1/50">
         <div className="flex items-center gap-2">
           <Layers size={14} className="text-cyan-400" />
           <span className="text-[12px] font-semibold text-white">Plans superposés</span>
@@ -244,7 +244,7 @@ export function MultiPlanOverlay({ floorId, className = '', onConsolidated }: Mu
               onDrop={() => onDrop(i)}
               className={`rounded-lg border p-2 transition ${
                 hoverIndex === i ? 'border-cyan-500 bg-cyan-900/10' :
-                l.visible ? 'border-white/[0.05] hover:border-white/[0.1] bg-slate-900/40' : 'border-white/[0.03] bg-slate-950 opacity-60'
+                l.visible ? 'border-white/[0.05] hover:border-white/[0.1] bg-surface-1/40' : 'border-white/[0.03] bg-surface-0 opacity-60'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -293,7 +293,7 @@ export function MultiPlanOverlay({ floorId, className = '', onConsolidated }: Mu
 
       {/* Stacked rendering preview */}
       {!collapsed && layers.length > 0 && (
-        <div className="border-t border-white/[0.06] p-3 bg-slate-900/30">
+        <div className="border-t border-white/[0.06] p-3 bg-surface-1/30">
           <div className="text-[9px] uppercase tracking-wider text-slate-500 mb-2">Aperçu superposition</div>
           <div className="relative w-full h-48 bg-white rounded overflow-hidden">
             {layers.map((l) => l.visible && l.record.planImageUrl && (
@@ -311,8 +311,8 @@ export function MultiPlanOverlay({ floorId, className = '', onConsolidated }: Mu
 
       {/* Consolidation result modal (PNG ou SVG) */}
       {(consolidatedUrl || consolidatedSvg) && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-5xl rounded-xl bg-slate-950 border border-cyan-500/40 overflow-hidden">
+        <div className="fixed inset-0 z-50 bg-surface-0/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-5xl rounded-xl bg-surface-0 border border-cyan-500/40 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
               <div>
                 <h3 className="text-[14px] font-semibold text-white">
@@ -339,7 +339,7 @@ export function MultiPlanOverlay({ floorId, className = '', onConsolidated }: Mu
                 </button>
               </div>
             </div>
-            <div className="p-4 max-h-[80vh] overflow-auto bg-slate-900">
+            <div className="p-4 max-h-[80vh] overflow-auto bg-surface-1">
               {consolidatedUrl && <img src={consolidatedUrl} alt="Plan consolidé" className="max-w-full" />}
               {consolidatedSvg && <div dangerouslySetInnerHTML={{ __html: consolidatedSvg }} />}
             </div>

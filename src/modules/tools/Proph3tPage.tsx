@@ -45,20 +45,20 @@ export default function Proph3tPage() {
   }
 
   return (
-    <div className="flex h-full" style={{ background: '#060a13', color: '#e2e8f0' }}>
+    <div className="flex h-full" style={{ background: '#1a1d23', color: '#e2e8f0' }}>
       {/* Left: Conversations */}
       <div className="w-64 flex-shrink-0 border-r border-white/[0.05] flex flex-col" style={{ background: '#0a0f1a' }}>
         <div className="p-4 border-b border-white/[0.04]">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-purple-500/15 flex items-center justify-center">
-              <Sparkles size={14} className="text-purple-400" />
+            <div className="w-8 h-8 rounded-lg bg-atlas-500/15 flex items-center justify-center">
+              <Sparkles size={14} className="text-atlas-400" />
             </div>
             <div>
               <p className="text-[12px] font-semibold text-white">Proph3t</p>
-              <p className="text-[9px] text-purple-400">Expert Vivant</p>
+              <p className="text-[9px] text-atlas-400">Expert Vivant</p>
             </div>
           </div>
-          <button className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600/20 border border-purple-500/20 text-purple-300 text-[11px] font-medium hover:bg-purple-600/30 transition-colors">
+          <button className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-atlas-600/20 border border-atlas-500/20 text-atlas-300 text-[11px] font-medium hover:bg-atlas-600/30 transition-colors">
             <Plus size={12} /> Nouvelle conversation
           </button>
         </div>
@@ -78,12 +78,12 @@ export default function Proph3tPage() {
         {/* Context badges */}
         <div className="p-3 border-t border-white/[0.04] space-y-1.5">
           <p className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold">Contexte actif</p>
-          <div className="flex items-center gap-1.5 text-[10px] text-gray-400"><Globe2 size={10} className="text-indigo-400" /> New Heaven SA</div>
+          <div className="flex items-center gap-1.5 text-[10px] text-gray-400"><Globe2 size={10} className="text-atlas-400" /> New Heaven SA</div>
           <div className="flex items-center gap-1.5 text-[10px] text-gray-400"><FolderOpen size={10} className="text-amber-400" /> Cosmos Angré</div>
           <div className="flex items-center gap-1.5 text-[10px] text-gray-400"><Shield size={10} className="text-emerald-400" /> DG (super_admin)</div>
           <div className="flex flex-wrap gap-1 mt-2">
             {NORMS.map(n => (
-              <span key={n} className="text-[8px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300/70 border border-purple-500/15">{n}</span>
+              <span key={n} className="text-[8px] px-1.5 py-0.5 rounded bg-atlas-500/10 text-atlas-300/70 border border-atlas-500/15">{n}</span>
             ))}
           </div>
         </div>
@@ -97,13 +97,13 @@ export default function Proph3tPage() {
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[70%] rounded-2xl px-4 py-3 ${
                 m.role === 'user'
-                  ? 'bg-indigo-600/20 border border-indigo-500/20 text-white'
-                  : 'bg-[#0e1629] border border-white/[0.06] text-gray-300'
+                  ? 'bg-atlas-500/20 border border-atlas-500/20 text-white'
+                  : 'bg-[#262a31] border border-white/[0.06] text-gray-300'
               }`}>
                 {m.role === 'assistant' && (
                   <div className="flex items-center gap-1.5 mb-2">
-                    <Sparkles size={11} className="text-purple-400" />
-                    <span className="text-[10px] text-purple-400 font-medium">Proph3t</span>
+                    <Sparkles size={11} className="text-atlas-400" />
+                    <span className="text-[10px] text-atlas-400 font-medium">Proph3t</span>
                     <span className="text-[9px] text-gray-600">{m.time}</span>
                   </div>
                 )}
@@ -121,9 +121,9 @@ export default function Proph3tPage() {
             <input value={input} onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSend()}
               placeholder="Posez une question à Proph3t..."
-              className="flex-1 bg-[#141e2e] text-white text-sm rounded-xl px-4 py-3 border border-white/[0.08] outline-none focus:border-purple-500/40 placeholder:text-gray-600" />
+              className="flex-1 bg-[#141e2e] text-white text-sm rounded-xl px-4 py-3 border border-white/[0.08] outline-none focus:border-atlas-500/40 placeholder:text-gray-600" />
             <button onClick={handleSend}
-              className="px-4 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white transition-colors">
+              className="px-4 py-3 rounded-xl bg-atlas-600 hover:bg-atlas-500 text-white transition-colors">
               <Send size={16} />
             </button>
           </div>

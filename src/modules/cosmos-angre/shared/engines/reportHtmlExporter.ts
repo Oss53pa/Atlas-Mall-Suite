@@ -310,13 +310,13 @@ details[open] summary { margin-bottom: 8px; }
 .fam-institutional { color: #0ea5e9; font-weight: 600; }
 .fam-advertising { color: #db2777; font-weight: 600; }
 .warn { color: #dc2626; font-weight: 600; }
-.proph3t-commentary { background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #818cf8; }
+.proph3t-commentary { background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #c9a068; }
 .action-bar { position: sticky; bottom: 20px; display: flex; gap: 10px; justify-content: center; padding: 16px; background: white; border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); margin-top: 20px; }
 .btn { padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; transition: transform 0.15s; }
 .btn:hover { transform: translateY(-1px); }
 .btn-approve { background: #10b981; color: white; }
 .btn-corrections { background: #f59e0b; color: white; }
-.btn-comment { background: #818cf8; color: white; }
+.btn-comment { background: #c9a068; color: white; }
 .btn-send { background: #0ea5e9; color: white; }
 .btn-cancel { background: #e2e8f0; color: #475569; }
 .comment-panel { background: white; padding: 16px; border-radius: 12px; margin-top: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }

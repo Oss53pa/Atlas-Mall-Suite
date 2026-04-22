@@ -37,9 +37,57 @@
 
   /* Selection */
   ::selection {
-    background: rgba(99, 102, 241, 0.3);
+    background: rgba(201, 160, 104, 0.35); /* bronze mat */
     color: white;
   }
+
+  /* ═══ Palette globale (variables CSS) ═══
+   * Thème 2026-04-22 : Anthracite + Bronze mat
+   * Utilisables via var(--atlas-*) depuis n'importe quel CSS ou style inline.
+   * Centralise les tons les plus utilisés — une modification ici change tout.
+   */
+  :root {
+    /* Anthracite éclairci — vrai gris (pas noir) */
+    --atlas-bg:          #2a2d33;   /* fond principal */
+    --atlas-bg-1:        #32353c;   /* panneaux */
+    --atlas-bg-2:        #3a3d44;   /* cards */
+    --atlas-bg-3:        #44474f;   /* hover / élevé */
+    --atlas-bg-4:        #4d5059;   /* actif */
+    --atlas-bg-5:        #5a5d66;   /* séparateurs */
+
+    /* Bronze mat doré (accents) */
+    --atlas-bronze:      #b38a5a;   /* principal */
+    --atlas-bronze-light:#c9a068;   /* hover / highlight */
+    --atlas-bronze-dark: #7e5e3c;   /* pressed */
+    --atlas-bronze-muted:#a77d4c;   /* variante */
+    --atlas-bronze-accent:#d4b280;  /* bordure claire */
+
+    /* Semantic */
+    --atlas-primary:     var(--atlas-bronze);
+    --atlas-primary-hover:var(--atlas-bronze-light);
+    --atlas-border:      rgba(255, 255, 255, 0.06);
+    --atlas-border-hover:rgba(201, 160, 104, 0.25);
+    --atlas-text-muted:  #a0a4ad;
+    --atlas-text-dim:    #6c707a;
+  }
+}
+
+@layer utilities {
+  /* ═══ Utilitaires de couleur centralisés ═══
+   * Préférer ces classes dans les nouveaux composants.
+   */
+  .bg-atlas-bg    { background-color: var(--atlas-bg); }
+  .bg-atlas-bg-1  { background-color: var(--atlas-bg-1); }
+  .bg-atlas-bg-2  { background-color: var(--atlas-bg-2); }
+  .bg-atlas-bg-3  { background-color: var(--atlas-bg-3); }
+  .bg-atlas-bronze       { background-color: var(--atlas-bronze); }
+  .bg-atlas-bronze-light { background-color: var(--atlas-bronze-light); }
+  .text-atlas-bronze     { color: var(--atlas-bronze); }
+  .text-atlas-bronze-light { color: var(--atlas-bronze-light); }
+  .border-atlas-bronze   { border-color: var(--atlas-bronze); }
+
+  /* Override global : toute surface qui avait #060a13 ou surface-0 noir
+     passe automatiquement en anthracite via le body root. */
 }
 
 @layer components {

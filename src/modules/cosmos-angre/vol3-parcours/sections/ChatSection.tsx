@@ -129,10 +129,10 @@ export default function ChatSection() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-800">
-        <div className="w-6 h-6 rounded-full bg-purple-600/30 flex items-center justify-center">
-          <Sparkles className="w-3 h-3 text-purple-400" />
+        <div className="w-6 h-6 rounded-full bg-atlas-600/30 flex items-center justify-center">
+          <Sparkles className="w-3 h-3 text-atlas-400" />
         </div>
-        <h3 className="text-sm font-semibold text-purple-300">Proph3t — Parcours</h3>
+        <h3 className="text-sm font-semibold text-atlas-300">Proph3t — Parcours</h3>
         {/* Indicateur source IA */}
         {sourceInfo && (
           <span className="text-[9px] flex items-center gap-1 ml-auto mr-2" style={{ color: sourceInfo.color }}>
@@ -151,7 +151,7 @@ export default function ChatSection() {
                 <button
                   key={s}
                   onClick={() => handleSend(s)}
-                  className="text-left text-[11px] text-gray-400 bg-gray-900/50 border border-gray-800 rounded-lg px-3 py-2 hover:border-emerald-500/30 hover:text-gray-300 transition-colors"
+                  className="text-left text-[11px] text-gray-400 bg-surface-1/50 border border-gray-800 rounded-lg px-3 py-2 hover:border-emerald-500/30 hover:text-gray-300 transition-colors"
                 >
                   {s}
                 </button>
@@ -185,7 +185,7 @@ export default function ChatSection() {
         ))}
         {isLoading && (
           <div className="bg-purple-900/20 border border-purple-800/30 rounded-lg px-3 py-2 mr-6">
-            <div className="flex items-center gap-2 text-purple-400 text-xs">
+            <div className="flex items-center gap-2 text-atlas-400 text-xs">
               <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
               Proph3t reflechit...
             </div>
@@ -201,7 +201,7 @@ export default function ChatSection() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(input) } }}
             placeholder="Question sur le parcours..."
-            className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-emerald-500"
+            className="flex-1 bg-surface-1 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-emerald-500"
             disabled={isLoading}
           />
           <button

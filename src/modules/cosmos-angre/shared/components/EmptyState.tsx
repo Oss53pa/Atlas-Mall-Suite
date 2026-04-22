@@ -23,7 +23,7 @@ const ILLUSTRATIONS: Record<Illustration, { icon: typeof Shield; color: string; 
   security:   { icon: Shield,      color: '#38bdf8', bg: 'rgba(56,189,248,0.06)' },
   commercial: { icon: ShoppingBag, color: '#f59e0b', bg: 'rgba(245,158,11,0.06)' },
   journey:    { icon: Route,       color: '#22c55e', bg: 'rgba(34,197,94,0.06)' },
-  generic:    { icon: Layers,      color: '#a855f7', bg: 'rgba(168,85,247,0.06)' },
+  generic:    { icon: Layers,      color: '#b38a5a', bg: 'rgba(179,138,90,0.06)' },
 }
 
 export default function EmptyState({

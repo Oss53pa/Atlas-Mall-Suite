@@ -278,16 +278,16 @@ export function PovGuideViewer({
   }
 
   const modal = (
-    <div className="fixed inset-0 z-[9999] bg-slate-950 flex flex-col">
+    <div className="fixed inset-0 z-[9999] bg-surface-0 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-2 bg-slate-900 border-b border-white/10">
+      <div className="flex items-center justify-between px-5 py-2 bg-surface-1 border-b border-white/10">
         <div className="flex items-center gap-3">
           <Eye className="w-4 h-4 text-amber-400" />
           <h2 className="text-sm font-bold text-white">Visite guidée — vue piéton</h2>
           <select
             value={selectedPathId}
             onChange={(e) => { setSelectedPathId(e.target.value); setTime(0); setPlaying(false) }}
-            className="bg-slate-950 border border-white/10 text-[11px] text-slate-200 rounded px-2 py-1 focus:outline-none"
+            className="bg-surface-0 border border-white/10 text-[11px] text-slate-200 rounded px-2 py-1 focus:outline-none"
           >
             {flowResult.paths.map(p => (
               <option key={p.id} value={p.id}>
@@ -304,7 +304,7 @@ export function PovGuideViewer({
       {/* Corps : scène 3D + HUD latéral */}
       <div className="flex-1 flex overflow-hidden">
         {/* Scène 3D */}
-        <div ref={containerRef} className="flex-1 relative bg-slate-950">
+        <div ref={containerRef} className="flex-1 relative bg-surface-0">
           {/* Overlay alerte si step courant a panneau manquant */}
           {currentEvents.some(e => e.kind === 'panel-missing') && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-red-900/90 border border-red-500 rounded-lg text-red-100 text-[12px] font-semibold shadow-lg">
@@ -319,7 +319,7 @@ export function PovGuideViewer({
         </div>
 
         {/* HUD latéral */}
-        <aside className="w-[320px] bg-slate-900 border-l border-white/10 flex flex-col">
+        <aside className="w-[320px] bg-surface-1 border-l border-white/10 flex flex-col">
           {script && (
             <>
               {/* Stats */}
@@ -329,7 +329,7 @@ export function PovGuideViewer({
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-[11px]">
                   <StatBox label="Durée" value={`${script.totalDurationSec.toFixed(0)}s`} color="text-blue-400" />
-                  <StatBox label="Distance" value={`${path?.distanceM.toFixed(0) ?? 0}m`} color="text-purple-400" />
+                  <StatBox label="Distance" value={`${path?.distanceM.toFixed(0) ?? 0}m`} color="text-atlas-400" />
                   <StatBox
                     label="Nœuds décision"
                     value={script.summary.totalDecisionPoints.toString()}
@@ -417,7 +417,7 @@ export function PovGuideViewer({
       </div>
 
       {/* Contrôles */}
-      <div className="px-5 py-3 bg-slate-900 border-t border-white/10 flex items-center gap-3">
+      <div className="px-5 py-3 bg-surface-1 border-t border-white/10 flex items-center gap-3">
         <button
           onClick={() => setPlaying(p => !p)}
           className="p-2 rounded bg-amber-600 hover:bg-amber-500 text-white"
@@ -464,7 +464,7 @@ export function PovGuideViewer({
 
 function StatBox({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="bg-slate-950/60 rounded px-2 py-1.5">
+    <div className="bg-surface-0/60 rounded px-2 py-1.5">
       <div className="text-slate-600 uppercase text-[8px] tracking-wider">{label}</div>
       <div className={`font-bold text-base tabular-nums ${color}`}>{value}</div>
     </div>

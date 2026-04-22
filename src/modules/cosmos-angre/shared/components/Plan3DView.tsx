@@ -170,9 +170,9 @@ const ZONE_COLORS: Record<string, string> = {
   services: '#14b8a6',
   circulation: '#94a3b8',
   loisirs: '#06b6d4',
-  backoffice: '#8b5cf6',
+  backoffice: '#a77d4c',
   sortie_secours: '#22c55e',
-  hotel: '#a855f7',
+  hotel: '#b38a5a',
   financier: '#dc2626',
   exterieur: '#84cc16',
 }
@@ -182,7 +182,7 @@ function MenuToggle({ label, on, onClick, icon }: { label: string; on: boolean; 
   return (
     <button
       onClick={onClick}
-      className="w-full text-left px-3 py-1.5 text-[11px] text-slate-200 hover:bg-slate-900 flex items-center justify-between"
+      className="w-full text-left px-3 py-1.5 text-[11px] text-slate-200 hover:bg-surface-1 flex items-center justify-between"
     >
       <span className="flex items-center gap-1.5">{icon && <span>{icon}</span>}{label}</span>
       {icon !== '🎨' && (
@@ -1027,7 +1027,7 @@ export function Plan3DView({
           if (sig.y < -ph * 0.1 || sig.y > ph * 1.1) continue
           const t = floorTransform(sig.floorId)
           const size = Math.max(pw, ph) * 0.006
-          const colorHex = sigTypeColors[sig.type] || '#8b5cf6'
+          const colorHex = sigTypeColors[sig.type] || '#a77d4c'
           const geo = new THREE.BoxGeometry(size * 2, size * 0.2, size * 1.2)
           const mat = new THREE.MeshLambertMaterial({
             color: new THREE.Color(colorHex),
@@ -1927,7 +1927,7 @@ export function Plan3DView({
       {/* Banner visite guidée */}
       {tourActive && tourStep && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30">
-          <div className="px-6 py-3 rounded-2xl bg-black/70 backdrop-blur-md border border-emerald-500/40 shadow-2xl">
+          <div className="px-6 py-3 rounded-2xl bg-surface-0/70 backdrop-blur-md border border-emerald-500/40 shadow-2xl">
             <div className="text-[10px] uppercase tracking-widest text-emerald-300 mb-1">
               Visite guidée · arrêt {tourStep.index} / {tourStep.total}
             </div>
@@ -1946,7 +1946,7 @@ export function Plan3DView({
 
       {/* Status overlay */}
       <div className="absolute top-3 left-3 flex items-center gap-2 flex-wrap">
-        <div className="px-3 py-1.5 rounded-lg bg-gray-900/80 border border-white/[0.08] text-[10px] text-gray-400">
+        <div className="px-3 py-1.5 rounded-lg bg-surface-1/80 border border-white/[0.08] text-[10px] text-gray-400">
           {mode === '3d' ? 'Perspective 3D' : 'Vue Isométrique'} — {status}
         </div>
         <button
@@ -1983,7 +1983,7 @@ export function Plan3DView({
           {displayMenuOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setDisplayMenuOpen(false)} />
-              <div className="absolute top-full left-0 mt-1 w-56 bg-slate-950 border border-white/[0.1] rounded-lg shadow-2xl z-50 py-1.5">
+              <div className="absolute top-full left-0 mt-1 w-56 bg-surface-0 border border-white/[0.1] rounded-lg shadow-2xl z-50 py-1.5">
                 <MenuToggle label="Labels des zones" on={showLabels} onClick={() => setShowLabels(!showLabels)} />
                 <MenuToggle label="Cotes / dimensions" on={showDimensions} onClick={() => setShowDimensions(!showDimensions)} />
                 <MenuToggle label="Marquage au sol (parking, voies, carrelage)" on={showFloorMarkings} onClick={() => setShowFloorMarkings(!showFloorMarkings)} />
@@ -2016,7 +2016,7 @@ export function Plan3DView({
                 <div className="border-t border-white/[0.06] my-1" />
                 <button
                   onClick={() => { exportRef.current?.(); setDisplayMenuOpen(false) }}
-                  className="w-full text-left px-3 py-1.5 text-[11px] text-purple-300 hover:bg-slate-900"
+                  className="w-full text-left px-3 py-1.5 text-[11px] text-atlas-300 hover:bg-surface-1"
                 >
                   📷 Exporter la vue PNG
                 </button>
@@ -2029,7 +2029,7 @@ export function Plan3DView({
             <button
               onClick={() => setShowCameras(!showCameras)}
               className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
-                showCameras ? 'bg-indigo-600/80 hover:bg-indigo-600 border-indigo-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
+                showCameras ? 'bg-atlas-500/80 hover:bg-atlas-500 border-atlas-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
               }`}
               title="Cameras CCTV"
             >
@@ -2038,7 +2038,7 @@ export function Plan3DView({
             <button
               onClick={() => setShowFov(!showFov)}
               className={`px-3 py-1.5 rounded-lg border text-[10px] font-medium transition-colors ${
-                showFov ? 'bg-indigo-600/50 hover:bg-indigo-600/70 border-indigo-600 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
+                showFov ? 'bg-atlas-500/50 hover:bg-atlas-500/70 border-indigo-600 text-white' : 'bg-gray-800 border-gray-700 text-gray-400'
               }`}
               title="Cones de vision (FOV)"
             >
@@ -2116,12 +2116,12 @@ export function Plan3DView({
 
       {/* Floor selector — top right */}
       {detectedFloors.length > 1 && (
-        <div className="absolute top-3 right-3 flex items-center gap-1 bg-gray-900/90 border border-white/[0.08] rounded-lg p-1">
+        <div className="absolute top-3 right-3 flex items-center gap-1 bg-surface-1/90 border border-white/[0.08] rounded-lg p-1">
           <span className="text-[9px] text-gray-500 px-2 uppercase tracking-wider">Etage</span>
           <button
             onClick={() => setCurrentFloor('all')}
             className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${
-              currentFloor === 'all' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              currentFloor === 'all' ? 'bg-atlas-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'
             }`}
           >
             Tous
@@ -2143,7 +2143,7 @@ export function Plan3DView({
 
       {/* Right-side panels: floor controls (if multi-floor view) + layer panel */}
       {detectedFloors.length > 1 && currentFloor === 'all' && (
-        <div className="absolute top-16 right-3 w-56 rounded-lg bg-gray-900/90 border border-white/[0.08] shadow-xl overflow-hidden">
+        <div className="absolute top-16 right-3 w-56 rounded-lg bg-surface-1/90 border border-white/[0.08] shadow-xl overflow-hidden">
           <div className="px-3 py-2 border-b border-white/[0.06]">
             <span className="text-[9px] uppercase tracking-wider text-gray-500 font-medium">Etages superposes</span>
           </div>
@@ -2201,8 +2201,8 @@ export function Plan3DView({
             Calques ({allLayers.length - hiddenLayers.size}/{allLayers.length})
           </button>
           {layerPanelOpen && (
-            <div className="absolute bottom-10 left-0 w-64 max-h-80 overflow-y-auto rounded-lg bg-gray-900 border border-white/[0.08] shadow-xl">
-              <div className="px-3 py-2 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-gray-900">
+            <div className="absolute bottom-10 left-0 w-64 max-h-80 overflow-y-auto rounded-lg bg-surface-1 border border-white/[0.08] shadow-xl">
+              <div className="px-3 py-2 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-surface-1">
                 <span className="text-[9px] uppercase tracking-wider text-gray-500 font-medium">Calques DXF</span>
                 <div className="flex gap-1">
                   <button onClick={() => setHiddenLayers(new Set())} className="text-[9px] text-blue-400 hover:text-blue-300 px-1">Tout</button>
@@ -2218,7 +2218,7 @@ export function Plan3DView({
                 const kindLabel = isMarking ? 'SOL' : isCurb ? 'BORD' : isColumn ? 'POT' : 'MUR'
                 const kindColor = isMarking ? 'bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30'
                   : isCurb ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30'
-                  : isColumn ? 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/30'
+                  : isColumn ? 'bg-atlas-500/20 text-atlas-300 hover:bg-atlas-500/30'
                   : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
                 return (
                   <div
@@ -2306,7 +2306,7 @@ export function Plan3DView({
 
       {/* Selection panel (bottom-center) */}
       {selectedSpace && (
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[min(420px,calc(100%-24px))] rounded-lg bg-gray-900/95 border border-blue-500/40 shadow-2xl overflow-hidden">
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[min(420px,calc(100%-24px))] rounded-lg bg-surface-1/95 border border-blue-500/40 shadow-2xl overflow-hidden">
           <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between bg-blue-900/40">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full"
@@ -2334,7 +2334,7 @@ export function Plan3DView({
               <p className="text-white mt-0.5">{selectedSpace.floorId ?? '—'}</p>
             </div>
           </div>
-          <div className="px-4 py-2 border-t border-white/[0.06] flex items-center justify-between bg-gray-950/50">
+          <div className="px-4 py-2 border-t border-white/[0.06] flex items-center justify-between bg-surface-0/50">
             <span className="text-[9px] text-gray-500">ID: {selectedSpace.id}</span>
             <div className="flex gap-2">
               <button
@@ -2372,7 +2372,7 @@ export function Plan3DView({
               compliance.scorePct >= 60 ? 'border-amber-500/40' :
               'border-red-500/40'
             }`}
-            style={{ background: '#0e1629' }}
+            style={{ background: '#262a31' }}
           >
             <div className="px-3 py-2 flex items-center gap-2">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[12px] font-bold ${
@@ -2401,11 +2401,11 @@ export function Plan3DView({
           </button>
 
           {compliancePanelOpen && (
-            <div className="mt-1 rounded-lg bg-gray-900/95 border border-white/[0.08] shadow-2xl overflow-hidden">
+            <div className="mt-1 rounded-lg bg-surface-1/95 border border-white/[0.08] shadow-2xl overflow-hidden">
               {compliance.floorStats && compliance.floorStats.length > 0 && (
                 <div className="p-2 border-b border-white/[0.06] grid grid-cols-3 gap-1 text-center">
                   {compliance.floorStats.map(fs => (
-                    <div key={fs.floorId} className="px-2 py-1.5 rounded bg-gray-950/50">
+                    <div key={fs.floorId} className="px-2 py-1.5 rounded bg-surface-0/50">
                       <div className="text-[9px] text-gray-500 uppercase">{fs.floorId}</div>
                       <div className={`text-[13px] font-bold ${
                         fs.coveragePct >= 70 ? 'text-emerald-400' :
@@ -2455,7 +2455,7 @@ export function Plan3DView({
         else if (kind === 'signage') entity = signage.find(s => s.id === id)
         else if (kind === 'moment') entity = moments.find(m => m.id === id)
         if (!entity) return null
-        const accent = kind === 'camera' ? '#6366f1'
+        const accent = kind === 'camera' ? '#b38a5a'
           : kind === 'door' ? '#22c55e'
           : kind === 'poi' ? '#10b981'
           : kind === 'signage' ? '#06b6d4'
@@ -2467,7 +2467,7 @@ export function Plan3DView({
           : 'Moment parcours'
         return (
           <div className="absolute top-16 right-3 w-72 rounded-lg shadow-2xl overflow-hidden"
-            style={{ background: '#0e1629', border: `1px solid ${accent}66` }}>
+            style={{ background: '#262a31', border: `1px solid ${accent}66` }}>
             <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between"
               style={{ background: `${accent}22` }}>
               <div className="flex items-center gap-2">
@@ -2498,7 +2498,7 @@ export function Plan3DView({
                   type="text"
                   defaultValue={(entity as { label?: string }).label ?? ''}
                   onBlur={(e) => onEntityUpdate?.(kind, id, { label: e.target.value })}
-                  className="w-full mt-1 px-2 py-1 bg-gray-900 border border-white/[0.06] rounded text-[11px] text-white"
+                  className="w-full mt-1 px-2 py-1 bg-surface-1 border border-white/[0.06] rounded text-[11px] text-white"
                 />
               </div>
 
@@ -2511,7 +2511,7 @@ export function Plan3DView({
                     step="0.1"
                     defaultValue={(entity as { x: number }).x.toFixed(1)}
                     onBlur={(e) => onEntityUpdate?.(kind, id, { x: parseFloat(e.target.value) })}
-                    className="w-full mt-1 px-2 py-1 bg-gray-900 border border-white/[0.06] rounded text-[11px] text-white font-mono"
+                    className="w-full mt-1 px-2 py-1 bg-surface-1 border border-white/[0.06] rounded text-[11px] text-white font-mono"
                   />
                 </div>
                 <div>
@@ -2521,7 +2521,7 @@ export function Plan3DView({
                     step="0.1"
                     defaultValue={(entity as { y: number }).y.toFixed(1)}
                     onBlur={(e) => onEntityUpdate?.(kind, id, { y: parseFloat(e.target.value) })}
-                    className="w-full mt-1 px-2 py-1 bg-gray-900 border border-white/[0.06] rounded text-[11px] text-white font-mono"
+                    className="w-full mt-1 px-2 py-1 bg-surface-1 border border-white/[0.06] rounded text-[11px] text-white font-mono"
                   />
                 </div>
               </div>
@@ -2539,7 +2539,7 @@ export function Plan3DView({
                           step="5"
                           defaultValue={c.angle}
                           onBlur={(e) => onEntityUpdate?.(kind, id, { angle: parseFloat(e.target.value) })}
-                          className="w-full mt-1 px-2 py-1 bg-gray-900 border border-white/[0.06] rounded text-[11px] text-white font-mono"
+                          className="w-full mt-1 px-2 py-1 bg-surface-1 border border-white/[0.06] rounded text-[11px] text-white font-mono"
                         />
                       </div>
                       <div>
@@ -2549,7 +2549,7 @@ export function Plan3DView({
                           step="5"
                           defaultValue={c.fov}
                           onBlur={(e) => onEntityUpdate?.(kind, id, { fov: parseFloat(e.target.value) })}
-                          className="w-full mt-1 px-2 py-1 bg-gray-900 border border-white/[0.06] rounded text-[11px] text-white font-mono"
+                          className="w-full mt-1 px-2 py-1 bg-surface-1 border border-white/[0.06] rounded text-[11px] text-white font-mono"
                         />
                       </div>
                     </div>
@@ -2561,7 +2561,7 @@ export function Plan3DView({
                           step="1"
                           defaultValue={c.rangeM}
                           onBlur={(e) => onEntityUpdate?.(kind, id, { rangeM: parseFloat(e.target.value) })}
-                          className="w-full mt-1 px-2 py-1 bg-gray-900 border border-white/[0.06] rounded text-[11px] text-white font-mono"
+                          className="w-full mt-1 px-2 py-1 bg-surface-1 border border-white/[0.06] rounded text-[11px] text-white font-mono"
                         />
                       </div>
                       <div>
@@ -2569,7 +2569,7 @@ export function Plan3DView({
                         <select
                           defaultValue={c.priority ?? 'normale'}
                           onChange={(e) => onEntityUpdate?.(kind, id, { priority: e.target.value })}
-                          className="w-full mt-1 px-1 py-1 bg-gray-900 border border-white/[0.06] rounded text-[11px] text-white"
+                          className="w-full mt-1 px-1 py-1 bg-surface-1 border border-white/[0.06] rounded text-[11px] text-white"
                         >
                           <option value="normale">Normale</option>
                           <option value="haute">Haute</option>
@@ -2604,7 +2604,7 @@ export function Plan3DView({
                 )
               })()}
             </div>
-            <div className="px-4 py-2 border-t border-white/[0.06] bg-gray-950/50 text-[9px] text-gray-500">
+            <div className="px-4 py-2 border-t border-white/[0.06] bg-surface-0/50 text-[9px] text-gray-500">
               ID: {id}
             </div>
           </div>
@@ -2612,7 +2612,7 @@ export function Plan3DView({
       })()}
 
       {/* Navigation hint */}
-      <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-lg bg-gray-900/80 border border-white/[0.08] text-[10px] text-gray-500 pointer-events-none">
+      <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-lg bg-surface-1/80 border border-white/[0.08] text-[10px] text-gray-500 pointer-events-none">
         Glisser: rotation · Molette: zoom · Clic droit / Shift+glisser: pan · Fleches: pan · Clic zone: selection
       </div>
     </div>

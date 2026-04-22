@@ -68,5 +68,5 @@ export default function GodModeSignageHost() {
     )
   }
 
-  return <GodModeSignagePanel buildInput={buildInput} volumeColor="#a855f7" />
+  return <GodModeSignagePanel buildInput={buildInput} volumeColor="#b38a5a" />
 }

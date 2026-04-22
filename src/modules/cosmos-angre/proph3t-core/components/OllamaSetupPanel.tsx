@@ -68,11 +68,11 @@ CMD ["serve"]`
   const missingCount = totalCount - installedCount - fallbackCount
 
   return (
-    <div className="bg-slate-950 border border-white/10 rounded-lg overflow-hidden">
+    <div className="bg-surface-0 border border-white/10 rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-slate-900">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-surface-1">
         <div className="flex items-center gap-2">
-          <Cpu className="text-indigo-400" size={16} />
+          <Cpu className="text-atlas-400" size={16} />
           <h3 className="text-sm font-bold text-white">Modèles Ollama embarqués (CDC §4.2)</h3>
         </div>
         <div className="flex items-center gap-2">
@@ -95,7 +95,7 @@ CMD ["serve"]`
       </div>
 
       {/* Status synthèse */}
-      <div className="px-5 py-3 grid grid-cols-4 gap-2 border-b border-white/5 bg-slate-950/50">
+      <div className="px-5 py-3 grid grid-cols-4 gap-2 border-b border-white/5 bg-surface-0/50">
         <Stat label="Ollama serveur" value={health?.available ? '✓ En ligne' : '✗ Hors ligne'} ok={health?.available} />
         <Stat label="Installés" value={`${installedCount}/${totalCount}`} ok={installedCount === totalCount} />
         <Stat label="Fallbacks" value={String(fallbackCount)} ok={fallbackCount === 0} />
@@ -138,13 +138,13 @@ CMD ["serve"]`
       </div>
 
       {/* Actions install */}
-      <div className="border-t border-white/5 p-4 bg-slate-900/50 space-y-2">
+      <div className="border-t border-white/5 p-4 bg-surface-1/50 space-y-2">
         <h4 className="text-[11px] font-bold text-white uppercase tracking-wider mb-1">Installation</h4>
 
         <div className="grid grid-cols-3 gap-2">
           <button
             onClick={downloadInstallScript}
-            className="flex items-center justify-center gap-2 px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold"
+            className="flex items-center justify-center gap-2 px-3 py-2 rounded bg-atlas-500 hover:bg-atlas-500 text-white text-[11px] font-semibold"
           >
             <Download size={12} /> Script bash
           </button>
@@ -221,7 +221,7 @@ function ModelRow({
           {constraints.cpuOnly && <span>CPU only</span>}
         </div>
         {!installed && (
-          <code className="block mt-1 text-[10px] text-slate-300 bg-slate-950 px-2 py-1 rounded font-mono">
+          <code className="block mt-1 text-[10px] text-slate-300 bg-surface-0 px-2 py-1 rounded font-mono">
             ollama pull {name}
           </code>
         )}

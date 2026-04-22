@@ -38,7 +38,7 @@ export const WithCustomPalette: Story = {
     (Story) => {
       useEffect(() => {
         const c = buildDefaultConfig()
-        c.brand.palette.primary = '#8b5cf6'
+        c.brand.palette.primary = '#a77d4c'
         c.brand.palette.accent = '#fbbf24'
         useDesignerStore.getState().setConfig(c)
       }, [])

@@ -213,7 +213,7 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl: _planImageUrl, viewMode 
   const is3D = viewMode !== '2d'
 
   return (
-    <div className={`relative w-full h-full overflow-hidden bg-gray-950 ${className}`}>
+    <div className={`relative w-full h-full overflow-hidden bg-surface-0 ${className}`}>
       {/* 2D DXF viewer — always mounted (hidden in 3D mode) */}
       <div ref={containerRef} className="w-full h-full absolute inset-0" style={{ zIndex: 1, display: is3D ? 'none' : 'block' }} />
 
@@ -245,7 +245,7 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl: _planImageUrl, viewMode 
 
       {/* Loading */}
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-950/80 z-10">
+        <div className="absolute inset-0 flex items-center justify-center bg-surface-0/80 z-10">
           <div className="text-center">
             <div className="w-8 h-8 border-2 border-gray-600 border-t-blue-500 rounded-full animate-spin mx-auto mb-3" />
             <p className="text-sm text-gray-300">Chargement du plan DXF...</p>
@@ -261,7 +261,7 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl: _planImageUrl, viewMode 
 
       {/* Error */}
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-950/80 z-10">
+        <div className="absolute inset-0 flex items-center justify-center bg-surface-0/80 z-10">
           <div className="text-center max-w-md">
             <p className="text-red-400 text-sm mb-2">Erreur de rendu DXF</p>
             <p className="text-xs text-gray-500">{error}</p>
@@ -279,7 +279,7 @@ export function DxfViewerCanvas({ dxfUrl, planImageUrl: _planImageUrl, viewMode 
             Calques ({layers.length - hiddenLayers.size}/{layers.length})
           </button>
           {layerPanelOpen && (
-            <div className="absolute bottom-10 left-0 w-60 max-h-80 overflow-y-auto rounded-lg bg-gray-900 border border-white/[0.08] shadow-xl">
+            <div className="absolute bottom-10 left-0 w-60 max-h-80 overflow-y-auto rounded-lg bg-surface-1 border border-white/[0.08] shadow-xl">
               <div className="px-3 py-2 border-b border-white/[0.06] flex items-center justify-between">
                 <span className="text-[9px] uppercase tracking-wider text-gray-500">Calques DXF</span>
                 <div className="flex gap-1">

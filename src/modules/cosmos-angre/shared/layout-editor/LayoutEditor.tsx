@@ -175,7 +175,7 @@ export default function LayoutEditor({ zoneName, zoneWidth, zoneHeight, onSave, 
   }
 
   return (
-    <div className="flex h-full" style={{ background: '#060a13', color: '#e2e8f0' }}>
+    <div className="flex h-full" style={{ background: '#1a1d23', color: '#e2e8f0' }}>
       {/* Left: Furniture catalog */}
       <div className="w-56 flex-shrink-0 border-r border-white/[0.05] overflow-y-auto" style={{ background: '#0a0f1a' }}>
         <div className="p-3 border-b border-white/[0.04]">
@@ -206,7 +206,7 @@ export default function LayoutEditor({ zoneName, zoneWidth, zoneHeight, onSave, 
       {/* Center: Canvas */}
       <div className="flex-1 flex flex-col">
         {/* Toolbar */}
-        <div className="flex items-center gap-2 px-3 py-2 border-b border-white/[0.05]" style={{ background: '#0b1120' }}>
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-white/[0.05]" style={{ background: '#202329' }}>
           <button onClick={() => setTool('select')} className={`p-1.5 rounded ${tool === 'select' ? 'bg-white/10 text-white' : 'text-gray-500'}`} title="Sélection"><Move size={14} /></button>
           <div className="w-px h-4 bg-white/[0.06]" />
           <button onClick={rotateSelected} disabled={!selectedId} className="p-1.5 rounded text-gray-500 hover:text-white disabled:opacity-30" title="Rotation 90°"><RotateCcw size={14} /></button>
@@ -223,7 +223,7 @@ export default function LayoutEditor({ zoneName, zoneWidth, zoneHeight, onSave, 
           <span className="text-[10px] text-gray-500">Grille : {GRID_M * 100}cm</span>
           <Grid3X3 size={12} className="text-gray-600" />
           <div className="w-px h-4 bg-white/[0.06]" />
-          <button onClick={handleSave} className="flex items-center gap-1 px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-medium"><Save size={12} /> Sauvegarder</button>
+          <button onClick={handleSave} className="flex items-center gap-1 px-3 py-1 rounded-lg bg-atlas-500 hover:bg-atlas-500 text-white text-[11px] font-medium"><Save size={12} /> Sauvegarder</button>
           <button onClick={() => onExportPDF?.({ furniture: items, walls: [], floorColor: '#e8e6e0', wallColor: '#d0cec8', zoneName, zoneArea: zoneWidth * zoneHeight })}
             className="flex items-center gap-1 px-3 py-1 rounded-lg bg-white/[0.06] border border-white/[0.08] text-gray-300 text-[11px] hover:text-white"><Download size={12} /> PDF</button>
         </div>
@@ -253,7 +253,7 @@ export default function LayoutEditor({ zoneName, zoneWidth, zoneHeight, onSave, 
                   onClick={() => setSelectedId(item.id)}
                   onDragEnd={(e) => handleDragEnd(item.id, e.target.x() - 20 / zoom, e.target.y() - 20 / zoom)}>
                   <Rect width={item.width} height={item.height} fill={item.color}
-                    stroke={selectedId === item.id ? '#818cf8' : '#00000030'} strokeWidth={selectedId === item.id ? 2 : 0.5}
+                    stroke={selectedId === item.id ? '#c9a068' : '#00000030'} strokeWidth={selectedId === item.id ? 2 : 0.5}
                     cornerRadius={2} />
                   <Text text={item.label} x={2} y={2} fontSize={9} fill="#ffffff80" />
                 </Group>
@@ -267,12 +267,12 @@ export default function LayoutEditor({ zoneName, zoneWidth, zoneHeight, onSave, 
         </div>
 
         {/* Status bar */}
-        <div className="flex items-center gap-4 px-3 py-1.5 border-t border-white/[0.05] text-[10px] text-gray-500" style={{ background: '#0b1120' }}>
+        <div className="flex items-center gap-4 px-3 py-1.5 border-t border-white/[0.05] text-[10px] text-gray-500" style={{ background: '#202329' }}>
           <span><strong className="text-white">{zoneName}</strong></span>
           <span>Surface : {zoneWidth * zoneHeight} m²</span>
           <span>Mobilier : {items.length} éléments</span>
           <span>Occupé : {occupiedArea.toFixed(1)} m² ({((occupiedArea / (zoneWidth * zoneHeight)) * 100).toFixed(0)}%)</span>
-          {selectedId && <span className="text-indigo-400">Sélection : {items.find(i => i.id === selectedId)?.label}</span>}
+          {selectedId && <span className="text-atlas-400">Sélection : {items.find(i => i.id === selectedId)?.label}</span>}
         </div>
       </div>
     </div>

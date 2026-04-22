@@ -50,8 +50,8 @@ interface Props {
 const SIGNAGE_META: Record<SignageType, { color: string; icon: string; label: string }> = {
   welcome:        { color: '#10b981', icon: 'ⓘ', label: 'Accueil + plan' },
   directional:    { color: '#f59e0b', icon: '↗', label: 'Directionnel' },
-  'you-are-here': { color: '#6366f1', icon: '◉', label: 'Vous êtes ici' },
-  information:    { color: '#8b5cf6', icon: 'i',  label: 'Information' },
+  'you-are-here': { color: '#b38a5a', icon: '◉', label: 'Vous êtes ici' },
+  information:    { color: '#a77d4c', icon: 'i',  label: 'Information' },
   exit:           { color: '#ef4444', icon: '⎋', label: 'Sortie' },
 }
 
@@ -119,12 +119,12 @@ export function DetailedJourneyReport({
 
   const modal = (
     <div
-      className="fixed inset-0 z-[9999] flex items-start justify-center bg-black/85 backdrop-blur-sm overflow-y-auto py-8"
+      className="fixed inset-0 z-[9999] flex items-start justify-center bg-surface-0/85 backdrop-blur-sm overflow-y-auto py-8"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div className="w-[960px] max-w-[95vw] bg-white text-slate-900 rounded-lg shadow-2xl print:w-full print:max-w-none print:shadow-none print:rounded-none" id="journey-report">
         {/* Top bar (non-print) */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-3 bg-slate-900 text-white rounded-t-lg print:hidden">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-3 bg-surface-1 text-white rounded-t-lg print:hidden">
           <div className="flex items-center gap-2">
             <FileText className="w-4 h-4 text-emerald-400" />
             <h2 className="text-sm font-semibold">Rapport détaillé — Flux & signalétique</h2>

@@ -53,9 +53,9 @@ export const THEME_PRESETS: Record<WayfinderTheme['preset'], WayfinderTheme> = {
     fontFamily: '"Inter", "Segoe UI", system-ui, sans-serif',
     categoryColors: {
       mode: '#ec4899', restauration: '#f59e0b', services: '#3b82f6',
-      loisirs: '#8b5cf6', alimentaire: '#10b981', beaute: '#f43f5e',
+      loisirs: '#a77d4c', alimentaire: '#10b981', beaute: '#f43f5e',
       electronique: '#06b6d4', sport: '#84cc16', enfants: '#fbbf24',
-      sante: '#0ea5e9', maison: '#a855f7', bijouterie: '#d946ef',
+      sante: '#0ea5e9', maison: '#b38a5a', bijouterie: '#d946ef',
       autres: '#64748b', vacant: '#e2e8f0',
     },
   },
@@ -138,7 +138,7 @@ const POI_ICONS: Record<WayfinderPoi['kind'], string> = {
 }
 
 const POI_COLORS: Record<WayfinderPoi['kind'], string> = {
-  wc: '#0ea5e9', lift: '#7c3aed', escalator: '#f59e0b', exit: '#10b981',
+  wc: '#0ea5e9', lift: '#7e5e3c', escalator: '#f59e0b', exit: '#10b981',
   info: '#3b82f6', parking: '#64748b', food: '#f97316', youAreHere: '#ef4444',
 }
 
