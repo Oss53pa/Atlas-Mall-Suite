@@ -15,6 +15,8 @@ import {
 } from 'lucide-react'
 import { usePlanModelsStore } from '../stores/planModelsStore'
 import { usePlanEngineStore } from '../stores/planEngineStore'
+import { buildParsedPlanFromImport } from '../planReader/planBridge'
+import { savePlanImageFromUrl } from '../stores/planImageCache'
 
 const PlanImportsSection = lazy(() => import('./PlanImportsSection'))
 const SpaceEditorSection = lazy(() => import('./SpaceEditorSection'))
@@ -159,8 +161,17 @@ export default function AtlasStudioModule() {
                   { id: 'floor-r1',  level: 'R+1' as any, order: 2, widthM: 200, heightM: 140, zones: [], transitions: [] },
                 ]}
                 activeFloorId="floor-rdc"
-                onImportComplete={() => {
-                  // Après import, basculer automatiquement sur l'éditeur
+                onImportComplete={(importedZones, dims, calibration, floorId, planImageUrl, _fileInfo, parsedPlanFromImport, importId) => {
+                  // 1. Construire le ParsedPlan + le pousser dans le store engine
+                  const plan = parsedPlanFromImport ?? buildParsedPlanFromImport(importedZones, dims, calibration)
+                  usePlanEngineStore.getState().setParsedPlan(plan)
+                  usePlanEngineStore.getState().setSpaces(plan.spaces)
+                  usePlanEngineStore.getState().setLayers(plan.layers)
+                  // 2. Persister l'image de fond (floor → IndexedDB) pour le background editor
+                  if (planImageUrl) void savePlanImageFromUrl(floorId, planImageUrl, 'plan-import.png')
+                  // 3. Indexer le parsedPlan par importId (selecteur multi-plans + Dexie)
+                  if (importId) usePlanEngineStore.getState().storeParsedPlan(importId, plan)
+                  // 4. Basculer sur l'éditeur
                   setTab('editor')
                 }}
               />

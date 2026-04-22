@@ -47,6 +47,16 @@ export default function SpaceEditorSection() {
     }
   }, [loadParsedPlan])
 
+  // Auto-charge : si aucun parsedPlan actif mais qu'un import (+ parsedPlan
+  // indexé) existe, charge le plus récent automatiquement. Évite "Aucun plan
+  // importé" alors que l'utilisateur vient de terminer un import.
+  useEffect(() => {
+    if (parsedPlan) return
+    if (imports.length === 0) return
+    const firstWithPlan = imports.find(imp => parsedPlans[imp.id])
+    if (firstWithPlan) loadParsedPlan(firstWithPlan.id)
+  }, [parsedPlan, imports, parsedPlans, loadParsedPlan])
+
   const planBounds = useMemo(() => ({
     width: parsedPlan?.bounds.width || 200,
     height: parsedPlan?.bounds.height || 140,
@@ -79,15 +89,42 @@ export default function SpaceEditorSection() {
 
   // Empty state
   if (!parsedPlan) {
+    const hasImportsButNoPlan = imports.length > 0
     return (
       <div className="h-full flex items-center justify-center bg-[#080c14] text-gray-400">
         <div className="max-w-md text-center space-y-3 p-6">
           <Info className="w-8 h-8 mx-auto text-amber-400/70" />
-          <h2 className="text-lg font-semibold text-white">Aucun plan importé</h2>
-          <p className="text-sm">
-            Importez un plan DXF/PDF depuis l'onglet <span className="text-emerald-400">Plans importés</span>{' '}
-            pour pouvoir dessiner et éditer les espaces.
-          </p>
+          <h2 className="text-lg font-semibold text-white">
+            {hasImportsButNoPlan ? 'Sélectionnez un plan à éditer' : 'Aucun plan importé'}
+          </h2>
+          {hasImportsButNoPlan ? (
+            <>
+              <p className="text-sm">
+                {imports.length} plan{imports.length > 1 ? 's' : ''} disponible{imports.length > 1 ? 's' : ''}. Choisissez-en un :
+              </p>
+              <div className="flex flex-col gap-1.5 mt-2 text-left">
+                {imports.map(imp => (
+                  <button
+                    key={imp.id}
+                    onClick={() => handleSwitchImport(imp.id)}
+                    className="px-3 py-2 rounded-lg bg-atlas-500/10 border border-atlas-500/30 text-atlas-200 text-[12px] hover:bg-atlas-500/20 flex items-center gap-2"
+                  >
+                    <FileText size={12} />
+                    <span className="flex-1 truncate">{imp.fileName}</span>
+                    {imp.floorLevel && <span className="text-[10px] text-slate-500">{imp.floorLevel}</span>}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-slate-600 mt-2">
+                Si le chargement échoue, re-importez le plan depuis l'onglet <span className="text-emerald-400">Import</span>.
+              </p>
+            </>
+          ) : (
+            <p className="text-sm">
+              Importez un plan DXF/PDF depuis l'onglet <span className="text-emerald-400">Import</span>{' '}
+              pour pouvoir dessiner et éditer les espaces.
+            </p>
+          )}
         </div>
       </div>
     )
@@ -138,8 +175,8 @@ export default function SpaceEditorSection() {
           </button>
         </div>
 
-        {/* ─── Sélecteur de plan (imports multiples) ─── */}
-        {imports.length > 1 && (
+        {/* ─── Sélecteur de plan (dropdown toujours visible dès qu'on a ≥1 import) ─── */}
+        {imports.length > 0 && (
           <div className="flex items-center gap-1.5">
             <FileText size={11} className="text-slate-500" />
             <span className="text-[10px] text-slate-500 uppercase tracking-wider">Plan :</span>
@@ -147,26 +184,20 @@ export default function SpaceEditorSection() {
               <select
                 value={activeImport?.id ?? ''}
                 onChange={(e) => handleSwitchImport(e.target.value)}
-                className="appearance-none pl-2.5 pr-7 py-1 rounded-md bg-surface-1 border border-white/[0.08] text-[11px] text-slate-200 hover:border-atlas-500/40 focus:outline-none focus:border-atlas-500/50 cursor-pointer"
+                className="appearance-none pl-2.5 pr-7 py-1 rounded-md bg-surface-1 border border-white/[0.08] text-[11px] text-slate-200 hover:border-atlas-500/40 focus:outline-none focus:border-atlas-500/50 cursor-pointer min-w-[220px]"
               >
                 {imports.map((imp) => (
                   <option key={imp.id} value={imp.id}>
-                    {imp.fileName} {imp.floorLevel ? `· ${imp.floorLevel}` : ''}
+                    {imp.fileName}{imp.floorLevel ? ` · ${imp.floorLevel}` : ''}
                   </option>
                 ))}
               </select>
               <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
             </div>
             <span className="text-[9px] text-slate-600 ml-1">
-              ({imports.length} disponibles)
+              ({imports.length} import{imports.length > 1 ? 's' : ''} disponible{imports.length > 1 ? 's' : ''})
             </span>
           </div>
-        )}
-        {imports.length === 1 && activeImport && (
-          <span className="flex items-center gap-1.5 text-[10px] text-slate-600">
-            <FileText size={10} />
-            {activeImport.fileName}
-          </span>
         )}
 
         {tab === 'editor' && (
