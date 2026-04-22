@@ -1,6 +1,5 @@
 // ═══ QUAL-04 — Indicateur de sauvegarde ═══
 
-import React from 'react'
 
 export type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'offline'
 

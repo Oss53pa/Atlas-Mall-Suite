@@ -1,4 +1,4 @@
-import React, { memo, useState } from 'react'
+import { memo, useState } from 'react'
 import type { SignageItem } from '../../shared/proph3t/types'
 
 interface SignageEntityProps {

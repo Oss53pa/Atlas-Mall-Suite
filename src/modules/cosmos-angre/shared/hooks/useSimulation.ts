@@ -122,7 +122,6 @@ export function useSimulation(): UseSimulationResult {
       cancelRef.current = false
 
       const exits = doors.filter((d) => d.isExit)
-      const totalAgents = zones.reduce((s, z) => s + Math.round(z.w * z.h * 8000), 0)
       const agents: { id: string; floorId: string; x: number; y: number; evacuated: boolean }[] = []
 
       let agentIdx = 0

@@ -1,4 +1,4 @@
-import type { View3DData, View3DConfig, FloorStackConfig, ZoneHeight } from '../types/view3dTypes'
+import type { View3DData, View3DConfig } from '../types/view3dTypes'
 import type { Zone, Floor } from '../../proph3t/types'
 import { getMaterialForZone, getMaterial } from './materialsLibrary'
 import { getLightSetup } from './lightingEngine'

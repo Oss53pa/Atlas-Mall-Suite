@@ -1,4 +1,3 @@
-import React from 'react'
 import { useVol3DStore } from '../store/vol3dStore'
 import type { LightingPreset } from '../store/vol3dTypes'
 

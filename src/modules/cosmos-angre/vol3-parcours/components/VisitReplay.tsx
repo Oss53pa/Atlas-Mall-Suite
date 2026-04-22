@@ -1,7 +1,7 @@
 // ═══ VISIT REPLAY — Animated visitor journey playback on floor plan ═══
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { Play, Pause, SkipForward, RotateCcw, Users, Clock, BarChart3 } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { Play, Pause, RotateCcw, Users, Clock, BarChart3 } from 'lucide-react'
 
 export interface VisitStep {
   zoneId: string

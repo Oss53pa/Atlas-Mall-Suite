@@ -14,7 +14,7 @@
 // Ces fonctions sont PURES (pas d'effets de bord) : elles consomment des données
 // et produisent des rapports JSON sérialisables.
 
-import type { NavGraph, NavEdge } from '../../shared/engines/plan-analysis/navGraphEngine'
+import type { NavGraph } from '../../shared/engines/plan-analysis/navGraphEngine'
 
 // ─── 1. OPTIMISATION DU GRAPHE ───────────────────────────
 

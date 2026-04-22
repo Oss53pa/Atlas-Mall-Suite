@@ -2,7 +2,7 @@
 // Heatmap SVG colorée (rouge/jaune/vert) affichant la densité piétonne
 // calculée par la simulation ABM pour une tranche horaire donnée.
 
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
 import type { HeatmapGrid } from '../engines/plan-analysis/abmSocialForceEngine'
 import { ABM_PARAMS } from '../engines/plan-analysis/abmSocialForceEngine'
 

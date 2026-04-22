@@ -1,4 +1,3 @@
-import React from 'react'
 import type { NavigationGraph } from '../../shared/proph3t/types'
 
 interface GraphBuilderProps {

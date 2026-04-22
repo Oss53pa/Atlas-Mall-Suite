@@ -169,7 +169,6 @@ function zhangSuenThinning(src: Uint8Array, w: number, h: number, maxIter = 500)
   const buf = new Uint8Array(src)
 
   const idx = (i: number, j: number) => j * w + i
-  const inBounds = (i: number, j: number) => i > 0 && i < w - 1 && j > 0 && j < h - 1
 
   // Retourne [P2..P9] pour pixel (i,j)
   const neighbors = (i: number, j: number): number[] => [
@@ -239,7 +238,6 @@ function zhangSuenThinning(src: Uint8Array, w: number, h: number, maxIter = 500)
 
 // ─── Étape 4 : extraction nœuds + arêtes du squelette ─────
 
-interface Pixel { i: number; j: number }
 
 function countSkeletonNeighbors(data: Uint8Array, w: number, h: number, i: number, j: number): number {
   let c = 0
@@ -315,7 +313,6 @@ function extractGraph(
         let prevI = i0, prevJ = j0
         let curI = ni, curJ = nj
         let lengthM = 0
-        const edgeKey = `${Math.min(i0, ni)}-${Math.min(j0, nj)}-${Math.max(i0, ni)}-${Math.max(j0, nj)}`
         // Pour éviter de doublonner une arête directe entre 2 nœuds adjacents
         // on utilise la clé du couple.
 

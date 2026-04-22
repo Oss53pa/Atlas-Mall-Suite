@@ -1,6 +1,6 @@
 // ═══ PROPH3T GLOBAL MOUNT — Monté UNE SEULE FOIS au niveau racine ═══
 
-import React, { useCallback, useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { Proph3tImportModal } from './Proph3tImportModal'
 import { FloorAttributionModal, type FloorAttribution } from '../../components/FloorAttributionModal'
 import { usePlanEngineStore } from '../../stores/planEngineStore'

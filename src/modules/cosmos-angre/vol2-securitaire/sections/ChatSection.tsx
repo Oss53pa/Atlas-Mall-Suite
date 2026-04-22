@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import { useCallback } from 'react'
 import type { ChatMessage } from '../../shared/proph3t/types'
 import type { FullProjectContext } from '../../shared/proph3t/chatEngine'
 import { proph3tAnswer } from '../../shared/proph3t/chatEngine'

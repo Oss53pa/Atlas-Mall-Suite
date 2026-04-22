@@ -1,13 +1,12 @@
 // ═══ SKILL Phase C — Parcours client (personas + ABM + variantes A/B) ═══
 
 import type { Proph3tResult, Proph3tAction, Proph3tFinding } from '../orchestrator.types'
-import { citeAlgo, citeBenchmark, confidence } from '../orchestrator.types'
+import { citeAlgo, confidence } from '../orchestrator.types'
 import { enrichActionsWithRag, enrichFindingsWithRag } from '../ragHelper'
 import { enrichWithNarrative } from '../narrativeEnricher'
 import { kmeans } from '../algorithms/kmeans'
 import { simulateABM } from '../algorithms/socialForceABM'
-import { compareAB, monteCarloPercentiles, randomNormal } from '../algorithms/monteCarlo'
-import { simulateJourney } from '../../engines/parcoursAgentEngine'
+import { compareAB, randomNormal } from '../algorithms/monteCarlo'
 import { optimizeSignage } from '../../engines/signageOptimizer'
 import { computeDetailedJourneys, type DetailedJourney } from '../../engines/plan-analysis/detailedJourneyEngine'
 
@@ -88,7 +87,6 @@ export async function analyzeParcours(input: ParcoursAnalysisInput): Promise<Pro
 
   // ─── 2. Simulation ABM (Social Force) ───
   const entrance = input.entrance ?? { x: input.planWidth * 0.05, y: input.planHeight * 0.5 }
-  const exits = input.exits ?? [{ x: input.planWidth * 0.95, y: input.planHeight * 0.5 }]
   const sources = [entrance]
   const destinations = (input.pois.length > 0 ? input.pois : []).map(p => ({ x: p.x, y: p.y, weight: p.priority === 1 ? 3 : p.priority === 2 ? 2 : 1 }))
   if (destinations.length === 0) destinations.push({ x: input.planWidth / 2, y: input.planHeight / 2, weight: 1 })
@@ -289,7 +287,7 @@ function deducePreferences(profile: number[]): string[] {
   return sorted.slice(0, 2).map(x => x.l)
 }
 
-function simulateVisit(input: ParcoursAnalysisInput, abm: ReturnType<typeof simulateABM>, optimized: boolean, seed: { value: number }): number {
+function simulateVisit(_input: ParcoursAnalysisInput, abm: ReturnType<typeof simulateABM>, optimized: boolean, seed: { value: number }): number {
   // Modèle simple : durée visite = base + bonus signalétique + pénalité goulot
   const baseMin = 45
   const sigBonus = optimized ? 12 : 0

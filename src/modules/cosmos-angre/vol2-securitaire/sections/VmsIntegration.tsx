@@ -1,7 +1,7 @@
 // ═══ VOL.2 — Integration VMS Live (F2.11) ═══
 
 import React, { useState } from 'react'
-import { Monitor, Wifi, WifiOff, CheckCircle, XCircle, RefreshCw, Settings, Camera } from 'lucide-react'
+import { WifiOff, CheckCircle, XCircle, RefreshCw, Settings } from 'lucide-react'
 import { DemoBanner, ConnectionStatus } from '../../shared/components/DemoBanner'
 
 type VmsProvider = 'milestone' | 'genetec' | 'dahua_dss' | 'hikvision_ivms'
@@ -50,7 +50,7 @@ const LIVE_CAMERAS: CameraLiveStatus[] = [
 ]
 
 export default function VmsIntegration() {
-  const [providers, setProviders] = useState(VMS_PROVIDERS)
+  const [providers, _setProviders] = useState(VMS_PROVIDERS)
   const [selectedProvider, setSelectedProvider] = useState<VmsProvider>('dahua_dss')
 
   const activeProvider = providers.find(p => p.provider === selectedProvider)

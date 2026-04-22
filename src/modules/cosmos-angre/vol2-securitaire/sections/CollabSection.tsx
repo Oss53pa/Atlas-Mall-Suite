@@ -1,4 +1,3 @@
-import React from 'react'
 import { Users, Circle, Clock, Activity } from 'lucide-react'
 
 interface CollabUser {

@@ -1,4 +1,4 @@
-import React, { memo } from 'react'
+import { memo } from 'react'
 import type { Camera } from '../../shared/proph3t/types'
 
 interface CameraEntityProps {
@@ -8,7 +8,7 @@ interface CameraEntityProps {
   onClick: () => void
 }
 
-function priorityColor(priority: Camera['priority']): string {
+function _priorityColor(priority: Camera['priority']): string {
   switch (priority) {
     case 'critique': return '#EF4444'
     case 'haute': return '#F59E0B'

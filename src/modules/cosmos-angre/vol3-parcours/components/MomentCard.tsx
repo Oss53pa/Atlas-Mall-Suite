@@ -1,4 +1,3 @@
-import React from 'react'
 import { Star, AlertTriangle, Lightbulb, Crown, Signpost } from 'lucide-react'
 import type { MomentCle } from '../../shared/proph3t/types'
 

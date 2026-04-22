@@ -2,7 +2,7 @@
 // Bridges the gap between the import pipeline (RecognizedZone[], DimEntity[])
 // and the PlanCanvasV2 engine (ParsedPlan with DetectedSpace[], PlanEntity[]).
 
-import type { RecognizedZone, DimEntity, CalibrationResult } from './planReaderTypes'
+import type { DimEntity, CalibrationResult } from './planReaderTypes'
 import type {
   ParsedPlan, PlanEntity, PlanLayer, DetectedSpace, WallSegment, Bounds,
 } from './planEngineTypes'

@@ -34,7 +34,7 @@ export async function recognizeRasterPlan(imageFile: File): Promise<RasterRecogn
   const closed = morphClose(edges, W, H, 3)
 
   // ── 5. Détection de composantes connexes (flood fill) ──
-  const { regions, labels } = findConnectedRegions(closed, W, H)
+  const { regions, labels: _labels } = findConnectedRegions(closed, W, H)
 
   // ── 6. Filtrage des régions par taille → zones candidates ──
   const minArea = W * H * 0.0005 // min 0.05% de l'image (~200px sur 4Mpx)
@@ -415,7 +415,7 @@ function detectWalls(edges: Uint8Array, W: number, H: number): RecognizedWall[] 
 
 // ═══ DOOR DETECTION (gaps in walls) ═══
 
-function detectDoors(edges: Uint8Array, walls: RecognizedWall[], W: number, H: number): RecognizedDoor[] {
+function detectDoors(_edges: Uint8Array, walls: RecognizedWall[], _W: number, _H: number): RecognizedDoor[] {
   const doors: RecognizedDoor[] = []
   // Find short gaps between collinear wall segments
   const hWalls = walls.filter(w => Math.abs(w.y1 - w.y2) < 0.01).sort((a, b) => a.x1 - b.x1)
@@ -477,7 +477,7 @@ function estimateScaleFromGeometry(
 // Les locaux techniques sont tres petits (< 0.1% du plan)
 // Les food courts / grandes surfaces sont grands (> 8% du plan)
 
-function guessZoneType(bb: BoundingBox, aspectRatio: number, relativeSize: number): SpaceType {
+function guessZoneType(_bb: BoundingBox, aspectRatio: number, relativeSize: number): SpaceType {
   // Tres grand (> 15%) → parking ou hypermarche
   if (relativeSize > 0.15) return 'parking'
   // Grand (8-15%) → food court ou ancre

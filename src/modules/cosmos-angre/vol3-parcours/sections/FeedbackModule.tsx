@@ -1,7 +1,7 @@
 // ═══ VOL.3 — Feedback Module (Faille #8 corrigee) ═══
 // Sentiment analysis via proph3tService + panneau Insights Proph3t
 
-import React, { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { MessageSquare, Star, ThumbsUp, AlertCircle, Filter, Sparkles, Loader2 } from 'lucide-react'
 import { analyzeSentiment, type SentimentResult } from '../../shared/proph3t/proph3tService'
 

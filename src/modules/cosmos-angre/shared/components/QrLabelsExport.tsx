@@ -3,10 +3,10 @@
 // et coller physiquement sur les panneaux. Chaque QR pointe vers /feedback
 // avec les paramètres du panneau (projet, ref, position, type).
 
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { QRCodeSVG } from 'qrcode.react'
-import { X, Printer, Download, QrCode, Info } from 'lucide-react'
+import { X, Printer, QrCode, Info } from 'lucide-react'
 import { buildFeedbackUrl } from '../services/signageFeedbackService'
 import type { PlacedPanel } from '../engines/plan-analysis/signagePlacementEngine'
 

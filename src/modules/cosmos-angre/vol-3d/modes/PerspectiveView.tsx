@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { AtlasMallScene } from '../engines/threeSceneBuilder'
 import { useVol3DStore } from '../store/vol3dStore'
 import type { Floor, Zone, Camera, POI, SignageItem, TransitionNode } from '../../shared/proph3t/types'

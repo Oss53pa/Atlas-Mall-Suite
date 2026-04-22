@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Project, ProjectStatus } from './types'
+import type { Project } from './types'
 
 interface ProjectsState {
   projects: Project[]

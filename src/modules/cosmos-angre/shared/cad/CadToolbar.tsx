@@ -9,7 +9,7 @@ import {
   Unlink, Plus, Pencil, AlertTriangle,
 } from 'lucide-react'
 import { useCadStore } from './cadStore'
-import type { CadTool, CadLayer } from './cadTypes'
+import type { CadLayer } from './cadTypes'
 import { TOOL_CONFIGS } from './cadTypes'
 
 const ICON_MAP: Record<string, React.ComponentType<any>> = {

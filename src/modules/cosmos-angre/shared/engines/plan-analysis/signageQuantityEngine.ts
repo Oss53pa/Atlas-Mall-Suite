@@ -17,7 +17,7 @@ import {
   type SignageModel,
 } from '../../proph3t/libraries/signageCatalog'
 import type { SpaceTypeKey, FloorLevelKey } from '../../proph3t/libraries/spaceTypeLibrary'
-import type { FlowAnalysisResult, FlowEntryExit } from './flowPathEngine'
+import type { FlowAnalysisResult } from './flowPathEngine'
 
 // ─── Input du moteur ──────────────────────────────────
 

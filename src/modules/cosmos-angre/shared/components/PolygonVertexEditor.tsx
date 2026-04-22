@@ -2,7 +2,7 @@
 // Drag des sommets, ajout/suppression au double-clic, snap optionnel à la grille
 
 import React, { useState, useCallback, useRef } from 'react'
-import { X, Plus, Trash2, Check, RotateCcw } from 'lucide-react'
+import { X, Check, RotateCcw } from 'lucide-react'
 
 interface Props {
   /** Polygone initial en mètres. */

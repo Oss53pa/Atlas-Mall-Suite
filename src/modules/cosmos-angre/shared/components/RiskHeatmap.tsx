@@ -1,4 +1,3 @@
-import React from 'react'
 
 interface RiskHeatmapProps {
   matrix: number[][] // 5x5 grid, [probability][impact]

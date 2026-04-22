@@ -1,6 +1,5 @@
-import React from 'react'
 import { DoorOpen, Fingerprint, KeySquare, ShieldCheck } from 'lucide-react'
-import type { Zone, SpaceType } from '../../shared/proph3t/types'
+import type { Zone } from '../../shared/proph3t/types'
 
 interface DoorRec {
   type: string

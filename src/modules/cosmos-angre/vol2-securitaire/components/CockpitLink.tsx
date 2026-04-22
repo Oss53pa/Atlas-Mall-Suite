@@ -1,4 +1,3 @@
-import React from 'react'
 import { Flag, ExternalLink } from 'lucide-react'
 import type { CockpitMilestone } from '../../shared/proph3t/types'
 

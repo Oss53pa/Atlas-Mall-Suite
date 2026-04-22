@@ -1,6 +1,5 @@
 // ═══ SPACE EDIT PANEL — Right sidebar for editing a selected space ═══
 
-import React from 'react'
 import type { DetectedSpace, SpaceState, SpaceStatus } from '../planReader/planEngineTypes'
 import { usePlanEngineStore } from '../stores/planEngineStore'
 

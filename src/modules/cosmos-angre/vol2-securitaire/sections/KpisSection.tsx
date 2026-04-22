@@ -1,4 +1,3 @@
-import React from 'react'
 import { useContentStore } from '../../shared/store/contentStore'
 import EditableText, { EditableKpi } from '../../shared/components/EditableText'
 

@@ -1,8 +1,8 @@
 // ═══ VISITE VIRTUELLE — Page standalone (sidebar Outils) ═══
 
-import React, { useState, lazy, Suspense } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { Loader2 } from 'lucide-react'
-import type { TourContext, ScenarioRole, Waypoint, TourZone } from '../cosmos-angre/shared/virtual-tour/VirtualTourEngine'
+import type { ScenarioRole, Waypoint, TourZone } from '../cosmos-angre/shared/virtual-tour/VirtualTourEngine'
 
 const VirtualTourEngine = lazy(() => import('../cosmos-angre/shared/virtual-tour/VirtualTourEngine'))
 

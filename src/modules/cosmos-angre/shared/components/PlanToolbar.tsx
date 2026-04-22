@@ -1,6 +1,5 @@
 // ═══ PLAN TOOLBAR — Floating tool buttons for the plan canvas ═══
 
-import React from 'react'
 import type { PlanTool } from '../planReader/planEngineTypes'
 
 interface PlanToolbarProps {

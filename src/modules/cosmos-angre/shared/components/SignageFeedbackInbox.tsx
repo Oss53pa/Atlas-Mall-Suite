@@ -2,15 +2,25 @@
 // Panneau latéral manager : liste tous les signalements terrain reçus
 // via QR code, permet de les filtrer, les marquer résolus, voir les photos.
 
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  X, Inbox, Filter, CheckCircle, AlertTriangle, MapPin, Camera,
-  RefreshCw, Loader2, User,
+  X,
+  Inbox,
+  Filter,
+  CheckCircle,
+  MapPin,
+  RefreshCw,
+  Loader2,
+  User
 } from 'lucide-react'
 import {
-  listFeedback, resolveFeedback, computeFeedbackStats,
-  type SignageFeedback, type FeedbackStatus, type FeedbackSeverity,
+  listFeedback,
+  resolveFeedback,
+  computeFeedbackStats,
+  type SignageFeedback,
+  type FeedbackStatus,
+  type FeedbackSeverity
 } from '../services/signageFeedbackService'
 
 interface Props {

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { FileText, Download, Loader2, FileSpreadsheet } from 'lucide-react'
 import { useVol2Store } from '../store/vol2Store'
 import { useContentStore } from '../../shared/store/contentStore'
@@ -7,7 +7,6 @@ import EditableText from '../../shared/components/EditableText'
 export default function RapportSection() {
   const projectName = useVol2Store((s) => s.projectName)
   const score = useVol2Store((s) => s.score)
-  const zones = useVol2Store((s) => s.zones)
   const cameras = useVol2Store((s) => s.cameras)
   const doors = useVol2Store((s) => s.doors)
   const evacResult = useVol2Store((s) => s.evacResult)

@@ -102,7 +102,7 @@ export interface JourneyState {
 /* ═══════════════════ ID GENERATOR ═══════════════════ */
 
 let _nextId = 1000
-function uid(prefix: string): string {
+function _uid(prefix: string): string {
   return `${prefix}-${++_nextId}`
 }
 

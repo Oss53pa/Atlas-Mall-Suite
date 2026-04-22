@@ -1,5 +1,5 @@
 import type { Zone, Floor } from '../../proph3t/types'
-import type { ExtrudedZone, ZoneHeight, IsoScene, IsoEntity, View3DConfig, View3DData, FloorStackConfig } from '../types/view3dTypes'
+import type { ExtrudedZone, ZoneHeight, IsoScene, IsoEntity, View3DConfig, View3DData } from '../types/view3dTypes'
 import { getVol1ZoneColors, getVol1ZoneLabel } from './vol1Renderer'
 import { buildCameraEntities, buildBlindSpotOverlaySVG } from './vol2Renderer'
 import { buildPOIEntities, buildMomentEntities, buildWayfindingPathsSVG } from './vol3Renderer'

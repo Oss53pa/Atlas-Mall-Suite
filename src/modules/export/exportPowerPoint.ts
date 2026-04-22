@@ -1,7 +1,6 @@
 // ═══ EXPORT POWERPOINT — Presentation cle en main ═══
 // Genere un fichier .pptx pour presentation DG / conseil d'administration
 
-import type { Vol2ExportData } from '../cosmos-angre/shared/proph3t/types'
 
 export interface SlideData {
   title: string

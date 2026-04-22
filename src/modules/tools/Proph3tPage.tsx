@@ -1,7 +1,7 @@
 // ═══ PROPH3T AI — Chat standalone ═══
 
-import React, { useState, useRef, useEffect } from 'react'
-import { Sparkles, Send, User, Globe2, FolderOpen, Shield, Plus } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Sparkles, Send, Globe2, FolderOpen, Shield, Plus } from 'lucide-react'
 
 interface Message { role: 'user' | 'assistant'; content: string; time: string }
 interface Conv { id: string; title: string; date: string; preview: string }

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { Zap, Target, Flame, Users, AlertTriangle, Shield } from 'lucide-react'
 import { useVol2Store } from '../store/vol2Store'
 import { useSimulation } from '../../shared/hooks/useSimulation'
@@ -15,10 +15,6 @@ const SCENARIOS = [
 export default function SimulationSection() {
   const cameras = useVol2Store((s) => s.cameras)
   const zones = useVol2Store((s) => s.zones)
-  const floors = useVol2Store((s) => s.floors)
-  const doors = useVol2Store((s) => s.doors)
-  const transitions = useVol2Store((s) => s.transitions)
-  const addMonteCarloResult = useVol2Store((s) => s.addMonteCarloResult)
 
   const { isRunning, progress, monteCarloResult, runMonteCarlo, cancel } = useSimulation()
 

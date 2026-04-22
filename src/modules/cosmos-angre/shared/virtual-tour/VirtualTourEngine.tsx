@@ -1,7 +1,7 @@
 // ═══ VIRTUAL TOUR ENGINE — Three.js vanilla (comme FloorPlan3D) ═══
 // FPS Walkthrough + Orbite + Visite guidée — 4 contextes
 
-import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react'
+import { useRef, useEffect, useState, useMemo, useCallback } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
@@ -41,7 +41,7 @@ interface Props {
 
 export default function VirtualTourEngine({
   zones, waypoints, floorWidth, floorDepth,
-  scenarioRole, onWaypointReached, onZoneClick, context,
+  scenarioRole, onWaypointReached, onZoneClick: _onZoneClick, context,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<{ scene: THREE.Scene; camera: THREE.PerspectiveCamera; renderer: THREE.WebGLRenderer; controls: OrbitControls; animId: number } | null>(null)
@@ -49,7 +49,7 @@ export default function VirtualTourEngine({
 
   const [mode, setMode] = useState<TourMode>('orbit')
   const [activeWP, setActiveWP] = useState(0)
-  const [showPanel, setShowPanel] = useState(true)
+  const [showPanel, _setShowPanel] = useState(true)
 
   const filteredWP = useMemo(() =>
     waypoints.filter(wp => !scenarioRole || wp.scenario.includes(scenarioRole)).sort((a, b) => a.order - b.order),

@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from 'react'
-import { FileText, Download, Loader2, QrCode, FileSpreadsheet } from 'lucide-react'
+import { useCallback, useState } from 'react'
+import { FileText, Loader2, QrCode } from 'lucide-react'
 import { useVol3Store } from '../store/vol3Store'
 
 export default function RapportSection() {

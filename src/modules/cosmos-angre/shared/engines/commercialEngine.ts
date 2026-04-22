@@ -95,7 +95,6 @@ export function runCommercialAnalysis(
 ): CommercialReport {
   const issues: CommercialReport['issues'] = []
   let issueCount = 0
-  const nextId = () => `comm-${++issueCount}`
 
   const totalSurface = spaces.reduce((s, sp) => s + sp.areaSqm, 0)
 

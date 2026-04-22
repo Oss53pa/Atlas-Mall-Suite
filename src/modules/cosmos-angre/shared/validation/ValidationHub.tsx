@@ -1,53 +1,79 @@
 // ═══ VALIDATION HUB — Document approval workflow ═══
+//
+// Source : reportShareEngine (IndexedDB + Supabase). Les "documents" sont les
+// rapports partagés via `ReportShareManager` (Section 7 de l'audit).
+// Zéro donnée mockée — alimentation 100% depuis les shares réels.
 
-import React, { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
-  FileText, CheckCircle, XCircle, Clock,
-  MessageSquare, Send, ChevronDown, ChevronRight,
+  FileText,
+  CheckCircle,
+  XCircle,
+  Clock,
+  MessageSquare,
+  Send,
+  RefreshCw,
 } from 'lucide-react'
-import type {
-  ValidationDocument, ValidationComment, ValidationStatus,
-} from './validationTypes'
+import type { ValidationDocument, ValidationStatus, ValidationComment } from './validationTypes'
 import { STATUS_CONFIG, ROLE_LABELS, DOC_TYPE_LABELS } from './validationTypes'
+import { listReportShares, pullSharesFromCloud, type ReportShare } from '../engines/reportShareEngine'
 
-// ── Mock documents for demo ──────────────────────────────────
+// ─── Bridge ReportShare → ValidationDocument ───
 
-const DEMO_DOCUMENTS: ValidationDocument[] = [
-  {
-    id: 'vd-01',
-    title: 'Plan securitaire Cosmos Angre v2.1',
-    type: 'plan_securitaire',
-    version: 'v2.1',
-    status: 'en_revue',
-    createdBy: 'pame@atlastudio.ci',
-    createdAt: '2026-03-15T10:00:00Z',
-    updatedAt: '2026-03-28T14:00:00Z',
-    workflow: [
-      { id: 'ws-01', role: 'owner', assignedTo: 'pame@atlastudio.ci', status: 'valide', completedAt: '2026-03-20T10:00:00Z' },
-      { id: 'ws-02', role: 'security_expert', assignedTo: 'expert@securite.ci', status: 'en_attente' },
-      { id: 'ws-03', role: 'architect', assignedTo: 'archi@cosmos.ci', status: 'en_attente' },
-    ],
-    comments: [
-      {
-        id: 'vc-01', author: 'pame@atlastudio.ci', role: 'owner',
-        text: 'Approuve pour envoi a l\'expert securite. Verifier la couverture parking B1.',
-        status: 'ouvert', createdAt: '2026-03-20T10:00:00Z',
-      },
-    ],
-  },
-  {
-    id: 'vd-02',
-    title: 'Rapport APSAD R82 — Conformite',
-    type: 'rapport_apsad',
+function shareToValidationDocument(share: ReportShare): ValidationDocument {
+  const status: ValidationStatus =
+    share.status === 'approved' ? 'approuve'
+    : share.status === 'rejected' ? 'rejete'
+    : share.status === 'commented' ? 'en_revue'
+    : share.status === 'opened' ? 'en_revue'
+    : share.status === 'sent' ? 'en_revue'
+    : 'brouillon'
+
+  const comments: ValidationComment[] = share.events
+    .filter(e => e.type === 'commented' && e.comment)
+    .map(e => ({
+      id: e.id,
+      author: e.actor ?? 'Destinataire',
+      role: 'security_expert',
+      text: e.comment ?? '',
+      status: 'ouvert' as const,
+      createdAt: e.at,
+    }))
+
+  const workflow = share.recipients.map((r, i) => {
+    const approved = share.events.some(e => e.type === 'approved' && e.actor === r.email)
+    const rejected = share.events.some(e => e.type === 'corrections_requested' && e.actor === r.email)
+    return {
+      id: `ws-${share.token}-${i}`,
+      role: (r.role as any) ?? 'security_expert',
+      assignedTo: r.email,
+      status: approved ? 'valide' as const
+            : rejected ? 'rejete' as const
+            : 'en_attente' as const,
+      completedAt: approved || rejected
+        ? share.events.find(e => (e.type === 'approved' || e.type === 'corrections_requested') && e.actor === r.email)?.at
+        : undefined,
+    }
+  })
+
+  return {
+    id: share.token,
+    title: share.title,
+    type: share.volumeId === 'vol2' ? 'plan_securitaire'
+        : share.volumeId === 'vol1' ? 'plan_commercial'
+        : share.volumeId === 'vol3' ? 'plan_signaletique'
+        : 'plan_commercial',
     version: 'v1.0',
-    status: 'brouillon',
-    createdBy: 'pame@atlastudio.ci',
-    createdAt: '2026-03-25T08:00:00Z',
-    updatedAt: '2026-03-25T08:00:00Z',
-    workflow: [],
-    comments: [],
-  },
-]
+    status,
+    createdBy: 'Auteur',
+    createdAt: share.createdAt,
+    updatedAt: share.events.length > 0
+      ? share.events[share.events.length - 1].at
+      : share.createdAt,
+    workflow,
+    comments,
+  }
+}
 
 // ── Component ────────────────────────────────────────────────
 
@@ -56,9 +82,24 @@ interface ValidationHubProps {
 }
 
 export default function ValidationHub({ volumeColor = '#a855f7' }: ValidationHubProps) {
-  const [documents] = useState<ValidationDocument[]>(DEMO_DOCUMENTS)
+  const [documents, setDocuments] = useState<ValidationDocument[]>([])
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
   const [newComment, setNewComment] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const refresh = useCallback(async () => {
+    setLoading(true)
+    try {
+      // Pull cloud avant d'afficher (non-bloquant si Supabase indispo)
+      try { await pullSharesFromCloud() } catch { /* offline ok */ }
+      const shares = await listReportShares()
+      setDocuments(shares.map(shareToValidationDocument))
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { void refresh() }, [refresh])
 
   const selectedDoc = documents.find((d) => d.id === selectedDocId)
 
@@ -74,15 +115,35 @@ export default function ValidationHub({ volumeColor = '#a855f7' }: ValidationHub
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       {/* Header */}
-      <div>
-        <p className="text-[11px] tracking-[0.2em] font-medium mb-1" style={{ color: volumeColor }}>
-          VALIDATION HUB
-        </p>
-        <h2 className="text-[22px] font-light text-white">Circuit d'approbation</h2>
-        <p className="text-[12px] text-slate-500 mt-1">
-          {documents.length} document(s) — validez les livrables avant transmission
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-[11px] tracking-[0.2em] font-medium mb-1" style={{ color: volumeColor }}>
+            VALIDATION HUB
+          </p>
+          <h2 className="text-[22px] font-light text-white">Circuit d'approbation</h2>
+          <p className="text-[12px] text-slate-500 mt-1">
+            {documents.length} document{documents.length > 1 ? 's' : ''} — rapports partagés et leur état de validation
+          </p>
+        </div>
+        <button
+          onClick={refresh}
+          disabled={loading}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 border border-white/[0.06] text-[11px] text-slate-300 hover:bg-slate-700 disabled:opacity-40"
+        >
+          <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+          Actualiser
+        </button>
       </div>
+
+      {documents.length === 0 && !loading && (
+        <div className="rounded-xl border border-dashed border-white/[0.08] bg-slate-900/20 p-10 text-center">
+          <FileText size={36} className="text-slate-600 mx-auto mb-3" />
+          <p className="text-slate-400 text-sm">Aucun rapport partagé pour validation.</p>
+          <p className="text-slate-500 text-xs mt-1">
+            Utilisez l'onglet « Rapports &amp; partage » de chaque volume pour envoyer un rapport à valider.
+          </p>
+        </div>
+      )}
 
       <div className="flex gap-6">
         {/* Document list */}

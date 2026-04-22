@@ -1,4 +1,4 @@
-import React, { memo } from 'react'
+import { memo } from 'react'
 import type { Camera } from '../../shared/proph3t/types'
 
 interface FovConeProps {

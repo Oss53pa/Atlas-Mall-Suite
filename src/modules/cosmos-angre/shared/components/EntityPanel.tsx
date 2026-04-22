@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, Trash2, Save, Camera as CamIcon, DoorOpen, MapPin, ArrowUpDown } from 'lucide-react'
+import { X, Trash2, Camera as CamIcon, DoorOpen, MapPin, ArrowUpDown } from 'lucide-react'
 import type { Camera, Door, Zone, TransitionNode, CameraModel, SpaceType } from '../proph3t/types'
 
 type EntityType = 'camera' | 'door' | 'zone' | 'transition'

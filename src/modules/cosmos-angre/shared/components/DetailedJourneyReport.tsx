@@ -11,24 +11,30 @@
 //   6. Recommandations stratégiques
 //   7. Méthodologie
 
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  X, Printer, FileText, TrendingUp, MapPin, AlertTriangle, Lightbulb, Users,
-  Navigation, BookOpen, Signpost, ArrowRight,
+  X,
+  Printer,
+  FileText,
+  TrendingUp,
+  MapPin,
+  AlertTriangle,
+  Lightbulb,
+  Users,
+  Navigation,
+  BookOpen,
+  Signpost,
+  ArrowRight
 } from 'lucide-react'
 import type {
-  FlowAnalysisResult, FlowPath, SignageRecommendation, SignageType,
+  FlowAnalysisResult,
+  FlowPath,
+  SignageRecommendation,
+  SignageType
 } from '../engines/plan-analysis/flowPathEngine'
-import {
-  resolveSpaceCategory,
-  resolveSpaceLabel,
-} from '../engines/plan-analysis/detailedJourneyEngine'
-import {
-  CATEGORY_META,
-  useSpaceCorrectionsStore,
-  type SpaceCategory,
-} from '../stores/spaceCorrectionsStore'
+import { resolveSpaceCategory } from '../engines/plan-analysis/detailedJourneyEngine'
+import { CATEGORY_META, useSpaceCorrectionsStore, type SpaceCategory } from '../stores/spaceCorrectionsStore'
 import type { EditableSpace } from './SpaceLabelEditor'
 
 interface Props {

@@ -1,4 +1,3 @@
-import React from 'react'
 import type { EvacuationFrame } from '../../shared/proph3t/types'
 
 interface EvacuationFlowProps {

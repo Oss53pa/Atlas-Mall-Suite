@@ -1,6 +1,6 @@
 // ═══ HEATMAP OVERLAY — Zone-based frequency heatmap on FloorPlanCanvas ═══
 
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 export interface ZoneHeatData {
   zoneId: string

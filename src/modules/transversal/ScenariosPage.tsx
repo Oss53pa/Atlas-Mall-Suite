@@ -1,7 +1,7 @@
 // ═══ SCÉNARIOS — Comparaison A/B/C/D ═══
 
-import React, { useState } from 'react'
-import { Layers, ArrowUpRight, ArrowDownRight, Minus, Plus, Check, X, Copy, Download } from 'lucide-react'
+import { useState } from 'react'
+import { Layers, ArrowUpRight, ArrowDownRight, Minus, Plus, Copy, Download } from 'lucide-react'
 
 interface Scenario {
   id: string; name: string; description: string; color: string

@@ -2,11 +2,11 @@
 // Rôle : nettoyer / dépolluer / valider le plan à l'import. PAS d'audit sécurité,
 // PAS de parcours, PAS de commercial. L'utilisateur valide puis passe aux volumes.
 
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Sparkles, CheckCircle2, ArrowRight, Camera, RotateCw } from 'lucide-react'
 import { Proph3tResultPanel } from './Proph3tResultPanel'
-import { runSkill, getLastResult, onProph3tResult } from '../orchestrator'
+import { getLastResult, onProph3tResult } from '../orchestrator'
 import type { Proph3tResult, Proph3tAction } from '../orchestrator.types'
 
 // Helper toast simple (pas de dépendance externe)
@@ -45,7 +45,7 @@ interface Props {
 }
 
 export function Proph3tImportModal({
-  open, onClose, projectName,
+  open, onClose, projectName: _projectName,
   onApplyAction, onValidatePlan, onRefresh, captureScreenshot,
 }: Props) {
   const [results, setResults] = useState<Record<string, Proph3tResult<unknown>>>({})

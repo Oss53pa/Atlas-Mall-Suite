@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react'
+import { lazy, Suspense } from 'react'
 import { useView3D } from './hooks/useView3D'
 import View3DToolbar from './View3DToolbar'
 import View3DSidebar from './View3DSidebar'
@@ -17,6 +17,7 @@ export default function View3DSection({ data }: Props) {
   const {
     config, setMode, setContext, toggleLayer,
     setZoneHeight, setFloorVisible, setFloorOpacity,
+    setIsolatedFloor, setExplodeLevel,
     setLighting, setViewAngle,
   } = useView3D(data)
 
@@ -34,6 +35,8 @@ export default function View3DSection({ data }: Props) {
         onSetLighting={setLighting}
         onSetViewAngle={setViewAngle}
         onSetContext={setContext}
+        onIsolateFloor={setIsolatedFloor}
+        onSetExplodeLevel={setExplodeLevel}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">

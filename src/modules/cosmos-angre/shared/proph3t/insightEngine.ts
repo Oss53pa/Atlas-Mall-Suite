@@ -2,8 +2,11 @@
 // 20 regles — 3 niveaux d'urgence — max 5 affiches simultanement
 
 import type {
-  ProactiveInsight, InsightLevel, FullProjectContextV3,
-  FullProjectContext, Zone, Camera,
+  ProactiveInsight,
+  InsightLevel,
+  FullProjectContextV3,
+  FullProjectContext,
+  Camera
 } from './types'
 import { calcArea } from './engine'
 import { formatFcfaWithUnit as formatFcfa } from '../utils/formatting'

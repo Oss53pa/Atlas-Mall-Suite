@@ -1,7 +1,7 @@
 // ═══ BENCHMARK — Comparaison centres commerciaux Afrique ═══
 
-import React, { useState } from 'react'
-import { BarChart2, Globe2, TrendingUp, Filter } from 'lucide-react'
+import { useState } from 'react'
+import { BarChart2, Filter } from 'lucide-react'
 
 interface Mall { name: string; city: string; country: string; region: string; isOurs: boolean; metrics: Record<string, number> }
 

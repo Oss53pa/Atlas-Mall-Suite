@@ -3,7 +3,7 @@
 // avec : score global, narratifs, actions priorisées, plan(s) joint(s), sources citées.
 
 import jsPDF from 'jspdf'
-import type { Proph3tResult, Proph3tAction, Proph3tFinding, Severity } from './orchestrator.types'
+import type { Proph3tResult, Proph3tAction, Severity } from './orchestrator.types'
 
 export interface Proph3tReportInput {
   projectName: string

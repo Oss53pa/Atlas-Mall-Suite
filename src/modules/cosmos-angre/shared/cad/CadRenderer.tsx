@@ -1,7 +1,6 @@
 // ═══ CAD RENDERER — SVG rendering for all CAD entity types ═══
 
-import React from 'react'
-import type { CadEntity, CadLayer, Point } from './cadTypes'
+import type { CadEntity, CadLayer } from './cadTypes'
 
 interface CadRendererProps {
   entities: CadEntity[]

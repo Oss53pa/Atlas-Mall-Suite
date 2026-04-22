@@ -2,7 +2,6 @@
 // Consumes GlobalAnalysis from floorAnalysisEngine and renders a compact
 // dashboard suitable for embedding in any volume or the dashboard page.
 
-import React from 'react'
 import type { GlobalAnalysis, PerFloorVolumeScore } from '../engines/floorAnalysisEngine'
 
 interface Props {

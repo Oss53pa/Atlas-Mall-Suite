@@ -1,4 +1,3 @@
-import React from 'react'
 import { Sparkles, Info, AlertTriangle, AlertOctagon, Lightbulb, Activity, Eye, X } from 'lucide-react'
 
 export type InsightType = 'critique' | 'attention' | 'info' | 'recommandation' | 'simulation'

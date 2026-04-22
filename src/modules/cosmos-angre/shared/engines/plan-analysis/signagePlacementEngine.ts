@@ -15,10 +15,9 @@ import {
   buildObstaclesFromSpaces,
   type Observer,
   type PanelCandidate,
-  type Obstacle,
-  MOUNT_RANGE_M,
+  MOUNT_RANGE_M
 } from './signageVisibilityEngine'
-import { computeErpPanels, type ErpResult, type MandatoryPanel } from './erpConstraintEngine'
+import { computeErpPanels, type ErpResult } from './erpConstraintEngine'
 import type { FlowPath, FlowEntryExit, SignageRecommendation } from './flowPathEngine'
 import type { NavGraph } from './navGraphEngine'
 

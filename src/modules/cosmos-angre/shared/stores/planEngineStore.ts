@@ -3,9 +3,14 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
-  ViewportState, DetectedSpace, SpaceState, SpaceStatus,
-  PlacedObject, PlanTool, ViewMode, ParsedPlan, PlanLayer,
-  ObjectCategory,
+  ViewportState,
+  DetectedSpace,
+  SpaceState,
+  PlacedObject,
+  PlanTool,
+  ViewMode,
+  ParsedPlan,
+  PlanLayer
 } from '../planReader/planEngineTypes'
 
 // ─── STORE INTERFACE ──────────────────────────────────────

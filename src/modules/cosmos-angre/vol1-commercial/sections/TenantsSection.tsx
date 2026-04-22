@@ -1,6 +1,6 @@
 // ═══ VOL.1 — Gestion des Preneurs (F1.3) ═══
 
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { Search, Users, Calendar, DollarSign, Phone, Mail, ChevronDown, ChevronUp, Filter, BarChart2, Plus, Pencil, Trash2 } from 'lucide-react'
 import { useVol1Store } from '../store/vol1Store'
 import type { Tenant, TenantStatus, Sector } from '../store/vol1Types'

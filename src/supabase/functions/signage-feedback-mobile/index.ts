@@ -18,7 +18,6 @@
 //
 // Rate limit : max 30 req/min par IP (simple anti-spam en mémoire).
 
-const ALLOWED_ORIGINS = ["*"] // Public depuis téléphone → autorise tout origin
 
 function corsHeaders(): Record<string, string> {
   return {

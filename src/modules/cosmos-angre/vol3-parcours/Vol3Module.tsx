@@ -1,6 +1,13 @@
 // ═══ VOL.3 PARCOURS CLIENT — Main Module ═══
 
-import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react'
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  lazy,
+  Suspense
+} from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -12,52 +19,21 @@ import {
   Library,
   Send,
   Sparkles,
-  ChevronDown,
-  ChevronRight,
-  Star,
-  AlertTriangle,
-  Lightbulb,
-  Crown,
   X,
   Loader2,
   Bell,
-  PlayCircle,
-  Info,
-  Map,
-  Eye,
-  Layers,
-  Users,
-  User,
-  Grid3X3,
-  BarChart2,
-  Calendar,
-  Navigation,
-  FileText,
-  MessageSquare,
-  LayoutDashboard,
-  Smartphone,
-  Upload,
-  Box,
-  Pencil,
+  PlayCircle
 } from 'lucide-react'
 import { useVol3Store } from './store/vol3Store'
 import { usePlanImportStore } from '../shared/stores/planImportStore'
-import {
-  ATLAS_STUDIO_GROUP_META,
-  ATLAS_STUDIO_DEFAULT_TAB,
-} from '../shared/components/atlasStudioNav'
+import { ATLAS_STUDIO_DEFAULT_TAB } from '../shared/components/atlasStudioNav'
 import FloorPlanCanvas, { CANVAS_SCALE } from '../shared/components/FloorPlanCanvas'
 import { ConsolidatedReportButton } from '../shared/components/ConsolidatedReportButton'
-import { Proph3tVolumePanel } from '../shared/proph3t/components/Proph3tVolumePanel'
-import { DetailedJourneysOverlay } from '../shared/components/DetailedJourneysOverlay'
-import { SpaceInfoOverlay } from '../shared/components/SpaceInfoOverlay'
 import { DetailedJourneyReport } from '../shared/components/DetailedJourneyReport'
-import { FlowPathsOverlay } from '../shared/components/FlowPathsOverlay'
 import { PlanCleaningPanel } from '../shared/components/PlanCleaningPanel'
 import { SignageBudgetPanel } from '../shared/components/SignageBudgetPanel'
 import { PmrAnalysisPanel } from '../shared/components/PmrAnalysisPanel'
 import { AbmSimulationPanel } from '../shared/components/AbmSimulationPanel'
-import { AbmHeatmapOverlay } from '../shared/components/AbmHeatmapOverlay'
 import type { AbmResult, TimeSlot } from '../shared/engines/plan-analysis/abmSocialForceEngine'
 import { exportWayfindingJSON } from '../shared/engines/plan-analysis/navGraphEngine'
 import { exportSignageCDC, exportCleanedDxf } from '../shared/engines/plan-analysis/signageExportEngine'
@@ -66,7 +42,6 @@ import { PovGuideViewer } from '../shared/components/PovGuideViewer'
 import { QrLabelsExport } from '../shared/components/QrLabelsExport'
 import { SignageFeedbackInbox } from '../shared/components/SignageFeedbackInbox'
 import { SignageMemoryPanel } from '../shared/components/SignageMemoryPanel'
-import type { DetailedJourney } from '../shared/engines/plan-analysis/detailedJourneyEngine'
 import type { FlowAnalysisResult } from '../shared/engines/plan-analysis/flowPathEngine'
 
 // F-004 : overlays + downloadBlob + Proph3tPanel extraits dans components/Vol3Overlays.tsx
@@ -76,7 +51,7 @@ import {
   Vol3FlowPathsMount,
   Vol3SpaceInfoMount,
   Vol3Proph3tPanel,
-  downloadBlob,
+  downloadBlob
 } from './components/Vol3Overlays'
 import { PlanCanvasV2 } from '../shared/components/PlanCanvasV2'
 import { PlanLayerSelector } from '../shared/components/PlanLayerSelector'
@@ -84,21 +59,18 @@ import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
 import { savePlanImageFromUrl, loadAllPlanImages } from '../shared/stores/planImageCache'
 const Vol3DModuleEmbed = lazy(() => import('../vol-3d/Vol3DModule'))
-import Proph3tChat from '../shared/components/Proph3tChat'
 import EntityPanel from '../shared/components/EntityPanel'
 import ToolbarButton from '../shared/components/ToolbarButton'
-import ScoreGauge from '../shared/components/ScoreGauge'
-import SaveStatusIndicator, { type SaveStatus } from '../shared/components/SaveStatusIndicator'
+import { type SaveStatus } from '../shared/components/SaveStatusIndicator'
 import { useActiveProjectId } from '../../../hooks/useActiveProject'
 import HeatmapOverlay, { type ZoneHeatData } from './components/HeatmapOverlay'
 import GeoNotificationPanel, { type GeoNotification } from './components/GeoNotificationPanel'
 import VisitReplay, { type VisitPath } from './components/VisitReplay'
-import type { ChatMessage, MomentCle, POI, SignageItem } from '../shared/proph3t/types'
+import type { ChatMessage } from '../shared/proph3t/types'
 
 // F-004 : 26 lazy imports deplaces dans sections/Vol3NonPlanRouter.tsx
 // Conserves ici uniquement ceux utilises inline dans Vol3Module (branch 'plan').
 const PlanImportsSectionLazy = lazy(() => import('../shared/components/PlanImportsSection'))
-const View3DSectionLazy = lazy(() => import('../shared/view3d/View3DSection'))
 
 // Router des sections non-plan (routing `activeTab` hors `plan`).
 import { Vol3NonPlanRouter } from './sections/Vol3NonPlanRouter'
@@ -110,7 +82,8 @@ import { Vol3Footer } from './components/Vol3Footer'
 import { Vol3PlanToolbar } from './components/Vol3PlanToolbar'
 
 // F-004 : Vol3Tab + NavItem/NavGroup + buildNavGroups extraits dans sidebarConfig.tsx
-import { type Vol3Tab, type NavItem, type NavGroup, buildNavGroups } from './sidebarConfig'
+import { type Vol3Tab, buildNavGroups } from './sidebarConfig'
+import { useAutoSnapshot } from '../shared/hooks/useAutoSnapshot'
 
 // F-004 : helpers iconAbbrev / signageColor / uid extraits dans ./helpers.ts
 import { iconAbbrev, signageColor, uid } from './helpers'
@@ -170,6 +143,9 @@ export default function Vol3Module() {
 
   const [chatInput, setChatInput] = useState('')
   const [activeTab, setActiveTab] = useState<Vol3Tab>(ATLAS_STUDIO_DEFAULT_TAB as Vol3Tab)
+
+  // Auto-snapshot : capture automatique des versions majeures
+  useAutoSnapshot({ volumeId: 'vol3' })
   const [heatmapHour, setHeatmapHour] = useState(14) // default 2pm
 
   // ── Sidebar accordion state ─────────────────────────────
@@ -192,8 +168,8 @@ export default function Vol3Module() {
   const [viewMode, setViewMode] = useState<'2d' | '3d' | '3d-advanced'>('2d')
 
   // ── PROPH3T parcours détaillés (calculés à la demande) ──
-  const [proph3tJourneys, setProph3tJourneys] = useState<import('../shared/engines/plan-analysis/detailedJourneyEngine').DetailedJourney[] | null>(null)
-  const [computingJourneys, setComputingJourneys] = useState(false)
+  const [proph3tJourneys, _setProph3tJourneys] = useState<import('../shared/engines/plan-analysis/detailedJourneyEngine').DetailedJourney[] | null>(null)
+  const [_computingJourneys, _setComputingJourneys] = useState(false)
 
   // ── Flux entrées → sorties + signalétique (nouveau moteur principal) ──
   const [flowResult, setFlowResult] = useState<FlowAnalysisResult | null>(null)
@@ -252,7 +228,7 @@ export default function Vol3Module() {
     setPlaceTool(null)
   }, [placeTool, activeFloorId, pois.length, store])
 
-  const handleEntityDelete = useCallback((id: string) => {
+  const _handleEntityDelete = useCallback((id: string) => {
     if (selectedEntityType === 'poi') store.deletePoi(id)
     else if (selectedEntityType === 'signage') store.deleteSignageItem(id)
     store.selectEntity(null, null)

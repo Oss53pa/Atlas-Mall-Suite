@@ -1,4 +1,3 @@
-import React from 'react'
 
 type KpiStatus = 'atteint' | 'en_cours' | 'non_atteint'
 

@@ -11,7 +11,7 @@ export function generateCotationSpecs(
   zones: Zone[],
   cameras: Camera[],
   doors: Door[],
-  signageItems: SignageItem[],
+  _signageItems: SignageItem[],
   options: {
     cotateZones?: boolean
     cotateCameras?: boolean

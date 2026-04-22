@@ -2,6 +2,10 @@
 // Deno Edge Function — Proph3t Expert Vivant via Claude API v3
 // 6 modes : vol2, vol3, simulation, dce, benchmark, contradiction, rapport
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — Deno runtime
+import { rateLimitResponse } from "../_shared/rateLimit.ts"
+
 const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "http://localhost:5173,http://localhost:3000").split(",")
 
 function getCorsHeaders(req: Request): Record<string, string> {
@@ -164,6 +168,10 @@ Deno.serve(async (req: Request) => {
 
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors })
 
+  // Rate limiting : 20 req/min par IP (l'API Claude est chère)
+  const throttled = rateLimitResponse(req, "proph3t-claude", { max: 20, windowMs: 60_000 }, cors)
+  if (throttled) return throttled
+
   let parsedBody: EdgeFunctionContext
   try {
     parsedBody = await req.json()
@@ -178,9 +186,19 @@ Deno.serve(async (req: Request) => {
 
   // ── F-014 : auth utilisateur Supabase obligatoire ─────────
   // ── F-011 : protection contre l'IDOR (lecture mémoire arbitraire) ──
+  // ── B1 (audit 2026-04-22) : durcissement configuration ──
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? ""
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+
+  // Configuration obligatoire : si l'une des clés serveur manque, on refuse la requête.
+  // Empêche le cas "skip silencieux" où l'absence de config désactivait les checks auth.
+  if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
+    return new Response(
+      JSON.stringify({ error: "Edge Function mal configurée — contacter l'administrateur" }),
+      { status: 500, headers: cors },
+    )
+  }
 
   const authHeader = req.headers.get("Authorization") ?? ""
   if (!authHeader.startsWith("Bearer ")) {
@@ -188,28 +206,37 @@ Deno.serve(async (req: Request) => {
   }
   const userJwt = authHeader.slice(7)
 
-  // Récupère l'identité utilisateur via Supabase Auth
-  let userId: string | null = null
-  if (supabaseUrl && supabaseAnonKey) {
-    try {
-      const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
-        headers: { "Authorization": `Bearer ${userJwt}`, "apikey": supabaseAnonKey },
-      })
-      if (!userRes.ok) {
-        return new Response(JSON.stringify({ error: "JWT invalide" }), { status: 401, headers: cors })
-      }
-      const userJson = await userRes.json() as { id?: string }
-      userId = userJson.id ?? null
-    } catch {
-      return new Response(JSON.stringify({ error: "Auth indisponible" }), { status: 503, headers: cors })
+  // Récupère l'identité utilisateur via Supabase Auth (obligatoire, plus de "if")
+  let userId: string
+  try {
+    const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: { "Authorization": `Bearer ${userJwt}`, "apikey": supabaseAnonKey },
+    })
+    if (!userRes.ok) {
+      return new Response(JSON.stringify({ error: "JWT invalide" }), { status: 401, headers: cors })
     }
-    if (!userId) {
+    const userJson = await userRes.json() as { id?: string }
+    if (!userJson.id) {
       return new Response(JSON.stringify({ error: "Utilisateur introuvable" }), { status: 401, headers: cors })
     }
+    userId = userJson.id
+  } catch {
+    return new Response(JSON.stringify({ error: "Auth indisponible" }), { status: 503, headers: cors })
   }
 
-  // Si projectId est fourni, vérifier que l'utilisateur en est membre
-  if (parsedBody.projectId && supabaseUrl && supabaseAnonKey && userId) {
+  // projectId obligatoire pour les modes qui accèdent à la mémoire projet.
+  // Liste positive : si le mode lit/écrit de la mémoire, projectId EST requis.
+  const mode = (parsedBody.mode ?? parsedBody.volume ?? "vol2") as string
+  const modesRequiringProject = new Set(["vol2", "vol3", "simulation", "dce", "benchmark", "contradiction", "rapport"])
+  if (modesRequiringProject.has(mode) && !parsedBody.projectId) {
+    return new Response(
+      JSON.stringify({ error: "projectId requis pour ce mode" }),
+      { status: 400, headers: cors },
+    )
+  }
+
+  // Vérifier l'appartenance au projet (check toujours actif si projectId fourni)
+  if (parsedBody.projectId) {
     const memberRes = await fetch(
       `${supabaseUrl}/rest/v1/project_members?projet_id=eq.${encodeURIComponent(parsedBody.projectId)}&user_id=eq.${encodeURIComponent(userId)}&select=role`,
       { headers: { "apikey": supabaseAnonKey, "Authorization": `Bearer ${userJwt}` } },
@@ -219,6 +246,8 @@ Deno.serve(async (req: Request) => {
     }
     const members = await memberRes.json() as Array<{ role: string }>
     if (members.length === 0) {
+      // Log de sécurité — tentative d'accès non autorisé
+      console.warn(`[SECURITY] User ${userId} tried to access project ${parsedBody.projectId} without membership`)
       return new Response(JSON.stringify({ error: "Acces projet refuse" }), { status: 403, headers: cors })
     }
   }
@@ -259,9 +288,7 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  // ── Build system prompt ────────────────────────────────────
-
-  const mode = (parsedBody.mode ?? parsedBody.volume ?? "vol2") as string
+  // ── Build system prompt (mode déjà défini plus haut pour le check projectId) ──
   const systemPrompt = buildSystemPrompt(mode, parsedBody, memoryContext)
 
   // ── Call Claude API with exponential retry on 529 ──────────

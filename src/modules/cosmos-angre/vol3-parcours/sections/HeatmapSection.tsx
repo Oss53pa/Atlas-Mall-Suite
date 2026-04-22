@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { Flame, TrendingUp, TrendingDown } from 'lucide-react'
 import { useVol3Store } from '../store/vol3Store'
 

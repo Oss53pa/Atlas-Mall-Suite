@@ -33,6 +33,9 @@ const RevenuePredictorLazy = lazy(() => import('./RevenuePredictor'))
 const SeasonalPlanningLazy = lazy(() => import('./SeasonalPlanning'))
 const TenantMixValidatorLazy = lazy(() => import('./TenantMixValidator'))
 const SpaceEditorSectionLazy = lazy(() => import('./SpaceEditorSection'))
+const VolumeHistoryTabLazy = lazy(() => import('../../shared/components/VolumeHistoryTab'))
+const VolumeReportsTabLazy = lazy(() => import('../../shared/components/VolumeReportsTab'))
+const GodModeSignageHostLazy = lazy(() => import('./GodModeSignageHost'))
 
 interface Vol3NonPlanRouterProps {
   activeTab: Vol3Tab
@@ -77,6 +80,18 @@ export function Vol3NonPlanRouter({ activeTab, renderPlanImports }: Vol3NonPlanR
         {activeTab === 'seasonal' && <SeasonalPlanningLazy />}
         {activeTab === 'tenant_mix_validator' && <TenantMixValidatorLazy />}
         {activeTab === 'space_editor' && <SpaceEditorSectionLazy />}
+        {activeTab === 'history' && (
+          <VolumeHistoryTabLazy volumeId="vol3" volumeColor="#34d399" volumeName="Parcours client" />
+        )}
+        {activeTab === 'reports' && (
+          <VolumeReportsTabLazy
+            volumeId="vol3"
+            volumeColor="#34d399"
+            volumeName="Parcours client"
+            projectName="Cosmos Angré"
+          />
+        )}
+        {activeTab === 'god_mode_signage' && <GodModeSignageHostLazy />}
         {activeTab === 'plan_imports' && renderPlanImports()}
       </Suspense>
     </main>

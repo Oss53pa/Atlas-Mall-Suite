@@ -58,7 +58,7 @@ export default function IncidentWorkflow() {
     setShowCreate(false)
   }
 
-  const handleUpdateState = (id: string, newState: IncidentState) => {
+  const _handleUpdateState = (id: string, newState: IncidentState) => {
     setIncidents(prev => prev.map(i => i.id === id ? {
       ...i,
       state: newState,
@@ -69,7 +69,7 @@ export default function IncidentWorkflow() {
     }
   }
 
-  const handleDelete = (id: string) => {
+  const _handleDelete = (id: string) => {
     setIncidents(prev => prev.filter(i => i.id !== id))
     if (selected?.id === id) setSelected(null)
   }

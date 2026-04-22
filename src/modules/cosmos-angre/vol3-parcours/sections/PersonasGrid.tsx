@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Plus, Pencil, User, Accessibility } from 'lucide-react'
 import { useVol3Store } from '../store/vol3Store'
 import type { VisitorProfile } from '../../shared/proph3t/types'

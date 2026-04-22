@@ -4,10 +4,12 @@ import React from 'react'
 import { useSettingsStore } from './settingsStore'
 import type { ThemeMode, Language, Units } from './settingsStore'
 import {
-  Moon, Sun, Globe, Ruler, User, Building2, Save,
-  Monitor, Eye, Palette, KeyRound,
+  User,
+  Building2,
+  Monitor,
+  Palette,
+  KeyRound
 } from 'lucide-react'
-import toast from 'react-hot-toast'
 import ApiKeySection from './components/ApiKeySection'
 
 function SettingsGroup({ title, icon: Icon, children }: { title: string; icon: React.ComponentType<any>; children: React.ReactNode }) {

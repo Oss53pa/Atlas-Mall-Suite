@@ -8,14 +8,25 @@
 
 import React, { useCallback, useMemo, useState } from 'react'
 import {
-  Wifi, Bluetooth, Smartphone, QrCode, MapPin, Upload, RefreshCw,
-  CheckCircle2, AlertTriangle, Trash2, Plus,
+  Wifi,
+  Bluetooth,
+  Smartphone,
+  QrCode,
+  MapPin,
+  Upload,
+  CheckCircle2,
+  AlertTriangle,
+  Trash2,
+  Plus
 } from 'lucide-react'
 import { useVol4Store } from '../store/vol4Store'
 import { usePlanEngineStore } from '../../shared/stores/planEngineStore'
 import {
-  ekfInitial, ekfUpdate, planBeaconDeployment,
-  type RadioMapPoint, type BleBeacon,
+  ekfInitial,
+  ekfUpdate,
+  planBeaconDeployment,
+  type RadioMapPoint,
+  type BleBeacon
 } from '../engines/positioningEngine'
 import { buildWayfinderGraph } from '../engines/wayfinderBridge'
 
@@ -97,7 +108,7 @@ export default function PositioningSection() {
 
   // ─── Utiliser les recommandations générées ───
   const applyBeaconRecommendations = useCallback(() => {
-    setBleBeacons(beaconRecommendations.map((b, i) => ({
+    setBleBeacons(beaconRecommendations.map((b, _i) => ({
       id: b.id, x: b.x, y: b.y, floorId: b.floorId, txPowerDbm: -59,
     })))
   }, [beaconRecommendations, setBleBeacons])

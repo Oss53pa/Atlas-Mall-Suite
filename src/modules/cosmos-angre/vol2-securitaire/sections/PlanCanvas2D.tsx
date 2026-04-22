@@ -1,4 +1,3 @@
-import React from 'react'
 import type { Floor, Zone, Camera, Door, BlindSpot, TransitionNode } from '../../shared/proph3t/types'
 import FloorPlanCanvas from '../../shared/components/FloorPlanCanvas'
 

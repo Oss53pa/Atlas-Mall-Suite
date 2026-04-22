@@ -1,7 +1,7 @@
 // ═══ DCE / APPELS D'OFFRES ═══
 
-import React, { useState } from 'react'
-import { FileText, Download, Send, ExternalLink, Clock, CheckCircle2, Package, Users, Calendar } from 'lucide-react'
+import { useState } from 'react'
+import { FileText, Download, Send, CheckCircle2, Package, Users, Calendar } from 'lucide-react'
 
 interface Lot {
   id: string; ref: string; title: string; budgetFcfa: number; deadline: string

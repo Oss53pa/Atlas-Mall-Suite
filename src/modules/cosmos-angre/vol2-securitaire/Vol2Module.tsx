@@ -1,6 +1,13 @@
 // ═══ VOL.2 SECURITAIRE — Main Module Component ═══
 
-import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  lazy,
+  Suspense
+} from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ConsolidatedReportButton } from '../shared/components/ConsolidatedReportButton'
 import { Proph3tVolumePanel } from '../shared/proph3t/components/Proph3tVolumePanel'
@@ -20,8 +27,6 @@ import {
   Square,
   CircleDot,
   ArrowUpRight,
-  ArrowDownRight,
-  Accessibility,
   AlertTriangle,
   Upload,
   Edit3,
@@ -41,13 +46,12 @@ import {
   FileText,
   MessageSquare,
   ChevronDown,
-  ChevronRight,
   Monitor,
   Footprints,
   CheckSquare,
   FlaskConical,
-  TrendingUp,
-  Brain,
+  History,
+  Send as SendIcon,
 } from 'lucide-react'
 
 import { useVol2Store } from './store/vol2Store'
@@ -55,7 +59,7 @@ import { usePlanImportStore } from '../shared/stores/planImportStore'
 import { computeCoverage } from '../shared/engines/cameraCoverageEngine'
 import { runCompliance } from '../shared/engines/complianceEngine'
 import { PlanLayerSelector } from '../shared/components/PlanLayerSelector'
-import type { ChatMessage, Camera, BlindSpot, TransitionNode } from '../shared/proph3t/types'
+import type { ChatMessage, Camera, TransitionNode } from '../shared/proph3t/types'
 import { proph3tAnswer } from '../shared/proph3t/chatEngine'
 import type { FullProjectContext } from '../shared/proph3t/chatEngine'
 
@@ -63,23 +67,19 @@ import FloorPlanCanvas from '../shared/components/FloorPlanCanvas'
 import { PlanCanvasV2 } from '../shared/components/PlanCanvasV2'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
-import type { ParsedPlan } from '../shared/planReader/planEngineTypes'
 import Proph3tChat from '../shared/components/Proph3tChat'
 import EntityPanel from '../shared/components/EntityPanel'
 import ToolbarButton from '../shared/components/ToolbarButton'
-import ScoreGauge from '../shared/components/ScoreGauge'
 // DXFImportModal removed — use PlanImportsSection (unified pipeline) instead
 import Model3DImportModal from './components/Model3DImportModal'
 import { useCascade } from './hooks/useCascade'
 import SaveStatusIndicator, { type SaveStatus } from '../shared/components/SaveStatusIndicator'
 import { PlanModelSelector } from '../shared/components/PlanModelSelector'
-import {
-  ATLAS_STUDIO_GROUP_META,
-  ATLAS_STUDIO_DEFAULT_TAB,
-} from '../shared/components/atlasStudioNav'
+import { ATLAS_STUDIO_GROUP_META, ATLAS_STUDIO_DEFAULT_TAB } from '../shared/components/atlasStudioNav'
 import { useActiveProjectId } from '../../../hooks/useActiveProject'
 import { savePlanImageFromUrl, loadAllPlanImages, clearAllPlanImages } from '../shared/stores/planImageCache'
 import { cacheImportedZones, getAllCachedZones, hasAnyCachedZones } from '../shared/stores/importedZonesCache'
+import { useAutoSnapshot } from '../shared/hooks/useAutoSnapshot'
 
 import type { ClippingConfig, ClippingAxis, NavMode } from './components/FloorPlan3D'
 
@@ -108,10 +108,12 @@ const ComplianceTrackerLazy = lazy(() => import('./sections/ComplianceTracker'))
 const AuditExistantLazy = lazy(() => import('./sections/AuditExistant'))
 const VmsIntegrationLazy = lazy(() => import('./sections/VmsIntegration'))
 const PlanImportsSectionLazy = lazy(() => import('../shared/components/PlanImportsSection'))
-const SpaceEditorSectionLazy = lazy(() => import('../shared/components/SpaceEditorSection'))
-const View3DSectionLazy = lazy(() => import('../shared/view3d/View3DSection'))
+const VolumeHistoryTabLazy  = lazy(() => import('../shared/components/VolumeHistoryTab'))
+const VolumeReportsTabLazy  = lazy(() => import('../shared/components/VolumeReportsTab'))
+const SpaceEditorSectionLazy  = lazy(() => import('../shared/components/SpaceEditorSection'))
+const MapViewerShellLazy     = lazy(() => import('../shared/map-viewer/MapViewerShell'))
 
-type Vol2Tab = 'plan' | 'analyse' | 'rapport' | 'simulation' | 'budget' | 'chat' | 'introduction' | 'kpis' | 'perimetre' | 'acces' | 'video' | 'incendie' | 'procedures' | 'organigramme' | 'control_room' | 'incidents' | 'risk_matrix' | 'whatif' | 'staffing' | 'rondes' | 'compliance' | 'audit_existant' | 'vms' | 'plan_imports' | 'editor'
+type Vol2Tab = 'plan' | 'analyse' | 'rapport' | 'simulation' | 'budget' | 'chat' | 'introduction' | 'kpis' | 'perimetre' | 'acces' | 'video' | 'incendie' | 'procedures' | 'organigramme' | 'control_room' | 'incidents' | 'risk_matrix' | 'whatif' | 'staffing' | 'rondes' | 'compliance' | 'audit_existant' | 'vms' | 'plan_imports' | 'editor' | 'history' | 'reports'
 
 // ─── Sidebar nav definition ─────────────────────────────────
 
@@ -198,6 +200,17 @@ const buildNavGroups = (): NavGroup[] => [
       { id: 'vms', label: 'Intégration VMS', icon: Monitor },
     ],
   },
+  {
+    key: 'collaboration',
+    label: 'COLLABORATION',
+    icon: History,
+    color: '#818cf8',
+    separator: true,
+    items: [
+      { id: 'history', label: 'Historique du plan', icon: History },
+      { id: 'reports', label: 'Rapports & partage', icon: SendIcon },
+    ],
+  },
 ]
 
 // ─── Helpers ────────────────────────────────────────────────
@@ -267,7 +280,6 @@ function transitionIcon(type: TransitionNode['type']): string {
       return '↕'
   }
 }
-
 
 // ═══ MAIN COMPONENT ═════════════════════════════════════════
 
@@ -409,7 +421,11 @@ export default function Vol2Module() {
   // ── View mode state ─────────────────────────────────────
   const [viewMode, setViewMode] = useState<'2d' | '3d' | '3d-advanced'>('2d')
   const [showAllFloors, setShowAllFloors] = useState(false)
+  const [showMapViewer, setShowMapViewer] = useState(false)
   const [activeTab, setActiveTab] = useState<Vol2Tab>(ATLAS_STUDIO_DEFAULT_TAB as Vol2Tab)
+
+  // Auto-snapshot : capture automatique des versions majeures
+  useAutoSnapshot({ volumeId: 'vol2' })
   const [show3DImport, setShow3DImport] = useState(false)
   const [clipping, setClipping] = useState<ClippingConfig>({
     enabled: false,
@@ -749,9 +765,9 @@ export default function Vol2Module() {
         {activeTab === 'plan' && (
           <div className="flex items-center gap-0.5 bg-gray-800 rounded-lg p-0.5">
             <button
-              onClick={() => { setViewMode('2d'); setNavMode('orbit') }}
+              onClick={() => { setViewMode('2d'); setNavMode('orbit'); setShowMapViewer(false) }}
               className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
-                viewMode === '2d'
+                !showMapViewer && viewMode === '2d'
                   ? 'bg-gray-700 text-white'
                   : 'text-gray-500 hover:text-gray-300'
               }`}
@@ -760,9 +776,9 @@ export default function Vol2Module() {
               2D
             </button>
             <button
-              onClick={() => setViewMode('3d')}
+              onClick={() => { setViewMode('3d'); setShowMapViewer(false) }}
               className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
-                viewMode === '3d'
+                !showMapViewer && viewMode === '3d'
                   ? 'bg-gray-700 text-white'
                   : 'text-gray-500 hover:text-gray-300'
               }`}
@@ -771,9 +787,9 @@ export default function Vol2Module() {
               3D
             </button>
             <button
-              onClick={() => setViewMode('3d-advanced')}
+              onClick={() => { setViewMode('3d-advanced'); setShowMapViewer(false) }}
               className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
-                viewMode === '3d-advanced'
+                !showMapViewer && viewMode === '3d-advanced'
                   ? 'bg-purple-700 text-white'
                   : 'text-gray-500 hover:text-gray-300'
               }`}
@@ -781,6 +797,19 @@ export default function Vol2Module() {
             >
               <Sparkles className="w-3 h-3" />
               3D+
+            </button>
+            <div className="w-px h-4 bg-white/10 mx-0.5" />
+            <button
+              onClick={() => setShowMapViewer(true)}
+              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
+                showMapViewer
+                  ? 'bg-sky-700 text-white'
+                  : 'text-gray-500 hover:text-gray-300'
+              }`}
+              title="Carte unifiée 2D · 3D · AR — Annotations & visites guidées"
+            >
+              <Map className="w-3 h-3" />
+              Carte
             </button>
           </div>
         )}
@@ -1076,7 +1105,17 @@ export default function Vol2Module() {
         </aside>
 
         {/* ── Content area ─────────────────────────────────── */}
-        {activeTab === 'plan' ? (<>
+        {activeTab === 'plan' ? (
+          showMapViewer ? (
+            <Suspense fallback={
+              <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                Chargement de la carte…
+              </div>
+            }>
+              <MapViewerShellLazy className="flex-1" />
+            </Suspense>
+          ) : (<>
         {/* ── Left sidebar (toolbar) ────────────────────────── */}
         <aside className="flex-none w-12 border-r border-gray-800 bg-gray-900/50 flex flex-col items-center py-3 gap-1">
           {/* ── PLACEMENT TOOLS ── */}
@@ -1452,7 +1491,7 @@ export default function Vol2Module() {
             />
           )}
         </aside>
-        </>) : (
+        </>)) : (
           <main className="flex-1 min-w-0 overflow-y-auto" style={{ background: '#080c14' }}>
             <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="w-5 h-5 animate-spin text-gray-500" /></div>}>
               {activeTab === 'introduction' && <IntroSectionLazy />}
@@ -1485,6 +1524,17 @@ export default function Vol2Module() {
               {activeTab === 'compliance' && <ComplianceTrackerLazy />}
               {activeTab === 'audit_existant' && <AuditExistantLazy />}
               {activeTab === 'vms' && <VmsIntegrationLazy />}
+              {activeTab === 'history' && (
+                <VolumeHistoryTabLazy volumeId="vol2" volumeColor="#38bdf8" volumeName="Plan sécuritaire" />
+              )}
+              {activeTab === 'reports' && (
+                <VolumeReportsTabLazy
+                  volumeId="vol2"
+                  volumeColor="#38bdf8"
+                  volumeName="Plan sécuritaire"
+                  projectName="Cosmos Angré"
+                />
+              )}
               {activeTab === 'editor' && <SpaceEditorSectionLazy />}
               {activeTab === 'plan_imports' && (
                 <PlanImportsSectionLazy

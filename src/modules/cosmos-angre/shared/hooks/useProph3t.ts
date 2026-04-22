@@ -1,19 +1,19 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback } from 'react'
 import type {
-  Zone, Camera, Door, BlindSpot, SecurityScore,
-  ChatAnswer, CascadeTrigger, CascadeResult, Floor,
-  TransitionNode, SignageItem, POI, MomentCle,
-  ProjectMemorySummary,
+  Zone,
+  Camera,
+  Door,
+  BlindSpot,
+  SecurityScore,
+  ChatAnswer,
+  CascadeTrigger,
+  CascadeResult
 } from '../proph3t/types'
 import type { FullProjectContext } from '../proph3t/chatEngine'
 import { proph3tAnswer } from '../proph3t/chatEngine'
 import { runCascade } from '../proph3t/cascadeEngine'
 import type { CascadeState } from '../proph3t/cascadeEngine'
-import {
-  detectBlindSpots,
-  scoreSecurite,
-  solveCameraPlacement,
-} from '../proph3t/engine'
+import { detectBlindSpots, scoreSecurite, solveCameraPlacement } from '../proph3t/engine'
 import { useWorker } from './useWorker'
 
 interface CoverageSolverInput {

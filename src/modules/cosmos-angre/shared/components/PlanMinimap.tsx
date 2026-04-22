@@ -1,7 +1,7 @@
 // ═══ PLAN MINIMAP — Bottom-right overview showing viewport position ═══
 
-import React, { useCallback, useRef, useMemo } from 'react'
-import type { ParsedPlan, ViewportState, DetectedSpace } from '../planReader/planEngineTypes'
+import React, { useCallback, useRef } from 'react'
+import type { ParsedPlan, ViewportState } from '../planReader/planEngineTypes'
 import { spaceTypeColor } from '../planReader/spaceDetector'
 
 interface PlanMinimapProps {

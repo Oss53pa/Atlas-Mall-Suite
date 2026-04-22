@@ -243,7 +243,7 @@ export function runCompliance(input: ComplianceInput): ComplianceReport {
     for (const sp of floorSpaces) {
       if (!sp.type || !thresh.criticalZones.includes(sp.type)) continue
       // Is there a camera within 20m of this zone?
-      const [cx, cy] = polygonCenter(sp.polygon)
+      const [_cx, _cy] = polygonCenter(sp.polygon)
       const hasNearCam = floorCameras.some(c => {
         const cam = input.cameras.find(cc => cc.id === c.id)
         if (!cam) return false

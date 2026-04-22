@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 type Priority = 'haute' | 'moyenne'
 type Phase = 'Pré-ouverture' | 'Ouverture' | 'Post-ouverture' | 'Croisière'

@@ -261,7 +261,7 @@ function extractEntities(dxfContent: string): { entities: DXFEntity[]; layers: s
 
 function extractZones(
   entities: DXFEntity[],
-  layers: string[],
+  _layers: string[],
   bounds: DXFBounds,
   floorId: string,
   widthM: number,

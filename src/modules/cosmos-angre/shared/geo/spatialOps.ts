@@ -172,7 +172,7 @@ export class SpatialIndex<T> {
   private buckets = new Map<string, Array<{ bounds: Envelope; value: T }>>()
   constructor(private cellSize: number) {}
 
-  private key(x: number, y: number): string {
+  private _key(x: number, y: number): string {
     return `${Math.floor(x / this.cellSize)},${Math.floor(y / this.cellSize)}`
   }
 

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useJourneyStore } from '../store/journeyStore'
-import type { JourneyStage, JourneyStep, JourneyTouchpoint, JourneyDepartment } from '../store/journeyStore'
+import type { JourneyStage } from '../store/journeyStore'
 
 /* ═══════════════════════════════════ HELPERS ═══════════════════════════════════ */
 
@@ -16,7 +16,7 @@ const T = { bg: '#080c14', surface: '#141e2e', surface2: '#0f1623', border: '#1e
 
 /* ═══════════════════════════════════ INLINE EDIT ═══════════════════════════════ */
 
-function InlineEdit({
+function _InlineEdit({
   value,
   editingId,
   itemId,
@@ -266,7 +266,7 @@ export default function JourneyMapSection() {
   const {
     stages, steps, emotions, touchpoints, departments,
     selectedStageId, editingId,
-    addStage, updateStage, deleteStage,
+    addStage, updateStage, deleteStage: _deleteStage,
     addStep, updateStep, deleteStep,
     updateEmotion,
     addTouchpoint, updateTouchpoint, deleteTouchpoint, toggleTouchpointStage,
@@ -291,7 +291,7 @@ export default function JourneyMapSection() {
   const selectedStage = stages.find((s) => s.id === selectedStageId) || null
 
   /* ── Hover helper — reveals delete buttons via CSS-in-JS ── */
-  const hoverParent = (itemId: string): React.CSSProperties => ({
+  const hoverParent = (_itemId: string): React.CSSProperties => ({
     position: 'relative' as const,
     cursor: 'pointer',
   })
@@ -603,7 +603,6 @@ export default function JourneyMapSection() {
 
           {/* Dot rows — one row per stage */}
           {stages.map((s, si) => {
-            const hasAny = touchpoints.some((tp) => tp.activeStageIds.includes(s.id))
             // Show all stage rows so dots can be toggled on
             return (
               <div

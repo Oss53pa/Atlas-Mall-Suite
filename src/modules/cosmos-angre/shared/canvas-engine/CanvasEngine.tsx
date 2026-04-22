@@ -2,9 +2,9 @@
 // Couche de capacités CAO intégrée dans chaque plan
 
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react'
-import { Stage, Layer, Rect, Line, Text, Circle, Group } from 'react-konva'
+import { Stage, Layer, Rect, Line, Text, Group } from 'react-konva'
 import Konva from 'konva'
-import { Eye, EyeOff, Lock, Unlock, Layers, Ruler, Grid3X3, MousePointer, Pen, Type, Minus } from 'lucide-react'
+import { Eye, EyeOff, Lock, Unlock, Layers, Ruler, Grid3X3, MousePointer, Type, Minus } from 'lucide-react'
 
 // ── Types ──
 export interface CanvasLayer {
@@ -95,7 +95,7 @@ const LAYER_PRESETS: Record<string, CanvasLayer[]> = {
 
 export default function CanvasEngine({
   width, height, context, layers: propLayers, objects: propObjects,
-  onObjectsChange, onLayersChange, children,
+  onObjectsChange, onLayersChange, children: _children,
   showGrid: initGrid = true, showDimensions: initDims = true, readOnly = false,
 }: Props) {
   const stageRef = useRef<Konva.Stage>(null)
@@ -104,7 +104,7 @@ export default function CanvasEngine({
   const [tool, setTool] = useState<'select' | 'line' | 'rect' | 'text'>('select')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [zoom, setZoom] = useState(1)
-  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [pan, _setPan] = useState({ x: 0, y: 0 })
   const [showGrid, setShowGrid] = useState(initGrid)
   const [showDims, setShowDims] = useState(initDims)
   const [snapEnabled, setSnapEnabled] = useState(true)

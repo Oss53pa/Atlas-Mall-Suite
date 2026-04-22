@@ -377,7 +377,7 @@ export const useCadStore = create<CadState>()((set, get) => ({
 
   setSnapConfig: (config) => set((s) => ({ snap: { ...s.snap, ...config } })),
 
-  computeSnap: (raw, canvasW, canvasH) => {
+  computeSnap: (raw, _canvasW, _canvasH) => {
     const { snap, entities } = get()
     if (!snap.enabled) return { point: raw, type: 'none' as const }
 

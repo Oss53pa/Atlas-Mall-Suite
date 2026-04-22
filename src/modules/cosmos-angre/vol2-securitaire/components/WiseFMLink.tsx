@@ -1,4 +1,3 @@
-import React from 'react'
 import { Wrench, AlertCircle, CheckCircle, Clock, ExternalLink } from 'lucide-react'
 import type { WiseFMLink as WiseFMLinkType } from '../../shared/proph3t/types'
 
@@ -17,7 +16,7 @@ function statusConfig(status: WiseFMLinkType['status']) {
   }
 }
 
-export default function WiseFMLinkComponent({ entityId, entityType, wisefmLink }: WiseFMLinkProps) {
+export default function WiseFMLinkComponent({ entityId: _entityId, entityType: _entityType, wisefmLink }: WiseFMLinkProps) {
   if (!wisefmLink) {
     return (
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-3">

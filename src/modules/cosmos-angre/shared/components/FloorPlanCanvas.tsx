@@ -57,7 +57,7 @@ const ZOOM_STEP = 0.1
 
 export default function FloorPlanCanvas({
   floor, zones, showHeatmap, heatmapContent, onEntityClick, onCanvasClick, selectedId, children, className = '',
-  cursorMode = 'select',
+  cursorMode: _cursorMode = 'select',
   dims, calibration, showDims: showDimsProp, onDimClick, cotationSpecs, showCotations: showCotationsProp, planBounds,
   planImageUrl,
   overlayLayers,

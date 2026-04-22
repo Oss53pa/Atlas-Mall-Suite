@@ -1,6 +1,6 @@
 // ═══ SPACE OVERLAY — Interactive polygon spaces on the plan ═══
 
-import React, { useMemo } from 'react'
+import React from 'react'
 import type { DetectedSpace, SpaceState, ViewportState } from '../planReader/planEngineTypes'
 import { statusColor, spaceTypeColor } from '../planReader/spaceDetector'
 

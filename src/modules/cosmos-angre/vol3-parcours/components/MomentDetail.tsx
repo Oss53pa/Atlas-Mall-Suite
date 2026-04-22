@@ -1,7 +1,6 @@
 // F-004 : sous-panel "Moment cle detaille" extrait de Vol3Module.tsx.
 // Aucun changement de comportement.
 
-import React from 'react'
 import { X, Star, AlertTriangle, Lightbulb, Crown } from 'lucide-react'
 import type { MomentCle } from '../../shared/proph3t/types'
 

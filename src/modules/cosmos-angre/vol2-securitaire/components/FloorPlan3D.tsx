@@ -1,6 +1,6 @@
 // ═══ FLOOR PLAN 3D — Vue Three.js des etages ═══
 
-import { useRef, useEffect, useMemo, useCallback, useSyncExternalStore } from 'react'
+import { useRef, useEffect, useCallback, useSyncExternalStore } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { Camera, Zone, Door, BlindSpot, TransitionNode, Floor } from '../../shared/proph3t/types'
@@ -241,7 +241,6 @@ function buildScene(
           const segments = 24
           const shape = new THREE.Shape()
           shape.moveTo(0, 0)
-          const halfFov = fovRad / 2
           const startA = ((cam.angle - cam.fov / 2) * Math.PI) / 180
           for (let i = 0; i <= segments; i++) {
             const a = startA + (fovRad * i) / segments
@@ -350,7 +349,6 @@ function buildScene(
         // Auto-scale and position the model to fit the floor
         const box = new THREE.Box3().setFromObject(modelClone)
         const size = box.getSize(new THREE.Vector3())
-        const center = box.getCenter(new THREE.Vector3())
 
         // Scale to match floor dimensions
         const maxModelDim = Math.max(size.x, size.z)
@@ -363,7 +361,6 @@ function buildScene(
         // Recompute bounding box after scaling
         const scaledBox = new THREE.Box3().setFromObject(modelClone)
         const scaledCenter = scaledBox.getCenter(new THREE.Vector3())
-        const scaledSize = scaledBox.getSize(new THREE.Vector3())
 
         // Center on floor slab
         modelClone.position.set(

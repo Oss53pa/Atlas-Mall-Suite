@@ -1,4 +1,3 @@
-import React from 'react'
 import type { PathResult } from '../../shared/proph3t/types'
 
 interface WayfindingPathProps {

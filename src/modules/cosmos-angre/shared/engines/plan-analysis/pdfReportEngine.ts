@@ -19,10 +19,7 @@ import type { AbmResult, TimeSlot } from './abmSocialForceEngine'
 import { TIME_SLOT_META } from './abmSocialForceEngine'
 import type { PlacedPanel } from './signagePlacementEngine'
 import type { QuantityPlan } from './signageQuantityEngine'
-import {
-  SIGNAGE_CATALOG, SIGNAGE_CATEGORY_META, SIGNAGE_CODES_BY_CATEGORY,
-  PRIORITY_META,
-} from '../../proph3t/libraries/signageCatalog'
+import { SIGNAGE_CATALOG, SIGNAGE_CATEGORY_META, PRIORITY_META } from '../../proph3t/libraries/signageCatalog'
 import { FLOOR_LEVEL_META, type FloorLevelKey } from '../../proph3t/libraries/spaceTypeLibrary'
 
 // ─── Types ─────────────────────────────────────────────
@@ -705,7 +702,7 @@ export async function generateEnrichedSignagePdfReport(input: EnrichedPdfInput):
 
 // ─── Page 1 : Synthèse ────────────────────────
 
-function renderEnrichedCoverPage(doc: jsPDF, input: EnrichedPdfInput, pageW: number, pageH: number) {
+function renderEnrichedCoverPage(doc: jsPDF, input: EnrichedPdfInput, pageW: number, _pageH: number) {
   const margin = 12
 
   // Bandeau haut
@@ -857,7 +854,7 @@ function renderEnrichedCoverPage(doc: jsPDF, input: EnrichedPdfInput, pageW: num
 
 function renderFloorPlanPage(
   doc: jsPDF, input: EnrichedPdfInput, level: FloorLevelKey,
-  pageW: number, pageH: number, margin: number,
+  pageW: number, _pageH: number, margin: number,
 ) {
   const meta = FLOOR_LEVEL_META[level]
   // Titre
@@ -1001,7 +998,7 @@ function renderFloorPlanPage(
 // ─── Page 6 : Tableau exhaustif ───────────────
 
 function renderExhaustiveTable(
-  doc: jsPDF, input: EnrichedPdfInput, pageW: number, pageH: number, margin: number,
+  doc: jsPDF, input: EnrichedPdfInput, pageW: number, _pageH: number, margin: number,
 ) {
   doc.setFillColor('#d97706')
   doc.rect(0, 0, pageW, 15, 'F')

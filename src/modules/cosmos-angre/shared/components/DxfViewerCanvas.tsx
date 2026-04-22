@@ -63,7 +63,7 @@ interface DxfViewerCanvasProps {
   className?: string
 }
 
-export function DxfViewerCanvas({ dxfUrl, planImageUrl, viewMode = '2d', wallSegments = [], spaces = [], planBounds, detectedFloors, dimensions, cameras, doors, blindSpots, pois, signage, moments, journeys, placeMode, onPlace, onEntityUpdate, onEntityDelete, compliance, className = '' }: DxfViewerCanvasProps) {
+export function DxfViewerCanvas({ dxfUrl, planImageUrl: _planImageUrl, viewMode = '2d', wallSegments = [], spaces = [], planBounds, detectedFloors, dimensions, cameras, doors, blindSpots, pois, signage, moments, journeys, placeMode, onPlace, onEntityUpdate, onEntityDelete, compliance, className = '' }: DxfViewerCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<DxfViewer | null>(null)
   const [layers, setLayers] = useState<LayerInfo[]>([])

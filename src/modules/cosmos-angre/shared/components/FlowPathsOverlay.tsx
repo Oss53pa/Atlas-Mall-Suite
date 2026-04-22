@@ -6,7 +6,7 @@
 //
 // Légende interactive : clic sur une entrée → isole tous ses chemins sortants.
 
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { FlowAnalysisResult, FlowEntryExit, SignageRecommendation, SignageType } from '../engines/plan-analysis/flowPathEngine'
 
 interface Props {

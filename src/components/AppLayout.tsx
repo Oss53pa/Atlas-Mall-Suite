@@ -3,11 +3,22 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {
-  Sparkles, Settings, Bell, ChevronDown, User, LogOut,
-  Building2, FolderOpen, ShieldCheck, Route, Box,
-  FileText, BarChart2, MessageSquare, Layers, Scale,
-  ClipboardList, Globe2, Zap, HelpCircle, LayoutDashboard,
-  ChevronRight,
+  Sparkles,
+  Settings,
+  Bell,
+  ChevronDown,
+  Building2,
+  FolderOpen,
+  ShieldCheck,
+  Route,
+  Box,
+  FileText,
+  BarChart2,
+  Layers,
+  ClipboardList,
+  Globe2,
+  Zap,
+  LayoutDashboard
 } from 'lucide-react'
 import { useProjectStore } from '../modules/projects/projectStore'
 import { useSettingsStore } from '../modules/projects/settingsStore'

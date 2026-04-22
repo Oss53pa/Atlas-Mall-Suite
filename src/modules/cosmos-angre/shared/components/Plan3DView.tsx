@@ -4,7 +4,6 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { getSpaceColor, type ColorMode } from '../planReader/spaceColoring'
 import { usePlanEngineStore } from '../stores/planEngineStore'
 import { useSceneEditorStore } from '../../scene-editor/store/sceneEditorStore'

@@ -236,7 +236,7 @@ export function astarForward(input: AstarInputSingleFloor): RouteResult | null {
 
 function reconstructSingle(
   graph: NavGraph,
-  fromId: string,
+  _fromId: string,
   toId: string,
   prev: Map<string, { nodeId: string; edgeId: string }>,
   totalWeight: number,
@@ -541,7 +541,6 @@ export function astarMultiFloor(input: MultiFloorRouteInput): RouteResult | null
   for (const e of graph.internalEdges) edgeMap.set(e.id, e)
   for (const e of graph.verticalEdges) edgeMap.set(e.id, e as any)
 
-  const from = nodeMap.get(fromId)!
   const to = nodeMap.get(toId)!
 
   const g = new Map<string, number>([[fromId, 0]])
@@ -629,7 +628,7 @@ function angleDeg(dx: number, dy: number): number {
 function buildInstructions(
   graph: NavGraph,
   nodeIds: string[],
-  waypoints: Array<{ x: number; y: number }>,
+  _waypoints: Array<{ x: number; y: number }>,
   totalLengthM: number,
 ): RouteInstruction[] {
   const out: RouteInstruction[] = []
@@ -682,7 +681,7 @@ function buildInstructions(
 function buildInstructionsMultiFloor(
   graph: MultiFloorGraph,
   nodeIds: string[],
-  waypoints: Array<{ x: number; y: number; floorId?: string }>,
+  _waypoints: Array<{ x: number; y: number; floorId?: string }>,
   totalLengthM: number,
 ): RouteInstruction[] {
   const out: RouteInstruction[] = []

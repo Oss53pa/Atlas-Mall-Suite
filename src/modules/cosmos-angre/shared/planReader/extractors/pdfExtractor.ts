@@ -44,7 +44,7 @@ export class PDFFloorPlanExtractor implements FloorPlanExtractor {
     const scale = this.detectScale(textContent) ?? this.estimateScale(viewport, classified.roomBoundaries)
 
     // Step 4: Build rooms from closed boundaries
-    const rooms = classified.roomBoundaries.map((p, i): NormalizedRoom => {
+    const rooms = classified.roomBoundaries.map((p, _i): NormalizedRoom => {
       const polygon = p.points.map(pt => ({ x: pt.x * scale, y: pt.y * scale }))
       return {
         id: generateId(),
@@ -267,7 +267,7 @@ export class PDFFloorPlanExtractor implements FloorPlanExtractor {
     return null
   }
 
-  private estimateScale(viewport: pdfjsLib.PageViewport, rooms: RawPath[]): number {
+  private estimateScale(_viewport: pdfjsLib.PageViewport, rooms: RawPath[]): number {
     // Assume a typical mall retail cell is ~100m² (10m x 10m)
     if (rooms.length === 0) return 1 / 200
     const avgArea = rooms.reduce((s, r) => s + computePolygonArea(r.points), 0) / rooms.length

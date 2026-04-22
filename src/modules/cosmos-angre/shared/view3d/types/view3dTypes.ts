@@ -73,6 +73,10 @@ export interface View3DConfig {
   populationDensity:    number   // multiplier: 0.5 to 2.0
   mallName:             string
   accentColor:          string   // for clothing racks, signs, etc.
+  /** 0 = stacked, 1 = fully exploded (floors spread apart vertically). */
+  explodeLevel:         number
+  /** When set, all floors except this one are faded to near-transparent. */
+  isolatedFloorId:      string | null
 }
 
 export interface ZoneHeight {

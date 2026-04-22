@@ -1,7 +1,6 @@
 // ═══ VOL.3 — Revenue per Sqm Predictor (F3.9) ═══
 
-import React from 'react'
-import { DollarSign, TrendingUp, MapPin, Star } from 'lucide-react'
+import { DollarSign, MapPin, Star } from 'lucide-react'
 
 interface CellRevenue {
   spaceRef: string

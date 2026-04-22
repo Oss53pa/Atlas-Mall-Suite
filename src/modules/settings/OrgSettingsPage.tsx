@@ -1,10 +1,23 @@
 // ═══ SETTINGS / ORGANISATION — 9 Sections ═══
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import {
-  Building2, Banknote, Palette, Users, Shield, FolderOpen,
-  CreditCard, Plug, ScrollText, Upload, Plus, Check, X,
-  Search, Download, ExternalLink, Mail,
+  Building2,
+  Banknote,
+  Palette,
+  Users,
+  Shield,
+  FolderOpen,
+  CreditCard,
+  Plug,
+  ScrollText,
+  Upload,
+  Plus,
+  Check,
+  _X,
+  Search,
+  Download,
+  ExternalLink
 } from 'lucide-react'
 
 const SECTIONS = [

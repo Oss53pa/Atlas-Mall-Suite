@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import type { View3DData, View3DConfig } from '../types/view3dTypes'
 import { buildThreeScene } from '../engines/threeSceneBuilder'
 

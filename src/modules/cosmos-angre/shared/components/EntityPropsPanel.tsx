@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
-import { X, Save, Trash2, Camera, DoorOpen, MapPin, Signpost } from 'lucide-react'
-import type { Camera as CameraType, Door, Zone, POI, SignageItem, CameraModel, SpaceType } from '../proph3t/types'
+import { X, Trash2, Camera, DoorOpen, MapPin, Signpost } from 'lucide-react'
+import type { Camera as CameraType, Door, Zone, POI, SignageItem, CameraModel } from '../proph3t/types'
 
 type Entity = CameraType | Door | Zone | POI | SignageItem
 
@@ -12,9 +12,9 @@ interface EntityPropsPanelProps {
   onClose: () => void
 }
 
-function isCamera(e: Entity, type: string): e is CameraType { return type === 'camera' }
-function isDoor(e: Entity, type: string): e is Door { return type === 'door' }
-function isPoi(e: Entity, type: string): e is POI { return type === 'poi' }
+function isCamera(_e: Entity, type: string): e is CameraType { return type === 'camera' }
+function isDoor(_e: Entity, type: string): e is Door { return type === 'door' }
+function isPoi(_e: Entity, type: string): e is POI { return type === 'poi' }
 
 const CAMERA_MODELS: CameraModel[] = ['XNV-8080R', 'QNV-8080R', 'PTZ-P3', 'PNM-9000VQ', 'QNO-8080R', 'XNF-9300RV', 'DS-2CD2T47G2', 'IPC-HDW3849H', 'PTZ QNP-9300RWB']
 

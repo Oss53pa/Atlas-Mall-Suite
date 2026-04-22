@@ -1,5 +1,4 @@
-import React from 'react'
-import { Eye, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 
 type EquipStatus = 'Opérationnel' | 'En cours' | 'Planifié'
 

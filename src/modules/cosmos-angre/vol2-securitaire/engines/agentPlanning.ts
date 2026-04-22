@@ -41,7 +41,7 @@ export function planSecurityStaff(
   zones: Zone[],
   floors: Floor[],
   controlPointCount: number,
-  openingHours: { open: number; close: number } = { open: 8, close: 22 }
+  _openingHours: { open: number; close: number } = { open: 8, close: 22 }
 ): AgentPlanningResult {
   const totalSurfaceM2 = zones.reduce((s, z) => s + (z.surfaceM2 ?? z.w * z.h), 0)
   const floorCount = floors.length

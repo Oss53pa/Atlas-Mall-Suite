@@ -11,7 +11,7 @@
 //   - api.anthropic.com (test direct depuis le navigateur en dev)
 //   - Edge Function Supabase (production, via header x-client-key)
 
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   KeyRound, Eye, EyeOff, Save, Trash2, CheckCircle2, XCircle,
   Loader2, AlertTriangle, ExternalLink,

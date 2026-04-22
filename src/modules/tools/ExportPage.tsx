@@ -1,7 +1,7 @@
 // ═══ EXPORT / RAPPORTS — Hub centralisé ═══
 
 import React, { useState } from 'react'
-import { FileText, Download, Clock, Check, File, FileSpreadsheet, Presentation, Code2, QrCode, Image } from 'lucide-react'
+import { FileText, Download, Clock, File, FileSpreadsheet, Presentation, Code2, QrCode, Image } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface ExportItem {

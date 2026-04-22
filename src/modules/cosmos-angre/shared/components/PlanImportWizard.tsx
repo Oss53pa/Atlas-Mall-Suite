@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import type { PlanImportState, CalibrationResult, RecognizedZone, DimEntity } from '../planReader/planReaderTypes'
+import type { PlanImportState, CalibrationResult, DimEntity } from '../planReader/planReaderTypes'
 import type { ParsedPlan } from '../planReader/planEngineTypes'
-import type { Zone, Floor, FloorLevel } from '../proph3t/types'
+import type { Zone, Floor } from '../proph3t/types'
 import { importPlan, detectPlanSourceType } from '../planReader'
 import PlanReaderProgress from './PlanReaderProgress'
 import RasterPreview from './RasterPreview'
@@ -97,7 +97,7 @@ export default function PlanImportWizard({
     setState(result)
   }, [selectedFloorId])
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const _handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     const file = e.dataTransfer.files[0]
     if (file) handleFileSelect(file)

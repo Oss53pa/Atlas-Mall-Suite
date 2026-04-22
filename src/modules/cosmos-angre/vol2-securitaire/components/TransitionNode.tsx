@@ -1,4 +1,3 @@
-import React from 'react'
 import type { TransitionNode as TransitionNodeType } from '../../shared/proph3t/types'
 
 interface TransitionNodeProps {

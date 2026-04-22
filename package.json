@@ -1,23 +1,31 @@
 {
-  "name": "vite-react-typescript-starter",
+  "name": "atlas-mall-suite",
+  "description": "Plateforme SaaS de pilotage pour centres commerciaux — cartographie 2D/3D/AR, visites guidées, rapports HTML interactifs, IA PROPH3T",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0-rc.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "lint:ci": "eslint . --max-warnings=9999",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "typecheck": "tsc --noEmit",
-    "build:analyze": "vite build --mode analyze"
+    "build:analyze": "vite build --mode analyze",
+    "precommit": "npm run typecheck && npm run lint:ci",
+    "prepare-release": "npm run typecheck && npm run lint:ci && npm test && npm run build"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",
     "@mlightcad/libredwg-web": "^0.6.7",
+    "@react-three/fiber": "^8.18.0",
+    "@react-three/xr": "^5.7.1",
     "@supabase/supabase-js": "^2.99.3",
     "@tanstack/react-query": "^5.94.5",
     "@types/three": "^0.183.1",
@@ -30,6 +38,7 @@
     "dxf-parser": "^1.1.2",
     "dxf-viewer": "^1.0.47",
     "exceljs": "^4.4.0",
+    "framer-motion": "^12.38.0",
     "hotkeys-js": "^4.0.2",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
@@ -55,7 +64,7 @@
     "web-ifc": "^0.0.77",
     "web-ifc-three": "^0.0.126",
     "xlsx": "^0.18.5",
-    "zustand": "^5.0.12"
+    "zustand": "^4.5.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",

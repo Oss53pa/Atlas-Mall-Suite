@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { VisitorProfile, POI } from '../../shared/proph3t/types'
 
 interface ProfileSimulatorProps {
@@ -19,7 +19,6 @@ interface AgentState {
 
 export default function ProfileSimulator({ profiles, pois, isPlaying, scale }: ProfileSimulatorProps) {
   const [agents, setAgents] = useState<AgentState[]>([])
-  const frameRef = useRef<number>(0)
 
   // Initialize agents
   useEffect(() => {

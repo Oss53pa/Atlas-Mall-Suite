@@ -6,7 +6,7 @@ import React from 'react'
 import {
   Upload, Map, Pencil, Route, Navigation, Signpost, Flame, FileText,
   MessageSquare, Info, Eye, Layers, Users, User, Grid3X3, BarChart2,
-  Calendar, Smartphone, LayoutDashboard,
+  Calendar, Smartphone, LayoutDashboard, History, Send, Sparkles,
 } from 'lucide-react'
 import { ATLAS_STUDIO_GROUP_META } from '../shared/components/atlasStudioNav'
 
@@ -42,6 +42,9 @@ export type Vol3Tab =
   | 'revenue_predictor'
   | 'seasonal'
   | 'tenant_mix_validator'
+  | 'history'
+  | 'reports'
+  | 'god_mode_signage'
 
 export interface NavItem {
   id: Vol3Tab
@@ -172,6 +175,27 @@ export const buildNavGroups = (): NavGroup[] => [
       { id: 'revenue_predictor', label: 'Revenue Predictor', icon: BarChart2 },
       { id: 'seasonal', label: 'Scénarios saisonniers', icon: Calendar },
       { id: 'tenant_mix_validator', label: 'Tenant Mix Validator', icon: Grid3X3 },
+    ],
+  },
+  {
+    key: 'god_mode',
+    label: 'GOD MODE · PROPH3T',
+    icon: Sparkles,
+    color: '#a855f7',
+    separator: true,
+    items: [
+      { id: 'god_mode_signage', label: 'Signalétique (institutionnelle + pub)', icon: Sparkles },
+    ],
+  },
+  {
+    key: 'collaboration',
+    label: 'COLLABORATION',
+    icon: Send,
+    color: '#818cf8',
+    separator: true,
+    items: [
+      { id: 'history', label: 'Historique du plan', icon: History },
+      { id: 'reports', label: 'Rapports & partage', icon: Send },
     ],
   },
 ]

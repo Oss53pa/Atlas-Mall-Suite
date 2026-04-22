@@ -9,7 +9,7 @@
 // Autonome — ne touche pas à Plan3DView. Utilise directement le FlowResult
 // + les walls + spaces pour reconstruire une mini-scène.
 
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import * as THREE from 'three'
 import {

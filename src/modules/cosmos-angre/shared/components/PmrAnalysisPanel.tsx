@@ -5,7 +5,7 @@
 //   - Détail des segments (largeur, pente, norme, correction)
 //   - Toggle pour surligner les segments non conformes sur la scène
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   X, Accessibility, Ruler, ArrowUpDown, AlertTriangle,

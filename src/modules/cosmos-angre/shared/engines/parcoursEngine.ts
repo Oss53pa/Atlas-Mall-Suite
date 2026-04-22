@@ -86,7 +86,7 @@ function dist(x1: number, y1: number, x2: number, y2: number) {
   return Math.hypot(x2 - x1, y2 - y1)
 }
 
-function polygonCenter(poly: [number, number][]): [number, number] {
+function _polygonCenter(poly: [number, number][]): [number, number] {
   if (!poly.length) return [0, 0]
   let sx = 0, sy = 0
   for (const [x, y] of poly) { sx += x; sy += y }
@@ -103,7 +103,6 @@ export function runParcoursAnalysis(input: {
   const { pois, signage, moments, spaces, floors } = input
   const issues: ParcoursReport['issues'] = []
   let issueCount = 0
-  const nextId = () => `par-${++issueCount}`
 
   // ── Signage density per floor ──
   const signageDensity = floors.map(f => {

@@ -1,7 +1,7 @@
 // ═══ WAYFINDER PANEL — Modal d'aperçu et d'export du wayfinder ═══
 
-import React, { useMemo, useState } from 'react'
-import { X, Download, Image as ImageIcon, FileCode, FileImage, Eye, EyeOff } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { X, Download, FileCode, FileImage, Eye, EyeOff } from 'lucide-react'
 import {
   WayfinderRenderer, THEME_PRESETS,
   exportWayfinderSvg, exportWayfinderPng, exportWayfinderHtml,

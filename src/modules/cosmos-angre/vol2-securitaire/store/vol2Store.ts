@@ -3,25 +3,43 @@
 import { create } from 'zustand'
 import * as THREE from 'three'
 import type {
-  FloorLevel, Floor, Zone, Camera, Door, BlindSpot,
-  SecurityScore, TransitionNode, EvacuationResult,
-  MonteCarloResult, EvacuationScenario, CascadeTrigger,
-  CascadeResult, CapexItem, WiseFMLink, CockpitMilestone,
-  LibraryItem, MallBenchmark, ProPh3tMemory,
-  ProjectMemorySummary, ChatMessage, SecurityScenario, SignageItem,
-  CrossVolumeInsight, ProactiveInsight, ProjectPhase,
+  Floor,
+  Zone,
+  Camera,
+  Door,
+  BlindSpot,
+  SecurityScore,
+  TransitionNode,
+  EvacuationResult,
+  MonteCarloResult,
+  EvacuationScenario,
+  CascadeTrigger,
+  CascadeResult,
+  CapexItem,
+  ProjectMemorySummary,
+  ChatMessage,
+  SecurityScenario,
+  SignageItem,
+  CrossVolumeInsight,
+  ProactiveInsight,
+  ProjectPhase
 } from '../../shared/proph3t/types'
 import { addImported3DModel } from './imported3DModel'
 import {
-  scoreSecurite, findBlindSpots, computeFloorCoverage,
-  solveCameraPlacement, recommendDoors, computeCapex
+  scoreSecurite,
+  findBlindSpots,
+  computeFloorCoverage,
+  solveCameraPlacement,
+  recommendDoors,
+  computeCapex
 } from '../../shared/proph3t/engine'
-import {
-  importPlan as importPlanOrchestrator,
-  generateCotationSpecs,
-  renderCotationsOnPDF,
-} from '../../shared/planReader'
-import type { DimEntity, CalibrationResult, CotationSpec, PlanImportState } from '../../shared/planReader/planReaderTypes'
+import { importPlan as importPlanOrchestrator, generateCotationSpecs } from '../../shared/planReader'
+import type {
+  DimEntity,
+  CalibrationResult,
+  CotationSpec,
+  PlanImportState
+} from '../../shared/planReader/planReaderTypes'
 import { runCascade as cascadeRun, type CascadeState } from '../../shared/proph3t/cascadeEngine'
 import type { TenantInfo } from '../../shared/proph3t/types'
 import { runMonteCarlo as monteCarloRun, simulateEvacuation } from '../../shared/proph3t/simulationEngine'
@@ -30,13 +48,16 @@ import { exportASPADPDF } from '../../../export/exportPDFApsad'
 import { exportCAPEXExcel } from '../../../export/exportCAPEX'
 import { exportAnnotatedDXF } from '../../../export/exportDXF'
 import {
-  loadProjectFromSupabase, persistEntity, deleteEntity, persistBatch,
-  mapCameraToDB, mapZoneToDB, mapDoorToDB, mapFloorToDB, mapTransitionToDB,
-  mapSignageToDB,
+  loadProjectFromSupabase,
+  persistEntity,
+  deleteEntity,
+  mapCameraToDB,
+  mapZoneToDB,
+  mapDoorToDB,
+  mapTransitionToDB
 } from '../../shared/supabaseSync'
 
 // No seed/mock data: stores start empty — user populates via DXF import or forms.
-
 
 // ─── Entity type union ───────────────────────────────────────
 
@@ -398,7 +419,7 @@ export const useVol2Store = create<Vol2State>()((set) => ({
 
   // ── Cascade ─────────────────────────────────────────────
   applyCascadeResult: (result) =>
-    set((s) => ({
+    set((_s) => ({
       blindSpots: result.blindSpots,
       score: result.score,
       coverageByFloor: result.coverageByFloor,

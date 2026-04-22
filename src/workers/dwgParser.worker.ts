@@ -178,7 +178,7 @@ function readDwgVersion(data: DataView): string {
   return versionStr
 }
 
-function readNullTermString(data: DataView, offset: number, maxLen: number): { str: string; bytesRead: number } {
+function _readNullTermString(data: DataView, offset: number, maxLen: number): { str: string; bytesRead: number } {
   const bytes: number[] = []
   for (let i = 0; i < maxLen; i++) {
     if (offset + i >= data.byteLength) break

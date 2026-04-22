@@ -1,4 +1,3 @@
-import React from 'react'
 import { BarChart3, Accessibility, MapPin, Signpost, Route } from 'lucide-react'
 import type { POI, SignageItem, MomentCle, NavigationGraph } from '../../shared/proph3t/types'
 import ScoreGauge from '../../shared/components/ScoreGauge'

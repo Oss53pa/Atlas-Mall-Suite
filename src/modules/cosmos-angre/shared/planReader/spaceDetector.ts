@@ -19,7 +19,7 @@ function uid(): string {
 
 export function detectSpaces(
   entities: PlanEntity[],
-  bounds: Bounds,
+  _bounds: Bounds,
 ): DetectedSpace[] {
   _uid = 0
   const spaces: DetectedSpace[] = []

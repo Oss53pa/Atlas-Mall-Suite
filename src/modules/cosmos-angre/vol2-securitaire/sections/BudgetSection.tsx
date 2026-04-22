@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react'
-import { Banknote, Camera, DoorOpen, Signpost, TrendingUp } from 'lucide-react'
+import { useMemo } from 'react'
+import { Banknote, Camera, DoorOpen } from 'lucide-react'
 import { useVol2Store } from '../store/vol2Store'
 import { formatFcfaWithUnit as formatFcfa } from '../../shared/utils/formatting'
 

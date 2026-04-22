@@ -2,7 +2,7 @@
 // Builds Three.js scenes from ParsedPlan: walls, floors, colored spaces.
 // Supports: perspective, isometric, north/east views, guided tour.
 
-import type { ParsedPlan, DetectedSpace, WallSegment, ViewportState } from '../planReader/planEngineTypes'
+import type { ParsedPlan } from '../planReader/planEngineTypes'
 
 export interface CameraState {
   position: [number, number, number]
@@ -18,7 +18,7 @@ export class SceneEngine {
   private scene: import('three').Scene | null = null
   private renderer: import('three').WebGLRenderer | null = null
   private camera: import('three').PerspectiveCamera | null = null
-  private orthoCamera: import('three').OrthographicCamera | null = null
+  private _orthoCamera: import('three').OrthographicCamera | null = null
   private controls: import('three/examples/jsm/controls/OrbitControls.js').OrbitControls | null = null
   private container: HTMLElement | null = null
   private animFrameId = 0
@@ -267,7 +267,7 @@ export class SceneEngine {
     return colors[type] ?? '#3b82f6'
   }
 
-  private createTextSprite(text: string, color: string): import('three').Sprite {
+  private createTextSprite(text: string, _color: string): import('three').Sprite {
     // Dynamic import workaround: use sync THREE reference from the scene
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')!

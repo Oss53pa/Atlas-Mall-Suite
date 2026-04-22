@@ -1,4 +1,3 @@
-import React from 'react'
 import { Crown, Star, Gift, QrCode } from 'lucide-react'
 import type { POI } from '../../shared/proph3t/types'
 

@@ -1,4 +1,3 @@
-import React from 'react'
 import { BarChart3, X } from 'lucide-react'
 import type { MallBenchmark } from '../proph3t/types'
 

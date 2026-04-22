@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useMemo } from 'react'
+import { lazy, Suspense, useEffect, useMemo } from 'react'
 import { useVol3DStore } from './store/vol3dStore'
 import { useVol2Store } from '../vol2-securitaire/store/vol2Store'
 import { useVol3Store } from '../vol3-parcours/store/vol3Store'
@@ -39,7 +39,7 @@ export default function Vol3DModule() {
   // When a real plan is imported, convert ParsedPlan spaces → Zone format for 3D
   const zones = useMemo(() => {
     if (!parsedPlan || parsedPlan.spaces.length === 0) return storeZones
-    return parsedPlan.spaces.map((sp, i) => ({
+    return parsedPlan.spaces.map((sp, _i) => ({
       id: sp.id,
       floorId: floors[0]?.id ?? 'floor-rdc',
       label: sp.label,

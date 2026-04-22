@@ -1,4 +1,4 @@
-import React, { memo } from 'react'
+import { memo } from 'react'
 import type { POI } from '../../shared/proph3t/types'
 
 interface PoiEntityProps {

@@ -2,7 +2,7 @@
 // Tenant Mix Analyzer, Vacancy Recommender, Rent Optimizer
 
 import React, { useState, useMemo } from 'react'
-import { Brain, Sparkles, Target, DollarSign, MapPin, ArrowRight, Loader2 } from 'lucide-react'
+import { Brain, Sparkles, Target, DollarSign, MapPin, ArrowRight } from 'lucide-react'
 import { useVol1Store } from '../store/vol1Store'
 import { formatFcfa } from '../../shared/utils/formatting'
 import { SECTOR_LABELS as sectorLabels } from '../../shared/constants/sectorConfig'
@@ -40,7 +40,7 @@ export default function Proph3tCommercialSection() {
   const spaces = useVol1Store(s => s.spaces)
   const occupancy = useVol1Store(s => s.occupancy)
   const [tab, setTab] = useState<AnalysisTab>('mix')
-  const [loading, setLoading] = useState(false)
+  const [_loading, _setLoading] = useState(false)
 
   // ── Tenant Mix Analysis ───────────────────
   const mixInsights: MixInsight[] = useMemo(() => {
@@ -70,7 +70,6 @@ export default function Proph3tCommercialSection() {
   const vacancyRecos: VacancyReco[] = useMemo(() => {
     return spaces.filter(s => s.status === 'vacant').map(s => {
       const adjacentTenants = spaces.filter(s2 => s2.floorLevel === s.floorLevel && s2.tenantId && Math.abs(s2.x - s.x) < 50).map(s2 => tenants.find(t => t.id === s2.tenantId)!)
-      const adjacentSectors = adjacentTenants.map(t => t?.sector).filter(Boolean)
 
       let recommendedSector: Sector = 'services'
       let reasoning = ''

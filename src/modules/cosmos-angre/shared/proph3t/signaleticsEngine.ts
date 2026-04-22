@@ -44,7 +44,7 @@ export interface SignaleticsSpec {
 // ═══ CALCUL SPECS SIGNALÉTIQUE (ISO 7010 + NF X 08-003) ═══
 
 export function calculateSignaleticsSpec(
-  position: { x: number; y: number },
+  _position: { x: number; y: number },
   zone: Zone,
   corridorWidthM: number,
   ceilingHeightM: number,

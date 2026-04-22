@@ -1,4 +1,3 @@
-import React from 'react'
 import { Sparkles, ChevronRight, ThumbsUp, ThumbsDown } from 'lucide-react'
 
 interface Suggestion {

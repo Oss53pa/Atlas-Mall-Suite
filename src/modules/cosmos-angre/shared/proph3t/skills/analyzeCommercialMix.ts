@@ -4,13 +4,11 @@ import type { Proph3tResult, Proph3tAction, Proph3tFinding } from '../orchestrat
 import { citeAlgo, citeBenchmark, confidence } from '../orchestrator.types'
 import { enrichActionsWithRag, enrichFindingsWithRag } from '../ragHelper'
 import { enrichWithNarrative } from '../narrativeEnricher'
-import { geneticOptimize } from '../algorithms/geneticOptimizer'
 import { fitHedonic, predictHedonic, type HedonicSample } from '../algorithms/hedonicRegression'
 import { fitCox, vacancyProb, type SurvivalSample } from '../algorithms/coxSurvival'
 import { monteCarloPercentiles, randomNormal } from '../algorithms/monteCarlo'
 import { recommendMix } from '../../ml/mixRecommender'
 import type { Lot } from '../../domain/LotEntity'
-import { WEST_AFRICA_BENCHMARKS } from '../../benchmarks/africanRetail'
 
 export interface CommercialAnalysisInput {
   lots: Lot[]

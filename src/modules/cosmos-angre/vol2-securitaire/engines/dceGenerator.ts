@@ -96,7 +96,7 @@ const DEFAULT_DOOR_PRICE = 1_200_000
 export function generateDCESecurite(
   cameras: Camera[],
   doors: Door[],
-  zones: Zone[],
+  _zones: Zone[],
   floors: Floor[],
   projectName: string,
   destinataire: string,

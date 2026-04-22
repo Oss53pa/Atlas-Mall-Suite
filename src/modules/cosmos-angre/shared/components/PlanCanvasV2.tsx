@@ -3,7 +3,7 @@
 // LOD, viewport culling, minimap, rulers, and space interaction.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { DetectedSpace, ParsedPlan, ViewportState, PlanTool } from '../planReader/planEngineTypes'
+import type { DetectedSpace, ParsedPlan, ViewportState } from '../planReader/planEngineTypes'
 import {
   fitToScreen, zoomAtPoint, screenToWorld, computeLOD,
 } from '../planReader/coordinateEngine'
@@ -23,7 +23,7 @@ import { FloorAttributionModal, type FloorAttribution } from './FloorAttribution
 import { FloorLevel, FLOOR_LABEL_FR, FLOOR_STACK_ORDER } from '../domain/FloorLevel'
 
 // Mount modal d'attribution — applique les choix user au parsedPlan
-function FloorAttributionModalMount({ plan }: { plan: ParsedPlan }) {
+function _FloorAttributionModalMount({ plan }: { plan: ParsedPlan }) {
   const open = usePlanEngineStore(s => s.floorAttributionOpen)
   const close = usePlanEngineStore(s => s.closeFloorAttribution)
   const setParsedPlan = usePlanEngineStore(s => s.setParsedPlan)
@@ -67,7 +67,6 @@ function FloorAttributionModalMount({ plan }: { plan: ParsedPlan }) {
 
     // 4. Re-tagge tous les spaces / walls / dims avec le nouveau FloorLevel
     //    Utilise le point-in-bbox du cluster d'origine
-    const clusterById = new Map(clusters.map(c => [c.id, c]))
     const levelByClusterId = new Map(attributions.map(a => [a.clusterId, a.level]))
     const retag = <T extends { floorId?: string }>(item: T, centerX: number, centerY: number): T => {
       if (item.floorId && levelByClusterId.has(item.floorId)) {
@@ -119,7 +118,7 @@ function FloorAttributionModalMount({ plan }: { plan: ParsedPlan }) {
 // Mount inline pour piloter la modal depuis le store.
 // Le composant utilise createPortal donc il rend HORS du DOM tree de PlanCanvasV2,
 // ce qui évite tout conflit de stacking context / pointer-events.
-function Proph3tImportModalMount({ plan }: { plan: ParsedPlan }) {
+function _Proph3tImportModalMount({ plan }: { plan: ParsedPlan }) {
   const open = usePlanEngineStore(s => s.proph3tModalOpen)
   const close = usePlanEngineStore(s => s.closeProph3tModal)
   const validatePlan = usePlanEngineStore(s => s.validatePlan)

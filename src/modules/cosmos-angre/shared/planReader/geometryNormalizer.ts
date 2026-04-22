@@ -1,19 +1,17 @@
 // ═══ NORMALISATION GÉOMÉTRIE MULTI-SOURCES ═══
 
-import type { Zone, SpaceType } from '../proph3t/types'
+import type { Zone } from '../proph3t/types'
 import type { CalibrationResult, RecognizedZone, BoundingBox } from './planReaderTypes'
 
 // ─── NORMALISER GÉOMÉTRIE ───
 
 export function normalizeGeometry(
   zones: Partial<Zone>[],
-  calibration: CalibrationResult,
+  _calibration: CalibrationResult,
   floorWidthM: number,
   floorHeightM: number
 ): Zone[] {
   return zones.map((z, idx): Zone => {
-    const x = (z.x ?? 0) * floorWidthM
-    const y = (z.y ?? 0) * floorHeightM
     const w = (z.w ?? 0.1) * floorWidthM
     const h = (z.h ?? 0.1) * floorHeightM
     const surfaceM2 = Math.round(w * h)

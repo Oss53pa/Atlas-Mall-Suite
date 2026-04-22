@@ -15,7 +15,6 @@ const modules = [
 export default function IntroSection() {
   const subtitle = useContentStore((s) => s.vol3IntroSubtitle)
   const description = useContentStore((s) => s.vol3IntroDescription)
-  const text1 = useContentStore((s) => s.vol3IntroText1)
   const setField = useContentStore((s) => s.setField)
   const setContent = useContentStore((s) => s.setContent)
   const content = useContentStore((s) => s.content)

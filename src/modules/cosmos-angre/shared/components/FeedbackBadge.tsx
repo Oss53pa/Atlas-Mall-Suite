@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { ThumbsUp, ThumbsDown, Clock } from 'lucide-react'
 
 interface FeedbackBadgeProps {

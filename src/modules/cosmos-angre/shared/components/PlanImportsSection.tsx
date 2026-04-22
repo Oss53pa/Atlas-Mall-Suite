@@ -2,9 +2,21 @@
 
 import React, { useState, useCallback } from 'react'
 import {
-  Upload, FileText, Image, FileCode2, Trash2, Eye,
-  CheckCircle, XCircle, Clock, AlertTriangle, Layers,
-  ChevronDown, ChevronUp, X, ZoomIn, Maximize2,
+  Upload,
+  FileText,
+  Image,
+  FileCode2,
+  Trash2,
+  Eye,
+  CheckCircle,
+  XCircle,
+  Clock,
+  AlertTriangle,
+  Layers,
+  ChevronDown,
+  ChevronUp,
+  X,
+  Maximize2
 } from 'lucide-react'
 import { usePlanImportStore, type PlanImportRecord, type ImportStatus } from '../stores/planImportStore'
 import { MapPin } from 'lucide-react'
@@ -63,7 +75,6 @@ export default function PlanImportsSection({
 }: PlanImportsSectionProps) {
   const imports = usePlanImportStore((s) => s.imports)
   const addImport = usePlanImportStore((s) => s.addImport)
-  const updateImport = usePlanImportStore((s) => s.updateImport)
   const removeImport = usePlanImportStore((s) => s.removeImport)
   const clearAll = usePlanImportStore((s) => s.clearAll)
   const activePlanPerFloor = usePlanImportStore((s) => s.activePlanPerFloor)

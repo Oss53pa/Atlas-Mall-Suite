@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
 import { buildIsoScene, generateIsoSVG } from '../engines/isometricEngine'
 import { useVol3DStore } from '../store/vol3dStore'
 import type { Floor, Zone, Camera, POI, SignageItem, TransitionNode } from '../../shared/proph3t/types'

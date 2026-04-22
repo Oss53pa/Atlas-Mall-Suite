@@ -267,7 +267,6 @@ function detectFlowPoints(
 
     const cat = categorize(s)
     const c = centroidOf(s.polygon)
-    const bb = bboxOf(s.polygon)
 
     // Distance au bord du plan (utilisée pour distinguer « principale » vs secondaire)
     const edgeDist = Math.min(c.x, c.y, planWidth - c.x, planHeight - c.y)

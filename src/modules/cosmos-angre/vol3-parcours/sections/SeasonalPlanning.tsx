@@ -1,7 +1,7 @@
 // ═══ VOL.3 — Seasonal Scenario Planning (F3.11) ═══
 
 import React, { useState } from 'react'
-import { Calendar, Users, Signpost, Shield, ShoppingBag, Play, Loader2 } from 'lucide-react'
+import { Users, Signpost, Shield, ShoppingBag, Play, Loader2 } from 'lucide-react'
 
 interface Season {
   id: string

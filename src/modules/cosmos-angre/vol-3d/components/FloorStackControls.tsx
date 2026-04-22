@@ -1,4 +1,3 @@
-import React from 'react'
 import { useVol3DStore } from '../store/vol3dStore'
 import type { Floor } from '../../shared/proph3t/types'
 

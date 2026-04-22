@@ -15,18 +15,53 @@
 //   - Supprimer (Del/Backspace)
 //   - Escape : annule l'opération en cours
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react'
 import {
-  MousePointer, Hexagon, Square, Spline, MoveHorizontal,
-  Merge, Scissors, Copy, Trash2, RotateCcw, Grid3X3, Check,
-  AlertTriangle, Car, Accessibility, Zap, Bike, Package, Users2, ArrowRight,
-  DoorOpen, DoorClosed, AlertOctagon, RectangleVertical,
+  MousePointer,
+  Hexagon,
+  Square,
+  Spline,
+  MoveHorizontal,
+  Merge,
+  Scissors,
+  Copy,
+  Trash2,
+  Grid3X3,
+  Check,
+  AlertTriangle,
+  Car,
+  Accessibility,
+  Zap,
+  Bike,
+  Package,
+  Users2,
+  ArrowRight,
+  DoorOpen,
+  DoorClosed,
+  AlertOctagon,
+  RectangleVertical,
+  Undo2,
+  StickyNote
 } from 'lucide-react'
+import { AnnotationsLayer }     from './AnnotationsLayer'
+import type { AnnotationType }  from '../stores/annotationsStore'
 import * as Geo from '../engines/plan-analysis/spaceGeometryEngine'
 import {
-  SPACE_TYPE_META, SPACE_TYPES_BY_CATEGORY, SPACE_CATEGORY_META, FLOOR_LEVEL_META,
-  type SpaceTypeKey, type SpaceTypeCategory, type FloorLevelKey,
-  autoDetectSpaceType, checkSurfaceAnomaly,
+  SPACE_TYPE_META,
+  SPACE_TYPES_BY_CATEGORY,
+  SPACE_CATEGORY_META,
+  FLOOR_LEVEL_META,
+  type SpaceTypeKey,
+  type SpaceTypeCategory,
+  type FloorLevelKey,
+  autoDetectSpaceType,
+  checkSurfaceAnomaly
 } from '../proph3t/libraries/spaceTypeLibrary'
 
 // ─── Types ─────────────────────────────────────────
@@ -41,6 +76,8 @@ export type DrawMode =
   | 'door-interieure' | 'door-secours' | 'door-service'
   // Flèche sens (2 clics)
   | 'arrow-flow'
+  // Annotations texte libres (Phase 1 cartographie)
+  | 'annotate'
 
 // Templates parking (dimensions en mètres)
 const PARKING_TEMPLATES: Record<string, { w: number; h: number; typeKey: SpaceTypeKey; label: string; color: string }> = {
@@ -71,6 +108,20 @@ export interface EditableSpace {
   floorLevel: FloorLevelKey
   validated: boolean
   notes?: string
+  // ── Champs commerciaux (locaux commerciaux) ──
+  /** Numéro de local : ex "A-012", "RDC-24" */
+  localNumber?: string
+  /** Nom de l'occupant. Vide = vacant. */
+  tenant?: string
+  /** true = vacant (par défaut), false = occupé */
+  vacant?: boolean
+  // ── Multi-niveau & mezzanine ──
+  /** ID d'unité fonctionnelle commune à plusieurs niveaux (ex : Big Box sur 2 étages). */
+  unitId?: string
+  /** Ce local possède-t-il une mezzanine intérieure ? */
+  hasMezzanine?: boolean
+  /** Surface de la mezzanine en m² (informative). */
+  mezzanineSqm?: number
 }
 
 interface Props {
@@ -86,6 +137,71 @@ interface Props {
   activeFloor: FloorLevelKey
   /** Callback pour changer le niveau actif. */
   onFloorChange: (floor: FloorLevelKey) => void
+}
+
+// ─── Helpers portes ──────────────────────────────────
+
+/** Types qui se rendent comme un trait (ouverture) et non comme un polygone rempli. */
+function isDoorType(type: SpaceTypeKey): boolean {
+  return type.startsWith('porte_') || type === 'sortie_secours'
+}
+
+/**
+ * Rend une porte comme un trait architectural :
+ *   ─ tiret central = feuille/vantail (le passage)
+ *   ├ petits jambages perpendiculaires aux extrémités = tableau de porte
+ * On repère le bord le plus long du polygone = l'ouverture.
+ */
+function DoorLineSymbol({
+  screenPts,
+  color,
+  strokeWidth,
+}: {
+  screenPts: { x: number; y: number }[]
+  color: string
+  strokeWidth: number
+}) {
+  if (screenPts.length < 2) return null
+
+  // Trouver l'arête la plus longue = ouverture
+  let maxLen = 0
+  let bestI = 0
+  for (let i = 0; i < screenPts.length; i++) {
+    const j = (i + 1) % screenPts.length
+    const d = Math.hypot(screenPts[j].x - screenPts[i].x, screenPts[j].y - screenPts[i].y)
+    if (d > maxLen) { maxLen = d; bestI = i }
+  }
+  const p1 = screenPts[bestI]
+  const p2 = screenPts[(bestI + 1) % screenPts.length]
+  if (maxLen < 1) return null
+
+  // Vecteur unitaire le long de l'ouverture
+  const ux = (p2.x - p1.x) / maxLen
+  const uy = (p2.y - p1.y) / maxLen
+  // Perpendiculaire (jambages) — longueur fixe 6 px indépendamment du zoom
+  const jambLen = 6
+  const nx = -uy * jambLen
+  const ny =  ux * jambLen
+
+  return (
+    <g>
+      {/* Trait principal = feuille/vantail */}
+      <line
+        x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
+        stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"
+      />
+      {/* Jambage gauche */}
+      <line
+        x1={p1.x - nx} y1={p1.y - ny} x2={p1.x + nx} y2={p1.y + ny}
+        stroke={color} strokeWidth={strokeWidth * 0.75} strokeLinecap="round"
+      />
+      {/* Jambage droit */}
+      <line
+        x1={p2.x - nx} y1={p2.y - ny} x2={p2.x + nx} y2={p2.y + ny}
+        stroke={color} strokeWidth={strokeWidth * 0.75} strokeLinecap="round"
+      />
+    </g>
+  )
 }
 
 const GRID_STEP_M = 0.5       // pas de grille de 50 cm
@@ -104,7 +220,7 @@ export function SpaceEditorCanvas({
   const [hoveredEdge, setHoveredEdge] = useState<{ spaceId: string; idx: number; point: Geo.Point } | null>(null)
   const [draftPoints, setDraftPoints] = useState<Geo.Point[]>([])
   const [dragStart, setDragStart] = useState<Geo.Point | null>(null)
-  const [draggingVertex, setDraggingVertex] = useState<{ spaceId: string; idx: number } | null>(null)
+  // draggingVertex déclaré plus bas dans le bloc Pan (refs + state combinés)
   const [splitLine, setSplitLine] = useState<[Geo.Point, Geo.Point] | null>(null)
   const [viewport, setViewport] = useState({ scale: 4, offsetX: 20, offsetY: 20 })
   const [showGrid, setShowGrid] = useState(true)
@@ -113,6 +229,44 @@ export function SpaceEditorCanvas({
   const [editingSpaceId, setEditingSpaceId] = useState<string | null>(null)
   const [showOnlyActiveFloor, setShowOnlyActiveFloor] = useState(true)
   const [cursorWorld, setCursorWorld] = useState<Geo.Point | null>(null)
+  const [hoveredSpaceId, setHoveredSpaceId] = useState<string | null>(null)
+  const [annotateType, setAnnotateType]   = useState<AnnotationType>('note')
+  /** Dernier espace survolé — NE s'efface PAS sur mouseLeave.
+   *  Reste actif jusqu'au prochain survol d'un autre espace ou clic vide.
+   *  Permet à Delete de fonctionner même si la souris a quitté l'espace. */
+  const lastFocusedSpaceIdRef = useRef<string | null>(null)
+
+  // ─── Historique Undo (Ctrl+Z) ────────────────────
+  const historyRef = useRef<EditableSpace[][]>([])
+  const [canUndo, setCanUndo] = useState(false)
+
+  // ─── Refs live pour les keyboard handlers (évite stale closures + TDZ) ──────
+  const spacesRef = useRef(spaces)
+  const selectedIdsRef = useRef(selectedIds)
+  const editingSpaceIdRef = useRef(editingSpaceId)
+  // Refs pour les fonctions définies plus bas (évite TDZ dans le useEffect)
+  const duplicateSelectedRef = useRef<() => void>(() => {})
+  const mergeSelectedRef = useRef<() => void>(() => {})
+  spacesRef.current = spaces
+  selectedIdsRef.current = selectedIds
+  editingSpaceIdRef.current = editingSpaceId
+
+  /** Wrapper autour de onSpacesChange qui sauvegarde l'état courant dans l'historique. */
+  const changeSpaces = useCallback((newSpaces: EditableSpace[]) => {
+    historyRef.current = [...historyRef.current.slice(-49), [...spacesRef.current]]
+    setCanUndo(true)
+    onSpacesChange(newSpaces)
+  }, [onSpacesChange])
+
+  const undoChange = useCallback(() => {
+    if (historyRef.current.length === 0) return
+    const prev = historyRef.current[historyRef.current.length - 1]
+    historyRef.current = historyRef.current.slice(0, -1)
+    setCanUndo(historyRef.current.length > 0)
+    onSpacesChange(prev)
+    setSelectedIds(new Set())
+    setEditingSpaceId(null)
+  }, [onSpacesChange])
 
   // Filtré par niveau
   const visibleSpaces = useMemo(
@@ -121,88 +275,132 @@ export function SpaceEditorCanvas({
   )
 
   // ─── Conversion screen ↔ monde ────────────────
+  // Fonctions simples (pas de useCallback) — toujours recréées avec le viewport courant.
 
-  const screenToWorld = useCallback((sx: number, sy: number): Geo.Point => {
+  const screenToWorld = (sx: number, sy: number): Geo.Point => {
     const svg = svgRef.current
     if (!svg) return { x: 0, y: 0 }
     const rect = svg.getBoundingClientRect()
     const x = (sx - rect.left - viewport.offsetX) / viewport.scale
     const y = (sy - rect.top - viewport.offsetY) / viewport.scale
     return snapEnabled ? Geo.snapToGrid({ x, y }, GRID_STEP_M) : { x, y }
-  }, [viewport, snapEnabled])
+  }
 
-  const worldToScreen = useCallback((x: number, y: number): Geo.Point => ({
+  const worldToScreen = (x: number, y: number): Geo.Point => ({
     x: x * viewport.scale + viewport.offsetX,
     y: y * viewport.scale + viewport.offsetY,
+  })
+
+  // Wrapper for AnnotationsLayer — receives container-relative coords (no rect subtraction)
+  const annScreenToWorld = useCallback((sx: number, sy: number) => ({
+    x: (sx - viewport.offsetX) / viewport.scale,
+    y: (sy - viewport.offsetY) / viewport.scale,
   }), [viewport])
 
-  // ─── Gestion clavier ──────────────────────────
+  // ─── Gestion clavier — enregistré UNE SEULE FOIS (toutes les valeurs via refs) ──
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement
+      if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable) return
+
       if (e.key === 'Escape') {
         setDraftPoints([])
         setDragStart(null)
         setSplitLine(null)
         setDraggingVertex(null)
+        setEditingSpaceId(null)
+        setSelectedIds(new Set())
+        return
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault()
+        undoChange()
+        return
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
         e.preventDefault()
-        duplicateSelected()
+        duplicateSelectedRef.current()
+        return
       }
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedIds.size > 0 && !editingSpaceId) {
-          e.preventDefault()
-          onSpacesChange(spaces.filter(s => !selectedIds.has(s.id)))
+        e.preventDefault()
+        const curSel = selectedIdsRef.current
+        const curSpaces = spacesRef.current
+        if (curSel.size > 0) {
+          changeSpaces(curSpaces.filter(s => !curSel.has(s.id)))
           setSelectedIds(new Set())
+          setEditingSpaceId(null)
+          lastFocusedSpaceIdRef.current = null
+        } else if (lastFocusedSpaceIdRef.current) {
+          const idToDelete = lastFocusedSpaceIdRef.current
+          changeSpaces(curSpaces.filter(s => s.id !== idToDelete))
+          lastFocusedSpaceIdRef.current = null
+          setHoveredSpaceId(null)
+          setEditingSpaceId(null)
         }
+        return
       }
-      if (e.key === 'm' && !editingSpaceId) mergeSelected()
-      if (e.key === 'x' && !editingSpaceId && selectedIds.size === 1) {
-        // Active split mode
+      if (e.key === 'm' && !editingSpaceIdRef.current) {
+        mergeSelectedRef.current()
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedIds, spaces, editingSpaceId])
+  // undoChange et changeSpaces sont stables (useCallback + onSpacesChange stable)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [undoChange, changeSpaces])
 
   // ─── Wheel zoom — centré sur le curseur ─────────────
 
-  const handleWheel = useCallback((e: React.WheelEvent) => {
+  const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault()
     const svg = svgRef.current
     if (!svg) return
     const rect = svg.getBoundingClientRect()
     const mx = e.clientX - rect.left
     const my = e.clientY - rect.top
-
-    // Point du monde sous le curseur AVANT zoom
-    const worldX = (mx - viewport.offsetX) / viewport.scale
-    const worldY = (my - viewport.offsetY) / viewport.scale
-
     const delta = -e.deltaY * 0.0015
-    const newScale = Math.max(0.3, Math.min(80, viewport.scale * (1 + delta)))
+    // setViewport fonctionnel : lit le viewport courant sans closure stale
+    setViewport(v => {
+      const worldX = (mx - v.offsetX) / v.scale
+      const worldY = (my - v.offsetY) / v.scale
+      const newScale = Math.max(0.3, Math.min(80, v.scale * (1 + delta)))
+      return {
+        scale: newScale,
+        offsetX: mx - worldX * newScale,
+        offsetY: my - worldY * newScale,
+      }
+    })
+  }
 
-    // Ajuste l'offset pour que le même point monde reste sous le curseur APRÈS zoom
-    const newOffsetX = mx - worldX * newScale
-    const newOffsetY = my - worldY * newScale
+  // ─── Pan — middle-click OU Space + drag OU clic-gauche zone vide ───
+  //
+  // Tout l'état impératif des gestes est en REFS (lecture synchrone, jamais stale).
+  // Les états React correspondants servent uniquement à l'affichage du curseur.
 
-    setViewport({ scale: newScale, offsetX: newOffsetX, offsetY: newOffsetY })
-  }, [viewport])
+  /** Ref pan — set synchrone dans startPan, lu dans doPan/endPan */
+  const isPanningRef  = useRef(false)
+  const panStartRef   = useRef<{ x: number; y: number; offX: number; offY: number } | null>(null)
+  /** Ref drag vertex — set dans handleMouseDown, lu dans handleMouseMove/Up */
+  const draggingVertexRef  = useRef<{ spaceId: string; idx: number } | null>(null)
+  /** Snapshot avant le début d'un drag → un seul step d'historique en fin de drag */
+  const preDragSpacesRef   = useRef<EditableSpace[]>([])
+  /** Ref space key — évite la stale closure dans le useEffect */
+  const spaceDownRef       = useRef(false)
 
-  // ─── Pan — middle-click OU Space + drag OU clic-droit ───
-
-  const [isPanning, setIsPanning] = useState(false)
-  const [panStart, setPanStart] = useState<{ x: number; y: number; offX: number; offY: number } | null>(null)
-  const [spaceDown, setSpaceDown] = useState(false)
+  // États visuels uniquement (curseur, rendu vertex actif)
+  const [isPanning,      setIsPanning]      = useState(false)
+  const [draggingVertex, setDraggingVertex] = useState<{ spaceId: string; idx: number } | null>(null)
+  const [spaceDown,      setSpaceDown]      = useState(false)
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement
       if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable) return
-      if (e.code === 'Space' && !spaceDown) {
+      if (e.code === 'Space' && !spaceDownRef.current) {
         e.preventDefault()
+        spaceDownRef.current = true
         setSpaceDown(true)
       } else if (e.key === 'f' || e.key === 'F') {
         e.preventDefault()
@@ -216,7 +414,7 @@ export function SpaceEditorCanvas({
       }
     }
     const onKeyUp = (e: KeyboardEvent) => {
-      if (e.code === 'Space') setSpaceDown(false)
+      if (e.code === 'Space') { spaceDownRef.current = false; setSpaceDown(false) }
     }
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
@@ -224,26 +422,33 @@ export function SpaceEditorCanvas({
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
     }
-
-  }, [spaceDown])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])  // Enregistré une seule fois — fitToScreen/zoomBy utilisent setViewport(v=>) (pas de stale)
 
   const startPan = (clientX: number, clientY: number) => {
+    isPanningRef.current = true
+    panStartRef.current  = { x: clientX, y: clientY, offX: viewport.offsetX, offY: viewport.offsetY }
     setIsPanning(true)
-    setPanStart({ x: clientX, y: clientY, offX: viewport.offsetX, offY: viewport.offsetY })
   }
 
   const doPan = (clientX: number, clientY: number) => {
-    if (!panStart) return
+    const start = panStartRef.current
+    if (!start) return
     setViewport(v => ({
       ...v,
-      offsetX: panStart.offX + (clientX - panStart.x),
-      offsetY: panStart.offY + (clientY - panStart.y),
+      offsetX: start.offX + (clientX - start.x),
+      offsetY: start.offY + (clientY - start.y),
     }))
   }
 
-  const endPan = () => { setIsPanning(false); setPanStart(null) }
+  const endPan = () => {
+    isPanningRef.current = false
+    panStartRef.current  = null
+    setIsPanning(false)
+  }
 
   // ─── Zoom buttons + fit ─────────────────────────
+  // setViewport(v=>) : toujours le viewport courant sans closure stale.
 
   const zoomBy = (factor: number) => {
     const svg = svgRef.current
@@ -251,13 +456,15 @@ export function SpaceEditorCanvas({
     const rect = svg.getBoundingClientRect()
     const mx = rect.width / 2
     const my = rect.height / 2
-    const worldX = (mx - viewport.offsetX) / viewport.scale
-    const worldY = (my - viewport.offsetY) / viewport.scale
-    const newScale = Math.max(0.3, Math.min(80, viewport.scale * factor))
-    setViewport({
-      scale: newScale,
-      offsetX: mx - worldX * newScale,
-      offsetY: my - worldY * newScale,
+    setViewport(v => {
+      const worldX = (mx - v.offsetX) / v.scale
+      const worldY = (my - v.offsetY) / v.scale
+      const newScale = Math.max(0.3, Math.min(80, v.scale * factor))
+      return {
+        scale: newScale,
+        offsetX: mx - worldX * newScale,
+        offsetY: my - worldY * newScale,
+      }
     })
   }
 
@@ -279,9 +486,14 @@ export function SpaceEditorCanvas({
 
   // ─── Événements souris ───────────────────────
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  // ─── Gestionnaires souris — fonctions simples (PAS de useCallback) ─────────
+  // Sans useCallback, chaque render fournit une closure fraîche sur tout l'état.
+  // Les gestes impératifs (pan, drag vertex) passent par des refs pour une
+  // lecture synchrone même entre deux renders React.
+
+  const handleMouseDown = (e: React.MouseEvent) => {
     // Pan : middle-click (1), ou clic gauche + Space maintenu
-    if (e.button === 1 || (e.button === 0 && spaceDown)) {
+    if (e.button === 1 || (e.button === 0 && spaceDownRef.current)) {
       e.preventDefault()
       startPan(e.clientX, e.clientY)
       return
@@ -292,9 +504,11 @@ export function SpaceEditorCanvas({
     if (mode === 'select') {
       // Clic sur un vertex ?
       for (const s of visibleSpaces) {
-        const pt = screenToWorld(e.clientX, e.clientY)
-        const vi = Geo.findClosestVertex(s.polygon, pt, VERTEX_HIT_PX / viewport.scale)
+        const vi = Geo.findClosestVertex(s.polygon, world, VERTEX_HIT_PX / viewport.scale)
         if (vi !== null) {
+          // Snapshot avant drag (un seul step d'undo pour tout le drag)
+          preDragSpacesRef.current = [...spacesRef.current]
+          draggingVertexRef.current = { spaceId: s.id, idx: vi }
           setDraggingVertex({ spaceId: s.id, idx: vi })
           return
         }
@@ -304,7 +518,10 @@ export function SpaceEditorCanvas({
         const hit = Geo.findClosestEdge(s.polygon, world, EDGE_HIT_PX / viewport.scale)
         if (hit) {
           const newPoly = Geo.insertVertex(s.polygon, hit.edgeIdx, hit.point)
-          updateSpace(s.id, { polygon: newPoly })
+          // Snapshot puis update direct (pas de changeSpaces → pas de history spam)
+          preDragSpacesRef.current = [...spacesRef.current]
+          onSpacesChange(spaces.map(sp => sp.id === s.id ? { ...sp, polygon: newPoly } : sp))
+          draggingVertexRef.current = { spaceId: s.id, idx: hit.edgeIdx + 1 }
           setDraggingVertex({ spaceId: s.id, idx: hit.edgeIdx + 1 })
           return
         }
@@ -325,8 +542,9 @@ export function SpaceEditorCanvas({
           return
         }
       }
-      // Clic sur zone vide en mode select = pan du plan + désélection
+      // Clic sur zone vide = pan du plan + désélection + reset focus sticky
       setSelectedIds(new Set())
+      lastFocusedSpaceIdRef.current = null
       e.preventDefault()
       startPan(e.clientX, e.clientY)
       return
@@ -346,7 +564,6 @@ export function SpaceEditorCanvas({
       if (!dragStart) {
         setDragStart(world)
       } else {
-        // Produit le polygone wall
         const snapped = e.shiftKey ? Geo.snapAngle(dragStart, world, 45) : world
         const poly = Geo.wallSegmentToPoly(dragStart, snapped, wallThicknessCm / 100)
         createSpace(poly)
@@ -371,7 +588,6 @@ export function SpaceEditorCanvas({
     }
 
     // Templates portes — clic unique = rectangle fin centré sur le clic
-    // (l'utilisateur peut ensuite tourner via les sommets)
     if (mode.startsWith('door-')) {
       const tpl = DOOR_TEMPLATES[mode as keyof typeof DOOR_TEMPLATES]
       if (tpl) {
@@ -391,13 +607,12 @@ export function SpaceEditorCanvas({
       if (!dragStart) {
         setDragStart(world)
       } else {
-        // Corps fin + tête triangulaire
         const dx = world.x - dragStart.x
         const dy = world.y - dragStart.y
         const len = Math.hypot(dx, dy)
         if (len < 0.2) { setDragStart(null); return }
         const nx = -dy / len, ny = dx / len
-        const t = 0.15  // demi-épaisseur corps (15 cm)
+        const t = 0.15
         const headL = Math.min(0.8, len * 0.3)
         const headW = 0.35
         const bx = world.x - dx / len * headL
@@ -416,20 +631,27 @@ export function SpaceEditorCanvas({
       }
       return
     }
-  }, [mode, visibleSpaces, viewport.scale, screenToWorld, draftPoints, dragStart, wallThicknessCm])
+  }
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    // Pan en cours — prioritaire
-    if (isPanning) { doPan(e.clientX, e.clientY); return }
+  const handleMouseMove = (e: React.MouseEvent) => {
+    // Pan en cours — lu depuis la ref, toujours synchrone
+    if (isPanningRef.current) { doPan(e.clientX, e.clientY); return }
 
     const world = screenToWorld(e.clientX, e.clientY)
     setCursorWorld(world)
 
-    // Dragging vertex
-    if (draggingVertex) {
-      const s = spaces.find(sp => sp.id === draggingVertex.spaceId)
+    // Drag vertex — lu depuis la ref (set synchronement dans mouseDown)
+    if (draggingVertexRef.current) {
+      const dv = draggingVertexRef.current
+      const s = spaces.find(sp => sp.id === dv.spaceId)
       if (s) {
-        updateSpace(s.id, { polygon: Geo.moveVertex(s.polygon, draggingVertex.idx, world) })
+        // onSpacesChange direct : PAS de changeSpaces → PAS d'histoire spammée
+        // L'historique est commité en UN seul step dans handleMouseUp.
+        onSpacesChange(spaces.map(sp =>
+          sp.id === dv.spaceId
+            ? { ...sp, polygon: Geo.moveVertex(sp.polygon, dv.idx, world) }
+            : sp
+        ))
       }
       return
     }
@@ -448,19 +670,27 @@ export function SpaceEditorCanvas({
       setHoveredEdge(foundEdge)
     }
 
-    // Split line preview (si split en cours)
+    // Split line preview
     if (splitLine) {
       setSplitLine([splitLine[0], world])
     }
-  }, [draggingVertex, mode, visibleSpaces, viewport.scale, screenToWorld, spaces, splitLine])
+  }
 
-  const handleMouseUp = useCallback((e: React.MouseEvent) => {
-    if (isPanning) { endPan(); return }
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (isPanningRef.current) { endPan(); return }
 
-    if (draggingVertex) {
+    if (draggingVertexRef.current) {
+      // Commit l'historique : on sauvegarde l'état d'AVANT le drag en UN seul step.
+      if (preDragSpacesRef.current.length > 0) {
+        historyRef.current = [...historyRef.current.slice(-49), preDragSpacesRef.current]
+        setCanUndo(true)
+        preDragSpacesRef.current = []
+      }
+      draggingVertexRef.current = null
       setDraggingVertex(null)
       return
     }
+
     if (mode === 'rect' && dragStart) {
       const end = screenToWorld(e.clientX, e.clientY)
       const minX = Math.min(dragStart.x, end.x), maxX = Math.max(dragStart.x, end.x)
@@ -473,12 +703,12 @@ export function SpaceEditorCanvas({
       }
       setDragStart(null)
     }
-  }, [draggingVertex, mode, dragStart, screenToWorld])
+  }
 
-  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+  const handleDoubleClick = (e: React.MouseEvent) => {
     if (mode === 'select') {
-      // Double-clic sur un vertex = suppression
       const world = screenToWorld(e.clientX, e.clientY)
+      // Double-clic sur un vertex = suppression
       for (const s of visibleSpaces) {
         const vi = Geo.findClosestVertex(s.polygon, world, VERTEX_HIT_PX / viewport.scale)
         if (vi !== null) {
@@ -503,7 +733,7 @@ export function SpaceEditorCanvas({
       createSpace(smoothed)
       setDraftPoints([])
     }
-  }, [mode, draftPoints, visibleSpaces, viewport.scale, screenToWorld])
+  }
 
   // ─── Operations ──────────────────────────────
 
@@ -520,7 +750,7 @@ export function SpaceEditorCanvas({
       floorLevel: activeFloor,
       validated: false,
     }
-    onSpacesChange([...spaces, newSpace])
+    changeSpaces([...spaces, newSpace])
     setSelectedIds(new Set([id]))
     setEditingSpaceId(id)
   }
@@ -538,16 +768,17 @@ export function SpaceEditorCanvas({
       floorLevel: activeFloor,
       validated: false,
     }
-    onSpacesChange([...spaces, newSpace])
+    changeSpaces([...spaces, newSpace])
     setSelectedIds(new Set([id]))
   }
 
   /** Drop HTML5 : pose un meuble/item depuis FurnitureLibrary. */
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     const catalogId = e.dataTransfer.getData('text/catalog-id')
     if (!catalogId) return
-    // Import dynamique pour ne pas coupler au scene-editor
+    const dropClientX = e.clientX
+    const dropClientY = e.clientY
     void import('../../scene-editor/store/furnitureCatalog').then(({ FURNITURE_CATALOG }) => {
       let item: { id: string; name: string; w: number; d: number } | null = null
       for (const [, cat] of Object.entries(FURNITURE_CATALOG)) {
@@ -555,7 +786,7 @@ export function SpaceEditorCanvas({
         if (found) { item = { id: found.id, name: found.name, w: found.w, d: found.d }; break }
       }
       if (!item) return
-      const world = screenToWorld(e.clientX, e.clientY)
+      const world = screenToWorld(dropClientX, dropClientY)
       const poly: Geo.Polygon = [
         { x: world.x - item.w / 2, y: world.y - item.d / 2 },
         { x: world.x + item.w / 2, y: world.y - item.d / 2 },
@@ -564,7 +795,7 @@ export function SpaceEditorCanvas({
       ]
       createSpaceWithType(poly, 'autre', `🪑 ${item.name}`)
     }).catch(() => {})
-  }, [screenToWorld, spaces, activeFloor])
+  }
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -572,11 +803,11 @@ export function SpaceEditorCanvas({
   }
 
   const updateSpace = (id: string, changes: Partial<EditableSpace>) => {
-    onSpacesChange(spaces.map(s => s.id === id ? { ...s, ...changes } : s))
+    changeSpaces(spaces.map(s => s.id === id ? { ...s, ...changes } : s))
   }
 
   const duplicateSelected = () => {
-    const toDuplicate = spaces.filter(s => selectedIds.has(s.id))
+    const toDuplicate = spacesRef.current.filter(s => selectedIdsRef.current.has(s.id))
     const copies: EditableSpace[] = toDuplicate.map(s => ({
       ...s,
       id: `sp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -584,17 +815,18 @@ export function SpaceEditorCanvas({
       validated: false,
       polygon: Geo.duplicatePolygon(s.polygon, 2, 2),
     }))
-    onSpacesChange([...spaces, ...copies])
+    changeSpaces([...spacesRef.current, ...copies])
     setSelectedIds(new Set(copies.map(c => c.id)))
   }
+  duplicateSelectedRef.current = duplicateSelected
 
   const mergeSelected = () => {
-    const toMerge = spaces.filter(s => selectedIds.has(s.id))
+    const toMerge = spacesRef.current.filter(s => selectedIdsRef.current.has(s.id))
     if (toMerge.length < 2) return
     const merged = Geo.unionPolygons(toMerge.map(s => s.polygon), 20)
     if (merged.length === 0) return
     const main = toMerge[0]
-    const newPoly = merged[0] // garder la 1re composante
+    const newPoly = merged[0]
     const newSpace: EditableSpace = {
       ...main,
       id: `sp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -602,10 +834,11 @@ export function SpaceEditorCanvas({
       polygon: newPoly,
       validated: false,
     }
-    const remaining = spaces.filter(s => !selectedIds.has(s.id))
-    onSpacesChange([...remaining, newSpace])
+    const remaining = spacesRef.current.filter(s => !selectedIdsRef.current.has(s.id))
+    changeSpaces([...remaining, newSpace])
     setSelectedIds(new Set([newSpace.id]))
   }
+  mergeSelectedRef.current = mergeSelected
 
   const splitSelected = () => {
     if (selectedIds.size !== 1) return
@@ -628,7 +861,7 @@ export function SpaceEditorCanvas({
             { ...s, polygon: left, id: `sp-${Date.now()}-l`, name: `${s.name} (A)`, validated: false },
             { ...s, polygon: right, id: `sp-${Date.now()}-r`, name: `${s.name} (B)`, validated: false },
           ]
-          onSpacesChange([...spaces.filter(sp => sp.id !== s.id), ...newSpaces])
+          changeSpaces([...spaces.filter(sp => sp.id !== s.id), ...newSpaces])
         }
       }
       window.addEventListener('click', handler2, { once: true })
@@ -740,6 +973,17 @@ export function SpaceEditorCanvas({
           <ArrowRight className="w-3.5 h-3.5" style={{ color: mode === 'arrow-flow' ? undefined : '#f59e0b' }} />
         </button>
 
+        {/* ─── Annotations texte libres ─── */}
+        <button
+          onClick={() => { setMode('annotate'); setDraftPoints([]); setDragStart(null) }}
+          className={`p-1.5 rounded text-[11px] flex items-center gap-1.5 ${
+            mode === 'annotate' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'
+          }`}
+          title="Annoter (texte libre)"
+        >
+          <StickyNote className="w-3.5 h-3.5" style={{ color: mode === 'annotate' ? undefined : '#22d3ee' }} />
+        </button>
+
         <div className="h-5 w-px bg-white/10 mx-1" />
 
         {/* ─── Templates portes (clic = pose) ─── */}
@@ -794,14 +1038,23 @@ export function SpaceEditorCanvas({
         <button
           onClick={() => {
             if (selectedIds.size === 0) return
-            onSpacesChange(spaces.filter(s => !selectedIds.has(s.id)))
+            changeSpaces(spaces.filter(s => !selectedIds.has(s.id)))
             setSelectedIds(new Set())
+            setEditingSpaceId(null)
           }}
           disabled={selectedIds.size === 0}
           className="p-1.5 rounded text-[11px] text-red-400 hover:text-red-300 hover:bg-red-950/40 disabled:opacity-30"
           title="Supprimer (Del)"
         >
           <Trash2 className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={undoChange}
+          disabled={!canUndo}
+          className="p-1.5 rounded text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30"
+          title="Annuler (Ctrl+Z)"
+        >
+          <Undo2 className="w-3.5 h-3.5" />
         </button>
 
         <div className="h-5 w-px bg-white/10 mx-1" />
@@ -933,15 +1186,39 @@ export function SpaceEditorCanvas({
             const anomaly = checkSurfaceAnomaly(s.type, areaSqm)
 
             return (
-              <g key={s.id}>
-                <path
-                  d={d}
-                  fill={meta.color}
-                  fillOpacity={s.validated ? 0.25 : 0.15}
-                  stroke={isSelected ? '#fff' : meta.color}
-                  strokeWidth={isSelected ? 2.5 : 1.2}
-                  strokeDasharray={s.validated ? 'none' : '4 2'}
-                />
+              <g
+                key={s.id}
+                onMouseEnter={() => { setHoveredSpaceId(s.id); lastFocusedSpaceIdRef.current = s.id }}
+                onMouseLeave={() => setHoveredSpaceId(null)}
+              >
+                {isDoorType(s.type) ? (
+                  /* ── Porte = trait + jambages ── */
+                  <>
+                    {/* Zone de clic invisible (rectangle fantôme) pour la sélection */}
+                    <path d={d} fill="transparent" stroke="none" />
+                    {/* Contour sélection */}
+                    {isSelected && (
+                      <path d={d} fill="none"
+                        stroke="#ffffff" strokeWidth={1.5} strokeDasharray="3 2" strokeOpacity={0.35} />
+                    )}
+                    <DoorLineSymbol
+                      screenPts={screenPts}
+                      color={isSelected ? '#fff' : hoveredSpaceId === s.id ? '#ffffffcc' : meta.color}
+                      strokeWidth={isSelected ? 3 : hoveredSpaceId === s.id ? 2.5 : 2}
+                    />
+                  </>
+                ) : (
+                  /* ── Espace normal = polygone rempli ── */
+                  <path
+                    d={d}
+                    fill={meta.color}
+                    fillOpacity={s.validated ? 0.25 : 0.15}
+                    stroke={isSelected ? '#fff' : hoveredSpaceId === s.id ? '#ffffff' : meta.color}
+                    strokeWidth={isSelected ? 2.5 : hoveredSpaceId === s.id ? 1.8 : 1.2}
+                    strokeDasharray={s.validated ? 'none' : '4 2'}
+                    strokeOpacity={hoveredSpaceId === s.id && !isSelected ? 0.7 : 1}
+                  />
+                )}
                 {/* Vertices en mode select */}
                 {mode === 'select' && isSelected && screenPts.map((p, i) => (
                   <circle
@@ -959,85 +1236,126 @@ export function SpaceEditorCanvas({
                     r={4} fill="#fff" opacity={0.6}
                   />
                 )}
-                {/* Label — taille réduite, police non-grasse */}
-                {(() => {
-                  const displayName = s.name || '(sans nom)'
-                  const lblWidth = Math.max(60, displayName.length * 5.5 + 16)
-                  return (
-                    <g transform={`translate(${cx}, ${cy})`} style={{ pointerEvents: 'none' }}>
-                      <rect
-                        x={-lblWidth / 2} y={-10}
-                        width={lblWidth} height={20}
-                        fill="rgba(15,23,42,0.88)"
-                        stroke={isSelected ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.12)'}
-                        strokeWidth={isSelected ? 1 : 0.5}
-                        rx={3}
-                      />
-                      <text textAnchor="middle" fontSize={9} fontWeight="500" fill="#e2e8f0" y={-1}>
-                        {meta.icon} {displayName.length > 22 ? displayName.slice(0, 21) + '…' : displayName}
-                      </text>
-                      <text textAnchor="middle" fontSize={7} fill="#94a3b8" y={7}>
-                        {areaSqm.toFixed(0)} m² · {meta.label}
-                      </text>
-                    </g>
-                  )
-                })()}
-                {/* Warning si surface aberrante */}
-                {anomaly.aberrant && (
-                  <g transform={`translate(${cx + 30}, ${cy - 12})`}>
-                    <circle r={6} fill="#f59e0b" stroke="#fff" strokeWidth={1} />
-                    <text textAnchor="middle" fontSize={9} fill="#000" y={3} fontWeight="bold">!</text>
+
+                {/* ── Badge icône — masqué pour les portes (trait seul suffit) ── */}
+                {!isDoorType(s.type) && (
+                  <g transform={`translate(${cx}, ${cy})`} style={{ pointerEvents: 'none' }}>
+                    <circle
+                      r={13}
+                      fill="rgba(15,23,42,0.88)"
+                      stroke={isSelected ? '#ffffff' : meta.color}
+                      strokeWidth={isSelected ? 1.5 : 1}
+                      strokeOpacity={0.7}
+                    />
+                    <text textAnchor="middle" dominantBaseline="central" fontSize={13} y={1}>
+                      {meta.icon}
+                    </text>
+                    {s.validated && (
+                      <circle cx={9} cy={-9} r={4} fill="#10b981" stroke="rgba(15,23,42,0.9)" strokeWidth={1} />
+                    )}
+                    {anomaly.aberrant && (
+                      <>
+                        <circle cx={9} cy={-9} r={5} fill="#f59e0b" stroke="rgba(15,23,42,0.9)" strokeWidth={1} />
+                        <text x={9} y={-9} textAnchor="middle" dominantBaseline="central" fontSize={7} fill="#000" fontWeight="bold">!</text>
+                      </>
+                    )}
                   </g>
                 )}
 
-                {/* ─── Boutons d'action (visibles uniquement sur espace sélectionné, mode select) ─── */}
+                {/* ── Tooltip au survol ── */}
+                {hoveredSpaceId === s.id && (
+                  (() => {
+                    const displayName = s.name || '(sans nom)'
+                    const isCommercial = meta.category === 'commerces-services'
+                    const localTag = isCommercial && s.localNumber ? `#${s.localNumber}` : ''
+                    const occupantTag = isCommercial
+                      ? (s.vacant !== false ? '🔴 vacant' : `🟢 ${s.tenant || '—'}`)
+                      : ''
+                    const line1 = [displayName, localTag].filter(Boolean).join(' · ')
+                    const line2 = `${meta.label} · ${areaSqm.toFixed(0)} m²${anomaly.aberrant ? ' ⚠' : ''}`
+                    const extraLine = isCommercial
+                    const lineCount = extraLine ? 4 : 3
+                    const ttH = lineCount * 11 + 10
+                    const ttW = Math.max(120, Math.max(line1.length, line2.length, occupantTag.length) * 5.2 + 24)
+                    const yTop = -(ttH)
+                    return (
+                      <g transform={`translate(${cx}, ${cy - 20})`} style={{ pointerEvents: 'none' }}>
+                        <rect
+                          x={-ttW / 2} y={yTop}
+                          width={ttW} height={ttH}
+                          fill="rgba(10,14,26,0.97)"
+                          stroke={meta.color}
+                          strokeWidth={0.8}
+                          strokeOpacity={0.55}
+                          rx={5}
+                        />
+                        <text textAnchor="middle" fontSize={9} fontWeight="600" fill="#f1f5f9" y={yTop + 12}>
+                          {line1.length > 34 ? line1.slice(0, 33) + '…' : line1}
+                        </text>
+                        <text textAnchor="middle" fontSize={7.5} fill={meta.color} y={yTop + 23}>
+                          {line2}
+                        </text>
+                        {isCommercial && (
+                          <text textAnchor="middle" fontSize={7.5}
+                            fill={s.vacant !== false ? '#f87171' : '#34d399'}
+                            y={yTop + 34}>
+                            {occupantTag}
+                          </text>
+                        )}
+                        <text textAnchor="middle" fontSize={6.5} fill="rgba(148,163,184,0.6)"
+                          y={yTop + ttH - 4}>
+                          {isCommercial ? '↖ clic · ✦ double-clic pour éditer' : '↖ clic · ✦ double-clic · Suppr'}
+                        </text>
+                      </g>
+                    )
+                  })()
+                )}
+
+                {/* ── Boutons d'action — sélection active, mode select ── */}
                 {mode === 'select' && isSelected && (
-                  <g transform={`translate(${cx}, ${cy + 24})`}>
-                    {/* Fond */}
-                    <rect x={-52} y={0} width={104} height={22} fill="rgba(15,23,42,0.95)" stroke="rgba(255,255,255,0.15)" strokeWidth={0.5} rx={4} />
-                    {/* Bouton Éditer */}
-                    <g transform="translate(-40, 11)" style={{ cursor: 'pointer' }}
-                       onClick={(e) => { e.stopPropagation(); setEditingSpaceId(s.id) }}>
-                      <title>Éditer les informations (type, nom, statut…)</title>
-                      <circle r={9} fill="#6366f1" />
-                      <text textAnchor="middle" y={3} fontSize={10} fill="#fff">✏</text>
-                    </g>
-                    {/* Bouton Valider */}
-                    <g transform="translate(-12, 11)" style={{ cursor: 'pointer' }}
+                  <g transform={`translate(${cx}, ${cy + 26})`}>
+                    <rect x={-52} y={0} width={104} height={22} fill="rgba(10,14,26,0.95)" stroke="rgba(255,255,255,0.12)" strokeWidth={0.5} rx={4} />
+                    {/* ✓ Valider */}
+                    <g transform="translate(-38, 11)" style={{ cursor: 'pointer' }}
                        onClick={(e) => { e.stopPropagation(); updateSpace(s.id, { validated: !s.validated }) }}>
-                      <title>{s.validated ? 'Marquer non validé' : 'Marquer validé'}</title>
+                      <title>{s.validated ? 'Annuler la validation' : 'Valider'}</title>
                       <circle r={9} fill={s.validated ? '#10b981' : '#475569'} />
-                      <text textAnchor="middle" y={3} fontSize={11} fill="#fff" fontWeight="bold">✓</text>
+                      <text textAnchor="middle" dominantBaseline="central" fontSize={10} fill="#fff">✓</text>
                     </g>
-                    {/* Bouton Dupliquer */}
-                    <g transform="translate(16, 11)" style={{ cursor: 'pointer' }}
+                    {/* ⧉ Dupliquer */}
+                    <g transform="translate(-14, 11)" style={{ cursor: 'pointer' }}
                        onClick={(e) => {
                          e.stopPropagation()
-                         const copy: EditableSpace = {
+                         changeSpaces([...spaces, {
                            ...s,
                            id: `sp-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,
                            name: `${s.name} (copie)`,
                            polygon: s.polygon.map(p => ({ x: p.x + 1, y: p.y + 1 })),
                            validated: false,
-                         }
-                         onSpacesChange([...spaces, copy])
+                         }])
                        }}>
-                      <title>Dupliquer</title>
+                      <title>Dupliquer (Ctrl+D)</title>
                       <circle r={9} fill="#0ea5e9" />
-                      <text textAnchor="middle" y={3} fontSize={9} fill="#fff">⧉</text>
+                      <text textAnchor="middle" dominantBaseline="central" fontSize={9} fill="#fff">⧉</text>
                     </g>
-                    {/* Bouton Supprimer */}
-                    <g transform="translate(40, 11)" style={{ cursor: 'pointer' }}
+                    {/* ✏ Éditer (double-clic = raccourci) */}
+                    <g transform="translate(14, 11)" style={{ cursor: 'pointer' }}
+                       onClick={(e) => { e.stopPropagation(); setEditingSpaceId(s.id) }}>
+                      <title>Éditer — ou double-clic sur l'espace</title>
+                      <circle r={9} fill="#6366f1" />
+                      <text textAnchor="middle" dominantBaseline="central" fontSize={10} fill="#fff">✏</text>
+                    </g>
+                    {/* × Supprimer */}
+                    <g transform="translate(38, 11)" style={{ cursor: 'pointer' }}
                        onClick={(e) => {
                          e.stopPropagation()
-                         if (confirm(`Supprimer "${s.name}" ?`)) {
-                           onSpacesChange(spaces.filter(x => x.id !== s.id))
-                           setSelectedIds(new Set())
-                         }
+                         changeSpaces(spaces.filter(x => x.id !== s.id))
+                         setSelectedIds(new Set())
+                         setEditingSpaceId(null)
                        }}>
-                      <title>Supprimer</title>
+                      <title>Supprimer (Del)</title>
                       <circle r={9} fill="#ef4444" />
-                      <text textAnchor="middle" y={3} fontSize={10} fill="#fff">×</text>
+                      <text textAnchor="middle" dominantBaseline="central" fontSize={12} fill="#fff">×</text>
                     </g>
                   </g>
                 )}
@@ -1162,6 +1480,36 @@ export function SpaceEditorCanvas({
           </defs>
         </svg>
 
+        {/* ─── Annotation type selector (annotate mode) ─── */}
+        {mode === 'annotate' && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-1.5 bg-[#0f172a]/95 backdrop-blur border border-white/15 rounded-xl px-3 py-2 shadow-xl z-20">
+            {(['note', 'title', 'promo', 'works', 'info'] as AnnotationType[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => setAnnotateType(t)}
+                className={[
+                  'px-2.5 py-1 rounded-lg text-[10px] font-medium border transition-all',
+                  annotateType === t
+                    ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300'
+                    : 'border-white/10 text-white/40 hover:text-white/60',
+                ].join(' ')}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ─── Annotations overlay ─── */}
+        <AnnotationsLayer
+          floorId={`floor-${activeFloor}`}
+          worldToScreen={worldToScreen}
+          screenToWorld={annScreenToWorld}
+          addMode={mode === 'annotate'}
+          defaultType={annotateType}
+          onAddDone={() => { /* stay in annotate mode for multiple placements */ }}
+        />
+
         {/* Aide flottante en mode select */}
         {mode === 'select' && selectedIds.size === 0 && spaces.length > 0 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg bg-slate-900/95 border border-white/10 text-[10px] text-slate-300 shadow-xl pointer-events-none">
@@ -1191,7 +1539,7 @@ export function SpaceEditorCanvas({
             }}
             onClose={() => setEditingSpaceId(null)}
             onDelete={() => {
-              onSpacesChange(spaces.filter(s => s.id !== editingSpace.id))
+              changeSpaces(spaces.filter(s => s.id !== editingSpace.id))
               setSelectedIds(new Set())
               setEditingSpaceId(null)
             }}
@@ -1217,12 +1565,23 @@ function SpaceMetadataPanel({
   const [floorLevel, setFloorLevel] = useState<FloorLevelKey>(space.floorLevel)
   const [notes, setNotes] = useState(space.notes ?? '')
   const [validated, setValidated] = useState(space.validated)
+  // ── Champs commerciaux ──
+  const [localNumber, setLocalNumber]   = useState(space.localNumber ?? '')
+  const [tenant, setTenant]             = useState(space.tenant ?? '')
+  const [vacant, setVacant]             = useState(space.vacant !== false) // default true
+  const [unitId, setUnitId]             = useState(space.unitId ?? '')
+  const [hasMezzanine, setHasMezzanine] = useState(space.hasMezzanine ?? false)
+  const [mezzanineSqm, setMezzanineSqm] = useState(space.mezzanineSqm ?? 0)
+  const [showMultiNiveau, setShowMultiNiveau] = useState(!!(space.unitId || space.hasMezzanine))
 
   const areaSqm = Geo.polyArea(space.polygon)
   const anomaly = checkSurfaceAnomaly(type, areaSqm)
+  const isCommercial = SPACE_TYPE_META[type]?.category === 'commerces-services'
+  const showMultiNiveauSection = showMultiNiveau
+    || type === 'big_box' || type === 'grande_surface' || type === 'loisirs'
 
   return (
-    <div className="absolute right-4 top-4 w-[340px] bg-slate-900 border border-white/10 rounded-lg shadow-2xl flex flex-col max-h-[calc(100vh-100px)] overflow-hidden">
+    <div className="absolute right-4 top-4 w-[340px] bg-slate-900 border border-white/10 rounded-lg shadow-2xl flex flex-col max-h-[calc(100%-2rem)] overflow-hidden">
       <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/10">
         <h3 className="text-sm font-bold text-white">Éditer espace</h3>
         <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
@@ -1288,6 +1647,84 @@ function SpaceMetadataPanel({
           <p className="text-[10px] text-slate-600 mt-1">{SPACE_TYPE_META[type].description}</p>
         </div>
 
+        {/* ── Section commerciale — visible uniquement pour les locaux commerciaux ── */}
+        {isCommercial && (
+          <div className="rounded-lg border border-white/10 bg-slate-950 overflow-hidden">
+            {/* En-tête segment avec couleur */}
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-white/10"
+                 style={{ background: `${SPACE_TYPE_META[type].color}18` }}>
+              <span className="text-base leading-none">{SPACE_TYPE_META[type].icon}</span>
+              <div className="flex-1">
+                <div className="text-[10px] font-bold" style={{ color: SPACE_TYPE_META[type].color }}>
+                  Local commercial · {SPACE_TYPE_META[type].label}
+                </div>
+              </div>
+              {/* Badge occupé / vacant */}
+              <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                vacant
+                  ? 'bg-red-900/50 text-red-300 border border-red-700/50'
+                  : 'bg-emerald-900/50 text-emerald-300 border border-emerald-700/50'
+              }`}>
+                {vacant ? '🔴 VACANT' : '🟢 OCCUPÉ'}
+              </span>
+            </div>
+
+            <div className="p-3 space-y-3">
+              {/* Numéro de local */}
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1">
+                  Numéro de local
+                </label>
+                <input
+                  value={localNumber}
+                  onChange={(e) => setLocalNumber(e.target.value)}
+                  placeholder="ex: A-012, RDC-24, B2-007"
+                  className="w-full px-2 py-1.5 rounded bg-slate-900 border border-white/10 text-sm text-white font-mono focus:border-indigo-500 outline-none"
+                />
+              </div>
+
+              {/* Toggle vacant / occupé */}
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !vacant
+                      setVacant(next)
+                      if (next) setTenant('') // effacer l'occupant si on repasse en vacant
+                    }}
+                    className={`relative w-9 h-5 rounded-full transition-colors ${
+                      vacant ? 'bg-red-700' : 'bg-emerald-600'
+                    }`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
+                      vacant ? 'left-0.5' : 'left-[18px]'
+                    }`} />
+                  </button>
+                  <span className="text-[11px] text-slate-300">
+                    {vacant ? 'Vacant (disponible)' : 'Occupé'}
+                  </span>
+                </label>
+              </div>
+
+              {/* Occupant — visible seulement si pas vacant */}
+              {!vacant && (
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1">
+                    Occupant / Enseigne
+                  </label>
+                  <input
+                    value={tenant}
+                    onChange={(e) => setTenant(e.target.value)}
+                    placeholder="ex: H&M, McDonald's, Pharmacie Centrale…"
+                    className="w-full px-2 py-1.5 rounded bg-slate-900 border border-white/10 text-sm text-white focus:border-indigo-500 outline-none"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Niveau */}
         <div>
           <label className="block text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1">
@@ -1324,6 +1761,71 @@ function SpaceMetadataPanel({
             <AlertTriangle className="w-3.5 h-3.5 mt-0.5" />
             {anomaly.reason}
           </div>
+        )}
+
+        {/* ── Multi-niveau & mezzanine (Big Box, locaux sur plusieurs niveaux) ── */}
+        {showMultiNiveauSection && (
+          <div className="rounded-lg border border-indigo-900/40 bg-slate-950 overflow-hidden">
+            <div className="px-3 py-2 border-b border-white/5 bg-indigo-950/20">
+              <div className="text-[10px] font-bold text-indigo-300">🏢 Multi-niveau / Mezzanine</div>
+            </div>
+            <div className="p-3 space-y-3">
+              {/* ID d'unité (lien entre niveaux) */}
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1">
+                  ID d'unité (relie plusieurs niveaux)
+                </label>
+                <input
+                  value={unitId}
+                  onChange={(e) => setUnitId(e.target.value)}
+                  placeholder="ex: BIGBOX-CARREFOUR, IKEA-NORD"
+                  className="w-full px-2 py-1.5 rounded bg-slate-900 border border-white/10 text-sm text-white font-mono focus:border-indigo-500 outline-none"
+                />
+                <p className="text-[9px] text-slate-600 mt-1">
+                  Les espaces avec le même ID sont considérés comme un seul tenant multi-niveaux.
+                </p>
+              </div>
+              {/* Mezzanine */}
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={hasMezzanine}
+                  onChange={(e) => setHasMezzanine(e.target.checked)}
+                  className="accent-indigo-500"
+                />
+                <span className="text-[11px] text-slate-300">Ce local possède une mezzanine</span>
+              </label>
+              {hasMezzanine && (
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1">
+                    Surface mezzanine (m²)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={mezzanineSqm || ''}
+                    onChange={(e) => setMezzanineSqm(Number(e.target.value))}
+                    placeholder="ex: 45"
+                    className="w-full px-2 py-1.5 rounded bg-slate-900 border border-white/10 text-sm text-white tabular-nums focus:border-indigo-500 outline-none"
+                  />
+                  {mezzanineSqm > 0 && (
+                    <p className="text-[10px] text-indigo-300 mt-1">
+                      Surface totale avec mezzanine : <strong>{(areaSqm + mezzanineSqm).toFixed(0)} m²</strong>
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        {/* Bouton d'activation multi-niveau si section pas encore ouverte */}
+        {!showMultiNiveauSection && (
+          <button
+            onClick={() => setShowMultiNiveau(true)}
+            className="w-full text-left text-[10px] text-slate-600 hover:text-indigo-400 py-1 flex items-center gap-1.5 transition-colors"
+          >
+            <span className="opacity-60">+</span> Ajouter info multi-niveau / mezzanine
+          </button>
         )}
 
         {/* Notes */}
@@ -1366,7 +1868,17 @@ function SpaceMetadataPanel({
             Annuler
           </button>
           <button
-            onClick={() => onSave({ name, type, floorLevel, notes, validated })}
+            onClick={() => onSave({
+              name, type, floorLevel, notes, validated,
+              ...(isCommercial ? {
+                localNumber: localNumber.trim() || undefined,
+                tenant: (!vacant && tenant.trim()) ? tenant.trim() : undefined,
+                vacant,
+              } : {}),
+              unitId: unitId.trim() || undefined,
+              hasMezzanine: hasMezzanine || undefined,
+              mezzanineSqm: (hasMezzanine && mezzanineSqm > 0) ? mezzanineSqm : undefined,
+            })}
             className="px-4 py-1.5 rounded text-[11px] font-semibold bg-gradient-to-r from-indigo-600 to-blue-600 text-white hover:opacity-90"
           >
             Enregistrer

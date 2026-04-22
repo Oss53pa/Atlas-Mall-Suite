@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { ClipboardList, X } from 'lucide-react'
+import { useState } from 'react'
+import { ClipboardList } from 'lucide-react'
 
 interface Procedure {
   id: string

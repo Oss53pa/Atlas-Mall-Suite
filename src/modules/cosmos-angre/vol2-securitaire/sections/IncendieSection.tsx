@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Sparkles, Play, CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
+import { useState } from 'react'
+import { Play, CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
 
 const equipments = [
   { name: 'SSI catégorie A — détection automatique intégrale', description: 'Détecteurs multi-capteurs tous locaux — report centralisé CMSI' },

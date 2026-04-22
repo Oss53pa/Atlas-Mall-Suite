@@ -1,6 +1,6 @@
 // ═══ CONNECTION INDICATOR ═══
 
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Wifi, WifiOff, RefreshCw } from 'lucide-react'
 import { getPendingSyncCount } from './OfflineSync'
 

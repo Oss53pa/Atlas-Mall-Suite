@@ -13,11 +13,10 @@ interface DimOverlayProps {
 }
 
 export default function DimOverlay({
-  dims, calibration, canvasWidth, canvasHeight, planBounds, visible, onDimClick,
+  dims, calibration: _calibration, canvasWidth, canvasHeight, planBounds, visible, onDimClick,
 }: DimOverlayProps) {
   if (!visible || dims.length === 0) return null
 
-  const SCALE = CANVAS_SCALE
   const planW = planBounds.maxX - planBounds.minX || 1
   const planH = planBounds.maxY - planBounds.minY || 1
 

@@ -1,12 +1,33 @@
 // ═══ ÉDITEUR D'AGENCEMENT BOUTIQUE — Konva.js ═══
 // Grille 20cm, bibliothèque mobilier, drag-drop, export PDF
 
-import React, { useState, useRef, useCallback, useMemo } from 'react'
-import { Stage, Layer, Rect, Line, Text, Group, Circle, Transformer } from 'react-konva'
+import {
+  useState,
+  useRef,
+  useCallback,
+  useMemo
+} from 'react'
+import {
+  Stage,
+  Layer,
+  Rect,
+  Line,
+  Text,
+  Group
+} from 'react-konva'
 import Konva from 'konva'
 import {
-  Move, RotateCcw, Trash2, Download, ZoomIn, ZoomOut,
-  Grid3X3, Save, Undo2, Redo2, Square, Armchair,
+  Move,
+  RotateCcw,
+  Trash2,
+  Download,
+  ZoomIn,
+  ZoomOut,
+  Grid3X3,
+  Save,
+  Undo2,
+  Redo2,
+  Armchair
 } from 'lucide-react'
 
 // ── Types ──

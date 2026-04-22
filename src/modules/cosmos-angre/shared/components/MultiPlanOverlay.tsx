@@ -3,7 +3,7 @@
 // par couche. Inclut un panneau latéral avec drag&drop d'ordre, sliders d'opacité,
 // toggle visibilité, et bouton de consolidation export PNG/SVG.
 
-import React, { useMemo, useRef, useState, useCallback, useEffect } from 'react'
+import React, { useMemo, useRef, useState, useCallback } from 'react'
 import { Eye, EyeOff, Layers, Trash2, GripVertical, Download, Maximize2, Minimize2, X } from 'lucide-react'
 import { usePlanImportStore, type PlanLayer, type PlanImportRecord } from '../stores/planImportStore'
 
@@ -30,7 +30,6 @@ export function MultiPlanOverlay({ floorId, className = '', onConsolidated }: Mu
   const reorderLayers = usePlanImportStore(s => s.reorderLayers)
 
   // Si pas de floorId, on agrège : 1 layer "virtuel" par import success
-  const scopeKey = floorId ?? '__all__'
   const layers = useMemo<OverlayLayerView[]>(() => {
     if (floorId) {
       const list = layersPerFloor[floorId] ?? []
@@ -59,7 +58,7 @@ export function MultiPlanOverlay({ floorId, className = '', onConsolidated }: Mu
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [collapsed, setCollapsed] = useState(false)
-  const [showConsolidate, setShowConsolidate] = useState(false)
+  const [_showConsolidate, _setShowConsolidate] = useState(false)
   const [consolidating, setConsolidating] = useState(false)
   const [consolidatedUrl, setConsolidatedUrl] = useState<string | null>(null)
   const [consolidatedSvg, setConsolidatedSvg] = useState<string | null>(null)

@@ -1,6 +1,5 @@
 // ═══ UNDO/REDO — History Panel ═══
 
-import React from 'react'
 import { Undo2, Redo2, Clock } from 'lucide-react'
 import { useUndoRedo } from './useUndoRedo'
 import type { UndoRedoManager } from './undoRedoManager'

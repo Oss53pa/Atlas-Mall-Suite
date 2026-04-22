@@ -20,19 +20,20 @@ const Vol1Proph3tPanel = React.memo(function Vol1Proph3tPanel() {
   return <Proph3tVolumePanel volume="commercial" buildInput={buildInput} />
 })
 import type { CommercialSpace, SpaceStatus } from '../store/vol1Types'
-import { Grid3X3, Sparkles, Loader2, CalendarDays, Cuboid, Navigation, Map } from 'lucide-react'
+import { Grid3X3, Sparkles, Loader2, CalendarDays, Cuboid, Navigation, Map as MapIcon } from 'lucide-react'
 import { getSpacePhaseStatus, computePhaseMetrics, PHASE_STATUS_COLORS } from '../engines/phasingEngine'
 import { SPACE_STATUS_COLORS as statusColors, SPACE_STATUS_LABELS as statusLabels } from '../../shared/constants/statusConfig'
 import { formatFcfa } from '../../shared/utils/formatting'
 import { PlanLayerSelector } from '../../shared/components/PlanLayerSelector'
 import { usePlanEngineStore } from '../../shared/stores/planEngineStore'
 import { PlanCanvasV2 } from '../../shared/components/PlanCanvasV2'
-import type { ParsedPlan, ViewMode, DetectedSpace } from '../../shared/planReader/planEngineTypes'
+import type { ParsedPlan, DetectedSpace } from '../../shared/planReader/planEngineTypes'
 import { runCommercialAnalysis } from '../../shared/engines/commercialEngine'
 import SpaceFormModal from '../components/SpaceFormModal'
 import { Plus, Pencil } from 'lucide-react'
 
-const View3DSection = lazy(() => import('../../shared/view3d/View3DSection'))
+const View3DSection  = lazy(() => import('../../shared/view3d/View3DSection'))
+const MapViewerShell = lazy(() => import('../../shared/map-viewer/MapViewerShell'))
 
 // Empty plan placeholder when no import has been done yet
 const EMPTY_PLAN: ParsedPlan = {
@@ -69,6 +70,7 @@ export default function PlanCommercialSection() {
   const floors = ['B1', 'RDC', 'R+1']
   const [activeFloor, setActiveFloor] = useState('RDC')
   const [spaceFormMode, setSpaceFormMode] = useState<'create' | 'edit' | null>(null)
+  const [showMapViewer, setShowMapViewer] = useState(false)
 
   // Active plan from engine store or empty placeholder
   const plan = parsedPlan ?? EMPTY_PLAN
@@ -78,7 +80,6 @@ export default function PlanCommercialSection() {
     const commSpaces = plan.spaces.length > 0
       ? plan.spaces.map(ps => {
           const mockSp = spaces.find(s => s.id === ps.id || s.reference === ps.label)
-          const tenant = mockSp ? tenants.find(t => t.id === mockSp.tenantId) : null
           return {
             id: ps.id, label: ps.label, type: ps.type,
             areaSqm: ps.areaSqm, floorId: ps.floorId,
@@ -444,12 +445,12 @@ export default function PlanCommercialSection() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* View mode toggle + phase switcher */}
         <div className="flex items-center gap-2 px-4 py-2 border-b" style={{ borderColor: '#1e2a3a', background: '#0b1120' }}>
-          {/* View switcher: 2D / 3D / ISO / Visite */}
+          {/* View switcher: 2D / 3D / ISO / Visite / Carte */}
           <div className="flex items-center gap-0.5 bg-gray-800 rounded-lg p-0.5">
             <button
-              onClick={() => setViewMode('2d')}
+              onClick={() => { setViewMode('2d'); setShowMapViewer(false) }}
               className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
-                viewMode === '2d' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'
+                !showMapViewer && viewMode === '2d' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'
               }`}
               title="Plan interactif 2D (F1)"
             >
@@ -457,9 +458,9 @@ export default function PlanCommercialSection() {
               2D
             </button>
             <button
-              onClick={() => setViewMode('3d')}
+              onClick={() => { setViewMode('3d'); setShowMapViewer(false) }}
               className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
-                viewMode === '3d' ? 'bg-purple-700 text-white' : 'text-gray-500 hover:text-gray-300'
+                !showMapViewer && viewMode === '3d' ? 'bg-purple-700 text-white' : 'text-gray-500 hover:text-gray-300'
               }`}
               title="Vue 3D perspective (F2)"
             >
@@ -467,9 +468,9 @@ export default function PlanCommercialSection() {
               3D
             </button>
             <button
-              onClick={() => setViewMode('isometric')}
+              onClick={() => { setViewMode('isometric'); setShowMapViewer(false) }}
               className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
-                viewMode === 'isometric' ? 'bg-cyan-700 text-white' : 'text-gray-500 hover:text-gray-300'
+                !showMapViewer && viewMode === 'isometric' ? 'bg-cyan-700 text-white' : 'text-gray-500 hover:text-gray-300'
               }`}
               title="Vue isometrique (F3)"
             >
@@ -477,18 +478,30 @@ export default function PlanCommercialSection() {
               ISO
             </button>
             <button
-              onClick={() => setViewMode('tour')}
+              onClick={() => { setViewMode('tour'); setShowMapViewer(false) }}
               className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
-                viewMode === 'tour' ? 'bg-emerald-700 text-white' : 'text-gray-500 hover:text-gray-300'
+                !showMapViewer && viewMode === 'tour' ? 'bg-emerald-700 text-white' : 'text-gray-500 hover:text-gray-300'
               }`}
-              title="Visite guidee first-person (F4)"
+              title="Visite guidée first-person (F4)"
             >
               <Navigation className="w-3 h-3" />
               Visite
             </button>
+            <div className="w-px h-4 bg-white/10 mx-0.5" />
+            <button
+              onClick={() => setShowMapViewer(true)}
+              className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors flex items-center gap-1 ${
+                showMapViewer ? 'bg-sky-700 text-white' : 'text-gray-500 hover:text-gray-300'
+              }`}
+              title="Carte unifiée 2D · 3D · AR (annotations, visites guidées)"
+            >
+              <MapIcon className="w-3 h-3" />
+              Carte
+            </button>
           </div>
           <span className="text-[10px] text-slate-500">
-            {viewMode === '2d' ? 'Plan interactif 2D — zoom molette, pan espace+drag'
+            {showMapViewer ? 'Carte unifiée — 2D · 3D · AR · Annotations · Visites'
+              : viewMode === '2d' ? 'Plan interactif 2D — zoom molette, pan espace+drag'
               : viewMode === '3d' ? 'Vue 3D perspective libre'
               : viewMode === 'isometric' ? 'Vue isometrique'
               : 'Visite guidee first-person'}
@@ -576,7 +589,18 @@ export default function PlanCommercialSection() {
         )}
 
         {/* Main content area */}
-        {is3d ? (
+        {showMapViewer ? (
+          <Suspense fallback={
+            <div className="flex-1 flex items-center justify-center" style={{ background: '#080c14' }}>
+              <div className="flex items-center gap-2 text-gray-500 text-sm">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Chargement Carte…
+              </div>
+            </div>
+          }>
+            <MapViewerShell className="flex-1" />
+          </Suspense>
+        ) : is3d ? (
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center" style={{ background: '#080c14' }}>
               <div className="flex items-center gap-2 text-gray-500 text-sm">

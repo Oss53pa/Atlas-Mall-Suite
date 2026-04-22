@@ -10,8 +10,8 @@
 //   • active l'aperçu kiosque fullscreen
 //   • génère un QR code pour transférer l'itinéraire au mobile
 
-import React, { useState } from 'react'
-import { Monitor, Plus, Trash2, MapPin, Printer, QrCode, Languages, Palette, ExternalLink } from 'lucide-react'
+import { useState } from 'react'
+import { Monitor, Plus, MapPin, Printer, QrCode, Languages, Palette, ExternalLink } from 'lucide-react'
 import { useVol4Store, type KioskLocation } from '../store/vol4Store'
 import { isDesignerEnabled } from '../../wayfinder-designer/types'
 import { useDesignerStore } from '../../wayfinder-designer/store/designerStore'

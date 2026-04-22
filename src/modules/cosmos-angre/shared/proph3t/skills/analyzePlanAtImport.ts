@@ -3,9 +3,7 @@
 // et un appel LLM optionnel (via Ollama) pour générer le narratif et les actions cliquables.
 
 import type { Proph3tResult, Proph3tAction, Proph3tFinding } from '../orchestrator.types'
-import { citeAlgo, citeBenchmark, confidence } from '../orchestrator.types'
-import { kmeans } from '../algorithms/kmeans'
-import { quickRiskScore } from '../algorithms/bayesianRisk'
+import { citeAlgo, confidence } from '../orchestrator.types'
 import type { ParsedPlan } from '../../planReader/planEngineTypes'
 import { enrichActionsWithRag, enrichFindingsWithRag } from '../ragHelper'
 import { enrichWithNarrative } from '../narrativeEnricher'
@@ -298,7 +296,7 @@ export async function analyzePlanAtImport(input: AnalyzePlanInput): Promise<Prop
   return await enrichWithNarrative(baseResult, { audience: 'director' })
 }
 
-function buildSummary(payload: AnalyzePlanPayload, plan: ParsedPlan): string {
+function buildSummary(payload: AnalyzePlanPayload, _plan: ParsedPlan): string {
   const parts: string[] = []
   parts.push(`Plan analysé : ${payload.zoneStats.total} zones détectées sur ${payload.floorStats.detected} étage(s).`)
   if (payload.qualityScore >= 80) parts.push(`Qualité plan : ${payload.qualityScore}/100 — exploitable directement.`)

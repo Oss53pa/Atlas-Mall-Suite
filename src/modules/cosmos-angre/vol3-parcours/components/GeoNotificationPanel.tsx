@@ -1,6 +1,6 @@
 // ═══ GEO-NOTIFICATION PANEL — Zone-based notification management ═══
 
-import React, { useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { Bell, BellOff, Plus, X, MapPin, Gift, Navigation, Info, Trash2 } from 'lucide-react'
 
 export interface GeoNotification {

@@ -1,6 +1,11 @@
-import React, { useMemo, useState } from 'react'
-import { Route, MapPin, Clock, Target } from 'lucide-react'
-import { generateRondePoints, optimizeRondes, type RondeRoute } from '../../shared/proph3t/rondeOptimizer'
+import { useMemo, useState } from 'react'
+import {
+  Route,
+  MapPin,
+  Clock,
+  Target
+} from 'lucide-react'
+import { generateRondePoints, optimizeRondes } from '../../shared/proph3t/rondeOptimizer'
 import { useVol2Store } from '../store/vol2Store'
 
 const priorityConfig = {

@@ -27,7 +27,7 @@ const statusConfig: Record<AuditStatus, { color: string; bg: string; label: stri
 
 export default function AuditExistant() {
   // Liste alimentée par import CSV/XLSX utilisateur — vide tant que rien n'a été importé.
-  const [existing, setExisting] = useState<ExistingCamera[]>([])
+  const [existing, _setExisting] = useState<ExistingCamera[]>([])
   const imported = existing.length > 0
 
   const conformeCount = existing.filter(c => c.status === 'conforme').length

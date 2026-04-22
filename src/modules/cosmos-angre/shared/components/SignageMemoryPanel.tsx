@@ -3,19 +3,28 @@
 // Montre les corrections PROPH3T suggère sur le projet courant et permet
 // de les accepter en masse ou individuellement.
 
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  X, Brain, Sparkles, CheckCircle, XCircle, Loader2, TrendingUp,
-  Award, RefreshCw,
+  X,
+  Brain,
+  Sparkles,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  TrendingUp,
+  Award,
+  RefreshCw
 } from 'lucide-react'
 import {
-  findMatchingPatterns, incrementPatternValidation, getMemoryStats,
-  type PatternMatch, type PatternType, type SignagePattern,
+  findMatchingPatterns,
+  incrementPatternValidation,
+  getMemoryStats,
+  type PatternMatch,
+  type PatternType,
+  type SignagePattern
 } from '../services/signageMemoryService'
-import {
-  useSpaceCorrectionsStore, CATEGORY_META, type SpaceCategory,
-} from '../stores/spaceCorrectionsStore'
+import { useSpaceCorrectionsStore, type SpaceCategory } from '../stores/spaceCorrectionsStore'
 import { usePlanEngineStore } from '../stores/planEngineStore'
 
 interface Props {

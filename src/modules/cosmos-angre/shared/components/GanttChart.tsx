@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
 
 export interface GanttTask {
   id: string
@@ -22,7 +22,7 @@ export default function GanttChart({ tasks, todayLine = true, height = 400 }: Ga
   const LABEL_W = 160
   const PADDING = 16
 
-  const { minDate, maxDate, totalDays } = useMemo(() => {
+  const { minDate, maxDate, totalDays: _totalDays } = useMemo(() => {
     const dates = tasks.flatMap(t => [new Date(t.startDate).getTime(), new Date(t.endDate).getTime()])
     const min = Math.min(...dates)
     const max = Math.max(...dates)

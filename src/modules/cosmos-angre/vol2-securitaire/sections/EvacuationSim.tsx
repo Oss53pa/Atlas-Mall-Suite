@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Play, Pause, RotateCcw, AlertTriangle, CheckCircle, Clock } from 'lucide-react'
 import type { EvacuationResult, Floor } from '../../shared/proph3t/types'
 

@@ -1,6 +1,5 @@
 // F-004 : Footer Vol.3 extrait de Vol3Module.tsx.
 
-import React from 'react'
 
 interface Vol3FooterProps {
   poiCount: number

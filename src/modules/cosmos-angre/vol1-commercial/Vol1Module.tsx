@@ -1,6 +1,12 @@
 // ═══ VOL.1 PLAN COMMERCIAL — Main Module Component ═══
 
-import React, { useMemo, useState, useEffect, lazy, Suspense } from 'react'
+import React, {
+  useMemo,
+  useState,
+  useEffect,
+  lazy,
+  Suspense
+} from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useVol1Store } from './store/vol1Store'
 import {
@@ -12,23 +18,19 @@ import {
   Brain,
   Download,
   Upload,
-
-  ChevronDown,
-  ChevronRight,
   Loader2,
   Sparkles,
   Edit3,
+  History,
+  Send,
 } from 'lucide-react'
 import SaveStatusIndicator from '../shared/components/SaveStatusIndicator'
 import { PlanModelSelector } from '../shared/components/PlanModelSelector'
-import {
-  ATLAS_STUDIO_GROUP_META,
-  ATLAS_STUDIO_CORE_ITEMS,
-  ATLAS_STUDIO_DEFAULT_TAB,
-} from '../shared/components/atlasStudioNav'
+import { ATLAS_STUDIO_GROUP_META, ATLAS_STUDIO_CORE_ITEMS, ATLAS_STUDIO_DEFAULT_TAB } from '../shared/components/atlasStudioNav'
 import { savePlanImageFromUrl, loadAllPlanImages } from '../shared/stores/planImageCache'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
+import { useAutoSnapshot } from '../shared/hooks/useAutoSnapshot'
 
 const DashboardSectionLazy = lazy(() => import('./sections/DashboardSection'))
 const PlanCommercialSectionLazy = lazy(() => import('./sections/PlanCommercialSection'))
@@ -37,9 +39,10 @@ const Proph3tCommercialSectionLazy = lazy(() => import('./sections/Proph3tCommer
 const ExportCommercialSectionLazy = lazy(() => import('./sections/ExportCommercialSection'))
 const PlanImportsSectionLazy = lazy(() => import('../shared/components/PlanImportsSection'))
 const SpaceEditorSectionLazy = lazy(() => import('../shared/components/SpaceEditorSection'))
+const VolumeHistoryTabLazy  = lazy(() => import('../shared/components/VolumeHistoryTab'))
+const VolumeReportsTabLazy  = lazy(() => import('../shared/components/VolumeReportsTab'))
 
-
-type Vol1Tab = 'dashboard' | 'plan' | 'plan_imports' | 'editor' | 'tenants' | 'proph3t' | 'exports'
+type Vol1Tab = 'dashboard' | 'plan' | 'plan_imports' | 'editor' | 'tenants' | 'proph3t' | 'exports' | 'history' | 'reports'
 
 interface NavItem {
   id: Vol1Tab
@@ -80,6 +83,17 @@ const buildNavGroups = (): NavGroup[] => [
       { id: 'tenants', label: 'Preneurs', icon: Users },
     ],
   },
+  {
+    key: 'collaboration',
+    label: 'COLLABORATION',
+    icon: Send,
+    color: '#818cf8',
+    separator: true,
+    items: [
+      { id: 'history', label: 'Historique du plan', icon: History },
+      { id: 'reports', label: 'Rapports & partage', icon: Send },
+    ],
+  },
 ]
 // Sanity: Studio group must carry the core IDs (plan_imports, plan, analyse-alias, rapport/export, chat-alias)
 void ATLAS_STUDIO_CORE_ITEMS // referenced to keep the contract in scope
@@ -94,6 +108,9 @@ export default function Vol1Module() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<Vol1Tab>(ATLAS_STUDIO_DEFAULT_TAB as Vol1Tab)
   const NAV_GROUPS = useMemo(() => buildNavGroups(), [])
+
+  // Auto-snapshot : capture automatique des versions majeures du plan
+  useAutoSnapshot({ volumeId: 'vol1' })
 
   // Rehydrate plan image backgrounds from IndexedDB on mount — blob URLs in localStorage are dead after refresh.
   useEffect(() => {
@@ -249,6 +266,17 @@ export default function Vol1Module() {
           {activeTab === 'tenants' && <TenantsSectionLazy />}
           {activeTab === 'proph3t' && <Proph3tCommercialSectionLazy />}
           {activeTab === 'exports' && <ExportCommercialSectionLazy />}
+          {activeTab === 'history' && (
+            <VolumeHistoryTabLazy volumeId="vol1" volumeColor="#f59e0b" volumeName="Plan commercial" />
+          )}
+          {activeTab === 'reports' && (
+            <VolumeReportsTabLazy
+              volumeId="vol1"
+              volumeColor="#f59e0b"
+              volumeName="Plan commercial"
+              projectName="Cosmos Angré"
+            />
+          )}
         </Suspense>
       </main>
     </div>

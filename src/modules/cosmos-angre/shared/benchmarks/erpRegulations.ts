@@ -183,7 +183,7 @@ export function theoreticalEffectif(glaSqm: number): number {
 }
 
 /** Règles applicables à un ERP d'une catégorie et d'un type donné. */
-export function applicableRules(type: ErpType, category?: ErpCategory['id']): ErpRule[] {
+export function applicableRules(type: ErpType, _category?: ErpCategory['id']): ErpRule[] {
   return ERP_RULES.filter(r => {
     if (r.scope === 'all') return true
     if (r.scope === type) return true

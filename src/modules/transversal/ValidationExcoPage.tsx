@@ -1,7 +1,7 @@
 // ═══ VALIDATION EXCO — Workflow d'approbation ═══
 
-import React, { useState } from 'react'
-import { ClipboardList, Check, X, Clock, MessageSquare, FileText, User, ChevronRight, Send } from 'lucide-react'
+import { useState } from 'react'
+import { ClipboardList, Check, X, Clock, MessageSquare, User, ChevronRight, Send } from 'lucide-react'
 
 interface Document {
   id: string; title: string; type: string; version: string; author: string; date: string

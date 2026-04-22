@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Users, Plus, X, Loader2, Sparkles, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'

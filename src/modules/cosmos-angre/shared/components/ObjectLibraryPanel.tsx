@@ -1,6 +1,6 @@
 // ═══ OBJECT LIBRARY PANEL — Drag-and-drop objects onto the plan ═══
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import type { ObjectDefinition, ObjectCategory, PlacedObject } from '../planReader/planEngineTypes'
 import { usePlanEngineStore } from '../stores/planEngineStore'
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Camera, AlertTriangle, Shield, Users, WifiOff } from 'lucide-react'
 import { useVol2Store } from '../store/vol2Store'
 

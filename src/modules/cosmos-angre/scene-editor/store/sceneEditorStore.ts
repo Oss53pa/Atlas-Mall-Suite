@@ -2,8 +2,11 @@
 
 import { create } from 'zustand'
 import type {
-  SceneTool, SceneObject, SceneData, SceneAmbiance,
-  RenderResult, RenderMode, AmbianceTime, AmbianceStyle,
+  SceneTool,
+  SceneObject,
+  SceneData,
+  SceneAmbiance,
+  RenderResult
 } from './sceneEditorTypes'
 
 interface SceneEditorState {

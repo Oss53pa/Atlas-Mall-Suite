@@ -1,4 +1,3 @@
-import React from 'react'
 import { Plus } from 'lucide-react'
 import type { Floor } from '../proph3t/types'
 

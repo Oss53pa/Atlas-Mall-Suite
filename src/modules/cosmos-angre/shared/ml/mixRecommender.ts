@@ -5,7 +5,6 @@
 //  - Taille du lot vs surface moyenne par catégorie
 //  - Position (RDC=ancre, étages=services/loisirs)
 
-import { WEST_AFRICA_BENCHMARKS } from '../benchmarks/africanRetail'
 import type { Lot } from '../domain/LotEntity'
 import { FloorLevel } from '../domain/FloorLevel'
 
@@ -106,7 +105,7 @@ function sizeFitScore(areaSqm: number, sector: Sector): number {
 
 function gapToIdealMix(
   currentMix: Record<string, number>, // % GLA par catégorie
-  totalGlaSqm: number,
+  _totalGlaSqm: number,
 ): Record<string, number> {
   const gaps: Record<string, number> = {}
   const sectors: Array<{ name: string; target: number }> = [

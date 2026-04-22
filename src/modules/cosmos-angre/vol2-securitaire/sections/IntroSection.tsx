@@ -1,4 +1,3 @@
-import React from 'react'
 import { Camera, Monitor, Layers, Zap, Sparkles } from 'lucide-react'
 import { useContentStore } from '../../shared/store/contentStore'
 import EditableText, { EditableStat } from '../../shared/components/EditableText'

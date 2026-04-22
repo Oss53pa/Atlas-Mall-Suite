@@ -2,7 +2,6 @@
 // Vue plan/opérationnelle du parcours : personas, trajectoires, simulation.
 // À ne pas confondre avec ParcoursSection (« 7 moments clés » — vue narrative UX).
 
-import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Users, Route, Navigation as NavIcon, Play, Map as MapIcon, Accessibility } from 'lucide-react'
 import { useVol3Store } from '../store/vol3Store'

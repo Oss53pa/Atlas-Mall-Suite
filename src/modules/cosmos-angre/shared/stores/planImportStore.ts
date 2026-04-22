@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { PlanSourceType, CalibrationResult, RecognizedZone, DimEntity } from '../planReader/planReaderTypes'
+import type { PlanSourceType, CalibrationResult } from '../planReader/planReaderTypes'
 
 export type ImportStatus = 'processing' | 'success' | 'error' | 'reviewing'
 
@@ -163,6 +163,19 @@ export const usePlanImportStore = create<PlanImportStoreState>()(
           .filter((l): l is NonNullable<typeof l> => l !== null)
       },
     }),
-    { name: 'atlas-plan-imports' }
+    {
+      name: 'atlas-plan-imports',
+      // Strip blob: URLs before persisting — they are session-only and
+      // become invalid after page refresh. The planImageCache (IndexedDB)
+      // holds the actual blobs and recreates URLs on demand.
+      partialize: (state) => ({
+        ...state,
+        imports: state.imports.map((r) => ({
+          ...r,
+          thumbnailUrl: r.thumbnailUrl?.startsWith('blob:') ? undefined : r.thumbnailUrl,
+          planImageUrl: r.planImageUrl?.startsWith('blob:') ? undefined : r.planImageUrl,
+        })),
+      }),
+    }
   )
 )

@@ -42,7 +42,7 @@ export interface StaffingPlan {
 const AGENT_DAILY_COST_FCFA = 25_000
 const AGENT_HOURLY_COST_FCFA = Math.round(AGENT_DAILY_COST_FCFA / 8)
 
-function getPeriod(hour: number): 'jour' | 'soir' | 'nuit' {
+function _getPeriod(hour: number): 'jour' | 'soir' | 'nuit' {
   if (hour >= 6 && hour < 14) return 'jour'
   if (hour >= 14 && hour < 22) return 'soir'
   return 'nuit'

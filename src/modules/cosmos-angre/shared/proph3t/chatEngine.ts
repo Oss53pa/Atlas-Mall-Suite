@@ -1,10 +1,22 @@
 import type {
-  Camera, Zone, Door, Floor, TransitionNode, BlindSpot,
-  SecurityScore, POI, SignageItem, MomentCle,
-  ChatAnswer, ProjectMemorySummary, FullProjectContext,
-  FullProjectContextV3, CrossVolumeInsight,
+  Camera,
+  Zone,
+  Floor,
+  BlindSpot,
+  SecurityScore,
+  ChatAnswer,
+  FullProjectContext,
+  FullProjectContextV3
 } from './types'
-import { CAMERA_SPECS, ZONE_CAMERA_RULES, computeCapex, scoreSecurite, calcDistance, calcArea, computeFloorCoverage } from './engine'
+import {
+  CAMERA_SPECS,
+  ZONE_CAMERA_RULES,
+  computeCapex,
+  scoreSecurite,
+  calcDistance,
+  calcArea,
+  computeFloorCoverage
+} from './engine'
 import { SIGNAGE_CATALOG, detectVisualBreaks } from './signaleticsEngine'
 import { generateMemoryNarrative } from './memoryEngine'
 import { MALL_BENCHMARKS } from './benchmarkData'
@@ -1067,7 +1079,7 @@ function answerCalibration(ctx: FullProjectContext): ChatAnswer {
   })
 }
 
-function answerVision(ctx: FullProjectContext): ChatAnswer {
+function answerVision(_ctx: FullProjectContext): ChatAnswer {
   let text = `Proph3t Vision — Reconnaissance de plans scannes\n\n`
   text += `Proph3t Vision peut analyser une photo ou un scan de plan architectural.\n`
   text += `Formats acceptes : JPG, PNG, WebP (max 10MB).\n\n`
@@ -1088,7 +1100,7 @@ function answerVision(ctx: FullProjectContext): ChatAnswer {
   })
 }
 
-function answerPDFPlan(ctx: FullProjectContext): ChatAnswer {
+function answerPDFPlan(_ctx: FullProjectContext): ChatAnswer {
   let text = `Import de plans PDF vectoriels\n\n`
   text += `Atlas Mall Suite lit les PDF vectoriels (export depuis AutoCAD, Revit, ArchiCAD).\n\n`
   text += `Ce qui est extrait :\n`

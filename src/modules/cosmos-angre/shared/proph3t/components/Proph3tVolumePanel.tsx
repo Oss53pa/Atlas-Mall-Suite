@@ -7,7 +7,7 @@
 // Le panneau écoute le domain event bus → rafraîchissement auto quand
 // l'utilisateur modifie des entités dans le volume.
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useCallback } from 'react'
 import { Sparkles, ChevronRight, ChevronLeft, Gauge, Lightbulb, ShieldCheck, Loader2, RefreshCw } from 'lucide-react'
 import { Proph3tResultPanel } from './Proph3tResultPanel'
 import { runSkill } from '../orchestrator'

@@ -6,7 +6,7 @@
 //   • nœuds clés (entrées, transits, favoris)
 //   • marqueur destination
 
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePlanEngineStore } from '../../shared/stores/planEngineStore'
 import { usePlanImportStore } from '../../shared/stores/planImportStore'
 import { useVol4Store } from '../store/vol4Store'

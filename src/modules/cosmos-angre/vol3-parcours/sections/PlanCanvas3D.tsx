@@ -1,4 +1,3 @@
-import React from 'react'
 import type { Floor, Zone, POI, SignageItem, MomentCle, PathResult } from '../../shared/proph3t/types'
 import FloorPlanCanvas from '../../shared/components/FloorPlanCanvas'
 

@@ -3,7 +3,6 @@
 // dans le header sont regroupes ici. Les handlers complexes (flux, exports,
 // PDF) sont passes en callbacks pour garder le couplage au state parent.
 
-import React from 'react'
 import {
   Grid3X3, Box, Signpost, Flame, Accessibility, FileText, Layers, Send,
   PlayCircle, Bell, Sparkles, ChevronDown, Eraser,

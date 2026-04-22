@@ -2,26 +2,39 @@
 
 import { create } from 'zustand'
 import type {
-  Floor, Zone, TransitionNode, POI, SignageItem,
-  MomentCle, VisitorProfile, NavigationGraph, PathResult,
-  ProjectMemorySummary, ChatMessage, NavigationNode,
-  NavigationEdge, InterFloorEdge, FloorLevel
+  Floor,
+  Zone,
+  TransitionNode,
+  POI,
+  SignageItem,
+  MomentCle,
+  VisitorProfile,
+  NavigationGraph,
+  PathResult,
+  ProjectMemorySummary,
+  ChatMessage,
+  NavigationNode,
+  NavigationEdge,
+  InterFloorEdge,
+  FloorLevel
 } from '../../shared/proph3t/types'
 import { generateParcours } from '../../shared/proph3t/engine'
 import { importPlan as importPlanOrchestrator } from '../../shared/planReader'
-import type { PlanImportState, CalibrationResult, DimEntity } from '../../shared/planReader/planReaderTypes'
+import type { PlanImportState } from '../../shared/planReader/planReaderTypes'
 import { calculateSignaleticsSpec, optimizeSignaleticsPlacement } from '../../shared/proph3t/signaleticsEngine'
 import { exportSignaletiquePDF } from '../../../export/exportSignaletique'
 import { exportQRCodesPDF } from '../../../export/exportQRCodes'
 import {
-  loadProjectFromSupabase, persistEntity, deleteEntity,
-  mapZoneToDB, mapPoiToDB, mapSignageToDB, mapTransitionToDB,
+  loadProjectFromSupabase,
+  persistEntity,
+  deleteEntity,
+  mapPoiToDB,
+  mapSignageToDB
 } from '../../shared/supabaseSync'
 
 // ─── Mock Data (fallback when Supabase has no data) ───
 
 // No seed/mock data: store starts empty — user populates via DXF import or forms.
-
 
 // ─── Entity type union ───────────────────────────────────────
 

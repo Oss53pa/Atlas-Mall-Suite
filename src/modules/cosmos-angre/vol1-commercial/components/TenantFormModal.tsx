@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { X, Plus, UserPlus } from 'lucide-react'
 import { useVol1Store } from '../store/vol1Store'
-import type { Tenant, CommercialSpace, Sector } from '../store/vol1Types'
+import type { Tenant, Sector } from '../store/vol1Types'
 import { SECTOR_LABELS } from '../../shared/constants/sectorConfig'
 
 interface Props {

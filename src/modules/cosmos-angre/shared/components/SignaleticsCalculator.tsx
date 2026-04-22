@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { Calculator, Check } from 'lucide-react'
 import type { SignageType } from '../proph3t/types'
 

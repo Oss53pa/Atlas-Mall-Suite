@@ -381,7 +381,6 @@ function simulate(input: EvacInput): EvacuationResult {
       } else {
         // Move toward target
         const moveDistM = agent.speed * FRAME_INTERVAL
-        const moveRatio = moveDistM / distNorm
 
         // Move in normalized coordinates: direction × distance / floor dimensions
         const moveX = (dx / distNorm) * (moveDistM / floor.widthM)

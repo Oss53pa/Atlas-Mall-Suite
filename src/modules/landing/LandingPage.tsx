@@ -1,11 +1,19 @@
 // ═══ ATLAS MALL SUITE — Landing Page ═══
 
-import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Sparkles, Building2, ShieldCheck, Route, ArrowRight,
-  CheckCircle2, Globe2, Zap, BarChart2, Users, Lock,
-  ChevronRight, Star, Play,
+  Sparkles,
+  Building2,
+  ShieldCheck,
+  Route,
+  ArrowRight,
+  CheckCircle2,
+  Globe2,
+  Zap,
+  Users,
+  Lock,
+  Star,
+  Play
 } from 'lucide-react'
 
 const FEATURES = [

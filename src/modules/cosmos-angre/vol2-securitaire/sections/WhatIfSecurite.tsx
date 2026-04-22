@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Zap, ArrowRight, Play, RotateCcw } from 'lucide-react'
 import { useWhatIf } from '../../shared/hooks/useWhatIf'
 import { useVol2Store } from '../store/vol2Store'

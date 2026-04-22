@@ -1,8 +1,8 @@
 // ═══ PROPH3T RESULT PANEL — Affiche un résultat avec actions cliquables et RLHF ═══
 
 import React, { useState } from 'react'
-import { Sparkles, AlertTriangle, AlertCircle, Info, Check, X, Edit3, Cpu, Cloud, Database } from 'lucide-react'
-import type { Proph3tResult, Proph3tAction, Proph3tFinding, Severity } from '../orchestrator.types'
+import { Sparkles, AlertTriangle, AlertCircle, Info, Check, X, Cpu, Cloud, Database } from 'lucide-react'
+import type { Proph3tResult, Proph3tAction, Severity } from '../orchestrator.types'
 import { applyCorrection } from '../orchestrator'
 
 interface Props {

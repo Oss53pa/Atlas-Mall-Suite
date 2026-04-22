@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShieldCheck, Route, Sparkles, Link2, ArrowRight, Building2, Zap, Globe, Box, Navigation } from 'lucide-react'
+import { ShieldCheck, Route, Sparkles, Link2, ArrowRight, Building2, Globe, Navigation } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface VolumeStat {

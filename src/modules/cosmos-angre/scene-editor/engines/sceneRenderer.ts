@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import type { SceneData, SceneObject, AmbianceTime } from '../store/sceneEditorTypes'
+import type { SceneObject, AmbianceTime } from '../store/sceneEditorTypes'
 
 // ── Eclairage par ambiance ──
 

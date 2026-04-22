@@ -1,7 +1,7 @@
 // ═══ 3D MODEL IMPORT MODAL — Upload IFC / glTF / OBJ models ═══
 
 import { useState, useCallback, useRef } from 'react'
-import { Upload, X, FileText, Loader2, CheckCircle, AlertTriangle, Box, Info } from 'lucide-react'
+import { X, FileText, Loader2, CheckCircle, AlertTriangle, Box, Info } from 'lucide-react'
 import { detectModelFormat, MODEL_FORMAT_LABELS, MODEL_FORMAT_COLORS, ALL_3D_ACCEPT, type ModelFormat } from '../../../../loaders'
 import { useVol2Store } from '../store/vol2Store'
 

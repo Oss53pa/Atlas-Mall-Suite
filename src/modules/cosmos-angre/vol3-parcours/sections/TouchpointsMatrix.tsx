@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 type Priority = 'critique' | 'important' | 'secondaire'
 type TPType = 'physique' | 'digital' | 'humain'

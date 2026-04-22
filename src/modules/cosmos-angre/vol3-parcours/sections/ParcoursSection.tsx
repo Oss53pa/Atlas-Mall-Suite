@@ -1,4 +1,3 @@
-import React from 'react'
 import { Star, AlertTriangle, Lightbulb, Crown, Signpost, Zap } from 'lucide-react'
 import { useVol3Store } from '../store/vol3Store'
 import ScoreGauge from '../../shared/components/ScoreGauge'

@@ -1,4 +1,3 @@
-import React from 'react'
 
 interface OrgNode {
   id: string
@@ -27,7 +26,7 @@ const connections: [string, string][] = [
   ['cpn', 'maint'],
 ]
 
-function getNodeCenter(node: OrgNode): { x: number; y: number } {
+function _getNodeCenter(node: OrgNode): { x: number; y: number } {
   return { x: node.x + node.width / 2, y: node.y + 60 }
 }
 

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
 import { Signpost, Lightbulb, AlertTriangle, Zap } from 'lucide-react'
 import { useVol3Store } from '../store/vol3Store'
 import SignaleticsCalculator from '../../shared/components/SignaleticsCalculator'
@@ -6,7 +6,6 @@ import SignaleticsCalculator from '../../shared/components/SignaleticsCalculator
 export default function SignaleticsSection() {
   const signageItems = useVol3Store((s) => s.signageItems)
   const zones = useVol3Store((s) => s.zones)
-  const floors = useVol3Store((s) => s.floors)
 
   const stats = useMemo(() => {
     const luminous = signageItems.filter((s) => s.isLuminous).length

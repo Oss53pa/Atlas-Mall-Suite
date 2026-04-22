@@ -73,7 +73,17 @@ export default defineConfig({
           if (id.includes('vol1-commercial'))    return 'vol1'
           if (id.includes('vol2-securitaire'))   return 'vol2'
           if (id.includes('vol3-parcours'))      return 'vol3'
+          if (id.includes('vol4-wayfinder'))     return 'vol4'
           if (id.includes('view3d') || id.includes('vol-3d')) return 'view3d'
+          // AR : isolé pour ne pas charger @react-three/xr hors mode AR
+          if (id.includes('@react-three') ||
+              id.includes('map-viewer/ar') ||
+              id.includes('view3d/modes/ARRenderer')) return 'ar-chunk'
+          // Map-viewer (2D/3D/AR shell)
+          if (id.includes('shared/map-viewer'))  return 'map-viewer'
+          if (id.includes('shared/guided-tour')) return 'guided-tour'
+          if (id.includes('wayfinder-designer')) return 'wayfinder-designer'
+          if (id.includes('proph3t-core'))       return 'proph3t-core'
           if (id.includes('scenarios'))          return 'scenarios'
           if (id.includes('dce'))                return 'dce'
           if (id.includes('validation'))         return 'validation'
@@ -88,7 +98,15 @@ export default defineConfig({
           if (id.includes('@tanstack'))          return 'vendor-query'
           if (id.includes('jspdf'))              return 'vendor-jspdf'
           if (id.includes('docx'))               return 'vendor-docx'
+          if (id.includes('framer-motion'))      return 'vendor-animation'
+          if (id.includes('konva'))              return 'vendor-konva'
+          if (id.includes('xlsx') || id.includes('exceljs')) return 'vendor-excel'
+          if (id.includes('pptxgenjs'))          return 'vendor-pptx'
         },
+        // Nommage explicite pour cache efficace
+        chunkFileNames: 'assets/chunks/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
       },
     },
   },

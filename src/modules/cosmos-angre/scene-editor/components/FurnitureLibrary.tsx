@@ -1,6 +1,5 @@
 // ═══ FurnitureLibrary — Panneau gauche, catalogue drag-and-drop ═══
 
-import { useState } from 'react'
 import { Search, Armchair, Users, Paintbrush } from 'lucide-react'
 import { useSceneEditorStore } from '../store/sceneEditorStore'
 import { FURNITURE_CATALOG, CHARACTER_CATALOG, TEXTURE_CATALOG } from '../store/furnitureCatalog'

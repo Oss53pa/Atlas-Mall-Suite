@@ -6,7 +6,6 @@
 // 4. Retourne les waypoints (coordonnées en mètres) pour affichage sur le plan
 
 import { simulateJourney, type JourneyStep } from '../../engines/parcoursAgentEngine'
-import { kmeans } from '../algorithms/kmeans'
 import { useSpaceCorrectionsStore, type SpaceCategory } from '../../stores/spaceCorrectionsStore'
 
 export interface Space {

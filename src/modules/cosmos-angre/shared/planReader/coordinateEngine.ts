@@ -1,6 +1,6 @@
 // ═══ COORDINATE ENGINE — Bounds, unit detection, normalization, fitToScreen ═══
 
-import type { Bounds, ViewportState, PlanEntity, ParsedPlan } from './planEngineTypes'
+import type { Bounds, ViewportState, PlanEntity } from './planEngineTypes'
 
 // ─── COMPUTE BOUNDS ───────────────────────────────────────
 

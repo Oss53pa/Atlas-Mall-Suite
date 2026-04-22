@@ -13,6 +13,11 @@ const BASE_CONFIG: View3DConfig = {
   floorStack: [], zoneHeights: [],
   shadowsEnabled: true, ssaoEnabled: false, bloomEnabled: false,
   backgroundColor: '#080c14',
+  explodeLevel: 0, isolatedFloorId: null,
+  // These fields are initialised later from CONCEPTION_DEFAULTS / data
+  showPeople: false, showFurniture: false, showVegetation: false,
+  showAnnotationNumbers: false, showFloorTiles: false, showFacadeSigns: false,
+  populationDensity: 1.0, mallName: 'COSMOS ANGRE', accentColor: '#b8d44a',
 }
 
 export function useView3D(data: View3DData) {
@@ -82,9 +87,30 @@ export function useView3D(data: View3DData) {
     }))
   }, [])
 
+  /**
+   * Isolate a floor — fades all other floors to 0.08 opacity.
+   * Pass null to clear isolation (restores all to 1.0).
+   */
+  const setIsolatedFloor = useCallback((floorId: string | null) => {
+    setConfig(c => ({
+      ...c,
+      isolatedFloorId: floorId,
+      floorStack: c.floorStack.map(f => ({
+        ...f,
+        opacity: floorId === null ? 1 : f.floorId === floorId ? 1 : 0.08,
+      })),
+    }))
+  }, [])
+
+  /** 0 = stacked, 1 = fully exploded. Clamped to [0, 1]. */
+  const setExplodeLevel = useCallback((level: number) => {
+    setConfig(c => ({ ...c, explodeLevel: Math.max(0, Math.min(1, level)) }))
+  }, [])
+
   return {
     config, setMode, setContext, toggleLayer,
     setZoneHeight, setFloorVisible, setFloorOpacity,
+    setIsolatedFloor, setExplodeLevel,
     setLighting:  (v: View3DConfig['lighting'])  => setConfig(c => ({ ...c, lighting: v })),
     setViewAngle: (v: View3DConfig['viewAngle']) => setConfig(c => ({ ...c, viewAngle: v })),
   }

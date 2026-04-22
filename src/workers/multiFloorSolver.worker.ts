@@ -346,7 +346,7 @@ function detectCrossFloorIssues(
 // ═══ MAIN SOLVER ═══
 
 function solve(input: MultiFloorInput): MultiFloorOutput {
-  const { trigger, floors, zones, cameras, doors, transitions } = input
+  const { trigger, floors, zones, cameras, doors: _doors, transitions } = input
 
   self.postMessage({ type: 'progress', percent: 10 })
 

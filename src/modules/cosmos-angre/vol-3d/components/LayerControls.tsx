@@ -1,4 +1,3 @@
-import React from 'react'
 import { useVol3DStore } from '../store/vol3dStore'
 
 const LAYERS: { key: 'showZones' | 'showCameras' | 'showCameraFOV' | 'showPOI' | 'showSignage' | 'showTransitions' | 'showFloorLabels'; label: string; color: string }[] = [

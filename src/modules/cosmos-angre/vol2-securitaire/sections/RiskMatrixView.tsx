@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react'
-import { Shield, ArrowUpDown, ChevronDown, ChevronUp } from 'lucide-react'
-import { THREAT_SCENARIOS, calculateRiskMatrix, type ThreatScenario } from '../../shared/proph3t/riskMatrix'
+import { useState, useMemo } from 'react'
+import { ArrowUpDown, ChevronDown, ChevronUp } from 'lucide-react'
+import { THREAT_SCENARIOS, calculateRiskMatrix } from '../../shared/proph3t/riskMatrix'
 import RiskHeatmap from '../../shared/components/RiskHeatmap'
 
 type SortKey = 'risk_score' | 'residual_risk' | 'probability' | 'name'

@@ -1,7 +1,6 @@
 // F-004 : Sidebar navigation extraite de Vol3Module.tsx.
 // Rendu pur — aucun etat local, tout vient des props.
 
-import React from 'react'
 import { ChevronDown } from 'lucide-react'
 import type { NavGroup, Vol3Tab } from '../sidebarConfig'
 import SaveStatusIndicator, { type SaveStatus } from '../../shared/components/SaveStatusIndicator'

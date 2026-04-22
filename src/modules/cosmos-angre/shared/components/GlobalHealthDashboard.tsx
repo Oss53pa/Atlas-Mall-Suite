@@ -1,7 +1,6 @@
 // ═══ FT.1 — Dashboard Sante Globale du Mall (Jumeaux Numeriques) ═══
 // Vue transversale : 3 scores (Commercial + Securite + Experience) en un
 
-import React from 'react'
 import { Building2, Shield, Route, TrendingUp, TrendingDown, Minus, AlertTriangle, Bell } from 'lucide-react'
 
 export interface VolumeHealth {

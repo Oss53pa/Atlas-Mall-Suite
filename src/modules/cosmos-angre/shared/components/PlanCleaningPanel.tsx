@@ -2,9 +2,9 @@
 // Modale de nettoyage du plan (Minimal / Standard / Complet + overrides manuels).
 // Affiche l'analyse par calque avec aperçu avant/après en une passe.
 
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Trash2, Check, Layers, Download, Save, AlertTriangle } from 'lucide-react'
+import { X, Trash2, Check, Layers, AlertTriangle } from 'lucide-react'
 import {
   computeCleaningPlan,
   applyCleaningPlan,

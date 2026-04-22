@@ -1,10 +1,12 @@
 // ═══ EMPTY STATE — Contextual guidance for empty sections ═══
 
-import React from 'react'
 import {
-  Shield, ShoppingBag, Route, Layers,
-  Camera, MapPin, Users, FileText,
-  Upload, Sparkles,
+  Shield,
+  ShoppingBag,
+  Route,
+  Layers,
+  Upload,
+  Sparkles
 } from 'lucide-react'
 
 type Illustration = 'security' | 'commercial' | 'journey' | 'generic'

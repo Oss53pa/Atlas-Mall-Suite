@@ -2,10 +2,21 @@
 // Aggregates Vol.1 (Commercial), Vol.2 (Securitaire), Vol.3 (Parcours)
 // analyses per detected floor and produces a unified per-level report.
 
-import { runCompliance, type ComplianceReport } from './complianceEngine'
-import { computeCoverage, type CoverageResult, type Camera as CovCamera, type Space as CovSpace } from './cameraCoverageEngine'
-import { runCommercialAnalysis, type CommercialReport, type CommercialSpace, type Tenant } from './commercialEngine'
-import { runParcoursAnalysis, type ParcoursReport, type POI, type SignageItem, type JourneyMoment, type SpaceForParcours } from './parcoursEngine'
+import { runCompliance } from './complianceEngine'
+import {
+  computeCoverage,
+  type CoverageResult,
+  type Camera as CovCamera,
+  type Space as CovSpace
+} from './cameraCoverageEngine'
+import { runCommercialAnalysis, type CommercialSpace, type Tenant } from './commercialEngine'
+import {
+  runParcoursAnalysis,
+  type POI,
+  type SignageItem,
+  type JourneyMoment,
+  type SpaceForParcours
+} from './parcoursEngine'
 
 export interface FloorDef {
   id: string

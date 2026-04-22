@@ -16,7 +16,7 @@ const fmtFcfa = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
 // ═══ XLSX — Tableau de commercialisation ═══
 export async function exportToXLSX(
   tenants: Tenant[], spaces: CommercialSpace[],
-  occupancy: OccupancyStats, phases: Phase[], mallName: string
+  _occupancy: OccupancyStats, phases: Phase[], mallName: string
 ) {
   const ExcelJS = await import('exceljs')
   const wb = new ExcelJS.Workbook()

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { X, Search, Camera } from 'lucide-react'
 import type { CameraModel } from '../../shared/proph3t/types'
 

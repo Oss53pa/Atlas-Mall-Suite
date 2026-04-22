@@ -1,4 +1,3 @@
-import React from 'react'
 import type { View3DConfig, View3DData, RenderMode, UsageContext } from './types/view3dTypes'
 
 const MODES: { id: RenderMode; label: string; icon: string }[] = [

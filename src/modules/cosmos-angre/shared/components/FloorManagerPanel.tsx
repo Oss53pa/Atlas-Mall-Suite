@@ -7,7 +7,7 @@
 
 import React, { useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { Layers, Trash2, Save, BookOpen, X, Plus, Download, Upload, RotateCcw } from 'lucide-react'
+import { Layers, Trash2, Save, BookOpen, X, Download, Upload, RotateCcw } from 'lucide-react'
 import { usePlanEngineStore } from '../stores/planEngineStore'
 import {
   savePlan, listPlans, loadPlan, deletePlan, extractFloor, removeFloorFromPlan,

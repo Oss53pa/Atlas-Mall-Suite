@@ -1,7 +1,7 @@
 // ═══ VOL.3 — Chat Proph3t Parcours (Faille #4 corrigee) ═══
 // Connexion IA reelle : Ollama → Claude API → keyword matching fallback
 
-import React, { useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Send, Sparkles } from 'lucide-react'
 import { useVol3Store } from '../store/vol3Store'
 import type { ChatMessage } from '../../shared/proph3t/types'

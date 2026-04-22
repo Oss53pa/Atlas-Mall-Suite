@@ -2,7 +2,7 @@
 // Drop-in dans n'importe quel volume. Assemble toute la donnée depuis
 // les stores + lotsStore + moteurs, puis exporte le PDF.
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 interface Props {
   projectName: string

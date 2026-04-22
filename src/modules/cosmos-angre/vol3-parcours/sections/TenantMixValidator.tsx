@@ -1,8 +1,8 @@
 // ═══ VOL.3 — Tenant Mix Validator Parcours (Faille #6 corrigee) ═══
 // Connecte au vol1Store pour les enseignes reelles + fallback donnees demo
 
-import React, { useState, useMemo, useEffect } from 'react'
-import { AlertTriangle, MapPin, ArrowRight, Users, Sparkles, CheckCircle, RefreshCw } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { AlertTriangle, Users, Sparkles, CheckCircle, RefreshCw } from 'lucide-react'
 
 // Import dynamique du vol1Store pour eviter les dependances circulaires
 let useVol1Store: (() => { tenants: any[]; spaces: any[] }) | null = null

@@ -5,7 +5,7 @@
 //   - Clic = ouvre SpaceLabelEditor pour corriger
 // Respecte les corrections manuelles via detailedJourneyEngine.resolveSpaceCategory/Label.
 
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   resolveSpaceCategory,
   resolveSpaceLabel,

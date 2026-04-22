@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Download, FileText, FileDown, ChevronDown } from 'lucide-react'
 
 interface ExportButtonProps {

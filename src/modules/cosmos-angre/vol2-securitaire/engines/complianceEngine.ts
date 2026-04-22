@@ -44,7 +44,7 @@ function checkApsadR82(
   cameras: Camera[],
   doors: Door[],
   zones: Zone[],
-  floors: Floor[]
+  _floors: Floor[]
 ): ComplianceReport {
   const gaps: ComplianceGap[] = []
   const compliant: string[] = []
@@ -200,7 +200,7 @@ function checkEN62676(cameras: Camera[], zones: Zone[]): ComplianceReport {
 
 // ── NF S 61-938 (Fire safety ERP type M) ─────────────────────
 
-function checkNFS61(doors: Door[], zones: Zone[], transitions: TransitionNode[]): ComplianceReport {
+function checkNFS61(doors: Door[], _zones: Zone[], transitions: TransitionNode[]): ComplianceReport {
   const gaps: ComplianceGap[] = []
   const compliant: string[] = []
 

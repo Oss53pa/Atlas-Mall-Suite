@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
 import { Users, Sun, Sunset, Moon, DollarSign } from 'lucide-react'
 import { calculateStaffing } from '../../shared/proph3t/staffingCalculator'
 import { useVol2Store } from '../store/vol2Store'

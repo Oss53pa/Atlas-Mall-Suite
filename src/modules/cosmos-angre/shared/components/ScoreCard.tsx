@@ -1,4 +1,3 @@
-import React from 'react'
 import { TrendingUp, type LucideIcon } from 'lucide-react'
 
 interface ScoreCardProps {

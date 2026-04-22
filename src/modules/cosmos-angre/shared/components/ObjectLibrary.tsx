@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { Search, X, Star, Camera, DoorOpen, Signpost, Accessibility } from 'lucide-react'
 import type { LibraryItem } from '../proph3t/types'
 

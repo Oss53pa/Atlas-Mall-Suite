@@ -1,6 +1,6 @@
 // ═══ VOL.3 — Dwell Time Optimizer (F3.8) ═══
 
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
 import { Clock, AlertTriangle, Lightbulb, TrendingUp, Target } from 'lucide-react'
 
 interface ZoneDwell {

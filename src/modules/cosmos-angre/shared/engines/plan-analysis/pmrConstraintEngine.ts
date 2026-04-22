@@ -17,7 +17,7 @@
 //   2. Retourne la liste des arêtes à surligner (UI) + recommandations
 //   3. Produit un A* contraint PMR (filtre arêtes conformes uniquement)
 
-import type { NavGraph, NavNode, NavEdge } from './navGraphEngine'
+import type { NavGraph, NavEdge } from './navGraphEngine'
 
 // ─── Types ─────────────────────────────────────────────
 

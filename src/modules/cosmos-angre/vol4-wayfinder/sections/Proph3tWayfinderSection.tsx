@@ -5,7 +5,7 @@
 //   • Rapport d'usage hebdo (top paires, taux recalculs, zones jamais traversées)
 //   • Alertes signalétique (arêtes à revoir)
 
-import React, { useMemo } from 'react'
+import { useMemo } from 'react'
 import { BarChart2, AlertTriangle, TrendingUp, MapPin, RefreshCw } from 'lucide-react'
 import { useVol4Store } from '../store/vol4Store'
 import { usePlanEngineStore } from '../../shared/stores/planEngineStore'

@@ -3,7 +3,6 @@
 // Configure la personnalisation : persona, taille (calibre PDR), mode PMR,
 // langue, guidage vocal, mode d'itinéraire par défaut.
 
-import React from 'react'
 import { User, Accessibility, Languages, Volume2, Navigation, Ruler } from 'lucide-react'
 import { useVol4Store } from '../store/vol4Store'
 import { PERSONA_PROFILES, type Persona } from '../engines/proph3tWayfinder'

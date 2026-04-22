@@ -3,7 +3,7 @@
 // Pipeline: Niblack threshold → morphClose → skeletonize → contour trace → Douglas-Peucker
 
 import type { FloorPlanExtractor, NormalizedFloorPlan, NormalizedRoom, Point } from './types'
-import { computePolygonArea, generateId } from './types'
+import { generateId } from './types'
 import { analyzeWithOllamaVision, checkOllamaVisionAvailable } from '../ollamaVision'
 
 export class ImageFloorPlanExtractor implements FloorPlanExtractor {

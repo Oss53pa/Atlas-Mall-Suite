@@ -13,11 +13,11 @@ const TOOL_SHORTCUTS: Record<string, CadTool> = {
 
 export function useCadInteraction(canvasW: number, canvasH: number) {
   const {
-    activeTool, isDrawing, drawPoints, snap,
+    activeTool, isDrawing, drawPoints, snap: _snap,
     setTool, startDraw, addDrawPoint, finishDraw, cancelDraw,
     select, deselectAll, deleteSelected, copySelected, paste,
     undo, redo, computeSnap, setSnapIndicator, setMeasureResult,
-    entities, moveSelected,
+    entities, moveSelected: _moveSelected,
   } = useCadStore()
 
   // ── Keyboard shortcuts ─────────────────────────────────

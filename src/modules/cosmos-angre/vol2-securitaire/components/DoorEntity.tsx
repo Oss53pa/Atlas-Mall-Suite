@@ -1,4 +1,4 @@
-import React, { memo } from 'react'
+import { memo } from 'react'
 import type { Door } from '../../shared/proph3t/types'
 
 interface DoorEntityProps {

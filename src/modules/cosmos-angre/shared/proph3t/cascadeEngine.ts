@@ -3,15 +3,31 @@
 // Objectif : < 200ms via Promise.allSettled parallele
 
 import type {
-  CascadeTrigger, CascadeResult, BlindSpot, SecurityScore,
-  Zone, Camera, Door, Floor, TransitionNode, SignageItem,
-  DoorRecommendation, CrossVolumeInsight, CascadeResultV3,
-  JourneyImpact, CommercialImpact, ProactiveInsight,
-  MomentCle, TenantInfo,
+  CascadeTrigger,
+  BlindSpot,
+  SecurityScore,
+  Zone,
+  Camera,
+  Door,
+  Floor,
+  TransitionNode,
+  SignageItem,
+  DoorRecommendation,
+  CrossVolumeInsight,
+  CascadeResultV3,
+  JourneyImpact,
+  CommercialImpact,
+  ProactiveInsight,
+  MomentCle,
+  TenantInfo
 } from './types'
 import {
-  scoreSecurite, findBlindSpots, computeFloorCoverage,
-  recommendDoor, computeCapex, calcArea,
+  scoreSecurite,
+  findBlindSpots,
+  computeFloorCoverage,
+  recommendDoor,
+  computeCapex,
+  calcArea
 } from './engine'
 import { detectVisualBreaks } from './signaleticsEngine'
 
@@ -262,8 +278,8 @@ function computeCommercialImpact(
 export function computeCrossVolumeInsights(
   state: CascadeState,
   blindSpots: BlindSpot[],
-  journeyImpact: JourneyImpact | null,
-  commercialImpact: CommercialImpact | null
+  _journeyImpact: JourneyImpact | null,
+  _commercialImpact: CommercialImpact | null
 ): CrossVolumeInsight[] {
   const insights: CrossVolumeInsight[] = []
 

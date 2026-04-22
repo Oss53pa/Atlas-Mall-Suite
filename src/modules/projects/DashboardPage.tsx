@@ -3,9 +3,19 @@
 import React, { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Plus, Search, Building2, ShieldCheck, Route, Calendar,
-  MapPin, ArrowRight, Trash2, Edit3, LayoutGrid, List,
-  FolderOpen, TrendingUp, X,
+  Plus,
+  Search,
+  Building2,
+  Calendar,
+  MapPin,
+  ArrowRight,
+  Trash2,
+  Edit3,
+  LayoutGrid,
+  List,
+  FolderOpen,
+  TrendingUp,
+  X
 } from 'lucide-react'
 import { useProjectStore } from './projectStore'
 import { PROJECT_TEMPLATES } from './templateData'

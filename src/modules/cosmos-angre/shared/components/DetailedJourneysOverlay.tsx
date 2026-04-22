@@ -4,7 +4,7 @@
 //  - waypoints numérotés (arrêts)
 //  - légende sélective (on peut masquer un persona)
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import type { DetailedJourney } from '../engines/plan-analysis/detailedJourneyEngine'
 
 interface Props {

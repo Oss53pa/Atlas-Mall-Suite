@@ -1,4 +1,4 @@
-import type { Zone, Camera, Door, POI, SignageItem, Floor, TransitionNode } from '../../shared/proph3t/types'
+import type { Zone } from '../../shared/proph3t/types'
 
 export type RenderMode = 'isometric' | 'perspective' | 'realistic'
 

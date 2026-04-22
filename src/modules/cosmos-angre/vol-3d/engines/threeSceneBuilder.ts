@@ -52,7 +52,7 @@ export class AtlasMallScene {
     this.scene.traverse(obj => { if (obj.userData.atlas3d) toRemove.push(obj) })
     toRemove.forEach(o => this.scene.remove(o))
 
-    const { floors, zones, cameras, pois, signageItems, transitions, floorStack, zoneHeights, mode, config } = input
+    const { floors, zones, cameras, pois, signageItems, transitions: _transitions, floorStack, zoneHeights, mode, config } = input
 
     for (const stackCfg of floorStack.filter(s => s.visible)) {
       const floor = floors.find(f => f.id === stackCfg.floorId)

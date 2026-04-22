@@ -162,8 +162,6 @@ export async function analyzeWithOllamaVision(
     }))
 
   // 6. Build result
-  const wallCount = parsed.wall_count_estimate ?? 0
-  const doorCount = parsed.door_count_estimate ?? 0
 
   // Generate simple wall segments from zone edges
   const walls: RecognizedWall[] = zones.slice(0, 30).flatMap((z, i) => {

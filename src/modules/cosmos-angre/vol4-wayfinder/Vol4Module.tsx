@@ -19,6 +19,8 @@ import {
   Loader2,
   Sparkles,
   Workflow,
+  History,
+  Send,
 } from 'lucide-react'
 import SaveStatusIndicator from '../shared/components/SaveStatusIndicator'
 import { PlanModelSelector } from '../shared/components/PlanModelSelector'
@@ -33,6 +35,7 @@ import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
 import { savePlanImageFromUrl, loadAllPlanImages } from '../shared/stores/planImageCache'
 import { buildWayfinderCatalog } from './engines/wayfinderBridge'
 import { buildSearchIndex } from './engines/searchEngine'
+import { useAutoSnapshot } from '../shared/hooks/useAutoSnapshot'
 
 // Sections lazy-loaded (avoid cross-chunk TDZ)
 const RouteSearchSectionLazy = lazy(() => import('./sections/RouteSearchSection'))
@@ -41,10 +44,14 @@ const PersonaSectionLazy = lazy(() => import('./sections/PersonaSection'))
 const KioskSectionLazy = lazy(() => import('./sections/KioskSection'))
 const Proph3tWayfinderSectionLazy = lazy(() => import('./sections/Proph3tWayfinderSection'))
 const WayfinderMapViewLazy = lazy(() => import('./components/WayfinderMapView'))
+const MapViewerShellLazy   = lazy(() => import('../shared/map-viewer/MapViewerShell'))
 const PlanImportsSectionLazy = lazy(() => import('../shared/components/PlanImportsSection'))
 const OrchestrationPanelLazy = lazy(() =>
   import('../proph3t-core/components/OrchestrationPanel').then(m => ({ default: m.OrchestrationPanel }))
 )
+const VolumeHistoryTabLazy = lazy(() => import('../shared/components/VolumeHistoryTab'))
+const VolumeReportsTabLazy = lazy(() => import('../shared/components/VolumeReportsTab'))
+const GodModeSignageHostLazy = lazy(() => import('./sections/GodModeSignageHost'))
 
 // Wayfinder Designer (CDC complet)
 const WayfinderDesignerViewLazy = lazy(() => import('../wayfinder-designer/components/WayfinderDesignerView'))
@@ -55,6 +62,7 @@ type Vol4Tab =
   | 'plan_imports' | 'plan' | 'proph3t' | 'rapport' | 'chat' // Atlas Studio core
   | 'search' | 'positioning' | 'persona' | 'kiosk' | 'designer'
   | 'orchestration'
+  | 'history' | 'reports' | 'god_mode_signage'
 
 interface NavItem {
   id: Vol4Tab
@@ -106,6 +114,18 @@ const buildNavGroups = (): NavGroup[] => [
     separator: true,
     items: [
       { id: 'orchestration', label: 'Orchestrateur 4 vol.', icon: Workflow },
+      { id: 'god_mode_signage', label: 'GOD MODE signalétique', icon: Sparkles },
+    ],
+  },
+  {
+    key: 'collaboration',
+    label: 'COLLABORATION',
+    icon: Send,
+    color: '#818cf8',
+    separator: true,
+    items: [
+      { id: 'history', label: 'Historique du plan', icon: History },
+      { id: 'reports', label: 'Rapports & partage', icon: Send },
     ],
   },
 ]
@@ -121,6 +141,7 @@ const Loading = () => (
 export default function Vol4Module() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<Vol4Tab>(ATLAS_STUDIO_DEFAULT_TAB as Vol4Tab)
+  const [planSubView, setPlanSubView] = useState<'wayfinder' | 'carte'>('wayfinder')
   const NAV_GROUPS = useMemo(() => buildNavGroups(), [])
 
   const {
@@ -129,6 +150,9 @@ export default function Vol4Module() {
   } = useVol4Store()
 
   const parsedPlan = usePlanEngineStore(s => s.parsedPlan)
+
+  // Auto-snapshot : capture automatique des versions majeures
+  useAutoSnapshot({ volumeId: 'vol4' })
 
   // Rehydrate plan image backgrounds (pattern Vol.1)
   useEffect(() => {
@@ -292,17 +316,47 @@ export default function Vol4Module() {
 
           {activeTab === 'plan' && (
             <div className="flex flex-col h-full">
-              <div className="px-6 py-3 border-b border-white/[0.05] flex items-center justify-between">
-                <div>
+              <div className="px-6 py-3 border-b border-white/[0.05] flex items-center gap-3">
+                <div className="flex-1">
                   <h2 className="text-white text-sm font-semibold">Plan interactif</h2>
                   <p className="text-[10px] text-slate-500">
-                    Affichage en temps réel de l'itinéraire, position et bornes
+                    {planSubView === 'wayfinder'
+                      ? 'Itinéraire en temps réel · position · bornes'
+                      : 'Carte unifiée — 2D · 3D · AR · Annotations · Visites guidées'}
                   </p>
                 </div>
+
+                {/* Sub-view toggle */}
+                <div className="flex items-center gap-0.5 bg-slate-900 border border-white/[0.08] rounded-lg p-0.5">
+                  <button
+                    onClick={() => setPlanSubView('wayfinder')}
+                    className={[
+                      'flex items-center gap-1.5 px-3 py-1 rounded-md text-[10px] font-medium transition-all',
+                      planSubView === 'wayfinder'
+                        ? 'bg-sky-700 text-white shadow-sm'
+                        : 'text-slate-400 hover:text-white',
+                    ].join(' ')}
+                  >
+                    <Navigation size={11} /> Wayfinder
+                  </button>
+                  <button
+                    onClick={() => setPlanSubView('carte')}
+                    className={[
+                      'flex items-center gap-1.5 px-3 py-1 rounded-md text-[10px] font-medium transition-all',
+                      planSubView === 'carte'
+                        ? 'bg-slate-700 text-white shadow-sm'
+                        : 'text-slate-400 hover:text-white',
+                    ].join(' ')}
+                  >
+                    <MapIcon size={11} /> Carte
+                  </button>
+                </div>
+
                 <PlatformBadge platform={activePlatform} />
               </div>
               <div className="flex-1 min-h-0">
-                <WayfinderMapViewLazy />
+                {planSubView === 'wayfinder' && <WayfinderMapViewLazy />}
+                {planSubView === 'carte'     && <MapViewerShellLazy className="h-full" />}
               </div>
             </div>
           )}
@@ -318,6 +372,18 @@ export default function Vol4Module() {
           {activeTab === 'proph3t' && <Proph3tWayfinderSectionLazy />}
           {activeTab === 'rapport' && <Proph3tWayfinderSectionLazy />}
           {activeTab === 'chat' && <Proph3tWayfinderSectionLazy />}
+          {activeTab === 'god_mode_signage' && <GodModeSignageHostLazy />}
+          {activeTab === 'history' && (
+            <VolumeHistoryTabLazy volumeId="vol4" volumeColor="#0ea5e9" volumeName="Wayfinder" />
+          )}
+          {activeTab === 'reports' && (
+            <VolumeReportsTabLazy
+              volumeId="vol4"
+              volumeColor="#0ea5e9"
+              volumeName="Wayfinder"
+              projectName="Cosmos Angré"
+            />
+          )}
         </Suspense>
       </main>
     </div>

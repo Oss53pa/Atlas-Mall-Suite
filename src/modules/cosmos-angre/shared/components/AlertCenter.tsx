@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Bell, X, AlertTriangle, Info, ShieldAlert, Check } from 'lucide-react'
 import type { Alert } from '../proph3t/alertEngine'
 

@@ -4,6 +4,20 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
+/** Visual category that drives rendering style. */
+export type AnnotationType =
+  | 'note'    // post-it jaune (défaut)
+  | 'title'   // grande carte blanche — titre de zone
+  | 'promo'   // gradient + animation pulse — offre commerciale
+  | 'works'   // fond orange stripes — travaux / zone fermée
+  | 'info'    // bulle bleue neutre
+
+/** How the annotation is anchored to plan content. */
+export type AnnotationAnchor = 'free' | 'space' | 'door' | 'zone'
+
+/** SVG arrow style from annotation to target point. */
+export type ArrowStyle = 'none' | 'straight' | 'curved' | 'elbow'
+
 export interface Annotation {
   id: string
   floorId?: string
@@ -18,6 +32,24 @@ export interface Annotation {
   background?: string
   /** Rotation en degrés. */
   rotation?: number
+
+  // ── Extended fields (Phase 1) ──────────────────────────────────────────
+  /** Visual type — controls rendering style. Default: 'note'. */
+  annotationType?: AnnotationType
+  /** Anchor type — how the annotation relates to plan content. */
+  anchor?: AnnotationAnchor
+  /** ID of the space/door/zone this annotation is anchored to. */
+  anchorId?: string
+  /** Arrow target (metres) — draws an SVG arrow from annotation to this point. */
+  arrowTargetX?: number
+  arrowTargetY?: number
+  /** Arrow rendering style. */
+  arrowStyle?: ArrowStyle
+  /** When true, the annotation pulses (CSS keyframe) — used for 'promo'. */
+  pulse?: boolean
+  /** ISO string — annotation auto-hides after this date. */
+  expiresAt?: string
+
   createdAt: string
   updatedAt: string
 }

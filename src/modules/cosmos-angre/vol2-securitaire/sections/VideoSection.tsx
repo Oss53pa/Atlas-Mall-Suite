@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Plus, Pencil, Camera as CameraIcon } from 'lucide-react'
 import { useVol2Store } from '../store/vol2Store'
 import type { Camera } from '../../shared/proph3t/types'

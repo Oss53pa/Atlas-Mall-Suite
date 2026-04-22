@@ -163,7 +163,7 @@ const NON_WALKABLE_TYPES = new Set([
   'technique', 'backoffice', 'financier',
 ])
 
-const STAIR_TRANSITION_TYPES = new Set([
+const _STAIR_TRANSITION_TYPES = new Set([
   'escalier_fixe', 'escalier_secours',
 ])
 

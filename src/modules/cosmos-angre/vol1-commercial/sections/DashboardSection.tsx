@@ -1,7 +1,7 @@
 // ═══ VOL.1 — Dashboard Occupancy (F1.4) ═══
 
-import React, { useMemo } from 'react'
-import { Building2, TrendingUp, TrendingDown, DollarSign, Users, BarChart2 } from 'lucide-react'
+import { useMemo } from 'react'
+import { Building2, DollarSign, Users, BarChart2 } from 'lucide-react'
 import { useVol1Store } from '../store/vol1Store'
 import { formatFcfa } from '../../shared/utils/formatting'
 import { SECTOR_LABELS as sectorLabels, SECTOR_COLORS as sectorColors } from '../../shared/constants/sectorConfig'
