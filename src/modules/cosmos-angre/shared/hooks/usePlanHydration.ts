@@ -39,6 +39,10 @@ export function usePlanHydration(): void {
     const current = usePlanEngineStore.getState().parsedPlan
 
     ;(async () => {
+      // Rehydrate tous les imports (multi-plans) — permet au sélecteur
+      // de SpaceEditorSection d'afficher tous les plans persistés.
+      void usePlanEngineStore.getState().hydrateParsedPlans()
+
       let plan = current
       if (!plan) {
         plan = await loadPlanFromCache().catch(() => null)

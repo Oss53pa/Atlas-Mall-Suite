@@ -11,11 +11,12 @@
 //   Éditeur — SpaceEditorCanvas (édition polygonale)
 //   Carte    — MapViewerShell  (visualisation 2D / 3D / AR)
 
-import { useEffect, useMemo, useState } from 'react'
-import { Info, Download, RotateCcw, AlertTriangle, PenLine, Map } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Info, Download, RotateCcw, AlertTriangle, PenLine, Map, FileText, ChevronDown } from 'lucide-react'
 import { SpaceEditorCanvas, type EditableSpace } from './SpaceEditorCanvas'
 import { usePlanEngineStore } from '../stores/planEngineStore'
 import { useEditableSpaceStore } from '../stores/editableSpaceStore'
+import { usePlanImportStore } from '../stores/planImportStore'
 import { autoDetectSpaceType } from '../proph3t/libraries/spaceTypeLibrary'
 import { loadAllPlanImages } from '../stores/planImageCache'
 import MapViewerShell from '../map-viewer/MapViewerShell'
@@ -25,30 +26,53 @@ type SectionTab = 'editor' | 'map'
 export default function SpaceEditorSection() {
   const [tab, setTab] = useState<SectionTab>('editor')
   const parsedPlan = usePlanEngineStore((s) => s.parsedPlan)
+  const loadParsedPlan = usePlanEngineStore((s) => s.loadParsedPlan)
+  const parsedPlans = usePlanEngineStore((s) => s.parsedPlans)
   const { spaces, activeFloor, setSpaces, setActiveFloor, clear } = useEditableSpaceStore()
+
+  // ─── Imports disponibles (pour choisir quel plan éditer) ───
+  const imports = usePlanImportStore((s) => s.imports)
+  const activeImport = useMemo(() => {
+    if (!parsedPlan) return null
+    // Cherche quel importId correspond au parsedPlan actif (match par référence)
+    const entry = Object.entries(parsedPlans).find(([, p]) => p === parsedPlan)
+    return entry ? imports.find(i => i.id === entry[0]) ?? null : imports[0] ?? null
+  }, [parsedPlan, parsedPlans, imports])
+
+  const handleSwitchImport = useCallback((importId: string) => {
+    const success = loadParsedPlan(importId)
+    if (!success) {
+      console.warn('[SpaceEditor] Impossible de charger le plan', importId, '— rebuild nécessaire')
+    }
+  }, [loadParsedPlan])
 
   const planBounds = useMemo(() => ({
     width: parsedPlan?.bounds.width || 200,
     height: parsedPlan?.bounds.height || 140,
   }), [parsedPlan])
 
-  // Recharge l'image de fond depuis IndexedDB (survit aux refreshes).
-  // On prend la première image disponible — l'utilisateur peut changer le
-  // niveau dans la toolbar de SpaceEditorCanvas.
+  // Recharge l'image de fond depuis le plan actif (import sélectionné).
+  // Priorité : planImageUrl de l'import actif > première image du cache IndexedDB.
   const [backgroundUrl, setBackgroundUrl] = useState<string | undefined>(undefined)
   useEffect(() => {
     let cancelled = false
     void (async () => {
       try {
+        // 1. Si un import est sélectionné, prioriser son image
+        if (activeImport?.planImageUrl) {
+          if (!cancelled) setBackgroundUrl(activeImport.planImageUrl)
+          return
+        }
+        // 2. Sinon fallback sur première image IndexedDB
         const all = await loadAllPlanImages()
         if (cancelled) return
         setBackgroundUrl(Object.values(all)[0])
       } catch {
-        setBackgroundUrl(undefined)
+        if (!cancelled) setBackgroundUrl(undefined)
       }
     })()
     return () => { cancelled = true }
-  }, [parsedPlan])
+  }, [parsedPlan, activeImport])
 
   // Empty state
   if (!parsedPlan) {
@@ -110,6 +134,37 @@ export default function SpaceEditorSection() {
             <Map size={11} /> Carte
           </button>
         </div>
+
+        {/* ─── Sélecteur de plan (imports multiples) ─── */}
+        {imports.length > 1 && (
+          <div className="flex items-center gap-1.5">
+            <FileText size={11} className="text-slate-500" />
+            <span className="text-[10px] text-slate-500 uppercase tracking-wider">Plan :</span>
+            <div className="relative">
+              <select
+                value={activeImport?.id ?? ''}
+                onChange={(e) => handleSwitchImport(e.target.value)}
+                className="appearance-none pl-2.5 pr-7 py-1 rounded-md bg-surface-1 border border-white/[0.08] text-[11px] text-slate-200 hover:border-atlas-500/40 focus:outline-none focus:border-atlas-500/50 cursor-pointer"
+              >
+                {imports.map((imp) => (
+                  <option key={imp.id} value={imp.id}>
+                    {imp.fileName} {imp.floorLevel ? `· ${imp.floorLevel}` : ''}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            </div>
+            <span className="text-[9px] text-slate-600 ml-1">
+              ({imports.length} disponibles)
+            </span>
+          </div>
+        )}
+        {imports.length === 1 && activeImport && (
+          <span className="flex items-center gap-1.5 text-[10px] text-slate-600">
+            <FileText size={10} />
+            {activeImport.fileName}
+          </span>
+        )}
 
         {tab === 'editor' && (
           <>

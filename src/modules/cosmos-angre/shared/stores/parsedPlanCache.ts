@@ -1,7 +1,12 @@
 // ═══ PARSED PLAN CACHE — Persiste le plan parsé en IndexedDB ═══
 // Le ParsedPlan peut être volumineux (10MB+ pour un gros DXF) donc pas stockable
 // directement en localStorage. On le sérialise en IndexedDB via Dexie.
-// À chaque navigation entre volumes / refresh, on recharge automatiquement.
+//
+// Deux APIs :
+//   • Legacy (table `current`) : 1 seul plan "actif" rechargé au boot
+//   • Multi (table `byImport`)  : N plans indexés par importId — permet de
+//     conserver tous les imports entre refreshes pour le sélecteur de
+//     SpaceEditorSection. v2 (2026-04-22).
 
 import Dexie, { type Table } from 'dexie'
 import type { ParsedPlan } from '../planReader/planEngineTypes'
@@ -12,27 +17,46 @@ interface PlanRecord {
   savedAt: string
 }
 
+interface ImportPlanRecord {
+  importId: string
+  parsedPlan: ParsedPlan
+  savedAt: string
+  /** Taille en octets de la sérialisation — sert au cleanup. */
+  sizeBytes: number
+}
+
 class ParsedPlanDB extends Dexie {
   current!: Table<PlanRecord, string>
+  byImport!: Table<ImportPlanRecord, string>
   constructor() {
     super('atlas-parsed-plan-cache')
+    // v1 : table `current` uniquement
     this.version(1).stores({ current: 'id, savedAt' })
+    // v2 : ajoute table `byImport` pour le multi-plans
+    this.version(2).stores({
+      current:  'id, savedAt',
+      byImport: 'importId, savedAt',
+    })
   }
 }
 
 const db = new ParsedPlanDB()
 
+// ─── API legacy : plan actif unique ────────────────────────
+
+/** Nettoie un ParsedPlan des blob URLs morts avant persistence. */
+function stripBlobUrls(plan: ParsedPlan): ParsedPlan {
+  const p = plan as ParsedPlan & { imageUrl?: string }
+  return p.imageUrl?.startsWith('blob:')
+    ? ({ ...plan, imageUrl: undefined } as ParsedPlan)
+    : plan
+}
+
 export async function savePlanToCache(plan: ParsedPlan): Promise<void> {
   try {
-    // Strip blob: URLs — ils meurent au refresh page (ERR_FILE_NOT_FOUND).
-    // Les images persistantes passent par planImageCache (IndexedDB + Blob).
-    const rec = plan as ParsedPlan & { imageUrl?: string }
-    const stripped: ParsedPlan = rec.imageUrl?.startsWith('blob:')
-      ? { ...plan, imageUrl: undefined } as ParsedPlan
-      : plan
     await db.current.put({
       id: 'current',
-      parsedPlan: stripped,
+      parsedPlan: stripBlobUrls(plan),
       savedAt: new Date().toISOString(),
     })
   } catch (err) {
@@ -44,12 +68,7 @@ export async function loadPlanFromCache(): Promise<ParsedPlan | null> {
   try {
     const rec = await db.current.get('current')
     if (!rec?.parsedPlan) return null
-    // Defense en profondeur : strip tout blob URL residuel des anciens caches.
-    const plan = rec.parsedPlan as ParsedPlan & { imageUrl?: string }
-    if (plan.imageUrl?.startsWith('blob:')) {
-      return { ...plan, imageUrl: undefined } as ParsedPlan
-    }
-    return plan
+    return stripBlobUrls(rec.parsedPlan)
   } catch (err) {
     console.warn('[parsedPlanCache] load failed', err)
     return null
@@ -57,5 +76,83 @@ export async function loadPlanFromCache(): Promise<ParsedPlan | null> {
 }
 
 export async function clearPlanCache(): Promise<void> {
-  try { await db.current.clear() } catch { /* */ }
+  try {
+    await db.current.clear()
+    await db.byImport.clear()
+  } catch { /* */ }
+}
+
+// ─── API multi-imports (v2) ────────────────────────────────
+
+/**
+ * Sauvegarde un ParsedPlan associé à un importId.
+ * Ces plans sont rechargés au boot par `loadAllImportPlans()` pour
+ * alimenter le sélecteur d'import de SpaceEditorSection.
+ */
+export async function saveImportPlan(importId: string, plan: ParsedPlan): Promise<void> {
+  try {
+    const stripped = stripBlobUrls(plan)
+    const serialized = JSON.stringify(stripped)
+    await db.byImport.put({
+      importId,
+      parsedPlan: stripped,
+      savedAt: new Date().toISOString(),
+      sizeBytes: new Blob([serialized]).size,
+    })
+  } catch (err) {
+    console.warn('[parsedPlanCache] saveImportPlan failed', err)
+  }
+}
+
+/** Charge tous les plans indexés par importId (utilisé au boot). */
+export async function loadAllImportPlans(): Promise<Record<string, ParsedPlan>> {
+  try {
+    const all = await db.byImport.toArray()
+    const map: Record<string, ParsedPlan> = {}
+    for (const rec of all) {
+      if (rec.parsedPlan) map[rec.importId] = stripBlobUrls(rec.parsedPlan)
+    }
+    return map
+  } catch (err) {
+    console.warn('[parsedPlanCache] loadAllImportPlans failed', err)
+    return {}
+  }
+}
+
+/** Supprime un plan import spécifique. */
+export async function deleteImportPlan(importId: string): Promise<void> {
+  try {
+    await db.byImport.delete(importId)
+  } catch { /* */ }
+}
+
+/** Stats pour monitoring : nombre + taille totale. */
+export async function getImportPlansStats(): Promise<{
+  count: number
+  totalSizeBytes: number
+  oldestAt: string | null
+}> {
+  try {
+    const all = await db.byImport.toArray()
+    if (all.length === 0) return { count: 0, totalSizeBytes: 0, oldestAt: null }
+    return {
+      count: all.length,
+      totalSizeBytes: all.reduce((s, r) => s + (r.sizeBytes ?? 0), 0),
+      oldestAt: all.reduce((min, r) => !min || r.savedAt < min ? r.savedAt : min, null as string | null),
+    }
+  } catch {
+    return { count: 0, totalSizeBytes: 0, oldestAt: null }
+  }
+}
+
+/** Purge les plans import > N jours pour éviter la saturation IDB. */
+export async function pruneOldImportPlans(maxAgeDays = 90): Promise<number> {
+  try {
+    const cutoff = new Date(Date.now() - maxAgeDays * 86_400_000).toISOString()
+    const old = await db.byImport.where('savedAt').below(cutoff).toArray()
+    await db.byImport.where('savedAt').below(cutoff).delete()
+    return old.length
+  } catch {
+    return 0
+  }
 }

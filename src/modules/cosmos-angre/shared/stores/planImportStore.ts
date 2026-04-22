@@ -75,16 +75,26 @@ export const usePlanImportStore = create<PlanImportStoreState>()(
           imports: s.imports.map((r) => (r.id === id ? { ...r, ...data } : r)),
         })),
 
-      removeImport: (id) =>
+      removeImport: (id) => {
         set((s) => {
           const newActive = { ...s.activePlanPerFloor }
           for (const [fid, iid] of Object.entries(newActive)) {
             if (iid === id) delete newActive[fid]
           }
           return { imports: s.imports.filter((r) => r.id !== id), activePlanPerFloor: newActive }
-        }),
+        })
+        // Purge le ParsedPlan persisté associé (fire-and-forget)
+        void import('./parsedPlanCache')
+          .then(m => m.deleteImportPlan(id))
+          .catch(() => { /* ignore */ })
+      },
 
-      clearAll: () => set({ imports: [], activePlanPerFloor: {}, layersPerFloor: {} }),
+      clearAll: () => {
+        set({ imports: [], activePlanPerFloor: {}, layersPerFloor: {} })
+        void import('./parsedPlanCache')
+          .then(m => m.clearPlanCache())
+          .catch(() => { /* ignore */ })
+      },
 
       setActivePlan: (floorId, importId) =>
         set((s) => ({ activePlanPerFloor: { ...s.activePlanPerFloor, [floorId]: importId } })),

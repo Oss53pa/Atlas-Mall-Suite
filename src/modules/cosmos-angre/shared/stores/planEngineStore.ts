@@ -45,12 +45,14 @@ interface PlanEngineState {
 
   /** Escape hatch — ferme toutes les modales d'un coup. */
   closeAllModals: () => void
-  /** All parsed plans keyed by importId (in-memory only, not persisted) */
+  /** All parsed plans keyed by importId (persisté via Dexie depuis 2026-04-22). */
   parsedPlans: Record<string, ParsedPlan>
-  /** Store a parsed plan associated with an import */
+  /** Store a parsed plan associated with an import (auto-persist IndexedDB). */
   storeParsedPlan: (importId: string, plan: ParsedPlan) => void
-  /** Load a previously stored plan into the active parsedPlan + spaces + layers */
+  /** Load a previously stored plan into the active parsedPlan + spaces + layers. */
   loadParsedPlan: (importId: string) => boolean
+  /** Rehydrate tous les parsedPlans depuis IndexedDB (à appeler au boot). */
+  hydrateParsedPlans: () => Promise<void>
 
   // ── Detected spaces ──
   spaces: DetectedSpace[]
@@ -154,14 +156,34 @@ export const usePlanEngineStore = create<PlanEngineState>()(
       closeAllModals: () => set({ proph3tModalOpen: false, floorAttributionOpen: false }),
 
       parsedPlans: {},
-      storeParsedPlan: (importId, plan) => set(s => ({
-        parsedPlans: { ...s.parsedPlans, [importId]: plan },
-      })),
+      storeParsedPlan: (importId, plan) => {
+        set(s => ({ parsedPlans: { ...s.parsedPlans, [importId]: plan } }))
+        // Persistance Dexie (fire-and-forget) — survit au refresh
+        void import('./parsedPlanCache')
+          .then(m => m.saveImportPlan(importId, plan))
+          .catch(() => { /* ignore */ })
+      },
       loadParsedPlan: (importId) => {
         const plan = get().parsedPlans[importId]
         if (!plan) return false
         set({ parsedPlan: plan, spaces: plan.spaces, layers: plan.layers })
+        // Met à jour aussi le plan "actif" persisté
+        void import('./parsedPlanCache')
+          .then(m => m.savePlanToCache(plan))
+          .catch(() => { /* ignore */ })
         return true
+      },
+      /** Rehydrate tous les parsedPlans depuis Dexie au boot. */
+      hydrateParsedPlans: async () => {
+        try {
+          const mod = await import('./parsedPlanCache')
+          const all = await mod.loadAllImportPlans()
+          if (Object.keys(all).length > 0) {
+            set(s => ({ parsedPlans: { ...all, ...s.parsedPlans } }))
+          }
+        } catch (err) {
+          console.warn('[planEngineStore] hydrateParsedPlans failed', err)
+        }
       },
 
       // Spaces
