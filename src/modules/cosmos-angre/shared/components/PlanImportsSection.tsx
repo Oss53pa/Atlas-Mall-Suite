@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { usePlanImportStore, type PlanImportRecord, type ImportStatus } from '../stores/planImportStore'
 import { MapPin } from 'lucide-react'
+import { safeImageUrl } from '../../../../lib/urlSafety'
 import type { PlanSourceType, CalibrationResult, DimEntity } from '../planReader/planReaderTypes'
 import type { ParsedPlan } from '../planReader/planEngineTypes'
 import type { Zone, Floor } from '../proph3t/types'
@@ -379,14 +380,18 @@ function ImportCard({
         <div className="w-16 h-12 rounded-lg overflow-hidden flex-shrink-0 relative group/thumb border border-white/[0.08] cursor-pointer"
           style={{ background: `${srcCfg.color}08` }}
           onClick={(e) => { e.stopPropagation(); onPreview() }}>
-          {(record.planImageUrl || record.thumbnailUrl) ? (
-            <img src={record.planImageUrl || record.thumbnailUrl} alt={record.fileName}
-              className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <SrcIcon size={18} style={{ color: srcCfg.color }} />
-            </div>
-          )}
+          {(() => {
+            const safeUrl = safeImageUrl(record.planImageUrl) ?? safeImageUrl(record.thumbnailUrl)
+            return safeUrl ? (
+              <img src={safeUrl} alt={record.fileName}
+                className="w-full h-full object-cover"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <SrcIcon size={18} style={{ color: srcCfg.color }} />
+              </div>
+            )
+          })()}
           <div className="absolute inset-0 bg-surface-0/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
             <Eye size={14} className="text-white" />
           </div>

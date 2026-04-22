@@ -44,12 +44,30 @@ const db = new ParsedPlanDB()
 
 // ─── API legacy : plan actif unique ────────────────────────
 
-/** Nettoie un ParsedPlan des blob URLs morts avant persistence. */
+/**
+ * Nettoie un ParsedPlan de TOUS ses blob URLs morts avant persistence.
+ * Les blob:// ne survivent pas au refresh de la page → doivent être strippés
+ * pour éviter ERR_FILE_NOT_FOUND à la lecture de cache.
+ *
+ * Champs concernés (ParsedPlan) :
+ *   • planImageUrl      → image rendue du plan
+ *   • dxfBlobUrl        → blob du fichier DXF pour WebGL viewer
+ *   • imageUrl (legacy) → ancien champ image
+ */
 function stripBlobUrls(plan: ParsedPlan): ParsedPlan {
   const p = plan as ParsedPlan & { imageUrl?: string }
-  return p.imageUrl?.startsWith('blob:')
-    ? ({ ...plan, imageUrl: undefined } as ParsedPlan)
-    : plan
+  const needsStrip =
+    p.imageUrl?.startsWith('blob:') ||
+    p.planImageUrl?.startsWith('blob:') ||
+    p.dxfBlobUrl?.startsWith('blob:')
+
+  if (!needsStrip) return plan
+
+  const cleaned = { ...plan } as ParsedPlan & { imageUrl?: string }
+  if (cleaned.imageUrl?.startsWith('blob:'))      cleaned.imageUrl = undefined
+  if (cleaned.planImageUrl?.startsWith('blob:'))  cleaned.planImageUrl = undefined
+  if (cleaned.dxfBlobUrl?.startsWith('blob:'))    cleaned.dxfBlobUrl = undefined
+  return cleaned
 }
 
 export async function savePlanToCache(plan: ParsedPlan): Promise<void> {

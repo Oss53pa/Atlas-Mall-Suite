@@ -175,17 +175,39 @@ export const usePlanImportStore = create<PlanImportStoreState>()(
     }),
     {
       name: 'atlas-plan-imports',
-      // Strip blob: URLs before persisting — they are session-only and
-      // become invalid after page refresh. The planImageCache (IndexedDB)
-      // holds the actual blobs and recreates URLs on demand.
-      partialize: (state) => ({
-        ...state,
-        imports: state.imports.map((r) => ({
+      // Strip blob: URLs + toute chaîne qui n'est pas un format d'URL reconnu
+      // (évite qu'un UUID brut se retrouve dans <img src={...}> → ERR_FILE_NOT_FOUND).
+      partialize: (state) => {
+        const keep = (u: string | undefined): string | undefined => {
+          if (!u) return undefined
+          if (u.startsWith('blob:')) return undefined  // blob mort au refresh
+          if (u.startsWith('data:') || u.startsWith('http://') || u.startsWith('https://') || u.startsWith('/')) return u
+          return undefined  // UUID brut, chaîne vide, garbage → strip
+        }
+        return {
+          ...state,
+          imports: state.imports.map((r) => ({
+            ...r,
+            thumbnailUrl: keep(r.thumbnailUrl),
+            planImageUrl: keep(r.planImageUrl),
+          })),
+        }
+      },
+      // Rehydrate : re-nettoie par sécurité (héritage v1 avec blobs résiduels).
+      onRehydrateStorage: () => (state) => {
+        if (!state) return
+        const keep = (u: string | undefined): string | undefined => {
+          if (!u) return undefined
+          if (u.startsWith('blob:')) return undefined
+          if (u.startsWith('data:') || u.startsWith('http://') || u.startsWith('https://') || u.startsWith('/')) return u
+          return undefined
+        }
+        state.imports = state.imports.map((r) => ({
           ...r,
-          thumbnailUrl: r.thumbnailUrl?.startsWith('blob:') ? undefined : r.thumbnailUrl,
-          planImageUrl: r.planImageUrl?.startsWith('blob:') ? undefined : r.planImageUrl,
-        })),
-      }),
+          thumbnailUrl: keep(r.thumbnailUrl),
+          planImageUrl: keep(r.planImageUrl),
+        }))
+      },
     }
   )
 )
