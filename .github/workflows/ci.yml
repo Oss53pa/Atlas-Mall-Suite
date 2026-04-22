@@ -1,0 +1,160 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, 'release/**']
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ────────────────────────────────────────────────
+  # 1. Typage + lint + tests unitaires
+  # ────────────────────────────────────────────────
+  quality:
+    name: Typecheck · Lint · Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: TypeScript — tsc --noEmit
+        run: npm run typecheck
+
+      - name: ESLint (ne bloque pas le build mais publie les erreurs)
+        run: npm run lint -- --max-warnings=9999 || true
+        continue-on-error: true
+
+      - name: Unit tests (Vitest)
+        run: npm test -- --reporter=default
+
+      - name: Coverage report
+        run: npm run test:coverage
+        continue-on-error: true
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+
+  # ────────────────────────────────────────────────
+  # 2. Build production
+  # ────────────────────────────────────────────────
+  build:
+    name: Build production
+    runs-on: ubuntu-latest
+    needs: quality
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm' }
+
+      - run: npm ci --prefer-offline --no-audit
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Bundle size check
+        run: |
+          SIZE=$(du -sb dist | awk '{print $1}')
+          echo "Bundle size: $SIZE bytes ($(echo "scale=2; $SIZE/1024/1024" | bc) MB)"
+          if [ $SIZE -gt 15000000 ]; then
+            echo "::warning::Bundle > 15 MB — optimisations requises"
+          fi
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 14
+
+  # ────────────────────────────────────────────────
+  # 3. Tests E2E Playwright
+  # ────────────────────────────────────────────────
+  e2e:
+    name: E2E Playwright
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 20
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm' }
+      - run: npm ci --prefer-offline --no-audit
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: npx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  # ────────────────────────────────────────────────
+  # 4. Scan sécurité SCA (dependencies)
+  # ────────────────────────────────────────────────
+  security:
+    name: Security — npm audit & SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm' }
+
+      - name: npm audit (high + critical)
+        run: npm audit --audit-level=high --omit=dev || true
+        continue-on-error: true
+
+      - name: Generate SBOM (CycloneDX)
+        run: npx --yes @cyclonedx/cyclonedx-npm --output-file sbom.json
+        continue-on-error: true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sbom
+          path: sbom.json
+          retention-days: 30
+
+  # ────────────────────────────────────────────────
+  # 5. (optionnel) Scan secrets dans le code
+  # ────────────────────────────────────────────────
+  secrets-scan:
+    name: Secrets scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
