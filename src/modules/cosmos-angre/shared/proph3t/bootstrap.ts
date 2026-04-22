@@ -6,6 +6,12 @@ import { analyzePlanAtImport, type AnalyzePlanInput } from './skills/analyzePlan
 import { analyzeCommercialMix, type CommercialAnalysisInput } from './skills/analyzeCommercialMix'
 import { auditSecurity, type SecurityAuditInput } from './skills/auditSecurity'
 import { analyzeParcours, type ParcoursAnalysisInput } from './skills/analyzeParcours'
+import { analyzeWayfinderSkill, type WayfinderAnalyzeInput } from './skills/analyzeWayfinder'
+import { analyzeAnomalies, type AnomaliesInput } from './skills/analyzeAnomalies'
+import { analyzeMaintenance, type MaintenanceInput } from './skills/analyzeMaintenance'
+import { analyzeTenantScore, type TenantScoreInput } from './skills/analyzeTenantScore'
+import { analyzeCrowding, type CrowdingInput } from './skills/analyzeCrowding'
+import { analyzeSentimentSkill, type SentimentInput } from './skills/analyzeSentiment'
 
 let bootstrapped = false
 
@@ -25,6 +31,24 @@ export async function bootstrapProph3t(): Promise<void> {
   )
   registerSkill<ParcoursAnalysisInput, ReturnType<typeof analyzeParcours>>(
     'analyzeParcours', analyzeParcours,
+  )
+  registerSkill<WayfinderAnalyzeInput, ReturnType<typeof analyzeWayfinderSkill>>(
+    'analyzeWayfinder', analyzeWayfinderSkill,
+  )
+  registerSkill<AnomaliesInput, ReturnType<typeof analyzeAnomalies>>(
+    'analyzeAnomalies', analyzeAnomalies,
+  )
+  registerSkill<MaintenanceInput, ReturnType<typeof analyzeMaintenance>>(
+    'analyzeMaintenance', analyzeMaintenance,
+  )
+  registerSkill<TenantScoreInput, ReturnType<typeof analyzeTenantScore>>(
+    'analyzeTenantScore', analyzeTenantScore,
+  )
+  registerSkill<CrowdingInput, ReturnType<typeof analyzeCrowding>>(
+    'analyzeCrowding', analyzeCrowding,
+  )
+  registerSkill<SentimentInput, ReturnType<typeof analyzeSentimentSkill>>(
+    'analyzeSentiment', analyzeSentimentSkill,
   )
 
   // Branche le bus d'événements de domaine (logging uniquement, pas d'auto-run)

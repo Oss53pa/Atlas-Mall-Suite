@@ -6,6 +6,7 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react'
 import { Eye, EyeOff, Layers, Trash2, GripVertical, Download, Maximize2, Minimize2, X } from 'lucide-react'
 import { usePlanImportStore, type PlanLayer, type PlanImportRecord } from '../stores/planImportStore'
+import { safeImageUrl } from '../../../../lib/urlSafety'
 
 interface OverlayLayerView extends PlanLayer {
   record: PlanImportRecord
@@ -296,15 +297,21 @@ export function MultiPlanOverlay({ floorId, className = '', onConsolidated }: Mu
         <div className="border-t border-white/[0.06] p-3 bg-surface-1/30">
           <div className="text-[9px] uppercase tracking-wider text-slate-500 mb-2">Aperçu superposition</div>
           <div className="relative w-full h-48 bg-white rounded overflow-hidden">
-            {layers.map((l) => l.visible && l.record.planImageUrl && (
-              <img
-                key={l.importId}
-                src={l.record.planImageUrl}
-                alt={l.record.fileName}
-                className="absolute inset-0 w-full h-full object-contain"
-                style={{ opacity: l.opacity }}
-              />
-            ))}
+            {layers.map((l) => {
+              if (!l.visible) return null
+              const safeUrl = safeImageUrl(l.record.planImageUrl)
+              if (!safeUrl) return null
+              return (
+                <img
+                  key={l.importId}
+                  src={safeUrl}
+                  alt={l.record.fileName}
+                  className="absolute inset-0 w-full h-full object-contain"
+                  style={{ opacity: l.opacity }}
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+                />
+              )
+            })}
           </div>
         </div>
       )}

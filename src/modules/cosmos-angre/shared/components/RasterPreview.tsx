@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react'
 import type { RasterRecognitionResult, RecognizedZone, BoundingBox } from '../planReader/planReaderTypes'
 import type { SpaceType } from '../proph3t/types'
+import { safeImageUrl } from '../../../../lib/urlSafety'
 
 interface RasterPreviewProps {
   imageUrl: string
@@ -203,7 +204,13 @@ export default function RasterPreview({
       {/* Preview canvas */}
       <div className="relative bg-surface-0 rounded-lg overflow-hidden" style={{ width, height }}>
         {/* Background image */}
-        <img src={imageUrl} alt="Plan" className="absolute inset-0 w-full h-full object-contain" draggable={false} />
+        {(() => {
+          const safeUrl = safeImageUrl(imageUrl)
+          return safeUrl ? (
+            <img src={safeUrl} alt="Plan" className="absolute inset-0 w-full h-full object-contain" draggable={false}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+          ) : null
+        })()}
 
         {/* SVG overlay */}
         <svg ref={svgRef} className="absolute inset-0 w-full h-full" viewBox="0 0 1 1" preserveAspectRatio="none"

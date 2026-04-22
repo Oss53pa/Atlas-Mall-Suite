@@ -20,6 +20,7 @@ import { usePlanImportStore } from '../stores/planImportStore'
 import { autoDetectSpaceType } from '../proph3t/libraries/spaceTypeLibrary'
 import { loadAllPlanImages } from '../stores/planImageCache'
 import MapViewerShell from '../map-viewer/MapViewerShell'
+import { safeImageUrl } from '../../../../lib/urlSafety'
 
 type SectionTab = 'editor' | 'map'
 
@@ -59,14 +60,16 @@ export default function SpaceEditorSection() {
     void (async () => {
       try {
         // 1. Si un import est sélectionné, prioriser son image
-        if (activeImport?.planImageUrl) {
-          if (!cancelled) setBackgroundUrl(activeImport.planImageUrl)
+        const safeActive = safeImageUrl(activeImport?.planImageUrl)
+        if (safeActive) {
+          if (!cancelled) setBackgroundUrl(safeActive)
           return
         }
         // 2. Sinon fallback sur première image IndexedDB
         const all = await loadAllPlanImages()
         if (cancelled) return
-        setBackgroundUrl(Object.values(all)[0])
+        const firstSafe = Object.values(all).map(safeImageUrl).find(Boolean)
+        setBackgroundUrl(firstSafe)
       } catch {
         if (!cancelled) setBackgroundUrl(undefined)
       }

@@ -3,7 +3,7 @@
 // GPS intérieur du Cosmos Angré : mobile, web, bornes.
 // Reprend le pattern Vol.1/2/3 : Atlas Studio Phase 0 + section métier propres.
 
-import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -33,9 +33,11 @@ import { useVol4Store } from './store/vol4Store'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
 import { savePlanImageFromUrl, loadAllPlanImages } from '../shared/stores/planImageCache'
-import { buildWayfinderCatalog } from './engines/wayfinderBridge'
+import { buildWayfinderCatalog, buildWayfinderGraph } from './engines/wayfinderBridge'
 import { buildSearchIndex } from './engines/searchEngine'
 import { useAutoSnapshot } from '../shared/hooks/useAutoSnapshot'
+import { Proph3tVolumePanel } from '../shared/proph3t/components/Proph3tVolumePanel'
+import type { WayfinderAnalyzeInput } from '../shared/proph3t/skills/analyzeWayfinder'
 
 // Sections lazy-loaded (avoid cross-chunk TDZ)
 const RouteSearchSectionLazy = lazy(() => import('./sections/RouteSearchSection'))
@@ -150,9 +152,22 @@ export default function Vol4Module() {
   } = useVol4Store()
 
   const parsedPlan = usePlanEngineStore(s => s.parsedPlan)
+  const routeHistory = useVol4Store(s => s.routeHistory)
+  const catalogItems = useVol4Store(s => s.catalogItems)
 
   // Auto-snapshot : capture automatique des versions majeures
   useAutoSnapshot({ volumeId: 'vol4' })
+
+  // ─── Proph3t Vol.4 — build input pour skill analyzeWayfinder ───
+  const buildWayfinderInput = useCallback((): WayfinderAnalyzeInput | null => {
+    if (!parsedPlan) return null
+    const { graph } = buildWayfinderGraph({ parsedPlan })
+    return {
+      navGraph: graph,
+      usageLogs: routeHistory,
+      allRefIds: catalogItems.map(c => c.id),
+    }
+  }, [parsedPlan, routeHistory, catalogItems])
 
   // Rehydrate plan image backgrounds (pattern Vol.1)
   useEffect(() => {
@@ -386,6 +401,14 @@ export default function Vol4Module() {
           )}
         </Suspense>
       </main>
+
+      {/* Proph3t Vol.4 docked panel (bouton "Analyser" → runSkill('analyzeWayfinder')) */}
+      <Proph3tVolumePanel
+        volume="wayfinder"
+        buildInput={buildWayfinderInput}
+        title="PROPH3T · Vol.4 Wayfinder"
+        position="right"
+      />
     </div>
   )
 }

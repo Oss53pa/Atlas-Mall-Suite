@@ -534,7 +534,7 @@ function PlanPreviewModal({ record, onClose }: { record: PlanImportRecord; onClo
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [dragging, setDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  const imageUrl = record.planImageUrl || record.thumbnailUrl
+  const imageUrl = safeImageUrl(record.planImageUrl) ?? safeImageUrl(record.thumbnailUrl)
 
   const srcCfg = sourceTypeConfig[record.sourceType]
   const stCfg = statusConfig[record.status]

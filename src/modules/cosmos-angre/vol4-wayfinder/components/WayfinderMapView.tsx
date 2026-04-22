@@ -11,6 +11,7 @@ import { usePlanEngineStore } from '../../shared/stores/planEngineStore'
 import { usePlanImportStore } from '../../shared/stores/planImportStore'
 import { useVol4Store } from '../store/vol4Store'
 import { smoothCatmullRom, simplifyRDP } from '../engines/astarEngine'
+import { safeImageUrl } from '../../../../lib/urlSafety'
 
 export default function WayfinderMapView() {
   const parsedPlan = usePlanEngineStore(s => s.parsedPlan)
@@ -32,8 +33,9 @@ export default function WayfinderMapView() {
 
   const planImageUrl = useMemo(() => {
     if (!parsedPlan) return undefined
-    return parsedPlan.planImageUrl
+    const raw = parsedPlan.planImageUrl
       ?? imports.find(i => i.planImageUrl)?.planImageUrl
+    return safeImageUrl(raw)
   }, [parsedPlan, imports])
 
   const bounds = parsedPlan?.bounds

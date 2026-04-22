@@ -13,7 +13,7 @@ import { Proph3tResultPanel } from './Proph3tResultPanel'
 import { runSkill } from '../orchestrator'
 import type { Proph3tResult, Proph3tAction } from '../orchestrator.types'
 
-export type VolumeKind = 'commercial' | 'security' | 'parcours'
+export type VolumeKind = 'commercial' | 'security' | 'parcours' | 'wayfinder'
 
 interface Props {
   /** Volume courant. */
@@ -66,6 +66,15 @@ const VOLUME_CONFIG: Record<VolumeKind, {
     evalVerb: 'Évaluer parcours',
     suggestVerb: 'Suggérer signalétique',
     auditVerb: 'Auditer accessibilité',
+  },
+  wayfinder: {
+    label: 'Vol.4 Wayfinder',
+    accent: 'atlas',
+    border: 'border-atlas-500/30',
+    skill: 'analyzeWayfinder',
+    evalVerb: 'Analyser wayfinder',
+    suggestVerb: 'Suggérer beacons',
+    auditVerb: 'Auditer signalétique',
   },
 }
 

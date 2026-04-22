@@ -189,6 +189,29 @@ export const usePlanModelsStore = create<PlanModelsState>()(
       // Note : les ParsedPlan peuvent être gros (polygones détaillés) → on
       // persiste tel quel dans localStorage. Pour des plans > 2 Mo, envisager
       // IndexedDB via un middleware custom.
+      //
+      // Strip des blob: URLs : un ParsedPlan fraîchement importé porte des
+      // blob:http://.../uuid (planImageUrl, dxfBlobUrl, imageUrl). Ces URLs
+      // meurent au refresh → ERR_FILE_NOT_FOUND si on les remet dans <img>.
+      // On les enlève à la persistance ET à la réhydratation (v1 legacy).
+      partialize: (state) => ({
+        ...state,
+        models: state.models.map((m) => ({ ...m, plan: stripBlobsFromPlan(m.plan) })),
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return
+        state.models = state.models.map((m) => ({ ...m, plan: stripBlobsFromPlan(m.plan) }))
+      },
     },
   ),
 )
+
+/** Retire blob: URLs d'un ParsedPlan (mortes au refresh). */
+function stripBlobsFromPlan(plan: ParsedPlan): ParsedPlan {
+  const p = plan as ParsedPlan & { imageUrl?: string }
+  const cleaned = { ...plan } as ParsedPlan & { imageUrl?: string }
+  if (p.imageUrl?.startsWith('blob:'))      cleaned.imageUrl = undefined
+  if (p.planImageUrl?.startsWith('blob:'))  cleaned.planImageUrl = undefined
+  if (p.dxfBlobUrl?.startsWith('blob:'))    cleaned.dxfBlobUrl = undefined
+  return cleaned
+}

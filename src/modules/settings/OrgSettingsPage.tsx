@@ -17,8 +17,10 @@ import {
   _X,
   Search,
   Download,
-  ExternalLink
+  ExternalLink,
+  Sparkles,
 } from 'lucide-react'
+import Proph3tCapabilitiesPanel from '../cosmos-angre/shared/proph3t/components/Proph3tCapabilitiesPanel'
 
 const SECTIONS = [
   { id: 'general', label: 'Informations légales', icon: Building2 },
@@ -29,6 +31,7 @@ const SECTIONS = [
   { id: 'projects', label: 'Projets gérés', icon: FolderOpen },
   { id: 'subscription', label: 'Abonnement', icon: CreditCard },
   { id: 'integrations', label: 'Intégrations', icon: Plug },
+  { id: 'ia', label: 'IA & Compétences', icon: Sparkles },
   { id: 'audit', label: "Journal d'audit", icon: ScrollText },
 ] as const
 
@@ -283,7 +286,22 @@ function IntegrationsSection() {
   )
 }
 
-// ═══ 9. Audit ═══
+// ═══ 9. IA & Capabilities ═══
+function IaCapabilitiesSection() {
+  return (
+    <div className="space-y-5">
+      <div>
+        <h3 className="text-lg font-semibold text-white">IA & Compétences Proph3t</h3>
+        <p className="text-sm text-gray-500">
+          Matrice exhaustive des capacités de Proph3t : apprend, prédit, suggère, recommande — par volume métier.
+        </p>
+      </div>
+      <Proph3tCapabilitiesPanel initialVolume="all" />
+    </div>
+  )
+}
+
+// ═══ 10. Audit ═══
 function AuditSection() {
   const logs = [
     { action:'Projet créé', user:'Cheick Sanankoua', detail:'Cosmos Angré', date:'15/01/2025 09:30' },
@@ -332,6 +350,7 @@ export default function OrgSettingsPage() {
       case 'projects': return <ProjectsSection />
       case 'subscription': return <SubscriptionSection />
       case 'integrations': return <IntegrationsSection />
+      case 'ia': return <IaCapabilitiesSection />
       case 'audit': return <AuditSection />
     }
   }

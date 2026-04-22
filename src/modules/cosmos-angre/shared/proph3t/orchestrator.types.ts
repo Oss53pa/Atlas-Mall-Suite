@@ -24,6 +24,9 @@ export interface Proph3tAction {
       | 'reposition-tenant' | 'renew-lease' | 'send-notice' | 'adjust-rent'
       | 'add-signage' | 'fix-compliance' | 'merge-zones' | 'split-zone'
       | 'flag-anomaly' | 'note'
+      | 'schedule-maintenance' | 'score-tenant' | 'deploy-agents'
+      | 'close-zone' | 'escalate-feedback' | 'investigate-feedback'
+      | 'acknowledge-feedback'
   targetId?: string
   label: string
   rationale: string

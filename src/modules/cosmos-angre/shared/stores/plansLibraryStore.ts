@@ -42,12 +42,27 @@ class PlansLibraryDB extends Dexie {
 
 const db = new PlansLibraryDB()
 
+/**
+ * Retire les blob: URLs d'un ParsedPlan. Ces URLs meurent au refresh de la
+ * page → elles ne doivent jamais être persistées. Concerne planImageUrl,
+ * dxfBlobUrl et le champ legacy imageUrl.
+ */
+function stripBlobsFromPlan(plan: ParsedPlan): ParsedPlan {
+  const p = plan as ParsedPlan & { imageUrl?: string }
+  const cleaned = { ...plan } as ParsedPlan & { imageUrl?: string }
+  if (p.imageUrl?.startsWith('blob:'))      cleaned.imageUrl = undefined
+  if (p.planImageUrl?.startsWith('blob:'))  cleaned.planImageUrl = undefined
+  if (p.dxfBlobUrl?.startsWith('blob:'))    cleaned.dxfBlobUrl = undefined
+  return cleaned
+}
+
 // ─── API ───────────────────────────────────────────────────
 
 export async function savePlan(record: Omit<SavedPlanRecord, 'savedAt' | 'lastAccessedAt' | 'accessCount'>): Promise<void> {
   const now = new Date().toISOString()
   await db.plans.put({
     ...record,
+    parsedPlan: stripBlobsFromPlan(record.parsedPlan),
     savedAt: now,
     lastAccessedAt: now,
     accessCount: 0,
@@ -69,7 +84,9 @@ export async function loadPlan(id: string): Promise<SavedPlanRecord | null> {
     lastAccessedAt: new Date().toISOString(),
     accessCount: plan.accessCount + 1,
   })
-  return plan
+  // Strip par sécurité : couvre les enregistrements legacy v1 écrits avant
+  // l'ajout du stripping côté savePlan.
+  return { ...plan, parsedPlan: stripBlobsFromPlan(plan.parsedPlan) }
 }
 
 export async function deletePlan(id: string): Promise<void> {
