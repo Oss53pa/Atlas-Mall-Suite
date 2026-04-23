@@ -640,7 +640,7 @@ export default function Vol3Module() {
         {/* ── Content area ─────────────────────────────────── */}
         {activeTab === 'plan' ? (<>
         {/* ── Left sidebar (toolbar) ────────────────────────── */}
-        <aside className="w-12 border-r border-white/[0.04] bg-surface-1/50 flex flex-col items-center py-3 gap-2 shrink-0">
+        <aside className="hidden md:flex w-12 border-r border-white/[0.04] bg-surface-1/50 flex-col items-center py-3 gap-2 shrink-0">
           {/* PLACEMENT TOOLS */}
           <div className="text-[8px] text-gray-600 font-mono mb-0.5">PLACER</div>
           <ToolbarButton
@@ -1351,7 +1351,7 @@ export default function Vol3Module() {
         </main>
 
         {/* ── Right Panel ── */}
-        <aside className="w-80 border-l border-gray-800 bg-surface-0 flex flex-col shrink-0 overflow-hidden">
+        <aside className="hidden lg:flex w-80 border-l border-gray-800 bg-surface-0 flex-col shrink-0 overflow-hidden">
           {/* Geo-notification panel */}
           {showNotifPanel && (
             <div className="border-b border-gray-800 p-3 max-h-[50%] overflow-y-auto">

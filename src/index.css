@@ -19,6 +19,15 @@
     @apply min-h-screen bg-surface-0 text-white font-sans;
   }
 
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  img, canvas, video, svg {
+    max-width: 100%;
+  }
+
   /* Custom scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
@@ -196,6 +205,18 @@
 }
 
 @layer utilities {
+  /* Toolbars scrollables horizontalement sur mobile */
+  .scroll-x-mobile {
+    @apply overflow-x-auto;
+    scrollbar-width: thin;
+  }
+  .scroll-x-mobile::-webkit-scrollbar { height: 3px; }
+
+  /* Bandeau "desktop recommandé" sous md */
+  .desktop-only-banner {
+    @apply md:hidden flex items-center gap-2 px-3 py-2 text-[11px] text-amber-300 bg-amber-500/10 border-b border-amber-500/20;
+  }
+
   .text-gradient-blue {
     @apply bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent;
   }

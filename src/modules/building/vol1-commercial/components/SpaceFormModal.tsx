@@ -102,7 +102,7 @@ export default function SpaceFormModal({ mode, space, defaultFloorId, onClose }:
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-surface-0/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-surface-0/60 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <div

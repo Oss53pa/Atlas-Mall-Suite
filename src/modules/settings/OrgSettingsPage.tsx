@@ -356,9 +356,9 @@ export default function OrgSettingsPage() {
   }
 
   return (
-    <div className="flex h-full" style={{ background: '#1a1d23', color: '#e2e8f0' }}>
-      <aside className="w-56 flex-shrink-0 border-r overflow-y-auto p-3 space-y-0.5" style={{ background: '#0a0f1a', borderColor: 'rgba(255,255,255,0.05)' }}>
-        <div className="px-2 py-2 mb-2">
+    <div className="flex flex-col md:flex-row h-full" style={{ background: '#1a1d23', color: '#e2e8f0' }}>
+      <aside className="md:w-56 md:flex-shrink-0 md:border-r border-b md:border-b-0 overflow-x-auto md:overflow-y-auto p-3 flex md:block gap-1 md:gap-0 md:space-y-0.5" style={{ background: '#0a0f1a', borderColor: 'rgba(255,255,255,0.05)' }}>
+        <div className="hidden md:block px-2 py-2 mb-2">
           <p className="text-[10px] text-gray-600 uppercase tracking-widest font-semibold">Paramètres</p>
           <p className="text-[12px] text-white font-medium mt-0.5">Organisation</p>
         </div>
@@ -366,7 +366,7 @@ export default function OrgSettingsPage() {
           const Icon = s.icon
           return (
             <button key={s.id} onClick={() => setActive(s.id)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all ${
+              className={`flex-shrink-0 md:w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all whitespace-nowrap ${
                 active === s.id ? 'bg-white/[0.06] text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'}`}>
               <Icon size={14} className={active === s.id ? 'text-atlas-400' : ''} />
               {s.label}
@@ -374,7 +374,9 @@ export default function OrgSettingsPage() {
           )
         })}
       </aside>
-      <main className="flex-1 overflow-y-auto p-8"><div className="max-w-3xl">{content()}</div></main>
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
+        <div className="max-w-5xl mx-auto">{content()}</div>
+      </main>
     </div>
   )
 }

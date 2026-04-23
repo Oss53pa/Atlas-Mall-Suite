@@ -189,7 +189,7 @@ export default function Vol4Module() {
   return (
     <div className="flex h-full" style={{ background: '#080c14', color: '#e2e8f0' }}>
       {/* Sidebar */}
-      <aside className="w-56 flex-shrink-0 flex flex-col border-r overflow-y-auto"
+      <aside className="hidden md:flex w-56 flex-shrink-0 flex-col border-r overflow-y-auto"
         style={{ background: '#0b1120', borderColor: '#1e2a3a' }}>
         {/* Back button */}
         <button

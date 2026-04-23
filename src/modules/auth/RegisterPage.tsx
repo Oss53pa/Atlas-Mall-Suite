@@ -18,7 +18,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: '#1a1d23' }}>
-      <div className="relative w-full max-w-md px-6">
+      <div className="relative w-full max-w-md px-4 sm:px-6 py-8">
         <div className="flex flex-col items-center mb-10">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-atlas-500 to-purple-600 shadow-lg mb-4">
             <Sparkles className="h-7 w-7 text-white" />
@@ -26,7 +26,7 @@ export default function RegisterPage() {
           <h1 className="text-2xl font-bold text-white tracking-tight">Atlas BIM</h1>
           <p className="text-sm text-gray-500 mt-1">Créez votre compte administrateur</p>
         </div>
-        <div className="rounded-2xl border border-white/[0.08] p-8" style={{ background: '#262a31' }}>
+        <div className="rounded-2xl border border-white/[0.08] p-6 sm:p-8" style={{ background: '#262a31' }}>
           <h2 className="text-lg font-semibold text-white mb-1">Inscription</h2>
           <p className="text-sm text-gray-500 mb-6">Étape 1/4 — Créer votre compte</p>
           <form onSubmit={handleSubmit} className="space-y-4">

@@ -19,7 +19,9 @@ import {
   ClipboardList,
   Globe2,
   Zap,
-  LayoutDashboard
+  LayoutDashboard,
+  Menu,
+  X
 } from 'lucide-react'
 import { useProjectStore } from '../modules/projects/projectStore'
 import { useSettingsStore } from '../modules/projects/settingsStore'
@@ -105,7 +107,15 @@ export default function AppLayout() {
   const isTransversalOrTool = ['/scenarios','/validation','/dce','/benchmark','/proph3t','/export','/virtual-tour'].includes(location.pathname)
 
   // When inside a volume, volumes have their own internal sidebar — collapse ours to icon rail
-  const isInsideVolume = currentVolPath !== null && !isTransversalOrTool
+  // mais seulement sur desktop (>= md) : sur mobile le drawer doit toujours afficher la nav complete
+  const [isMdUp, setIsMdUp] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    const h = (e: MediaQueryListEvent) => setIsMdUp(e.matches)
+    mq.addEventListener('change', h)
+    return () => mq.removeEventListener('change', h)
+  }, [])
+  const isInsideVolume = currentVolPath !== null && !isTransversalOrTool && isMdUp
 
   const appActiveOrg = useAppStore((s) => s.activeOrg)
   const appUserOrgs = useAppStore((s) => s.userOrgs)
@@ -124,26 +134,53 @@ export default function AppLayout() {
 
   const userInitial = settings.userName ? settings.userName[0].toUpperCase() : 'U'
 
-  return (
-    <div className="flex h-screen" style={{ background: '#1a1d23' }}>
+  const [mobileOpen, setMobileOpen] = useState(false)
 
-      {/* ═══ SIDEBAR PERMANENTE ═══ */}
+  useEffect(() => { setMobileOpen(false) }, [location.pathname])
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') setMobileOpen(false) }
+    document.addEventListener('keydown', h)
+    return () => document.removeEventListener('keydown', h)
+  }, [])
+
+  return (
+    <div className="flex h-screen relative" style={{ background: '#1a1d23' }}>
+
+      {/* Backdrop mobile */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 md:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden
+        />
+      )}
+
+      {/* ═══ SIDEBAR ═══ (drawer sur mobile, permanente >= md) */}
       <aside
-        className={`flex-shrink-0 flex flex-col border-r overflow-hidden transition-all duration-200 ${
-          isInsideVolume ? 'w-12' : 'w-52'
-        }`}
+        className={`flex flex-col border-r overflow-hidden transition-all duration-200
+          fixed md:static inset-y-0 left-0 z-50 md:z-auto md:flex-shrink-0
+          ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
+          ${isInsideVolume ? 'w-52 md:w-12' : 'w-64 md:w-52'}
+        `}
         style={{ background: '#080c16', borderColor: 'rgba(255,255,255,0.05)' }}
       >
-        {/* Name as logo → landing page */}
-        <button onClick={() => navigate('/')}
-          className="flex items-center px-3 py-3 hover:opacity-80 transition-opacity flex-shrink-0 border-b border-white/[0.04]"
-          title="Page d'accueil">
-          {!isInsideVolume ? (
-            <span className="text-[18px] text-white tracking-wide" style={{ fontFamily: "'Grand Hotel', cursive" }}>Atlas Bim</span>
-          ) : (
-            <span className="text-[13px] text-white" style={{ fontFamily: "'Grand Hotel', cursive" }}>A</span>
-          )}
-        </button>
+        {/* Header : logo + close (mobile) */}
+        <div className="flex items-center justify-between pr-2 flex-shrink-0 border-b border-white/[0.04]">
+          <button onClick={() => navigate('/')}
+            className="flex-1 flex items-center px-3 py-3 hover:opacity-80 transition-opacity"
+            title="Page d'accueil">
+            {!isInsideVolume ? (
+              <span className="text-[18px] text-white tracking-wide" style={{ fontFamily: "'Grand Hotel', cursive" }}>Atlas Bim</span>
+            ) : (
+              <span className="text-[13px] text-white" style={{ fontFamily: "'Grand Hotel', cursive" }}>A</span>
+            )}
+          </button>
+          <button onClick={() => setMobileOpen(false)}
+            className="md:hidden p-2 text-gray-400 hover:text-white"
+            aria-label="Fermer le menu">
+            <X size={18} />
+          </button>
+        </div>
 
         {/* Org selector */}
         {!isInsideVolume && (
@@ -399,17 +436,28 @@ export default function AppLayout() {
       </aside>
 
       {/* ═══ MAIN CONTENT ═══ */}
-      <main className="flex-1 overflow-hidden flex flex-col min-w-0">
-        {/* Topbar global : bouton Retour + raccourci Accueil */}
+      <main className="flex-1 overflow-hidden flex flex-col min-w-0 w-full">
+        {/* Topbar global : burger (mobile) + bouton Retour + raccourci Accueil */}
+        <div className="flex items-center gap-1 px-2 sm:px-4 py-2 border-b border-white/[0.04] bg-surface-0/50 backdrop-blur-sm flex-shrink-0 md:hidden">
+          <button onClick={() => setMobileOpen(true)}
+            className="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+            aria-label="Ouvrir le menu">
+            <Menu size={20} />
+          </button>
+          <span className="text-[15px] text-white" style={{ fontFamily: "'Grand Hotel', cursive" }}>Atlas Bim</span>
+          <div className="ml-auto flex items-center gap-1">
+            {!isHome && <BackButton />}
+          </div>
+        </div>
         {!isHome && (
-          <div className="flex items-center gap-1 px-4 py-2 border-b border-white/[0.04] bg-surface-0/50 backdrop-blur-sm flex-shrink-0">
+          <div className="hidden md:flex items-center gap-1 px-4 py-2 border-b border-white/[0.04] bg-surface-0/50 backdrop-blur-sm flex-shrink-0">
             <BackButton />
             {location.pathname !== '/dashboard' && (
               <BackButton toHome label="Accueil" className="ml-1" />
             )}
           </div>
         )}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-auto md:overflow-hidden">
           <Outlet />
         </div>
       </main>

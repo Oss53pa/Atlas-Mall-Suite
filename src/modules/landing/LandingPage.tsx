@@ -102,19 +102,19 @@ export default function LandingPage() {
 
       {/* ═══ NAVBAR ═══ */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/[0.04] backdrop-blur-xl" style={{ background: 'rgba(6,10,19,0.85)' }}>
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <span className="text-[26px] text-white tracking-wide" style={{ fontFamily: "'Grand Hotel', cursive" }}>Atlas Bim</span>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+          <span className="text-[22px] sm:text-[26px] text-white tracking-wide" style={{ fontFamily: "'Grand Hotel', cursive" }}>Atlas Bim</span>
           <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
             <a href="#features" className="hover:text-white transition-colors">Fonctionnalités</a>
             <a href="#pricing" className="hover:text-white transition-colors">Tarifs</a>
             <a href="#testimonials" className="hover:text-white transition-colors">Témoignages</a>
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/login')} className="text-sm text-gray-400 hover:text-white transition-colors px-3 py-1.5">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button onClick={() => navigate('/login')} className="hidden sm:inline text-sm text-gray-400 hover:text-white transition-colors px-3 py-1.5">
               Connexion
             </button>
             <button onClick={() => navigate('/register')}
-              className="text-sm font-medium bg-atlas-500 hover:bg-atlas-400 text-white px-4 py-2 rounded-xl transition-colors">
+              className="text-xs sm:text-sm font-medium bg-atlas-500 hover:bg-atlas-400 text-white px-3 sm:px-4 py-2 rounded-xl transition-colors whitespace-nowrap">
               Essai gratuit
             </button>
           </div>
@@ -122,7 +122,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ═══ HERO ═══ */}
-      <section className="relative pt-32 pb-20 overflow-hidden">
+      <section className="relative pt-24 sm:pt-32 pb-12 sm:pb-20 overflow-hidden">
         {/* Background effects */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-20 left-1/4 w-[700px] h-[700px] rounded-full opacity-[0.06] blur-[150px]" style={{ background: '#7e5e3c' }} />
@@ -134,7 +134,7 @@ export default function LandingPage() {
           }} />
         </div>
 
-        <div className="relative max-w-6xl mx-auto px-6 text-center">
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 text-center">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-8 text-[12px] font-medium"
             style={{ background: 'rgba(179,138,90,0.08)', border: '1px solid rgba(179,138,90,0.2)', color: '#d4b280' }}>
@@ -142,14 +142,14 @@ export default function LandingPage() {
             Propulsé par Proph3t — IA conversationnelle à mémoire longue
           </div>
 
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-light tracking-tight leading-[1.1] mb-6">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light tracking-tight leading-[1.1] mb-6">
             Le jumeau numérique{' '}
             <span className="bg-gradient-to-r from-atlas-300 via-atlas-400 to-atlas-600 bg-clip-text text-transparent">
               de vos bâtiments
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
             Atlas BIM par Atlas Studio — plateforme SaaS de planification, sécurité, expérience et wayfinding
             pour centres commerciaux, hôtels, bureaux, hôpitaux, campus et ERP publics.
           </p>
@@ -216,8 +216,8 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ VERTICALES ═══ */}
-      <section id="verticals" className="py-24">
-        <div className="max-w-6xl mx-auto px-6">
+      <section id="verticals" className="py-16 sm:py-24">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-14">
             <p className="text-[11px] text-atlas-400 uppercase tracking-[0.2em] font-semibold mb-3">8 Verticales</p>
             <h2 className="text-3xl md:text-4xl font-light tracking-tight mb-4">
@@ -245,8 +245,8 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ FEATURES ═══ */}
-      <section id="features" className="py-24" style={{ background: 'rgba(10,15,26,0.5)' }}>
-        <div className="max-w-6xl mx-auto px-6">
+      <section id="features" className="py-16 sm:py-24" style={{ background: 'rgba(10,15,26,0.5)' }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-16">
             <p className="text-[11px] text-atlas-400 uppercase tracking-[0.2em] font-semibold mb-3">4 Volumes métier</p>
             <h2 className="text-3xl md:text-4xl font-light tracking-tight mb-4">
@@ -299,8 +299,8 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ WHY US ═══ */}
-      <section className="py-20 border-y border-white/[0.04]" style={{ background: 'rgba(10,15,26,0.5)' }}>
-        <div className="max-w-6xl mx-auto px-6">
+      <section className="py-14 sm:py-20 border-y border-white/[0.04]" style={{ background: 'rgba(10,15,26,0.5)' }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-light tracking-tight mb-4">Pensé pour l'Afrique francophone &amp; au-delà</h2>
             <p className="text-gray-500 max-w-xl mx-auto">Native UEMOA/CEMAC, compatible internationale. Toute verticale, tout pays.</p>
@@ -326,8 +326,8 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ PRICING ═══ */}
-      <section id="pricing" className="py-24">
-        <div className="max-w-6xl mx-auto px-6">
+      <section id="pricing" className="py-16 sm:py-24">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-16">
             <p className="text-[11px] text-atlas-400 uppercase tracking-[0.2em] font-semibold mb-3">Tarification</p>
             <h2 className="text-3xl md:text-4xl font-light tracking-tight mb-4">
@@ -376,8 +376,8 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ TESTIMONIALS ═══ */}
-      <section id="testimonials" className="py-20 border-t border-white/[0.04]" style={{ background: 'rgba(10,15,26,0.5)' }}>
-        <div className="max-w-4xl mx-auto px-6">
+      <section id="testimonials" className="py-14 sm:py-20 border-t border-white/[0.04]" style={{ background: 'rgba(10,15,26,0.5)' }}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-light tracking-tight mb-4">Ce que disent nos utilisateurs</h2>
           </div>
@@ -396,8 +396,8 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ CTA ═══ */}
-      <section className="py-24">
-        <div className="max-w-3xl mx-auto px-6 text-center">
+      <section className="py-16 sm:py-24">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-atlas-500 to-purple-600 mx-auto mb-6 shadow-lg shadow-bronze/20">
             <Sparkles className="h-8 w-8 text-white" />
           </div>
@@ -407,9 +407,9 @@ export default function LandingPage() {
           <p className="text-gray-400 text-lg mb-8 max-w-xl mx-auto">
             Rejoignez les opérateurs qui utilisent Atlas BIM pour piloter mall, hôtels, bureaux, hôpitaux, campus ou portfolios multi-sites.
           </p>
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
             <button onClick={() => navigate('/register')}
-              className="flex items-center gap-2 px-8 py-3.5 rounded-xl bg-atlas-500 hover:bg-atlas-400 text-white font-medium text-[15px] transition-all hover:-translate-y-0.5">
+              className="flex items-center gap-2 px-6 sm:px-8 py-3.5 rounded-xl bg-atlas-500 hover:bg-atlas-400 text-white font-medium text-[15px] transition-all hover:-translate-y-0.5">
               Créer mon compte <ArrowRight size={18} />
             </button>
             <button onClick={() => navigate('/login')}
@@ -422,13 +422,13 @@ export default function LandingPage() {
 
       {/* ═══ FOOTER ═══ */}
       <footer className="border-t border-white/[0.04] py-12" style={{ background: 'rgba(6,10,19,0.9)' }}>
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
             <div>
               <span className="text-[18px] text-white" style={{ fontFamily: "'Grand Hotel', cursive" }}>Atlas BIM</span>
               <p className="text-[10px] text-gray-600">Atlas Studio</p>
             </div>
-            <div className="flex items-center gap-6 text-[12px] text-gray-500">
+            <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-6 text-[12px] text-gray-500">
               <span>UEMOA / CEMAC</span>
               <span>SYSCOHADA Révisé 2017</span>
               <span>Abidjan, Côte d'Ivoire</span>

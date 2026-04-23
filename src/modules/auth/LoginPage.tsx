@@ -23,7 +23,7 @@ export default function LoginPage() {
         <div className="absolute top-1/4 left-1/3 w-[500px] h-[500px] rounded-full opacity-[0.04] blur-[100px]" style={{ background: '#7e5e3c' }} />
         <div className="absolute bottom-1/4 right-1/3 w-[400px] h-[400px] rounded-full opacity-[0.03] blur-[80px]" style={{ background: '#38bdf8' }} />
       </div>
-      <div className="relative w-full max-w-md px-6">
+      <div className="relative w-full max-w-md px-4 sm:px-6">
         <div className="flex flex-col items-center mb-10">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-atlas-500 to-purple-600 shadow-lg mb-4">
             <Sparkles className="h-7 w-7 text-white" />
@@ -31,7 +31,7 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-white tracking-tight">Atlas BIM</h1>
           <p className="text-sm text-gray-500 mt-1">Plateforme de pilotage immobilier commercial</p>
         </div>
-        <div className="rounded-2xl border border-white/[0.08] p-8" style={{ background: '#262a31' }}>
+        <div className="rounded-2xl border border-white/[0.08] p-6 sm:p-8" style={{ background: '#262a31' }}>
           <h2 className="text-lg font-semibold text-white mb-1">Connexion</h2>
           <p className="text-sm text-gray-500 mb-6">Accédez à votre espace de travail</p>
           <form onSubmit={handleSubmit} className="space-y-4">

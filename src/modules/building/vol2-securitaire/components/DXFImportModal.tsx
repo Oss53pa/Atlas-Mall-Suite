@@ -284,8 +284,8 @@ export default function DXFImportModal({ open, onClose }: DXFImportModalProps) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-0/60 backdrop-blur-sm">
-      <div className="bg-surface-1 border border-gray-700 rounded-xl shadow-2xl w-[640px] max-h-[85vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-0/60 backdrop-blur-sm p-2 sm:p-4">
+      <div className="bg-surface-1 border border-gray-700 rounded-xl shadow-2xl w-full max-w-[640px] max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
           <div className="flex items-center gap-3">

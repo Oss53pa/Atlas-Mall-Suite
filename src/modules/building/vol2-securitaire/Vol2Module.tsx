@@ -1036,7 +1036,7 @@ export default function Vol2Module() {
       {/* ── Main body ───────────────────────────────────────── */}
       <div className="flex-1 flex min-h-0">
         {/* ── Sidebar navigation — always visible ──────────── */}
-        <aside className="flex-none w-60 border-r border-white/[0.04] bg-surface-1 overflow-y-auto">
+        <aside className="hidden md:block flex-none w-60 border-r border-white/[0.04] bg-surface-1 overflow-y-auto">
           {/* Sidebar header */}
           <div className="px-4 pt-4 pb-3 border-b border-white/[0.04]">
             <div className="text-[12px] font-bold text-white tracking-tight">The Mall</div>
@@ -1117,7 +1117,7 @@ export default function Vol2Module() {
             </Suspense>
           ) : (<>
         {/* ── Left sidebar (toolbar) ────────────────────────── */}
-        <aside className="flex-none w-12 border-r border-gray-800 bg-surface-1/50 flex flex-col items-center py-3 gap-1">
+        <aside className="hidden md:flex flex-none w-12 border-r border-gray-800 bg-surface-1/50 flex-col items-center py-3 gap-1">
           {/* ── PLACEMENT TOOLS ── */}
           <div className="text-[8px] text-gray-600 font-mono mb-1">PLACER</div>
           <ToolbarButton
@@ -1474,7 +1474,7 @@ export default function Vol2Module() {
         </main>
 
         {/* ── Right panel ───────────────────────────────────── */}
-        <aside className="flex-none w-80 border-l border-gray-800 bg-surface-1/40 flex flex-col min-h-0">
+        <aside className="hidden lg:flex flex-none w-80 border-l border-gray-800 bg-surface-1/40 flex-col min-h-0">
           {selectedEntity ? (
             <EntityPanel
               entity={selectedEntity}

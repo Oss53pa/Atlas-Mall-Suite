@@ -124,9 +124,9 @@ export default function Vol1Module() {
   }, [])
 
   return (
-    <div className="flex h-full" style={{ background: '#080c14', color: '#e2e8f0' }}>
-      {/* Sidebar */}
-      <aside className="w-56 flex-shrink-0 flex flex-col border-r overflow-y-auto" style={{ background: '#0b1120', borderColor: '#1e2a3a' }}>
+    <div className="flex h-full min-h-[60vh]" style={{ background: '#080c14', color: '#e2e8f0' }}>
+      {/* Sidebar — cachee sur mobile (nav via AppLayout drawer + selecteur d'onglet) */}
+      <aside className="hidden md:flex w-56 flex-shrink-0 flex-col border-r overflow-y-auto" style={{ background: '#0b1120', borderColor: '#1e2a3a' }}>
         {/* Back button */}
         <button
           onClick={() => navigate('/projects/cosmos-angre')}

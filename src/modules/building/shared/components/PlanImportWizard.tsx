@@ -168,9 +168,9 @@ export default function PlanImportWizard({
   const isReviewing = state.step === 'reviewing'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-0/70 backdrop-blur-sm">
-      <div className={`bg-surface-1 border border-gray-700 rounded-xl shadow-2xl overflow-hidden flex flex-col ${
-        isReviewing ? 'w-[95vw] h-[92vh]' : 'w-[900px] max-h-[90vh] overflow-y-auto'
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-0/70 backdrop-blur-sm p-2 sm:p-4">
+      <div className={`bg-surface-1 border border-gray-700 rounded-xl shadow-2xl overflow-hidden flex flex-col w-full ${
+        isReviewing ? 'sm:w-[95vw] h-[92vh]' : 'sm:w-[900px] max-w-[900px] max-h-[92vh] overflow-y-auto'
       }`}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-3 border-b border-gray-800 flex-shrink-0">
