@@ -409,6 +409,42 @@ export function duplicatePolygon(poly: Polygon, offsetX = 2, offsetY = 2): Polyg
   return poly.map(p => ({ x: p.x + offsetX, y: p.y + offsetY }))
 }
 
+/** Centroïde simple (moyenne des sommets). */
+export function polyCentroid(poly: Polygon): Point {
+  if (poly.length === 0) return { x: 0, y: 0 }
+  const sum = poly.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), { x: 0, y: 0 })
+  return { x: sum.x / poly.length, y: sum.y / poly.length }
+}
+
+/** Rotation d'un polygone autour d'un pivot (centroïde par défaut).
+ *  `angleDeg` en degrés (positif = sens horaire écran, car Y inversé). */
+export function rotatePolygon(poly: Polygon, angleDeg: number, pivot?: Point): Polygon {
+  const p = pivot ?? polyCentroid(poly)
+  const rad = (angleDeg * Math.PI) / 180
+  const cos = Math.cos(rad), sin = Math.sin(rad)
+  return poly.map(v => {
+    const dx = v.x - p.x
+    const dy = v.y - p.y
+    return {
+      x: p.x + dx * cos - dy * sin,
+      y: p.y + dx * sin + dy * cos,
+    }
+  })
+}
+
+/** Mirroir horizontal (flip X) autour du centroïde. Utile pour inverser
+ *  la direction d'ouverture d'une porte (gauche ↔ droite). */
+export function flipPolygonH(poly: Polygon, pivot?: Point): Polygon {
+  const p = pivot ?? polyCentroid(poly)
+  return poly.map(v => ({ x: 2 * p.x - v.x, y: v.y }))
+}
+
+/** Mirroir vertical (flip Y) autour du centroïde. */
+export function flipPolygonV(poly: Polygon, pivot?: Point): Polygon {
+  const p = pivot ?? polyCentroid(poly)
+  return poly.map(v => ({ x: v.x, y: 2 * p.y - v.y }))
+}
+
 // ─── Normalisation (orientation + dédoublonnage) ──
 
 export function normalizePolygon(poly: Polygon): Polygon {

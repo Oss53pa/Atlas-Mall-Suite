@@ -47,7 +47,10 @@ import {
   AlertOctagon,
   RectangleVertical,
   Undo2,
-  StickyNote
+  StickyNote,
+  RotateCw,
+  FlipHorizontal,
+  FlipVertical,
 } from 'lucide-react'
 import { AnnotationsLayer }     from './AnnotationsLayer'
 import type { AnnotationType }  from '../stores/annotationsStore'
@@ -247,6 +250,9 @@ export function SpaceEditorCanvas({
   // Refs pour les fonctions définies plus bas (évite TDZ dans le useEffect)
   const duplicateSelectedRef = useRef<() => void>(() => {})
   const mergeSelectedRef = useRef<() => void>(() => {})
+  const rotateSelectedRef = useRef<(angle: number) => void>(() => {})
+  const flipSelectedHRef = useRef<() => void>(() => {})
+  const flipSelectedVRef = useRef<() => void>(() => {})
   spacesRef.current = spaces
   selectedIdsRef.current = selectedIds
   editingSpaceIdRef.current = editingSpaceId
@@ -343,6 +349,17 @@ export function SpaceEditorCanvas({
       }
       if (e.key === 'm' && !editingSpaceIdRef.current) {
         mergeSelectedRef.current()
+      }
+      // Rotation / flip — pratiques pour les portes (orientation + sens d'ouverture)
+      if (e.key === 'r' && !editingSpaceIdRef.current) {
+        // Shift+R = rotation anti-horaire (−90°), R = rotation horaire (+90°)
+        rotateSelectedRef.current(e.shiftKey ? -90 : 90)
+      }
+      if (e.key === 'h' && !editingSpaceIdRef.current && !e.ctrlKey && !e.metaKey) {
+        flipSelectedHRef.current()
+      }
+      if (e.key === 'v' && !editingSpaceIdRef.current && !e.ctrlKey && !e.metaKey) {
+        flipSelectedVRef.current()
       }
     }
     window.addEventListener('keydown', handler)
@@ -850,6 +867,36 @@ export function SpaceEditorCanvas({
   }
   mergeSelectedRef.current = mergeSelected
 
+  /** Rotation 90° horaire. Utile pour les portes (orientation mur H↔V) mais
+   *  fonctionne sur n'importe quel espace sélectionné. */
+  const rotateSelected = (angleDeg: number) => {
+    const selectedIds = selectedIdsRef.current
+    if (selectedIds.size === 0) return
+    changeSpaces(spacesRef.current.map(s =>
+      selectedIds.has(s.id) ? { ...s, polygon: Geo.rotatePolygon(s.polygon, angleDeg) } : s,
+    ))
+  }
+  rotateSelectedRef.current = rotateSelected
+
+  /** Flip horizontal (inverse gauche↔droite du vantail porte). */
+  const flipSelectedH = () => {
+    const selectedIds = selectedIdsRef.current
+    if (selectedIds.size === 0) return
+    changeSpaces(spacesRef.current.map(s =>
+      selectedIds.has(s.id) ? { ...s, polygon: Geo.flipPolygonH(s.polygon) } : s,
+    ))
+  }
+  flipSelectedHRef.current = flipSelectedH
+  /** Flip vertical (inverse intérieur↔extérieur du sens d'ouverture). */
+  const flipSelectedV = () => {
+    const selectedIds = selectedIdsRef.current
+    if (selectedIds.size === 0) return
+    changeSpaces(spacesRef.current.map(s =>
+      selectedIds.has(s.id) ? { ...s, polygon: Geo.flipPolygonV(s.polygon) } : s,
+    ))
+  }
+  flipSelectedVRef.current = flipSelectedV
+
   const splitSelected = () => {
     if (selectedIds.size !== 1) return
     // Active le mode split : le prochain trait dessiné coupera le polygone
@@ -1044,6 +1091,32 @@ export function SpaceEditorCanvas({
           title="Dupliquer (Ctrl+D)"
         >
           <Copy className="w-3.5 h-3.5" />
+        </button>
+
+        {/* ─── Rotation & flip (essentiel pour les portes) ─── */}
+        <button
+          onClick={() => rotateSelected(90)}
+          disabled={selectedIds.size === 0}
+          className="p-1.5 rounded text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30"
+          title="Rotation 90° horaire (R)"
+        >
+          <RotateCw className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={flipSelectedH}
+          disabled={selectedIds.size === 0}
+          className="p-1.5 rounded text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30"
+          title="Miroir horizontal — inverse gauche/droite (H)"
+        >
+          <FlipHorizontal className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={flipSelectedV}
+          disabled={selectedIds.size === 0}
+          className="p-1.5 rounded text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30"
+          title="Miroir vertical — inverse intérieur/extérieur (V)"
+        >
+          <FlipVertical className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={() => {
