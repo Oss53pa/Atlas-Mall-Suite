@@ -17,7 +17,7 @@ const METRICS = [
 ]
 
 const MALLS: Mall[] = [
-  { name: 'Cosmos Angré', city: 'Abidjan', country: 'CI', region: 'Afrique de l\'Ouest', isOurs: true,
+  { name: 'The Mall', city: 'Abidjan', country: 'CI', region: 'Afrique de l\'Ouest', isOurs: true,
     metrics: { cameras: 120, coverage: 85, nps: 72, dwell: 95, revenueM2: 280, securityScore: 78, digitalTouchpoints: 24, signageDensity: 4.2 } },
   { name: 'Playce Marcory', city: 'Abidjan', country: 'CI', region: 'Afrique de l\'Ouest', isOurs: false,
     metrics: { cameras: 80, coverage: 72, nps: 65, dwell: 70, revenueM2: 220, securityScore: 65, digitalTouchpoints: 12, signageDensity: 3.1 } },

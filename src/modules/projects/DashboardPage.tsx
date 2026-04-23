@@ -133,7 +133,7 @@ function NewProjectModal({ onClose }: { onClose: () => void }) {
             <div>
               <label className="text-[11px] text-gray-500 mb-1 block">Nom du projet *</label>
               <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Ex: Cosmos Angré Shopping Center"
+                placeholder="Ex: The Mall Shopping Center"
                 className="w-full bg-[#141e2e] text-white text-sm rounded-lg px-3 py-2 border border-white/10 outline-none focus:border-atlas-500/50" />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -254,7 +254,7 @@ export default function DashboardPage() {
 
   const handleOpenProject = (project: Project) => {
     setActiveProject(project.id)
-    // Route générique multi-projets (Cosmos Angré est un projet comme un autre)
+    // Route générique multi-projets (The Mall est un projet comme un autre)
     navigate(`/projects/${project.id}`)
   }
 
@@ -276,7 +276,7 @@ export default function DashboardPage() {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-[10px] tracking-widest uppercase text-atlas-300 font-bold">
-                  Atlas Mall Suite
+                  Atlas BIM
                 </span>
                 <span className="text-[10px] text-slate-500">·</span>
                 <span className="text-[10px] text-slate-500">

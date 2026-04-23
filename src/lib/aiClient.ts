@@ -21,7 +21,7 @@ interface ChatResponse {
 // ── System prompt template ───────────────────────────────────
 
 function buildSystemPrompt(ctx: ProjectContext): string {
-  return `Tu es PROPH3T, l'assistant IA d'Atlas Mall Suite.
+  return `Tu es PROPH3T, l'assistant IA d'Atlas BIM.
 Organisation : ${ctx.orgName}
 Projet : ${ctx.projectName} (${ctx.phase})
 Role utilisateur : ${ctx.userRole}

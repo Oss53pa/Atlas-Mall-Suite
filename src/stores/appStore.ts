@@ -56,7 +56,7 @@ const DEMO_ORG: Organization = {
 }
 
 const DEMO_PROJECT: Project = {
-  id: 'cosmos-angre', org_id: 'org-new-heaven', name: 'Cosmos Angré',
+  id: 'cosmos-angre', org_id: 'org-new-heaven', name: 'The Mall',
   slug: 'cosmos-angre', phase: 'pre_opening', opening_date: '2026-10-16',
   total_area_sqm: 30000, city: 'Abidjan', country: 'CI',
   status: 'active', volumes_enabled: ['vol1','vol2','vol3'],

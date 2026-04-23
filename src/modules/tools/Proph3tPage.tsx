@@ -16,7 +16,7 @@ const CONVERSATIONS: Conv[] = [
 
 const DEMO_MESSAGES: Message[] = [
   { role: 'user', content: 'Quel est le taux d\'occupancy actuel du centre ?', time: '09:15' },
-  { role: 'assistant', content: 'Le taux d\'occupancy global de Cosmos Angré est actuellement de **92%** :\n\n- **RDC** : 95% (15/16 cellules occupées)\n- **R+1** : 88% (7/8 cellules occupées)\n- **B1** : 100% (parking complet)\n\nLa cellule vacante au RDC (réf. C-08, 120 m²) est située dans l\'aile Est, face au food court. C\'est un emplacement premium avec un flux piéton estimé à 2 400 visiteurs/jour.\n\nJe recommande de cibler une enseigne de restauration rapide ou de cosmétiques pour maximiser la synergie avec le food court adjacent.', time: '09:15' },
+  { role: 'assistant', content: 'Le taux d\'occupancy global de The Mall est actuellement de **92%** :\n\n- **RDC** : 95% (15/16 cellules occupées)\n- **R+1** : 88% (7/8 cellules occupées)\n- **B1** : 100% (parking complet)\n\nLa cellule vacante au RDC (réf. C-08, 120 m²) est située dans l\'aile Est, face au food court. C\'est un emplacement premium avec un flux piéton estimé à 2 400 visiteurs/jour.\n\nJe recommande de cibler une enseigne de restauration rapide ou de cosmétiques pour maximiser la synergie avec le food court adjacent.', time: '09:15' },
   { role: 'user', content: 'Quelles enseignes recommandes-tu pour la cellule C-08 ?', time: '09:18' },
   { role: 'assistant', content: 'Pour la cellule **C-08** (120 m², RDC aile Est, face food court), voici mes 3 recommandations :\n\n**1. KFC** — Restauration rapide\n- Loyer estimé : 18 000 FCFA/m²/an → 2 160 000 FCFA/an\n- Synergy score : 94/100 (proximité food court)\n- Déjà présent dans 3 malls CFAO en CI\n\n**2. MAC Cosmetics** — Beauté premium\n- Loyer estimé : 22 000 FCFA/m²/an → 2 640 000 FCFA/an  \n- Synergy score : 78/100\n- Cible la clientèle premium du quartier Angré\n\n**3. Orange Money Boutique** — Services financiers\n- Loyer estimé : 15 000 FCFA/m²/an → 1 800 000 FCFA/an\n- Synergy score : 85/100 (fort trafic)\n- Service à forte demande en zone UEMOA\n\nVoulez-vous que je prépare un dossier de prospection pour l\'une de ces enseignes ?', time: '09:18' },
 ]
@@ -39,7 +39,7 @@ export default function Proph3tPage() {
     setTimeout(() => {
       setMessages(prev => [...prev, {
         role: 'assistant', time: now,
-        content: 'Je suis en train d\'analyser votre demande en croisant les données de Cosmos Angré avec les référentiels SYSCOHADA et APSAD R82. Un instant...\n\n*Cette fonctionnalité sera connectée à Ollama (Proph3t LLaMA 3.1) en production, avec Claude API en fallback.*',
+        content: 'Je suis en train d\'analyser votre demande en croisant les données de The Mall avec les référentiels SYSCOHADA et APSAD R82. Un instant...\n\n*Cette fonctionnalité sera connectée à Ollama (Proph3t LLaMA 3.1) en production, avec Claude API en fallback.*',
       }])
     }, 1200)
   }
@@ -79,7 +79,7 @@ export default function Proph3tPage() {
         <div className="p-3 border-t border-white/[0.04] space-y-1.5">
           <p className="text-[9px] text-gray-600 uppercase tracking-wider font-semibold">Contexte actif</p>
           <div className="flex items-center gap-1.5 text-[10px] text-gray-400"><Globe2 size={10} className="text-atlas-400" /> New Heaven SA</div>
-          <div className="flex items-center gap-1.5 text-[10px] text-gray-400"><FolderOpen size={10} className="text-amber-400" /> Cosmos Angré</div>
+          <div className="flex items-center gap-1.5 text-[10px] text-gray-400"><FolderOpen size={10} className="text-amber-400" /> The Mall</div>
           <div className="flex items-center gap-1.5 text-[10px] text-gray-400"><Shield size={10} className="text-emerald-400" /> DG (super_admin)</div>
           <div className="flex flex-wrap gap-1 mt-2">
             {NORMS.map(n => (

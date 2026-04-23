@@ -1,6 +1,6 @@
 // Tests Hungarian Jonker-Volgenant.
 import { describe, it, expect } from 'vitest'
-import { solveHungarian } from '../../modules/cosmos-angre/vol2-securitaire/engines/hungarianAssignmentEngine'
+import { solveHungarian } from '../../modules/building/vol2-securitaire/engines/hungarianAssignmentEngine'
 
 describe('solveHungarian', () => {
   it('matrice 1x1', () => {

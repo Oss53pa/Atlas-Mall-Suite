@@ -1,8 +1,8 @@
 // ═══ WEB WORKER — DIM PARSER (NON-BLOQUANT) ═══
 
-import { extractDimEntities, calibratePlanFromDims, linkDimsToZones } from '../modules/cosmos-angre/shared/planReader/dimParser'
-import type { DimEntity, CalibrationResult, Zone } from '../modules/cosmos-angre/shared/planReader/planReaderTypes'
-import type { DXFEntity } from '../modules/cosmos-angre/shared/proph3t/types'
+import { extractDimEntities, calibratePlanFromDims, linkDimsToZones } from '../modules/building/shared/planReader/dimParser'
+import type { DimEntity, CalibrationResult, Zone } from '../modules/building/shared/planReader/planReaderTypes'
+import type { DXFEntity } from '../modules/building/shared/proph3t/types'
 
 export interface DimParserRequest {
   type: 'extract' | 'calibrate' | 'linkZones'

@@ -1,4 +1,4 @@
-// ═══ PROJECT DATA — Cosmos Angré ═══
+// ═══ PROJECT DATA — The Mall ═══
 
 import type { PlanAction, SignaletiqueItem, TouchpointItem } from './types'
 
@@ -15,7 +15,7 @@ export const COSMOS_PLAN_ACTIONS: PlanAction[] = [
   { id: 'a10', code: 'A10', title: 'Tests intégration système', description: 'Tests bout en bout : vidéo + accès + incendie + évacuation', responsible: 'Pame', startDate: '2026-10-01', endDate: '2026-10-10', dependencies: ['A05', 'A06', 'A09'], status: 'not_started', progress: 0, deliverables: ['PV de tests', 'Scénarios validés', 'Corrections appliquées'], budget_fcfa: 3_000_000 },
   { id: 'a11', code: 'A11', title: 'Exercice évacuation grandeur nature', description: 'Exercice évacuation complète avec chronométrage', responsible: 'Pame', startDate: '2026-10-10', endDate: '2026-10-12', dependencies: ['A10'], status: 'not_started', progress: 0, deliverables: ['Rapport évacuation', 'Temps < 3min', 'Conformité NF S 61-938'], budget_fcfa: 2_000_000 },
   { id: 'a12', code: 'A12', title: 'Recette générale et levée de réserves', description: 'Inspection finale, correction des anomalies', responsible: 'Pame', startDate: '2026-10-12', endDate: '2026-10-14', dependencies: ['A08', 'A11'], status: 'not_started', progress: 0, deliverables: ['PV recette', 'Réserves levées', 'Certificat conformité'], budget_fcfa: 1_000_000 },
-  { id: 'a13', code: 'A13', title: 'Ouverture Cosmos Angré', description: "Jour d'ouverture officielle du centre commercial", responsible: 'Direction', startDate: '2026-10-16', endDate: '2026-10-16', dependencies: ['A12'], status: 'not_started', progress: 0, deliverables: ['Centre ouvert', 'Systèmes opérationnels', 'Équipes en place'] },
+  { id: 'a13', code: 'A13', title: 'Ouverture The Mall', description: "Jour d'ouverture officielle du centre commercial", responsible: 'Direction', startDate: '2026-10-16', endDate: '2026-10-16', dependencies: ['A12'], status: 'not_started', progress: 0, deliverables: ['Centre ouvert', 'Systèmes opérationnels', 'Équipes en place'] },
 ]
 
 export function generateSignaletiqueItems(): SignaletiqueItem[] {

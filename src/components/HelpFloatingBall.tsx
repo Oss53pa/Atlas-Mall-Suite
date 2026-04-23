@@ -1,7 +1,7 @@
 // ═══ Help Floating Ball ═══
 //
 // Bulle flottante (bottom-right) qui ouvre un guide expliquant
-// le fonctionnement de l'application Atlas Mall Suite :
+// le fonctionnement de l'application Atlas BIM :
 //   - Vue d'ensemble (4 volumes + PROPH3T transversal)
 //   - Workflow conseillé
 //   - Raccourcis clavier
@@ -59,7 +59,7 @@ function getContextualHelp(pathname: string): RouteHelp {
     hint: 'Designer = signalétique print/digital. Bornes = runtime kiosque (URL /kiosk/:id).',
   }
   if (pathname.includes('cosmos-angre')) return {
-    title: 'Projet Cosmos Angré',
+    title: 'Projet The Mall',
     hint: 'Sélectionnez un volume dans le menu de gauche. Phase 0 « Atlas Studio » est partagée.',
   }
   return {
@@ -168,7 +168,7 @@ export function HelpFloatingBall() {
                 <Sparkles className="text-white" size={18} />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-white m-0">Atlas Mall Suite — Aide</h2>
+                <h2 className="text-sm font-bold text-white m-0">Atlas BIM — Aide</h2>
                 <p className="text-[10px] text-slate-400 m-0">Guide rapide d'utilisation · v1.0</p>
               </div>
             </div>
@@ -227,7 +227,7 @@ export function HelpFloatingBall() {
             {section === 'overview' && (
               <div className="space-y-3 text-[12px] leading-relaxed">
                 <p>
-                  <strong className="text-white">Atlas Mall Suite</strong> est une plateforme
+                  <strong className="text-white">Atlas BIM</strong> est une plateforme
                   <strong className="text-emerald-400"> générique de pilotage pour centres commerciaux</strong>
                   : multi-projets, multi-tenant, multi-étages, multi-devises.
                 </p>
@@ -237,7 +237,7 @@ export function HelpFloatingBall() {
                   les enchaîne automatiquement à partir d'un plan importé (DXF/DWG/PDF).
                 </p>
                 <p className="text-[11px] text-slate-400">
-                  Le projet <strong className="text-emerald-300">Cosmos Angré</strong> (Abidjan, ouverture oct. 2026)
+                  Le projet <strong className="text-emerald-300">The Mall</strong> (Abidjan, ouverture oct. 2026)
                   est le <em>pilote</em> utilisé pour roder l'outil ; la plateforme est conçue pour accueillir
                   tout autre centre commercial via l'onboarding projet.
                 </p>
@@ -273,7 +273,7 @@ export function HelpFloatingBall() {
                     </Link>
                   </div>
                   <p className="text-[11px] text-slate-300 m-0">
-                    Mode d'emploi pas-à-pas pour utiliser Atlas Mall Suite de A à Z.
+                    Mode d'emploi pas-à-pas pour utiliser Atlas BIM de A à Z.
                     Le résumé ci-dessous reprend les 10 opérations clés.
                     <strong className="text-blue-300"> Cliquez « Ouvrir ↗ »</strong> pour la version complète (15 chapitres,
                     imprimable PDF).
@@ -288,7 +288,7 @@ export function HelpFloatingBall() {
                   </h3>
                   <ul className="text-[11px] text-slate-300 m-0 pl-5 list-disc space-y-1">
                     <li>Sélectionnez votre projet dans la liste — ou créez-en un via l'onboarding (Nouveau projet).</li>
-                    <li>Le projet pilote <strong>Cosmos Angré</strong> (Abidjan) est ouvert par défaut pour démonstration.</li>
+                    <li>Le projet pilote <strong>The Mall</strong> (Abidjan) est ouvert par défaut pour démonstration.</li>
                     <li>Le menu de gauche liste les modules transversaux + les 4 volumes.</li>
                     <li>L'auto-sauvegarde est activée : indicateur en bas à gauche (✓ enregistré).</li>
                     <li>Toutes les données sont persistées (localStorage + IndexedDB en offline, Supabase RLS en prod).</li>
@@ -610,7 +610,7 @@ proph3t.feedback(qrCode, data)    // boucle apprentissage terrain`}
 
           {/* Footer */}
           <div className="px-5 py-2.5 border-t border-white/10 bg-surface-1/60 flex items-center justify-between text-[10px] text-slate-500">
-            <span>Atlas Mall Suite · plateforme multi-projets · pilote : Cosmos Angré</span>
+            <span>Atlas BIM · plateforme multi-projets · pilote : The Mall</span>
             <span>Esc pour fermer</span>
           </div>
         </div>

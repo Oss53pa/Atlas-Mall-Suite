@@ -63,7 +63,7 @@ export default function SettingsPage() {
       <div className="max-w-3xl mx-auto px-6 py-8">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-white tracking-tight">Paramètres</h1>
-          <p className="text-sm text-gray-500 mt-1">Configurez Atlas Mall Suite selon vos préférences</p>
+          <p className="text-sm text-gray-500 mt-1">Configurez Atlas BIM selon vos préférences</p>
         </div>
 
         <div className="space-y-5">
@@ -150,7 +150,7 @@ export default function SettingsPage() {
               </div>
               <div className="flex justify-between">
                 <span>Éditeur</span>
-                <span className="text-xs text-gray-500">Praedium Tech — Atlas Studio</span>
+                <span className="text-xs text-gray-500">Atlas Studio</span>
               </div>
             </div>
           </SettingsGroup>

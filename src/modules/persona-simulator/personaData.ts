@@ -1,4 +1,4 @@
-// ═══ PERSONA DATA — 4 Cosmos Angré Personas ═══
+// ═══ PERSONA DATA — 4 The Mall Personas ═══
 
 import type { Persona } from './types'
 

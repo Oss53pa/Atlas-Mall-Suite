@@ -1,8 +1,8 @@
 // ═══ WEB WORKER — PDF PLAN PARSER (NON-BLOQUANT) ═══
 
-import { readPDFPlan, convertPDFToZones } from '../modules/cosmos-angre/shared/planReader/pdfPlanReader'
-import type { PDFPlanPage } from '../modules/cosmos-angre/shared/planReader/planReaderTypes'
-import type { Zone } from '../modules/cosmos-angre/shared/proph3t/types'
+import { readPDFPlan, convertPDFToZones } from '../modules/building/shared/planReader/pdfPlanReader'
+import type { PDFPlanPage } from '../modules/building/shared/planReader/planReaderTypes'
+import type { Zone } from '../modules/building/shared/proph3t/types'
 
 export interface PDFParserRequest {
   type: 'parse' | 'convert'

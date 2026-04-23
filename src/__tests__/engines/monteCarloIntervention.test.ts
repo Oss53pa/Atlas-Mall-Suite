@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 import {
   simulateIntervention,
   type InterventionConfig,
-} from '../../modules/cosmos-angre/vol2-securitaire/engines/monteCarloInterventionEngine'
+} from '../../modules/building/vol2-securitaire/engines/monteCarloInterventionEngine'
 
 function baseConfig(seed?: number): InterventionConfig {
   return {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { proph3tAnswer } from '../modules/cosmos-angre/shared/proph3t/chatEngine'
-import type { FullProjectContext } from '../modules/cosmos-angre/shared/proph3t/types'
+import { proph3tAnswer } from '../modules/building/shared/proph3t/chatEngine'
+import type { FullProjectContext } from '../modules/building/shared/proph3t/types'
 
 const ctx = (o: Partial<FullProjectContext> = {}): FullProjectContext => ({
   zones: [], cameras: [], doors: [], pois: [], signageItems: [],

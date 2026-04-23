@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { calculateSignaleticsSpec } from '../modules/cosmos-angre/shared/proph3t/signaleticsEngine'
-import type { Zone } from '../modules/cosmos-angre/shared/proph3t/types'
+import { calculateSignaleticsSpec } from '../modules/building/shared/proph3t/signaleticsEngine'
+import type { Zone } from '../modules/building/shared/proph3t/types'
 
 const zone = (o: Partial<Zone> = {}): Zone => ({
   id: 'z1', floorId: 'f1', label: 'Test', type: 'circulation',

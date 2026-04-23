@@ -14,7 +14,7 @@ export function exportJSON(data: Record<string, unknown>, config: JSONExportConf
       exportedAt: new Date().toISOString(),
       project: config.projectName,
       volume: config.volume,
-      generator: 'Atlas Mall Suite / Proph3t Engine',
+      generator: 'Atlas BIM / Proph3t Engine',
       version: '1.0',
     } : undefined,
     data,

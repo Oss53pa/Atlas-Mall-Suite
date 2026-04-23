@@ -6,12 +6,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
 import AppLayout from './components/AppLayout'
 import { HelpFloatingBall } from './components/HelpFloatingBall'
-import ConsentBanner from './modules/cosmos-angre/shared/components/ConsentBanner'
+import ConsentBanner from './modules/building/shared/components/ConsentBanner'
 
 // Landing (public, no layout) + HomeRoute intelligent
 const LandingPage = lazy(() => import('./modules/landing/LandingPage'))
 const HomeRoute   = lazy(() => import('./modules/landing/HomeRoute'))
 const DemoReportPage = lazy(() => import('./modules/landing/DemoReportPage'))
+const DemoHotelPage = lazy(() => import('./modules/landing/DemoHotel'))
+const DemoOfficePage = lazy(() => import('./modules/landing/DemoOffice'))
+const DemoHospitalPage = lazy(() => import('./modules/landing/DemoHospital'))
+const DemoCampusPage = lazy(() => import('./modules/landing/DemoCampus'))
 
 // Auth pages (no layout)
 const LoginPage = lazy(() => import('./modules/auth/LoginPage'))
@@ -26,7 +30,7 @@ const TeamOnboarding = lazy(() => import('./modules/onboarding/TeamOnboarding'))
 const DashboardPage = lazy(() => import('./modules/projects/DashboardPage'))
 const OrgSettingsPage = lazy(() => import('./modules/settings/OrgSettingsPage'))
 // Workspace projet (anciennement CosmosAngre — désormais générique pour tout projet)
-const ProjectWorkspace = lazy(() => import('./modules/cosmos-angre'))
+const ProjectWorkspace = lazy(() => import('./modules/building'))
 
 // Transversal pages
 const ScenariosPage = lazy(() => import('./modules/transversal/ScenariosPage'))
@@ -40,13 +44,13 @@ const ExportPage = lazy(() => import('./modules/tools/ExportPage'))
 const VirtualTourPage = lazy(() => import('./modules/tools/VirtualTourPage'))
 
 // Mobile feedback (public, no layout) — scanné via QR code sur un panneau
-const SignageFeedbackPage = lazy(() => import('./modules/cosmos-angre/shared/pages/SignageFeedbackPage'))
+const SignageFeedbackPage = lazy(() => import('./modules/building/shared/pages/SignageFeedbackPage'))
 
 // Notice d'utilisation (public, plein écran, imprimable)
 const NoticePage = lazy(() => import('./modules/docs/NoticePage'))
 
 // Wayfinder Kiosk Runtime (public, plein écran, sans AppLayout)
-const KioskRuntime = lazy(() => import('./modules/cosmos-angre/wayfinder-designer/runtime/KioskRuntime'))
+const KioskRuntime = lazy(() => import('./modules/building/wayfinder-designer/runtime/KioskRuntime'))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -84,8 +88,13 @@ function App() {
             {/* ── Landing page publique (URL directe) ── */}
             <Route path="/landing" element={<LandingPage />} />
 
-            {/* ── Démo publique : rapport Proph3t parcours client ── */}
+            {/* ── Démos publiques : rapports Proph3t par verticale ── */}
             <Route path="/demo/rapport-parcours-client" element={<DemoReportPage />} />
+            <Route path="/demo/mall"     element={<DemoReportPage />} />
+            <Route path="/demo/hotel"    element={<DemoHotelPage />} />
+            <Route path="/demo/office"   element={<DemoOfficePage />} />
+            <Route path="/demo/hospital" element={<DemoHospitalPage />} />
+            <Route path="/demo/campus"   element={<DemoCampusPage />} />
 
             {/* ── Auth pages (sans AppLayout) ── */}
             <Route path="/login" element={<LoginPage />} />
@@ -110,7 +119,7 @@ function App() {
               <Route path="/proph3t" element={<Proph3tPage />} />
               <Route path="/export" element={<ExportPage />} />
               <Route path="/virtual-tour" element={<VirtualTourPage />} />
-              {/* Workspace projet — générique, fonctionne pour TOUT projectId (Cosmos Angré est le pilote) */}
+              {/* Workspace projet — générique, fonctionne pour TOUT projectId (The Mall est le pilote) */}
               <Route path="/projects/:projectId/*" element={<ProjectWorkspace />} />
             </Route>
 

@@ -39,7 +39,7 @@ try {
 // ─── Escape key global — ferme toutes les modales PROPH3T ───
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    import('./modules/cosmos-angre/shared/stores/planEngineStore')
+    import('./modules/building/shared/stores/planEngineStore')
       .then(m => m.usePlanEngineStore.getState().closeAllModals())
       .catch(() => { /* */ })
   }
@@ -47,7 +47,7 @@ window.addEventListener('keydown', (e) => {
 
 // ─── Ferme les modales automatiquement à chaque navigation (pushState, popstate) ───
 const closeModalsOnNav = () => {
-  import('./modules/cosmos-angre/shared/stores/planEngineStore')
+  import('./modules/building/shared/stores/planEngineStore')
     .then(m => m.usePlanEngineStore.getState().closeAllModals())
     .catch(() => { /* */ })
 }
@@ -61,7 +61,7 @@ window.history.pushState = function (...args: Parameters<typeof originalPushStat
 
 // Commandes d'urgence globales
 ;(window as any).closeAllModals = () => {
-  import('./modules/cosmos-angre/shared/stores/planEngineStore')
+  import('./modules/building/shared/stores/planEngineStore')
     .then(m => {
       m.usePlanEngineStore.getState().closeAllModals()
       console.log('[Atlas] Toutes les modales fermées.')
@@ -70,13 +70,13 @@ window.history.pushState = function (...args: Parameters<typeof originalPushStat
 
 // Purge le cache parsedPlan corrompu (bounds 2.4×2.4m au lieu de 239×239m)
 ;(window as any).clearPlanCache = async () => {
-  const m1 = await import('./modules/cosmos-angre/shared/stores/parsedPlanCache')
+  const m1 = await import('./modules/building/shared/stores/parsedPlanCache')
   await m1.clearPlanCache()
-  const m2 = await import('./modules/cosmos-angre/shared/stores/planImageCache')
+  const m2 = await import('./modules/building/shared/stores/planImageCache')
   await m2.clearAllPlanImages()
-  const m3 = await import('./modules/cosmos-angre/shared/stores/planFileCache')
+  const m3 = await import('./modules/building/shared/stores/planFileCache')
   await m3.clearAllPlanFiles()
-  const m4 = await import('./modules/cosmos-angre/shared/stores/planEngineStore')
+  const m4 = await import('./modules/building/shared/stores/planEngineStore')
   m4.usePlanEngineStore.getState().setParsedPlan(null)
   // Et vide localStorage si des bounds y sont persistées
   try { localStorage.removeItem('atlas-plan-engine') } catch {}
@@ -127,7 +127,7 @@ import('./lib/localBackup/bootstrap')
 // M24 — Enregistre le service worker après first paint (offline-first)
 if (import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    import('./modules/cosmos-angre/shared/offline/serviceWorkerClient')
+    import('./modules/building/shared/offline/serviceWorkerClient')
       .then(mod => {
         mod.registerServiceWorker()
         ;(window as any).nuclearReset = mod.nuclearReset

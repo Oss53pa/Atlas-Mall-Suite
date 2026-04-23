@@ -5,7 +5,7 @@ import {
   trainRevenueForest,
   predictRevenue,
   type LocalFeatures,
-} from '../../modules/cosmos-angre/vol1-commercial/engines/revenueForestEngine'
+} from '../../modules/building/vol1-commercial/engines/revenueForestEngine'
 
 describe('revenueForestEngine F-009 — determinisme', () => {
   it('generateBenchmarkDataset est deterministe (seed fixe 42)', () => {

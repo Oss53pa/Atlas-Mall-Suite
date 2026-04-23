@@ -16,14 +16,15 @@ interface ProjectsState {
   getActiveProject: () => Project | undefined
 }
 
-// Cosmos Angré as seed project
-const COSMOS_ANGRE: Project = {
+// The Mall as seed project
+const THE_MALL: Project = {
   id: 'cosmos-angre',
-  name: 'Cosmos Angré Shopping Center',
+  name: 'The Mall Shopping Center',
   client: 'Cosmos Group',
   address: 'Angré, Abidjan, Côte d\'Ivoire',
   surface_m2: 30000,
   type: 'mall',
+  verticalId: 'mall',
   opening_date: '2026-10-16',
   status: 'conception',
   created_by: 'admin',
@@ -35,7 +36,7 @@ const COSMOS_ANGRE: Project = {
 export const useProjectStore = create<ProjectsState>()(
   persist(
     (set, get) => ({
-      projects: [COSMOS_ANGRE],
+      projects: [THE_MALL],
       activeProjectId: 'cosmos-angre',
 
       addProject: (project) =>

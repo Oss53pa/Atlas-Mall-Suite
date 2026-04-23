@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { scoreSecurite, calcDistance, calcArea, recommendDoor } from '../modules/cosmos-angre/shared/proph3t/engine'
-import type { Zone, Camera, Door } from '../modules/cosmos-angre/shared/proph3t/types'
+import { scoreSecurite, calcDistance, calcArea, recommendDoor } from '../modules/building/shared/proph3t/engine'
+import type { Zone, Camera, Door } from '../modules/building/shared/proph3t/types'
 
 const mockZone = (overrides: Partial<Zone> = {}): Zone => ({
   id: 'z1', floorId: 'f1', label: 'Test', type: 'commerce',

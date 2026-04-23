@@ -29,7 +29,7 @@ export default function ProjectOnboarding() {
           <div className="flex items-center gap-2 mb-6"><FolderOpen size={18} className="text-amber-400"/><h2 className="text-lg font-semibold text-white">Créez votre premier projet</h2></div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div><label className="text-[11px] text-gray-500 mb-1 block">Nom du projet *</label>
-              <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Cosmos Angré Shopping Center"
+              <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="The Mall Shopping Center"
                 className="w-full bg-[#141e2e] text-white text-sm rounded-xl px-3 py-2.5 border border-white/[0.08] outline-none focus:border-atlas-500/50 placeholder:text-gray-600"/></div>
             <div className="grid grid-cols-2 gap-4">
               <div><label className="text-[11px] text-gray-500 mb-1 block">Ville</label>

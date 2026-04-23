@@ -361,10 +361,10 @@ function buildPlan2D(): string {
     ${walls.join('')}
     ${doors.join('')}
     ${corridor}
-    ${heat}
-    ${flows}
-    ${panels}
-    ${pinsAndLabels}
+    <g id="layer-congestion" class="plan-layer" data-layer="congestion">${heat}</g>
+    <g id="layer-flux" class="plan-layer" data-layer="flux">${flows}</g>
+    <g id="layer-signage" class="plan-layer" data-layer="signage">${panels}</g>
+    <g id="layer-annotations" class="plan-layer" data-layer="annotations">${pinsAndLabels}</g>
     ${compass}
     <g transform="translate(30 ${H - 40})">
       <rect x="0" y="0" width="170" height="28" rx="2" fill="#1a1d22" stroke="#f59e0b" stroke-opacity="0.3"/>
@@ -589,7 +589,7 @@ function buildRichHtml(): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Rapport Parcours Client · Cosmos Angré</title>
+<title>Rapport Parcours Client · The Mall</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Grand+Hotel&display=swap" rel="stylesheet">
@@ -667,8 +667,10 @@ function buildRichHtml(): string {
   .map-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); }
   .map-head .title { font-size: 13px; font-weight: 600; }
   .tabs { display: flex; gap: 6px; }
-  .tab { font-family: ui-monospace, monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; padding: 7px 14px; border-radius: 3px; border: 1px solid var(--border-2); color: var(--muted); background: transparent; }
+  .tab { font-family: ui-monospace, monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; padding: 7px 14px; border-radius: 3px; border: 1px solid var(--border-2); color: var(--muted); background: transparent; cursor: pointer; transition: all 0.15s; user-select: none; }
+  .tab:hover { color: var(--ink); border-color: var(--border-2); }
   .tab.on { border-color: var(--accent); color: var(--accent); background: rgba(245,158,11,0.1); }
+  .plan-layer.hidden { display: none; }
 
   .legend-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 32px; padding: 20px 28px; border-top: 1px solid var(--border); font-family: ui-monospace, monospace; font-size: 11px; color: var(--muted); }
   .legend-grid .li { display: flex; align-items: center; gap: 8px; }
@@ -817,7 +819,7 @@ function buildRichHtml(): string {
         <span class="sep">/</span>
         <span class="crumb">Mall Suite · Vol.3 Parcours Client</span>
       </div>
-      <div class="doc-title">Rapport d'analyse du parcours client — Cosmos Angré</div>
+      <div class="doc-title">Rapport d'analyse du parcours client — The Mall</div>
       <div class="doc-sub">Centre commercial 30 000 m² · RDC · Abidjan · New Heaven SA</div>
       <div class="chips">
         <span class="chip is-primary">Proph3t v2.4</span>
@@ -830,7 +832,7 @@ function buildRichHtml(): string {
     </div>
     <div class="doc-meta">
       <div><span class="k">Destinataire</span> · <span class="v">M. Cheick Sanankoua — DG</span></div>
-      <div><span class="k">Émetteur</span> · <span class="v">Atlas Mall Suite / Proph3t IA</span></div>
+      <div><span class="k">Émetteur</span> · <span class="v">Atlas BIM / Proph3t IA</span></div>
       <div><span class="k">Généré</span> · <span class="v">${generatedAt} UTC</span></div>
       <div class="ref"><span class="k">ref</span> · <span class="v">${ref}</span></div>
     </div>
@@ -839,7 +841,7 @@ function buildRichHtml(): string {
   <!-- ═══ Ident strip ═══ -->
   <div class="ident-strip">
     <div class="cell"><div class="k">Destinataire</div><div class="v">Monsieur Cheick Sanankoua — Directeur Général, New Heaven SA</div></div>
-    <div class="cell"><div class="k">Périmètre</div><div class="v">Cosmos Angré · RDC · 30 000 m² GLA · 80 boutiques</div></div>
+    <div class="cell"><div class="k">Périmètre</div><div class="v">The Mall · RDC · 30 000 m² GLA · 80 boutiques</div></div>
     <div class="cell"><div class="k">Horizon</div><div class="v">Soft opening Oct. 2026 · Régime cible T+6 mois</div></div>
   </div>
 
@@ -862,12 +864,12 @@ function buildRichHtml(): string {
     </div>
     <div class="card map-card">
       <div class="map-head">
-        <span class="title">Cosmos Angré · RDC · Couches superposées</span>
-        <div class="tabs">
-          <span class="tab on">Flux</span>
-          <span class="tab on">Signalétique</span>
-          <span class="tab on">Congestion</span>
-          <span class="tab on">Annotations</span>
+        <span class="title">The Mall · RDC · Couches superposées</span>
+        <div class="tabs" id="map-tabs">
+          <button type="button" class="tab on" data-target="flux">Flux</button>
+          <button type="button" class="tab on" data-target="signage">Signalétique</button>
+          <button type="button" class="tab on" data-target="congestion">Congestion</button>
+          <button type="button" class="tab on" data-target="annotations">Annotations</button>
         </div>
       </div>
       ${plan}
@@ -893,7 +895,7 @@ function buildRichHtml(): string {
     </div>
     <div class="card card-pad prose">
       <p><strong>Monsieur le Directeur Général,</strong></p>
-      <p>Proph3t a analysé le parcours client de Cosmos Angré (30 000 m² GLA, RDC) en croisant la simulation Agent-Based Modeling <a href="#">Helbing Social Force</a> (2 400 agents, 3 h simulées, 10 000 runs Monte Carlo) avec le benchmark ICSC Afrique 2024 (panel N = 9 malls UEMOA comparables).</p>
+      <p>Proph3t a analysé le parcours client de The Mall (30 000 m² GLA, RDC) en croisant la simulation Agent-Based Modeling <a href="#">Helbing Social Force</a> (2 400 agents, 3 h simulées, 10 000 runs Monte Carlo) avec le benchmark ICSC Afrique 2024 (panel N = 9 malls UEMOA comparables).</p>
       <p>Trois constats majeurs émergent. <span class="hl">Premier constat :</span> le dwell time moyen ressort à 47 min (IC95 % : 43,8 — 50,2), soit 5 min en deçà du benchmark UEMOA (52 min) — équivalent à un manque à gagner de ~8 % de panier moyen selon l'élasticité ICSC. <span class="hl">Deuxième constat :</span> seuls 34 % des visiteurs traversent intégralement le mall (objectif : 45 %), en raison de trois points de friction identifiés sur le plan ci-dessus. <span class="hl">Troisième constat :</span> 9 défauts de signalétique (7 panneaux manquants, 2 contradictoires) privent la galerie Services &amp; Banques de 60 % de son flux potentiel (42 pax/h observés vs. 105 pax/h attendus).</p>
       <p>Les corrections proposées représentent un investissement total de <span class="hl">17,7 MFCFA</span> (CAPEX 11,9 + OPEX 5,8 sur 24 mois), pour un uplift de CA prévisionnel de <span class="hl">+142 MFCFA/an</span>. ROI consolidé sur 24 mois : <span class="hl">8,0×</span>. Payback théorique : <span class="hl">1,5 mois</span>.</p>
     </div>
@@ -1097,7 +1099,7 @@ function buildRichHtml(): string {
           <tr><td class="id">R03</td><td>Installer borne interactive carrefour FC / Cinéma</td><td class="delay">cercle amber</td><td class="capex">1 400 000</td><td class="opex">240 000</td><td class="delay">30 j</td><td class="impact">+12 % dwell time</td><td><span class="prio p1">P1</span></td></tr>
           <tr><td class="id">R04</td><td>Étendre sanitaires RDC-1 : +4 cabines (plomberie + cloisons + ventilation + carrelage)</td><td class="delay">annot. 3</td><td class="capex">8 500 000</td><td class="opex">180 000</td><td class="delay">45 j</td><td class="impact">−1,2 pax/m² pic</td><td><span class="prio p1">P1</span></td></tr>
           <tr><td class="id">R05</td><td>Déployer 3 ambassadeurs régulation sam./dim. 14-20h</td><td class="delay">annot. 1,2</td><td class="capex">—</td><td class="opex">2 880 000</td><td class="delay">immédiat</td><td class="impact">−22 % attente FC</td><td><span class="prio p0">P0</span></td></tr>
-          <tr><td class="id">R06</td><td>Recalibration ABM Proph3t (T+90j avec données réelles)</td><td class="delay">SaaS</td><td class="capex">—</td><td class="opex">inclus Atlas Mall Suite</td><td class="delay">90 j</td><td class="impact">boucle continue</td><td><span class="prio p2">P2</span></td></tr>
+          <tr><td class="id">R06</td><td>Recalibration ABM Proph3t (T+90j avec données réelles)</td><td class="delay">SaaS</td><td class="capex">—</td><td class="opex">inclus Atlas BIM</td><td class="delay">90 j</td><td class="impact">boucle continue</td><td><span class="prio p2">P2</span></td></tr>
           <tr><td class="id">—</td><td class="accent-tot">TOTAL (24 mois)</td><td class="delay">—</td><td class="capex accent-tot">11 900 000</td><td class="opex accent-tot">5 800 000</td><td class="delay">—</td><td class="impact accent-tot">+142 MFCFA/an · ROI 8,0×</td><td>—</td></tr>
         </tbody>
       </table>
@@ -1256,7 +1258,7 @@ investors@cosmosgroup.ci</textarea>
         <label>Message d'introduction</label>
         <textarea id="share-msg">Bonjour,
 
-Vous trouverez ci-joint le rapport d'analyse du parcours client de Cosmos Angré généré par Proph3t. Merci de valider vos sections d'intérêt avant mercredi.
+Vous trouverez ci-joint le rapport d'analyse du parcours client de The Mall généré par Proph3t. Merci de valider vos sections d'intérêt avant mercredi.
 
 Cordialement,
 New Heaven SA</textarea>
@@ -1353,10 +1355,28 @@ New Heaven SA</textarea>
         document.querySelectorAll('.modal-back.open').forEach(function(m){ closeModal(m); });
       }
     });
+
+    // ─── Tabs Plan 2D : toggle des 4 couches ───
+    (function() {
+      var tabs = document.querySelectorAll('#map-tabs .tab');
+      tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+          var target = tab.getAttribute('data-target');
+          tab.classList.toggle('on');
+          var layer = document.getElementById('layer-' + target);
+          if (layer) {
+            layer.classList.toggle('hidden');
+            var isOn = !layer.classList.contains('hidden');
+            var labels = { flux: 'Flux', signage: 'Signalétique', congestion: 'Congestion', annotations: 'Annotations' };
+            toast((isOn ? 'Couche affichée : ' : 'Couche masquée : ') + labels[target]);
+          }
+        });
+      });
+    })();
   </script>
 
   <footer class="doc">
-    <div>Atlas Mall Suite · Proph3t IA v2.4 · ${generatedAt} · ref <span style="color:var(--accent)">${ref}</span></div>
+    <div>Atlas BIM · Proph3t IA v2.4 · ${generatedAt} · ref <span style="color:var(--accent)">${ref}</span></div>
     <div>© 2026 New Heaven SA · Confidentiel — ne pas diffuser hors comité</div>
   </footer>
 

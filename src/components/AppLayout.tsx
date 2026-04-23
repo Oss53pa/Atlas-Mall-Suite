@@ -11,6 +11,7 @@ import {
   FolderOpen,
   ShieldCheck,
   Route,
+  Navigation,
   Box,
   FileText,
   BarChart2,
@@ -61,9 +62,10 @@ function DropItem({ icon: Icon, label, active, accent, onClick }: {
 
 // ── Nav items ──
 const VOLUME_ITEMS = [
-  { id: 'vol1', label: 'Plan Commercial', icon: Building2, color: '#f59e0b', path: 'vol1' },
-  { id: 'vol2', label: 'Plan Sécurité', icon: ShieldCheck, color: '#38bdf8', path: 'vol2' },
-  { id: 'vol3', label: 'Parcours Client', icon: Route, color: '#34d399', path: 'vol3' },
+  { id: 'vol1', label: 'Opérations & Business', icon: Building2, color: '#f59e0b', path: 'vol1' },
+  { id: 'vol2', label: 'Sécurité & Conformité', icon: ShieldCheck, color: '#38bdf8', path: 'vol2' },
+  { id: 'vol3', label: 'Expérience Utilisateur', icon: Route, color: '#34d399', path: 'vol3' },
+  { id: 'vol4', label: 'Wayfinder', icon: Navigation, color: '#0ea5e9', path: 'vol4' },
 ]
 
 const TRANSVERSAL_ITEMS = [
@@ -95,6 +97,7 @@ export default function AppLayout() {
     ? location.pathname.includes('/vol1') ? 'vol1'
     : location.pathname.includes('/vol2') ? 'vol2'
     : location.pathname.includes('/vol3') ? 'vol3'
+    : location.pathname.includes('/vol4') ? 'vol4'
     : null
     : null
 
@@ -136,7 +139,7 @@ export default function AppLayout() {
           className="flex items-center px-3 py-3 hover:opacity-80 transition-opacity flex-shrink-0 border-b border-white/[0.04]"
           title="Page d'accueil">
           {!isInsideVolume ? (
-            <span className="text-[15px] text-white tracking-wide" style={{ fontFamily: "'Grand Hotel', cursive" }}>Atlas Mall Suite</span>
+            <span className="text-[18px] text-white tracking-wide" style={{ fontFamily: "'Grand Hotel', cursive" }}>Atlas Bim</span>
           ) : (
             <span className="text-[13px] text-white" style={{ fontFamily: "'Grand Hotel', cursive" }}>A</span>
           )}

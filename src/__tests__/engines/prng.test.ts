@@ -1,6 +1,6 @@
 // Tests F-010 : PRNG centralise.
 import { describe, it, expect } from 'vitest'
-import { mulberry32, randn } from '../../modules/cosmos-angre/shared/utils/prng'
+import { mulberry32, randn } from '../../modules/building/shared/utils/prng'
 
 describe('mulberry32', () => {
   it('produit la meme sequence avec la meme graine', () => {

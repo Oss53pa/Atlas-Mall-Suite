@@ -1,5 +1,8 @@
 // ═══ MULTI-PROJECT — Types ═══
 
+import type { VerticalId } from '../../verticals/types'
+
+/** @deprecated Utiliser `VerticalId` pour les nouvelles features. Conservé pour compat. */
 export type ProjectType = 'mall' | 'office' | 'hotel' | 'hospital' | 'school'
 export type ProjectStatus = 'conception' | 'deploiement' | 'ouvert' | 'archive'
 
@@ -19,7 +22,10 @@ export interface Project {
   /** Référentiels réglementaires activés. */
   regulatory_refs?: RegulatoryRef[]
   surface_m2: number
+  /** @deprecated Utiliser `verticalId`. Conservé pour backward compat. */
   type: ProjectType
+  /** Verticale Atlas BIM (8 types de bâtiments supportés). Fallback auto depuis `type` si absent. */
+  verticalId?: VerticalId
   opening_date: string
   status: ProjectStatus
   created_by: string
@@ -29,6 +35,23 @@ export interface Project {
   thumbnail?: string
   /** Nombre d'étages. */
   floor_count?: number
+}
+
+/** Convertit `ProjectType` (legacy) → `VerticalId` (nouvelle taxonomie). */
+export function toVerticalId(t: ProjectType): VerticalId {
+  const map: Record<ProjectType, VerticalId> = {
+    'mall': 'mall',
+    'office': 'office',
+    'hotel': 'hotel',
+    'hospital': 'hospital',
+    'school': 'campus',
+  }
+  return map[t] ?? 'mall'
+}
+
+/** Résout la verticale d'un projet (priorité `verticalId`, fallback `type`). */
+export function projectVertical(p: Pick<Project, 'verticalId' | 'type'>): VerticalId {
+  return p.verticalId ?? toVerticalId(p.type)
 }
 
 export type RegulatoryRef =

@@ -47,9 +47,10 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['InterVar', 'system-ui', 'sans-serif'],
-        display: ['Plus Jakarta Sans', 'InterVar', 'sans-serif'],
+        sans: ['"Exo 2"', 'InterVar', 'system-ui', 'sans-serif'],
+        display: ['"Exo 2"', 'Plus Jakarta Sans', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+        wordmark: ['"Grand Hotel"', 'cursive'],
       },
       boxShadow: {
         'glow-bronze': '0 0 20px rgba(201, 160, 104, 0.15)',

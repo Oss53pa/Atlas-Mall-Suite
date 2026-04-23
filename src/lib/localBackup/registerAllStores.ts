@@ -6,23 +6,23 @@
 
 import { registerStore } from './backupOrchestrator'
 import { useAppStore } from '../../stores/appStore'
-import { useVol1Store } from '../../modules/cosmos-angre/vol1-commercial/store/vol1Store'
-import { useVol2Store } from '../../modules/cosmos-angre/vol2-securitaire/store/vol2Store'
-import { useVol3Store } from '../../modules/cosmos-angre/vol3-parcours/store/vol3Store'
-import { useVol4Store } from '../../modules/cosmos-angre/vol4-wayfinder/store/vol4Store'
-import { usePlanEngineStore } from '../../modules/cosmos-angre/shared/stores/planEngineStore'
-import { useAnnotationsStore } from '../../modules/cosmos-angre/shared/stores/annotationsStore'
-import { useEditableSpaceStore } from '../../modules/cosmos-angre/shared/stores/editableSpaceStore'
-import { usePlanImportStore } from '../../modules/cosmos-angre/shared/stores/planImportStore'
+import { useVol1Store } from '../../modules/building/vol1-commercial/store/vol1Store'
+import { useVol2Store } from '../../modules/building/vol2-securitaire/store/vol2Store'
+import { useVol3Store } from '../../modules/building/vol3-parcours/store/vol3Store'
+import { useVol4Store } from '../../modules/building/vol4-wayfinder/store/vol4Store'
+import { usePlanEngineStore } from '../../modules/building/shared/stores/planEngineStore'
+import { useAnnotationsStore } from '../../modules/building/shared/stores/annotationsStore'
+import { useEditableSpaceStore } from '../../modules/building/shared/stores/editableSpaceStore'
+import { usePlanImportStore } from '../../modules/building/shared/stores/planImportStore'
 // Note: plansLibraryStore n'est PAS un store Zustand — c'est un wrapper IndexedDB
 // (Dexie) avec ses propres fonctions async (savePlan, loadPlan, listPlans…).
 // Il n'a pas besoin du système de backup Zustand — la persistance est native.
-import { useLotsStore } from '../../modules/cosmos-angre/shared/stores/lotsStore'
-import { useOnboardingStore } from '../../modules/cosmos-angre/shared/stores/onboardingStore'
-import { useHiddenEntitiesStore } from '../../modules/cosmos-angre/shared/stores/hiddenEntitiesStore'
-import { useExcludedLayersStore } from '../../modules/cosmos-angre/shared/stores/excludedLayersStore'
-import { useContentStore } from '../../modules/cosmos-angre/shared/store/contentStore'
-import { useRlhfStore } from '../../modules/cosmos-angre/shared/proph3t/rlhfStore'
+import { useLotsStore } from '../../modules/building/shared/stores/lotsStore'
+import { useOnboardingStore } from '../../modules/building/shared/stores/onboardingStore'
+import { useHiddenEntitiesStore } from '../../modules/building/shared/stores/hiddenEntitiesStore'
+import { useExcludedLayersStore } from '../../modules/building/shared/stores/excludedLayersStore'
+import { useContentStore } from '../../modules/building/shared/store/contentStore'
+import { useRlhfStore } from '../../modules/building/shared/proph3t/rlhfStore'
 
 type S = Record<string, unknown>
 

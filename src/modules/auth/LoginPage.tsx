@@ -28,7 +28,7 @@ export default function LoginPage() {
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-atlas-500 to-purple-600 shadow-lg mb-4">
             <Sparkles className="h-7 w-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Atlas Mall Suite</h1>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Atlas BIM</h1>
           <p className="text-sm text-gray-500 mt-1">Plateforme de pilotage immobilier commercial</p>
         </div>
         <div className="rounded-2xl border border-white/[0.08] p-8" style={{ background: '#262a31' }}>
@@ -66,7 +66,7 @@ export default function LoginPage() {
             </Link>
           </div>
         </div>
-        <p className="text-center text-[10px] text-gray-700 mt-6">Praedium Tech — Atlas Studio &middot; SYSCOHADA &middot; UEMOA/CEMAC</p>
+        <p className="text-center text-[10px] text-gray-700 mt-6">Atlas Studio &middot; SYSCOHADA &middot; UEMOA/CEMAC</p>
       </div>
     </div>
   )

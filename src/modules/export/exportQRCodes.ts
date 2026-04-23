@@ -23,7 +23,7 @@ export async function exportQRCodesPDF(pois: POI[]): Promise<Blob> {
     doc.text("Scannez ce QR code avec l'application Cosmos Club", 105, 195, { align: 'center' })
     setBodyFont(doc, 8)
     doc.setTextColor(150)
-    doc.text(`Cosmos Angré — ${poi.id}`, 105, 280, { align: 'center' })
+    doc.text(`The Mall — ${poi.id}`, 105, 280, { align: 'center' })
     doc.setTextColor(0)
   }
   return doc.output('blob')

@@ -1,4 +1,4 @@
-// ═══ Notice d'utilisation — Atlas Mall Suite ═══
+// ═══ Notice d'utilisation — Atlas BIM ═══
 //
 // Page dédiée accessible via /notice — mode d'emploi complet,
 // imprimable, avec sommaire cliquable et pagination latérale.
@@ -95,13 +95,13 @@ export default function NoticePage() {
       {/* Impression : page de garde */}
       <div className="hidden print:block p-12">
         <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold m-0">Atlas Mall Suite</h1>
+          <h1 className="text-4xl font-bold m-0">Atlas BIM</h1>
           <p className="text-xl text-slate-600 m-0 mt-2">Notice d'utilisation — v1.0</p>
           <p className="text-sm text-slate-500 m-0 mt-8">
             Plateforme de pilotage pour centres commerciaux (multi-projets, multi-tenant)
           </p>
           <p className="text-sm text-slate-500 m-0 mt-1">
-            Projet pilote : <strong>Cosmos Angré Shopping Center</strong> · Abidjan · ouverture octobre 2026
+            Projet pilote : <strong>The Mall Shopping Center</strong> · Abidjan · ouverture octobre 2026
           </p>
         </div>
       </div>
@@ -137,7 +137,7 @@ export default function NoticePage() {
           <section id="intro" className="mb-12 scroll-mt-24">
             <SectionHeader icon={BookOpen} color="#b38a5a">1. Introduction</SectionHeader>
             <p className="text-[13px] leading-relaxed">
-              <strong className="text-white">Atlas Mall Suite</strong> est une plateforme
+              <strong className="text-white">Atlas BIM</strong> est une plateforme
               <strong className="text-emerald-400"> générique de pilotage pour centres commerciaux</strong>
               (conception, audit réglementaire, signalétique, exploitation). Elle est multi-projets,
               multi-tenant, multi-étages et multi-devises — adaptable à tout mall où qu'il soit implanté.
@@ -148,7 +148,7 @@ export default function NoticePage() {
               référentiels et exports sont paramétrables par projet.
             </p>
             <InfoBox variant="info">
-              <strong>Projet pilote :</strong> <em>Cosmos Angré Shopping Center</em> (Abidjan, ouverture oct. 2026)
+              <strong>Projet pilote :</strong> <em>The Mall Shopping Center</em> (Abidjan, ouverture oct. 2026)
               est le premier déploiement utilisé pour roder l'outil et calibrer les benchmarks UEMOA.
               La plateforme est <strong>conçue pour accueillir n'importe quel projet</strong> via l'onboarding
               (nouveaux pays, devises, référentiels réglementaires).
@@ -195,7 +195,7 @@ export default function NoticePage() {
                 <strong>Projet existant</strong> : sélectionnez-le dans la liste du tableau de bord.
               </li>
               <li>
-                Pour la démonstration, le projet pilote <strong>Cosmos Angré Shopping Center</strong>
+                Pour la démonstration, le projet pilote <strong>The Mall Shopping Center</strong>
                 (Abidjan) est préchargé.
               </li>
               <li>Le menu de gauche liste les modules transversaux et les 4 volumes métier.</li>
@@ -396,7 +396,7 @@ export default function NoticePage() {
           <section id="refs" className="mb-12 scroll-mt-24">
             <SectionHeader icon={BookOpen} color="#64748b">15. Référentiels réglementaires appliqués</SectionHeader>
             <p className="text-[12px] text-slate-400 mb-3">
-              Référentiels <strong>activés par défaut pour le pilote Cosmos Angré (zone UEMOA)</strong>.
+              Référentiels <strong>activés par défaut pour le pilote The Mall (zone UEMOA)</strong>.
               Chaque projet peut activer/désactiver ses propres référentiels selon sa juridiction
               (France, UE, USA, autres zones Afrique, Moyen-Orient, Asie…).
             </p>
@@ -412,7 +412,7 @@ export default function NoticePage() {
 
             <div className="mt-6 pt-4 border-t border-white/10 print:border-slate-300 text-[10px] text-slate-500 print:text-slate-700">
               <p className="m-0">
-                <strong>Atlas Mall Suite</strong> — Notice v1.0 — {new Date().toLocaleDateString('fr-FR')}
+                <strong>Atlas BIM</strong> — Notice v1.0 — {new Date().toLocaleDateString('fr-FR')}
               </p>
               <p className="m-0 mt-1">
                 Audit généré automatiquement par PROPH3T. Validation finale par bureau de contrôle agréé requise

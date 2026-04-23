@@ -65,7 +65,7 @@ function makeCtx(overrides: Partial<Record<string, unknown>> = {}) {
 describe('Insight Engine', () => {
   it('genere un bloquant si sorties < 3', async () => {
     const { evaluateInsights } = await import(
-      '../modules/cosmos-angre/shared/proph3t/insightEngine'
+      '../modules/building/shared/proph3t/insightEngine'
     )
     const ctx = makeCtx({
       doors: [makeDoor('d1', true), makeDoor('d2', true)],
@@ -76,7 +76,7 @@ describe('Insight Engine', () => {
 
   it('genere max 5 insights', async () => {
     const { evaluateInsights } = await import(
-      '../modules/cosmos-angre/shared/proph3t/insightEngine'
+      '../modules/building/shared/proph3t/insightEngine'
     )
     const ctx = makeCtx({
       cameras: [],
@@ -93,7 +93,7 @@ describe('Insight Engine', () => {
 
   it('priorise bloquants avant opportunites', async () => {
     const { evaluateInsights } = await import(
-      '../modules/cosmos-angre/shared/proph3t/insightEngine'
+      '../modules/building/shared/proph3t/insightEngine'
     )
     const ctx = makeCtx({
       cameras: [],
@@ -119,7 +119,7 @@ describe('Insight Engine', () => {
 describe('Phasing Engine', () => {
   it('identifie bloquants pour phase incomplete', async () => {
     const { simulatePhase } = await import(
-      '../modules/cosmos-angre/shared/proph3t/phasingEngine'
+      '../modules/building/shared/proph3t/phasingEngine'
     )
     const phase = {
       id: 'p1', name: 'Soft opening', targetDate: '2026-10-01',
@@ -137,7 +137,7 @@ describe('Phasing Engine', () => {
 
   it('valide une phase bien configuree', async () => {
     const { simulatePhase } = await import(
-      '../modules/cosmos-angre/shared/proph3t/phasingEngine'
+      '../modules/building/shared/proph3t/phasingEngine'
     )
     const cams = Array.from({ length: 12 }, (_, i) => makeCamera(`c${i}`))
     const exits = Array.from({ length: 4 }, (_, i) => makeDoor(`d${i}`, true))
@@ -160,7 +160,7 @@ describe('Phasing Engine', () => {
 describe('Learning Engine', () => {
   it('detecte une preference camera apres 3 choix identiques', async () => {
     const { detectPreferences } = await import(
-      '../modules/cosmos-angre/shared/proph3t/learningEngine'
+      '../modules/building/shared/proph3t/learningEngine'
     )
     const feedbacks = Array.from({ length: 3 }, (_, i) => ({
       id: `fb${i}`, projectId: 'p1', ruleId: 'camera_model',
@@ -174,7 +174,7 @@ describe('Learning Engine', () => {
 
   it('ne detecte pas de preference avec moins de 3 choix', async () => {
     const { detectPreferences } = await import(
-      '../modules/cosmos-angre/shared/proph3t/learningEngine'
+      '../modules/building/shared/proph3t/learningEngine'
     )
     const feedbacks = [
       { id: 'fb1', projectId: 'p1', ruleId: 'cam', ruleCategory: 'camera', recommendation: 'A', userAction: 'modified' as const, modifiedValue: 'B', context: { equipmentModel: 'A' }, timestamp: '' },
@@ -190,7 +190,7 @@ describe('Learning Engine', () => {
 describe('Benchmark Engine', () => {
   it('retourne un rapport avec des percentiles', async () => {
     const { benchmarkProject } = await import(
-      '../modules/cosmos-angre/shared/proph3t/benchmarkEngine'
+      '../modules/building/shared/proph3t/benchmarkEngine'
     )
     const metrics = {
       cameraDensity: 1.2, securityScore: 75, occupancyRate: 85,
@@ -204,7 +204,7 @@ describe('Benchmark Engine', () => {
 
   it('genere des recommandations pour les faiblesses', async () => {
     const { benchmarkProject } = await import(
-      '../modules/cosmos-angre/shared/proph3t/benchmarkEngine'
+      '../modules/building/shared/proph3t/benchmarkEngine'
     )
     const weakMetrics = {
       cameraDensity: 0.3, securityScore: 40, occupancyRate: 50,
@@ -216,7 +216,7 @@ describe('Benchmark Engine', () => {
 
   it('contient 52 malls dans la base', async () => {
     const { BENCHMARK_DB } = await import(
-      '../modules/cosmos-angre/shared/proph3t/benchmarkEngine'
+      '../modules/building/shared/proph3t/benchmarkEngine'
     )
     expect(BENCHMARK_DB.length).toBeGreaterThanOrEqual(48)
   })
@@ -227,7 +227,7 @@ describe('Benchmark Engine', () => {
 describe('Cascade Engine v3', () => {
   it('detecte un angle mort sur un moment cle', async () => {
     const { computeCrossVolumeInsights } = await import(
-      '../modules/cosmos-angre/shared/proph3t/cascadeEngine'
+      '../modules/building/shared/proph3t/cascadeEngine'
     )
     const state = {
       floors: [makeFloor()], zones: [makeZone()], cameras: [], doors: [],
@@ -245,7 +245,7 @@ describe('Cascade Engine v3', () => {
 
   it('ne genere pas de conflit si positions eloignees', async () => {
     const { computeCrossVolumeInsights } = await import(
-      '../modules/cosmos-angre/shared/proph3t/cascadeEngine'
+      '../modules/building/shared/proph3t/cascadeEngine'
     )
     const state = {
       floors: [makeFloor()], zones: [makeZone()], cameras: [], doors: [],

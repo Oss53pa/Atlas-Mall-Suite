@@ -216,7 +216,7 @@ function PermissionsSection() {
 // ═══ 6. Projects ═══
 function ProjectsSection() {
   const projects = [
-    { name: 'Cosmos Angré', phase: 'Pré-ouverture', volumes: ['Vol.1','Vol.2','Vol.3'], area: '30 000' },
+    { name: 'The Mall', phase: 'Pré-ouverture', volumes: ['Vol.1','Vol.2','Vol.3'], area: '30 000' },
     { name: 'Cosmos Yopougon', phase: 'Conception', volumes: ['Vol.1','Vol.2'], area: '18 000' },
   ]
   return (
@@ -274,7 +274,7 @@ function IntegrationsSection() {
   return (
     <div className="space-y-5">
       <h3 className="text-lg font-semibold text-white">Intégrations</h3>
-      <p className="text-sm text-gray-500">Connectez Atlas Mall Suite à vos outils.</p>
+      <p className="text-sm text-gray-500">Connectez Atlas BIM à vos outils.</p>
       <div className="space-y-3">{items.map(it=>(
         <div key={it.name} className="rounded-xl p-4 border border-white/[0.06] flex items-center gap-4" style={{ background: '#141e2e' }}>
           <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${it.color}15` }}><Plug size={16} style={{ color: it.color }}/></div>
@@ -304,7 +304,7 @@ function IaCapabilitiesSection() {
 // ═══ 10. Audit ═══
 function AuditSection() {
   const logs = [
-    { action:'Projet créé', user:'Cheick Sanankoua', detail:'Cosmos Angré', date:'15/01/2025 09:30' },
+    { action:'Projet créé', user:'Cheick Sanankoua', detail:'The Mall', date:'15/01/2025 09:30' },
     { action:'Membre invité', user:'Cheick Sanankoua', detail:'aminata@newheavensa.ci (Admin)', date:'16/01/2025 14:15' },
     { action:'Plan DXF importé', user:'Aminata Koné', detail:'RDC — 200×140m', date:'20/01/2025 10:00' },
     { action:'Budget CAPEX approuvé', user:'Cheick Sanankoua', detail:'147 000 000 FCFA — Sécurité', date:'25/01/2025 16:45' },

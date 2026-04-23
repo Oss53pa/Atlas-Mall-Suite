@@ -46,7 +46,7 @@ export default function HomeRoute() {
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#1a1d23' }}>
         <div className="flex items-center gap-3 text-gray-400 text-sm">
           <div className="w-4 h-4 border-2 border-gray-700 border-t-indigo-500 rounded-full animate-spin" />
-          Atlas Mall Suite
+          Atlas BIM
         </div>
       </div>
     )

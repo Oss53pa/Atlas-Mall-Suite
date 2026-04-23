@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { calibratePlanFromDims } from '../modules/cosmos-angre/shared/planReader/dimParser'
-import type { DimEntity } from '../modules/cosmos-angre/shared/planReader/planReaderTypes'
+import { calibratePlanFromDims } from '../modules/building/shared/planReader/dimParser'
+import type { DimEntity } from '../modules/building/shared/planReader/planReaderTypes'
 
 const mockDim = (value: number, dist: number, overrides: Partial<DimEntity> = {}): DimEntity => ({
   id: `d-${Math.random()}`,

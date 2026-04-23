@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validatePlanFile, detectPlanSourceType } from '../modules/cosmos-angre/shared/planReader/fileValidator'
+import { validatePlanFile, detectPlanSourceType } from '../modules/building/shared/planReader/fileValidator'
 
 const makeFile = (name: string, sizeBytes: number, type = ''): File => {
   const blob = new Blob([new ArrayBuffer(sizeBytes)], { type })

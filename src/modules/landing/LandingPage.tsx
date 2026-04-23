@@ -13,29 +13,52 @@ import {
   Users,
   Lock,
   Star,
-  Play
+  Play,
+  Store,
+  Hotel,
+  Briefcase,
+  Stethoscope,
+  GraduationCap,
+  Factory,
+  Landmark,
+  Network,
 } from 'lucide-react'
 
 const FEATURES = [
   {
-    icon: Building2, color: '#f59e0b', title: 'Plan Commercial',
-    desc: 'Pilotez le mix enseigne, suivez l\'occupancy en temps réel, optimisez les loyers avec l\'IA.',
+    icon: Building2, color: '#f59e0b', title: 'Opérations & Business',
+    desc: 'Pilotage métier adapté à chaque verticale : mix enseigne, RevPAR hôtel, occupation bureaux, activité hospitalière.',
   },
   {
-    icon: ShieldCheck, color: '#38bdf8', title: 'Plan Sécuritaire',
-    desc: 'Vidéosurveillance intelligente, contrôle d\'accès, conformité APSAD R82, simulation Monte Carlo.',
+    icon: ShieldCheck, color: '#38bdf8', title: 'Sécurité & Conformité',
+    desc: 'Vidéosurveillance, contrôle d\'accès, conformité ERP (APSAD R82, NF S 61-938, EN 62676), simulation Monte Carlo évacuation.',
   },
   {
-    icon: Route, color: '#34d399', title: 'Parcours Client',
-    desc: 'Expérience visiteur, signalétique ISO 7010, wayfinding multi-niveaux, programme fidélité.',
+    icon: Route, color: '#34d399', title: 'Expérience Utilisateur',
+    desc: 'Parcours visiteur/client/occupant, signalétique ISO 7010, flux ABM Helbing, simulations de foule.',
+  },
+  {
+    icon: Sparkles, color: '#0ea5e9', title: 'Wayfinder',
+    desc: 'GPS intérieur : app mobile, bornes, AR. A* bidirectionnel, positioning WiFi+BLE+PDR, précision ±1,3 m.',
   },
 ]
 
+const VERTICALS = [
+  { icon: Store,         title: 'Centres commerciaux',    desc: 'Mix enseignes · loyers · CA/m² · ICSC benchmarks · tenant scoring' },
+  { icon: Hotel,         title: 'Hôtels & hospitality',   desc: 'RevPAR · ADR · housekeeping · F&B · parcours client' },
+  { icon: Briefcase,     title: 'Immeubles de bureaux',   desc: 'Occupation · desk booking · QAI · coworking · badges' },
+  { icon: Stethoscope,   title: 'Hôpitaux & santé',       desc: 'Flux patients · bloc opératoire · compliance HAS · wayfinding' },
+  { icon: GraduationCap, title: 'Campus & éducation',     desc: 'Salles · flux étudiants · bibliothèque · événements' },
+  { icon: Factory,       title: 'Logistique & industrie', desc: 'SKU · zones ATEX · compliance OSHA · flux entrepôt' },
+  { icon: Landmark,      title: 'ERP public & culture',   desc: 'Musées · mairies · billetterie · accessibilité PMR' },
+  { icon: Network,       title: 'Multi-sites / portfolio', desc: 'Consolidation REIT · benchmarking inter-sites · API' },
+]
+
 const STATS = [
-  { value: '30 000', label: 'm² gérés', suffix: '+' },
-  { value: '120', label: 'caméras pilotées', suffix: '+' },
-  { value: '18%', label: 'TVA intégrée', suffix: '' },
-  { value: '3', label: 'volumes métier', suffix: '' },
+  { value: '8', label: 'verticales couvertes', suffix: '' },
+  { value: '4', label: 'volumes métier', suffix: '' },
+  { value: '40+', label: 'capacités Proph3t', suffix: '' },
+  { value: '15+', label: 'normes intégrées', suffix: '' },
 ]
 
 const CLIENTS_LOGOS = [
@@ -45,24 +68,24 @@ const CLIENTS_LOGOS = [
 const PRICING = [
   {
     name: 'Étude', price: '2 500 000', period: '/ projet',
-    features: ['1 centre commercial', 'Conception & audit réglementaire', 'Vol.1 Commercial + Vol.2 Sécurité', 'Export PDF & DWG', 'Livraison sous 4 semaines'],
+    features: ['1 bâtiment (toute verticale)', 'Conception & audit réglementaire', 'Vol.1 Opérations + Vol.2 Sécurité', 'Export PDF & DWG', 'Livraison sous 4 semaines'],
     cta: 'Démarrer un projet', popular: false,
   },
   {
     name: 'Complet', price: '6 500 000', period: '/ projet',
-    features: ['1 centre commercial', 'Les 4 volumes complets', 'Proph3t IA illimité', 'Wayfinder (mobile + bornes)', 'Visites guidées & rapports partageables', '6 mois de support après livraison', 'Formation équipe'],
+    features: ['1 bâtiment', 'Les 4 volumes complets', 'Proph3t IA illimité', 'Wayfinder (mobile + bornes + AR)', 'Visites 3D/VR & rapports partageables', '6 mois de support après livraison', 'Formation équipe'],
     cta: 'Demander un devis', popular: true,
   },
   {
     name: 'Portefeuille', price: 'Sur devis', period: '',
-    features: ['Plusieurs centres commerciaux', 'Licence pluriannuelle', 'API dédiée', 'SSO / SAML', 'SLA 99.9% avec pénalités', 'Déploiement on-premise possible', 'Équipe consultants sur site'],
+    features: ['Portfolio multi-sites', 'Licence pluriannuelle', 'API dédiée', 'SSO / SAML', 'SLA 99.9% avec pénalités', 'Déploiement on-premise possible', 'Équipe consultants sur site'],
     cta: 'Contacter l\'équipe', popular: false,
   },
 ]
 
 const TESTIMONIALS = [
   {
-    quote: 'Atlas Mall Suite a transformé notre façon de piloter Cosmos Angré. L\'IA Proph3t nous fait gagner des semaines sur chaque rapport.',
+    quote: 'Atlas BIM a transformé notre façon de piloter The Mall. L\'IA Proph3t nous fait gagner des semaines sur chaque rapport.',
     author: 'Cheick Sanankoua', role: 'Directeur Général', company: 'New Heaven SA',
   },
   {
@@ -80,7 +103,7 @@ export default function LandingPage() {
       {/* ═══ NAVBAR ═══ */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/[0.04] backdrop-blur-xl" style={{ background: 'rgba(6,10,19,0.85)' }}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <span className="text-[22px] text-white tracking-wide" style={{ fontFamily: "'Grand Hotel', cursive" }}>Atlas Mall Suite</span>
+          <span className="text-[26px] text-white tracking-wide" style={{ fontFamily: "'Grand Hotel', cursive" }}>Atlas Bim</span>
           <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
             <a href="#features" className="hover:text-white transition-colors">Fonctionnalités</a>
             <a href="#pricing" className="hover:text-white transition-colors">Tarifs</a>
@@ -119,28 +142,22 @@ export default function LandingPage() {
             Propulsé par Proph3t — IA conversationnelle à mémoire longue
           </div>
 
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
-            Pilotez vos centres{' '}
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-light tracking-tight leading-[1.1] mb-6">
+            Le jumeau numérique{' '}
             <span className="bg-gradient-to-r from-atlas-300 via-atlas-400 to-atlas-600 bg-clip-text text-transparent">
-              commerciaux
+              de vos bâtiments
             </span>
-            <br />
-            comme jamais
           </h1>
 
           <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            La plateforme SaaS de référence pour la planification, la sécurité et l'expérience client
-            des centres commerciaux en Afrique francophone.
+            Atlas BIM par Atlas Studio — plateforme SaaS de planification, sécurité, expérience et wayfinding
+            pour centres commerciaux, hôtels, bureaux, hôpitaux, campus et ERP publics.
           </p>
 
-          <div className="flex items-center justify-center gap-4 mb-16 flex-wrap">
+          <div className="flex items-center justify-center gap-4 mb-10 flex-wrap">
             <button onClick={() => navigate('/register')}
               className="flex items-center gap-2 px-7 py-3.5 rounded-xl bg-atlas-500 hover:bg-atlas-400 text-white font-medium text-[15px] transition-all hover:-translate-y-0.5 shadow-lg shadow-bronze/20">
               Démarrer gratuitement <ArrowRight size={18} />
-            </button>
-            <button onClick={() => navigate('/demo/rapport-parcours-client')}
-              className="flex items-center gap-2 px-6 py-3.5 rounded-xl border border-atlas-500/40 bg-atlas-500/10 text-atlas-200 hover:text-white hover:border-atlas-400 font-medium text-[15px] transition-all">
-              <Sparkles size={16} /> Voir un rapport Proph3t (démo)
             </button>
             <button onClick={() => navigate('/dashboard')}
               className="flex items-center gap-2 px-6 py-3.5 rounded-xl border border-white/[0.1] text-gray-300 hover:text-white hover:border-white/20 font-medium text-[15px] transition-all">
@@ -148,11 +165,35 @@ export default function LandingPage() {
             </button>
           </div>
 
+          {/* Sélecteur de démos verticales */}
+          <div className="mb-16">
+            <p className="text-[11px] text-atlas-400 uppercase tracking-[0.18em] font-semibold mb-3 flex items-center justify-center gap-2">
+              <Sparkles size={12} /> Voir un rapport Proph3t par verticale
+            </p>
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              {[
+                { Icon: Store,         label: 'Centre commercial', path: '/demo/mall' },
+                { Icon: Hotel,         label: 'Hôtel',              path: '/demo/hotel' },
+                { Icon: Briefcase,     label: 'Bureaux',            path: '/demo/office' },
+                { Icon: Stethoscope,   label: 'Hôpital',            path: '/demo/hospital' },
+                { Icon: GraduationCap, label: 'Campus',             path: '/demo/campus' },
+              ].map(d => (
+                <button
+                  key={d.path}
+                  onClick={() => navigate(d.path)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] text-gray-300 hover:text-white hover:border-atlas-400/40 hover:bg-atlas-500/[0.08] font-medium text-[13px] transition-all"
+                >
+                  <d.Icon size={16} strokeWidth={1.4} className="text-gray-400" /> {d.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto">
             {STATS.map(s => (
               <div key={s.label} className="text-center">
-                <div className="text-3xl font-bold text-white">{s.value}<span className="text-atlas-400">{s.suffix}</span></div>
+                <div className="text-3xl font-light text-white">{s.value}<span className="text-atlas-400">{s.suffix}</span></div>
                 <div className="text-[12px] text-gray-500 mt-1 uppercase tracking-wider">{s.label}</div>
               </div>
             ))}
@@ -174,31 +215,59 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══ FEATURES ═══ */}
-      <section id="features" className="py-24">
+      {/* ═══ VERTICALES ═══ */}
+      <section id="verticals" className="py-24">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <p className="text-[11px] text-atlas-400 uppercase tracking-[0.2em] font-semibold mb-3">3 Volumes métier</p>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-              Tout ce dont vous avez besoin,<br />dans une seule plateforme
+          <div className="text-center mb-14">
+            <p className="text-[11px] text-atlas-400 uppercase tracking-[0.2em] font-semibold mb-3">8 Verticales</p>
+            <h2 className="text-3xl md:text-4xl font-light tracking-tight mb-4">
+              Une seule plateforme,<br />tous les types de bâtiments
             </h2>
             <p className="text-gray-500 max-w-xl mx-auto">
-              Chaque volume couvre un domaine d'expertise. Ensemble, ils forment la vision complète de votre centre commercial.
+              Atlas BIM s'adapte à votre secteur : benchmarks, vocabulaire, KPIs, compliance — tout est configuré pour votre verticale.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {VERTICALS.map(v => {
+              const Icon = v.icon
+              return (
+                <div key={v.title} className="rounded-xl p-5 border border-white/[0.06] transition-all hover:border-atlas-500/30 hover:-translate-y-0.5"
+                  style={{ background: '#262a31' }}>
+                  <Icon size={22} strokeWidth={1.4} className="text-gray-400 mb-3" />
+                  <h3 className="text-[14px] font-medium text-white mb-1.5">{v.title}</h3>
+                  <p className="text-[11px] text-gray-500 leading-relaxed font-light">{v.desc}</p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ FEATURES ═══ */}
+      <section id="features" className="py-24" style={{ background: 'rgba(10,15,26,0.5)' }}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <p className="text-[11px] text-atlas-400 uppercase tracking-[0.2em] font-semibold mb-3">4 Volumes métier</p>
+            <h2 className="text-3xl md:text-4xl font-light tracking-tight mb-4">
+              Tout ce dont vous avez besoin,<br />dans une seule plateforme
+            </h2>
+            <p className="text-gray-500 max-w-xl mx-auto">
+              Chaque volume couvre un domaine d'expertise. Ensemble, ils forment la vision complète de votre bâtiment.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {FEATURES.map(f => {
               const Icon = f.icon
               return (
                 <div key={f.title} className="group rounded-2xl p-7 border border-white/[0.06] transition-all hover:-translate-y-1 hover:border-white/[0.1]"
                   style={{ background: '#262a31' }}>
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-transform group-hover:scale-110"
-                    style={{ background: `${f.color}12`, border: `1px solid ${f.color}20` }}>
-                    <Icon size={22} style={{ color: f.color }} />
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 border border-white/[0.08] bg-white/[0.03] transition-colors group-hover:border-white/20">
+                    <Icon size={22} strokeWidth={1.4} className="text-gray-400 group-hover:text-white transition-colors" />
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">{f.title}</h3>
-                  <p className="text-[13px] text-gray-400 leading-relaxed">{f.desc}</p>
+                  <h3 className="text-lg font-medium text-white mb-2">{f.title}</h3>
+                  <p className="text-[13px] text-gray-400 leading-relaxed font-light">{f.desc}</p>
                 </div>
               )
             })}
@@ -212,7 +281,7 @@ export default function LandingPage() {
                 <Sparkles className="h-7 w-7 text-atlas-400" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white mb-2">Proph3t — L'expert qui vit dans votre projet</h3>
+                <h3 className="text-xl font-medium text-white mb-2">Proph3t — L'expert qui vit dans votre projet</h3>
                 <p className="text-gray-400 text-[14px] leading-relaxed mb-4">
                   Moteur IA conversationnel à mémoire longue. Proph3t connaît chaque décision depuis le premier import DXF,
                   anticipe les problèmes, et produit des rapports certifiés aux normes APSAD R82, ISO 7010, EN 62676.
@@ -233,15 +302,15 @@ export default function LandingPage() {
       <section className="py-20 border-y border-white/[0.04]" style={{ background: 'rgba(10,15,26,0.5)' }}>
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight mb-4">Conçu pour l'Afrique francophone</h2>
-            <p className="text-gray-500 max-w-xl mx-auto">Chaque détail est pensé pour le marché UEMOA/CEMAC.</p>
+            <h2 className="text-3xl font-light tracking-tight mb-4">Pensé pour l'Afrique francophone &amp; au-delà</h2>
+            <p className="text-gray-500 max-w-xl mx-auto">Native UEMOA/CEMAC, compatible internationale. Toute verticale, tout pays.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
-              { icon: Globe2, title: 'SYSCOHADA natif', desc: 'Référentiel comptable révisé 2017, plan de comptes OHADA intégré' },
-              { icon: Zap, title: 'Monnaie FCFA', desc: 'Tous les montants en XOF, TVA 18% DGI Côte d\'Ivoire par défaut' },
+              { icon: Globe2, title: 'SYSCOHADA + IFRS', desc: 'SYSCOHADA Révisé 2017 natif, norme IFRS pour les projets internationaux' },
+              { icon: Zap, title: 'Multi-devises', desc: 'XOF / XAF natif, EUR / USD / CHF / MAD sur demande, conversion temps réel' },
               { icon: Lock, title: 'Multi-tenant sécurisé', desc: 'RLS Supabase — aucune donnée d\'une org visible par une autre' },
-              { icon: Users, title: '6 rôles métier', desc: 'DG, Admin, Consultant, Enseigne, Investisseur, Lecteur' },
+              { icon: Users, title: '6 rôles métier', desc: 'DG, Admin, Consultant, Partenaire, Investisseur, Lecteur' },
             ].map(item => {
               const Icon = item.icon
               return (
@@ -261,7 +330,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
             <p className="text-[11px] text-atlas-400 uppercase tracking-[0.2em] font-semibold mb-3">Tarification</p>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+            <h2 className="text-3xl md:text-4xl font-light tracking-tight mb-4">
               Un plan pour chaque ambition
             </h2>
             <p className="text-gray-500">Tous les montants en FCFA (XOF). Sans engagement.</p>
@@ -279,9 +348,9 @@ export default function LandingPage() {
                     <Star size={10} /> Le plus populaire
                   </span>
                 )}
-                <h3 className="text-xl font-bold text-white">{plan.name}</h3>
+                <h3 className="text-xl font-medium text-white">{plan.name}</h3>
                 <div className="mt-2 mb-6">
-                  <span className="text-3xl font-bold text-white">{plan.price}</span>
+                  <span className="text-3xl font-light text-white">{plan.price}</span>
                   {plan.period && <span className="text-sm text-gray-500 ml-1">FCFA{plan.period}</span>}
                 </div>
                 <ul className="space-y-2.5 mb-8">
@@ -310,7 +379,7 @@ export default function LandingPage() {
       <section id="testimonials" className="py-20 border-t border-white/[0.04]" style={{ background: 'rgba(10,15,26,0.5)' }}>
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight mb-4">Ce que disent nos utilisateurs</h2>
+            <h2 className="text-3xl font-light tracking-tight mb-4">Ce que disent nos utilisateurs</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {TESTIMONIALS.map((t, i) => (
@@ -332,11 +401,11 @@ export default function LandingPage() {
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-atlas-500 to-purple-600 mx-auto mb-6 shadow-lg shadow-bronze/20">
             <Sparkles className="h-8 w-8 text-white" />
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-            Prêt à transformer votre centre commercial ?
+          <h2 className="text-3xl md:text-4xl font-light tracking-tight mb-4">
+            Prêt à transformer votre bâtiment ?
           </h2>
           <p className="text-gray-400 text-lg mb-8 max-w-xl mx-auto">
-            Rejoignez les opérateurs qui utilisent Atlas Mall Suite pour piloter leurs actifs immobiliers commerciaux.
+            Rejoignez les opérateurs qui utilisent Atlas BIM pour piloter mall, hôtels, bureaux, hôpitaux, campus ou portfolios multi-sites.
           </p>
           <div className="flex items-center justify-center gap-4">
             <button onClick={() => navigate('/register')}
@@ -356,15 +425,15 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
-              <span className="text-[18px] text-white" style={{ fontFamily: "'Grand Hotel', cursive" }}>Atlas Mall Suite</span>
-              <p className="text-[10px] text-gray-600">Praedium Tech — Atlas Studio</p>
+              <span className="text-[18px] text-white" style={{ fontFamily: "'Grand Hotel', cursive" }}>Atlas BIM</span>
+              <p className="text-[10px] text-gray-600">Atlas Studio</p>
             </div>
             <div className="flex items-center gap-6 text-[12px] text-gray-500">
               <span>UEMOA / CEMAC</span>
               <span>SYSCOHADA Révisé 2017</span>
               <span>Abidjan, Côte d'Ivoire</span>
             </div>
-            <p className="text-[11px] text-gray-700">&copy; 2025 Praedium Tech. Tous droits réservés.</p>
+            <p className="text-[11px] text-gray-700">&copy; 2026 Atlas Studio. Tous droits réservés.</p>
           </div>
         </div>
       </footer>

@@ -6,7 +6,7 @@ import type { ScenarioRole, Waypoint, TourZone } from '../cosmos-angre/shared/vi
 
 const VirtualTourEngine = lazy(() => import('../cosmos-angre/shared/virtual-tour/VirtualTourEngine'))
 
-// Demo data for Cosmos Angré
+// Demo data for The Mall
 const DEMO_ZONES: TourZone[] = [
   { id: 'z1', name: 'Hall Principal', polygon: [[20,10],[80,10],[80,30],[20,30]], height: 5, color: '#38bdf8', type: 'circulation' },
   { id: 'z2', name: 'Zara', polygon: [[5,10],[18,10],[18,30],[5,30]], height: 4.5, color: '#22c55e', type: 'commerce', tenantName: 'Zara CI', rentPerSqm: 22000, status: 'Signé' },

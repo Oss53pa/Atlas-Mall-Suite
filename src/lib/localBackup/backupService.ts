@@ -1,6 +1,6 @@
 // ═══ LOCAL BACKUP SERVICE ═══
 //
-// API de sauvegarde locale pour Atlas Mall Suite.
+// API de sauvegarde locale pour Atlas BIM.
 // Un snapshot "courant" par projet + historique roulant (HISTORY_MAX_PER_PROJECT).
 
 import { backupDB, SNAPSHOT_VERSION, HISTORY_MAX_PER_PROJECT, type ProjectSnapshot } from './db'

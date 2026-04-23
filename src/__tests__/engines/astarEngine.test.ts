@@ -4,8 +4,8 @@ import {
   astarForward,
   RouteAbortedError,
   type RouteOptions,
-} from '../../modules/cosmos-angre/vol4-wayfinder/engines/astarEngine'
-import type { NavGraph, NavNode, NavEdge } from '../../modules/cosmos-angre/shared/engines/plan-analysis/navGraphEngine'
+} from '../../modules/building/vol4-wayfinder/engines/astarEngine'
+import type { NavGraph, NavNode, NavEdge } from '../../modules/building/shared/engines/plan-analysis/navGraphEngine'
 
 function buildLineGraph(n: number): NavGraph {
   const nodes: NavNode[] = []

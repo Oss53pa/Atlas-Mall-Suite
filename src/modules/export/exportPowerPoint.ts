@@ -30,7 +30,7 @@ export function generatePresentationSlides(config: PresentationConfig): SlideDat
   slides.push({
     title: config.projectName,
     subtitle: `${volumeLabel(config.volume)} — ${config.date}`,
-    content: [`Auteur : ${config.author}`, 'Confidentiel — Praedium Tech / Atlas Studio'],
+    content: [`Auteur : ${config.author}`, 'Confidentiel — Atlas Studio'],
     type: 'title',
   })
 
@@ -40,7 +40,7 @@ export function generatePresentationSlides(config: PresentationConfig): SlideDat
   // Closing slide
   slides.push({
     title: 'Proph3t Engine',
-    subtitle: 'Intelligence Artificielle — Atlas Mall Suite',
+    subtitle: 'Intelligence Artificielle — Atlas BIM',
     content: [
       'Analyse generee par Proph3t (Claude API)',
       'Normes : APSAD R82 · EN 50132 · ISO 22341 · ISO 7010',

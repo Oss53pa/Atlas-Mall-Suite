@@ -1,0 +1,284 @@
+// ═══ VOL.1 PLAN COMMERCIAL — Main Module Component ═══
+
+import React, {
+  useMemo,
+  useState,
+  useEffect,
+  lazy,
+  Suspense
+} from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useVol1Store } from './store/vol1Store'
+import {
+  ArrowLeft,
+  Building2,
+  Users,
+  BarChart2,
+  Map,
+  Brain,
+  Download,
+  Upload,
+  Loader2,
+  Sparkles,
+  Edit3,
+  History,
+  Send,
+} from 'lucide-react'
+import SaveStatusIndicator from '../shared/components/SaveStatusIndicator'
+import { PlanModelSelector } from '../shared/components/PlanModelSelector'
+import { ATLAS_STUDIO_GROUP_META, ATLAS_STUDIO_CORE_ITEMS, ATLAS_STUDIO_DEFAULT_TAB } from '../shared/components/atlasStudioNav'
+import { savePlanImageFromUrl, loadAllPlanImages } from '../shared/stores/planImageCache'
+import { usePlanEngineStore } from '../shared/stores/planEngineStore'
+import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
+import { useAutoSnapshot } from '../shared/hooks/useAutoSnapshot'
+
+const DashboardSectionLazy = lazy(() => import('./sections/DashboardSection'))
+const PlanCommercialSectionLazy = lazy(() => import('./sections/PlanCommercialSection'))
+const TenantsSectionLazy = lazy(() => import('./sections/TenantsSection'))
+const Proph3tCommercialSectionLazy = lazy(() => import('./sections/Proph3tCommercialSection'))
+const ExportCommercialSectionLazy = lazy(() => import('./sections/ExportCommercialSection'))
+const PlanImportsSectionLazy = lazy(() => import('../shared/components/PlanImportsSection'))
+const SpaceEditorSectionLazy = lazy(() => import('../shared/components/SpaceEditorSection'))
+const VolumeHistoryTabLazy  = lazy(() => import('../shared/components/VolumeHistoryTab'))
+const VolumeReportsTabLazy  = lazy(() => import('../shared/components/VolumeReportsTab'))
+
+type Vol1Tab = 'dashboard' | 'plan' | 'plan_imports' | 'editor' | 'tenants' | 'proph3t' | 'exports' | 'history' | 'reports'
+
+interface NavItem {
+  id: Vol1Tab
+  label: string
+  icon: React.ComponentType<any>
+}
+
+interface NavGroup {
+  key: string
+  label: string
+  icon: React.ComponentType<any>
+  color: string
+  items: NavItem[]
+  separator?: boolean
+}
+
+// Factory: defers cross-chunk ATLAS_STUDIO_GROUP_META access to render time.
+// See Vol3Module for rationale (chunk TDZ avoidance).
+const buildNavGroups = (): NavGroup[] => [
+  {
+    ...ATLAS_STUDIO_GROUP_META,
+    items: [
+      { id: 'plan_imports', label: 'Plans importés', icon: Upload },
+      { id: 'editor', label: 'Éditeur espaces', icon: Edit3 },
+      { id: 'plan', label: 'Plan Commercial', icon: Map },
+      { id: 'proph3t', label: 'Analyse Proph3t', icon: Brain },
+      { id: 'exports', label: 'Rapport / Export', icon: Download },
+    ],
+  },
+  {
+    key: 'commercial',
+    label: 'COMMERCIAL',
+    icon: Building2,
+    color: '#f59e0b',
+    separator: true,
+    items: [
+      { id: 'dashboard', label: 'Dashboard Occupancy', icon: BarChart2 },
+      { id: 'tenants', label: 'Preneurs', icon: Users },
+    ],
+  },
+  {
+    key: 'collaboration',
+    label: 'COLLABORATION',
+    icon: Send,
+    color: '#c9a068',
+    separator: true,
+    items: [
+      { id: 'history', label: 'Historique du plan', icon: History },
+      { id: 'reports', label: 'Rapports & partage', icon: Send },
+    ],
+  },
+]
+// Sanity: Studio group must carry the core IDs (plan_imports, plan, analyse-alias, rapport/export, chat-alias)
+void ATLAS_STUDIO_CORE_ITEMS // referenced to keep the contract in scope
+
+const Loading = () => (
+  <div className="flex items-center justify-center h-96">
+    <Loader2 className="animate-spin text-slate-500" size={24} />
+  </div>
+)
+
+export default function Vol1Module() {
+  const navigate = useNavigate()
+  const [activeTab, setActiveTab] = useState<Vol1Tab>(ATLAS_STUDIO_DEFAULT_TAB as Vol1Tab)
+  const NAV_GROUPS = useMemo(() => buildNavGroups(), [])
+
+  // Auto-snapshot : capture automatique des versions majeures du plan
+  useAutoSnapshot({ volumeId: 'vol1' })
+
+  // Rehydrate plan image backgrounds from IndexedDB on mount — blob URLs in localStorage are dead after refresh.
+  useEffect(() => {
+    void loadAllPlanImages().then((urls) => {
+      if (Object.keys(urls).length === 0) return
+      useVol1Store.setState((s: Record<string, unknown>) => ({
+        ...s,
+        planImageUrls: { ...(s.planImageUrls as Record<string, string> ?? {}), ...urls },
+      }))
+    })
+  }, [])
+
+  return (
+    <div className="flex h-full" style={{ background: '#080c14', color: '#e2e8f0' }}>
+      {/* Sidebar */}
+      <aside className="w-56 flex-shrink-0 flex flex-col border-r overflow-y-auto" style={{ background: '#0b1120', borderColor: '#1e2a3a' }}>
+        {/* Back button */}
+        <button
+          onClick={() => navigate('/projects/cosmos-angre')}
+          className="flex items-center gap-2 px-4 py-3 text-[12px] text-slate-400 hover:text-white transition-colors border-b"
+          style={{ borderColor: '#1e2a3a' }}
+        >
+          <ArrowLeft size={14} />
+          Atlas BIM
+        </button>
+
+        {/* Volume header */}
+        <div className="px-4 py-4 border-b" style={{ borderColor: '#1e2a3a' }}>
+          <div className="flex items-center gap-2 mb-1">
+            <Building2 size={16} style={{ color: '#f59e0b' }} />
+            <span className="text-[11px] tracking-[0.15em] font-semibold" style={{ color: '#f59e0b' }}>VOL. 1</span>
+          </div>
+          <h2 className="text-white font-bold text-[15px]">Plan Commercial</h2>
+          <p className="text-[10px] text-slate-500 mt-0.5">Mix enseigne · Occupancy · Preneurs</p>
+        </div>
+
+        {/* Nav groups */}
+        <nav className="flex-1 p-2 space-y-3 overflow-y-auto">
+          {NAV_GROUPS.map((group) => {
+            const GroupIcon = group.icon
+            return (
+              <div
+                key={group.key}
+                className={group.separator ? 'pt-3 border-t' : ''}
+                style={group.separator ? { borderColor: '#1e2a3a' } : undefined}
+              >
+                <div className="flex items-center gap-1.5 px-2 mb-1.5">
+                  <GroupIcon size={11} style={{ color: group.color }} />
+                  <span
+                    className="text-[9px] tracking-[0.15em] font-semibold"
+                    style={{ color: group.color }}
+                  >
+                    {group.label}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  {group.items.map((item) => {
+                    const Icon = item.icon
+                    const isActive = activeTab === item.id
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => setActiveTab(item.id)}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all"
+                        style={{
+                          background: isActive ? `${group.color}12` : 'transparent',
+                          color: isActive ? group.color : '#4a5568',
+                          border: `1px solid ${isActive ? `${group.color}30` : 'transparent'}`,
+                        }}
+                      >
+                        <Icon size={15} />
+                        {item.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+        </nav>
+
+        {/* Plan model selector (commun aux volumes) */}
+        <div className="px-3 py-2 border-t" style={{ borderColor: '#1e2a3a' }}>
+          <p className="text-[9px] uppercase tracking-widest text-slate-600 mb-1.5">Modèle de plan</p>
+          <PlanModelSelector projectId="cosmos-angre" accentColor="#f59e0b" />
+        </div>
+
+        {/* Save status */}
+        <div className="px-4 py-2 border-t" style={{ borderColor: '#1e2a3a' }}>
+          <SaveStatusIndicator status="saved" />
+        </div>
+
+        {/* Proph3t badge */}
+        <div className="p-3 m-2 rounded-lg" style={{ background: 'rgba(179,138,90,0.06)', border: '1px solid rgba(179,138,90,0.15)' }}>
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles size={12} className="text-atlas-400" />
+            <span className="text-[10px] font-medium text-atlas-300">Proph3t Engine</span>
+          </div>
+          <p className="text-[9px] text-slate-500">IA commerciale — analyse mix, recommendations, optimisation loyers</p>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <main className="flex-1 overflow-y-auto">
+        <Suspense fallback={<Loading />}>
+          {activeTab === 'dashboard' && <DashboardSectionLazy />}
+          {activeTab === 'plan_imports' && (
+            <PlanImportsSectionLazy
+              volumeColor="#f59e0b"
+              volumeLabel="VOL. 1 — PLAN COMMERCIAL"
+              floors={[
+                { id: 'floor-b1', level: 'B1' as any, order: 0, widthM: 180, heightM: 120, zones: [], transitions: [] },
+                { id: 'floor-rdc', level: 'RDC' as any, order: 1, widthM: 200, heightM: 140, zones: [], transitions: [] },
+                { id: 'floor-r1', level: 'R+1' as any, order: 2, widthM: 200, heightM: 140, zones: [], transitions: [] },
+              ]}
+              activeFloorId="floor-rdc"
+              onImportComplete={(importedZones, dims, calibration, floorId, planImageUrl, _fileInfo, parsedPlan, importId) => {
+                const { spaces } = useVol1Store.getState()
+                const newSpaces = importedZones.map((z, i) => ({
+                  id: z.id ?? `import-${Date.now()}-${i}`,
+                  reference: `IMP-${(spaces.length + i + 1).toString().padStart(2, '0')}`,
+                  floorId: z.floorId ?? floorId,
+                  floorLevel: floorId === 'floor-b1' ? 'B1' : floorId === 'floor-r1' ? 'R+1' : 'RDC',
+                  x: (z.x ?? 0) * 200, y: (z.y ?? 0) * 140,
+                  w: (z.w ?? 0.1) * 200, h: (z.h ?? 0.1) * 140,
+                  areaSqm: Math.round((z.w ?? 0.1) * 200 * (z.h ?? 0.1) * 140),
+                  status: 'vacant' as const, tenantId: null,
+                  wing: z.label ?? `Zone ${i + 1}`,
+                }))
+                // Replace spaces on this floor (remove old mock/imported for this floor)
+                const otherFloorSpaces = spaces.filter(s => s.floorId !== floorId)
+                useVol1Store.setState({ spaces: [...otherFloorSpaces, ...newSpaces] })
+                // Store plan image as background for the commercial plan canvas
+                if (planImageUrl) {
+                  useVol1Store.setState((s: Record<string, unknown>) => ({
+                    ...s,
+                    planImageUrls: { ...(s.planImageUrls as Record<string, string> ?? {}), [floorId]: planImageUrl },
+                  }))
+                  // Persist in IndexedDB so it survives page refresh
+                  void savePlanImageFromUrl(floorId, planImageUrl, 'plan-import.png')
+                }
+                // Store ParsedPlan in engine store for PlanCanvasV2 vectorial rendering
+                const plan = parsedPlan ?? buildParsedPlanFromImport(importedZones, dims, calibration)
+                usePlanEngineStore.getState().setParsedPlan(plan)
+                usePlanEngineStore.getState().setSpaces(plan.spaces)
+                usePlanEngineStore.getState().setLayers(plan.layers)
+                if (importId) usePlanEngineStore.getState().storeParsedPlan(importId, plan)
+              }}
+            />
+          )}
+          {activeTab === 'editor' && <SpaceEditorSectionLazy />}
+          {activeTab === 'plan' && <PlanCommercialSectionLazy />}
+          {activeTab === 'tenants' && <TenantsSectionLazy />}
+          {activeTab === 'proph3t' && <Proph3tCommercialSectionLazy />}
+          {activeTab === 'exports' && <ExportCommercialSectionLazy />}
+          {activeTab === 'history' && (
+            <VolumeHistoryTabLazy volumeId="vol1" volumeColor="#f59e0b" volumeName="Plan commercial" />
+          )}
+          {activeTab === 'reports' && (
+            <VolumeReportsTabLazy
+              volumeId="vol1"
+              volumeColor="#f59e0b"
+              volumeName="Plan commercial"
+              projectName="The Mall"
+            />
+          )}
+        </Suspense>
+      </main>
+    </div>
+  )
+}

@@ -32,7 +32,7 @@ export const useSettingsStore = create<SettingsState>()(
       units: 'metric',
       userName: '',
       userRole: '',
-      companyName: 'Praedium Tech',
+      companyName: 'Atlas Studio',
       autoSave: true,
       showWelcome: true,
       defaultView: '2d',

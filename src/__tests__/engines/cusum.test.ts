@@ -1,6 +1,6 @@
 // Tests CUSUM Page-Hinkley.
 import { describe, it, expect } from 'vitest'
-import { computeCusum } from '../../modules/cosmos-angre/vol2-securitaire/engines/cusumEngine'
+import { computeCusum } from '../../modules/building/vol2-securitaire/engines/cusumEngine'
 
 function noisySeries(n: number, mu: number, sigma: number, seed = 1): number[] {
   // Simple LCG suffisant pour un test deterministe.
