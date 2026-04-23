@@ -11,6 +11,7 @@ import ConsentBanner from './modules/cosmos-angre/shared/components/ConsentBanne
 // Landing (public, no layout) + HomeRoute intelligent
 const LandingPage = lazy(() => import('./modules/landing/LandingPage'))
 const HomeRoute   = lazy(() => import('./modules/landing/HomeRoute'))
+const DemoReportPage = lazy(() => import('./modules/landing/DemoReportPage'))
 
 // Auth pages (no layout)
 const LoginPage = lazy(() => import('./modules/auth/LoginPage'))
@@ -82,6 +83,9 @@ function App() {
 
             {/* ── Landing page publique (URL directe) ── */}
             <Route path="/landing" element={<LandingPage />} />
+
+            {/* ── Démo publique : rapport Proph3t parcours client ── */}
+            <Route path="/demo/rapport-parcours-client" element={<DemoReportPage />} />
 
             {/* ── Auth pages (sans AppLayout) ── */}
             <Route path="/login" element={<LoginPage />} />

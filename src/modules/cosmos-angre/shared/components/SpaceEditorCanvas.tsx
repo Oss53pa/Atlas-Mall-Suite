@@ -753,6 +753,11 @@ export function SpaceEditorCanvas({
     changeSpaces([...spaces, newSpace])
     setSelectedIds(new Set([id]))
     setEditingSpaceId(id)
+    // Auto-switch en mode "select" pour éviter que le prochain clic sur le
+    // même espace redessine un nouveau rectangle par-dessus.
+    setMode('select')
+    setDraftPoints([])
+    setDragStart(null)
   }
 
   /** Variante : crée un espace avec un type et un nom imposés (templates, drag). */
@@ -770,6 +775,11 @@ export function SpaceEditorCanvas({
     }
     changeSpaces([...spaces, newSpace])
     setSelectedIds(new Set([id]))
+    // Auto-switch en select après templates/portes/parking/flèches pour
+    // que l'utilisateur puisse immédiatement éditer l'espace créé.
+    setMode('select')
+    setDraftPoints([])
+    setDragStart(null)
   }
 
   /** Drop HTML5 : pose un meuble/item depuis FurnitureLibrary. */
@@ -1561,18 +1571,33 @@ function SpaceMetadataPanel({
   onDelete: () => void
 }) {
   const [name, setName] = useState(space.name)
-  const [type, setType] = useState<SpaceTypeKey>(space.type)
-  const [floorLevel, setFloorLevel] = useState<FloorLevelKey>(space.floorLevel)
+  const [type, setTypeLocal] = useState<SpaceTypeKey>(space.type)
+  const [floorLevel, setFloorLevelLocal] = useState<FloorLevelKey>(space.floorLevel)
   const [notes, setNotes] = useState(space.notes ?? '')
-  const [validated, setValidated] = useState(space.validated)
+  const [validated, setValidatedLocal] = useState(space.validated)
   // ── Champs commerciaux ──
   const [localNumber, setLocalNumber]   = useState(space.localNumber ?? '')
   const [tenant, setTenant]             = useState(space.tenant ?? '')
-  const [vacant, setVacant]             = useState(space.vacant !== false) // default true
+  const [vacant, setVacantLocal]             = useState(space.vacant !== false) // default true
   const [unitId, setUnitId]             = useState(space.unitId ?? '')
-  const [hasMezzanine, setHasMezzanine] = useState(space.hasMezzanine ?? false)
+  const [hasMezzanine, setHasMezzanineLocal] = useState(space.hasMezzanine ?? false)
   const [mezzanineSqm, setMezzanineSqm] = useState(space.mezzanineSqm ?? 0)
   const [showMultiNiveau, setShowMultiNiveau] = useState(!!(space.unitId || space.hasMezzanine))
+
+  // ─── Auto-save helpers : chaque changement discret persiste immédiatement ───
+  const setType = (k: SpaceTypeKey) => { setTypeLocal(k); onSave({ type: k }) }
+  const setFloorLevel = (f: FloorLevelKey) => { setFloorLevelLocal(f); onSave({ floorLevel: f }) }
+  const setValidated = (v: boolean) => { setValidatedLocal(v); onSave({ validated: v }) }
+  const setVacant = (v: boolean) => {
+    setVacantLocal(v)
+    const patch: Partial<EditableSpace> = { vacant: v }
+    if (v) { setTenant(''); patch.tenant = undefined }
+    onSave(patch)
+  }
+  const setHasMezzanine = (m: boolean) => {
+    setHasMezzanineLocal(m)
+    onSave({ hasMezzanine: m || undefined, mezzanineSqm: m ? mezzanineSqm : undefined })
+  }
 
   const areaSqm = Geo.polyArea(space.polygon)
   const anomaly = checkSurfaceAnomaly(type, areaSqm)
@@ -1678,6 +1703,10 @@ function SpaceMetadataPanel({
                 <input
                   value={localNumber}
                   onChange={(e) => setLocalNumber(e.target.value)}
+                  onBlur={() => {
+                    const next = localNumber.trim() || undefined
+                    if (next !== space.localNumber) onSave({ localNumber: next })
+                  }}
                   placeholder="ex: A-012, RDC-24, B2-007"
                   className="w-full px-2 py-1.5 rounded bg-surface-1 border border-white/10 text-sm text-white font-mono focus:border-atlas-500 outline-none"
                 />
@@ -1716,6 +1745,10 @@ function SpaceMetadataPanel({
                   <input
                     value={tenant}
                     onChange={(e) => setTenant(e.target.value)}
+                    onBlur={() => {
+                      const next = tenant.trim() || undefined
+                      if (next !== space.tenant) onSave({ tenant: next })
+                    }}
                     placeholder="ex: H&M, McDonald's, Pharmacie Centrale…"
                     className="w-full px-2 py-1.5 rounded bg-surface-1 border border-white/10 text-sm text-white focus:border-atlas-500 outline-none"
                   />
@@ -1778,6 +1811,10 @@ function SpaceMetadataPanel({
                 <input
                   value={unitId}
                   onChange={(e) => setUnitId(e.target.value)}
+                  onBlur={() => {
+                    const next = unitId.trim() || undefined
+                    if (next !== space.unitId) onSave({ unitId: next })
+                  }}
                   placeholder="ex: BIGBOX-CARREFOUR, IKEA-NORD"
                   className="w-full px-2 py-1.5 rounded bg-surface-1 border border-white/10 text-sm text-white font-mono focus:border-atlas-500 outline-none"
                 />
@@ -1805,6 +1842,10 @@ function SpaceMetadataPanel({
                     min={0}
                     value={mezzanineSqm || ''}
                     onChange={(e) => setMezzanineSqm(Number(e.target.value))}
+                    onBlur={() => {
+                      const next = mezzanineSqm > 0 ? mezzanineSqm : undefined
+                      if (next !== space.mezzanineSqm) onSave({ mezzanineSqm: next })
+                    }}
                     placeholder="ex: 45"
                     className="w-full px-2 py-1.5 rounded bg-surface-1 border border-white/10 text-sm text-white tabular-nums focus:border-atlas-500 outline-none"
                   />
@@ -1835,6 +1876,10 @@ function SpaceMetadataPanel({
           </label>
           <textarea
             value={notes} onChange={(e) => setNotes(e.target.value)}
+            onBlur={() => {
+              const next = notes.trim() || undefined
+              if (next !== space.notes) onSave({ notes: next })
+            }}
             rows={2}
             placeholder="Informations complémentaires…"
             className="w-full px-2 py-1.5 rounded bg-surface-0 border border-white/10 text-xs text-white resize-none"
@@ -1862,26 +1907,29 @@ function SpaceMetadataPanel({
           className="text-[11px] text-red-400 hover:text-red-300 flex items-center gap-1">
           <Trash2 className="w-3.5 h-3.5" /> Supprimer
         </button>
-        <div className="flex gap-2">
-          <button onClick={onClose}
-            className="px-3 py-1.5 rounded text-[11px] text-slate-400 hover:text-white">
-            Annuler
-          </button>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-emerald-400 flex items-center gap-1">
+            <Check className="w-3 h-3" /> Sauvegardé auto
+          </span>
           <button
-            onClick={() => onSave({
-              name, type, floorLevel, notes, validated,
-              ...(isCommercial ? {
-                localNumber: localNumber.trim() || undefined,
-                tenant: (!vacant && tenant.trim()) ? tenant.trim() : undefined,
-                vacant,
-              } : {}),
-              unitId: unitId.trim() || undefined,
-              hasMezzanine: hasMezzanine || undefined,
-              mezzanineSqm: (hasMezzanine && mezzanineSqm > 0) ? mezzanineSqm : undefined,
-            })}
+            onClick={() => {
+              // Flush : commit tout changement text non encore blurré avant de fermer
+              onSave({
+                name, type, floorLevel, notes: notes.trim() || undefined, validated,
+                ...(isCommercial ? {
+                  localNumber: localNumber.trim() || undefined,
+                  tenant: (!vacant && tenant.trim()) ? tenant.trim() : undefined,
+                  vacant,
+                } : {}),
+                unitId: unitId.trim() || undefined,
+                hasMezzanine: hasMezzanine || undefined,
+                mezzanineSqm: (hasMezzanine && mezzanineSqm > 0) ? mezzanineSqm : undefined,
+              })
+              onClose()
+            }}
             className="px-4 py-1.5 rounded text-[11px] font-semibold bg-gradient-to-r from-atlas-500 to-blue-600 text-white hover:opacity-90"
           >
-            Enregistrer
+            Fermer
           </button>
         </div>
       </div>

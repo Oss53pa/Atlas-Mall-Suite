@@ -133,14 +133,18 @@ export default function LandingPage() {
             des centres commerciaux en Afrique francophone.
           </p>
 
-          <div className="flex items-center justify-center gap-4 mb-16">
+          <div className="flex items-center justify-center gap-4 mb-16 flex-wrap">
             <button onClick={() => navigate('/register')}
               className="flex items-center gap-2 px-7 py-3.5 rounded-xl bg-atlas-500 hover:bg-atlas-400 text-white font-medium text-[15px] transition-all hover:-translate-y-0.5 shadow-lg shadow-bronze/20">
               Démarrer gratuitement <ArrowRight size={18} />
             </button>
+            <button onClick={() => navigate('/demo/rapport-parcours-client')}
+              className="flex items-center gap-2 px-6 py-3.5 rounded-xl border border-atlas-500/40 bg-atlas-500/10 text-atlas-200 hover:text-white hover:border-atlas-400 font-medium text-[15px] transition-all">
+              <Sparkles size={16} /> Voir un rapport Proph3t (démo)
+            </button>
             <button onClick={() => navigate('/dashboard')}
               className="flex items-center gap-2 px-6 py-3.5 rounded-xl border border-white/[0.1] text-gray-300 hover:text-white hover:border-white/20 font-medium text-[15px] transition-all">
-              <Play size={16} /> Mode démo (sans compte)
+              <Play size={16} /> Mode démo app
             </button>
           </div>
 
