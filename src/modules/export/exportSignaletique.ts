@@ -2,7 +2,7 @@
 
 import { jsPDF } from 'jspdf'
 import 'svg2pdf.js'
-import type { Vol3ExportData } from '../cosmos-angre/shared/proph3t/types'
+import type { Vol3ExportData } from '../building/shared/proph3t/types'
 import { registerPDFFonts, setHeadingFont, setBodyFont } from './pdfFonts'
 
 function hexRgb(hex: string): [number, number, number] {

@@ -86,7 +86,7 @@ export function Proph3tImportModal({
     // Navigue vers Vol.1 Commercial pour démarrer le travail manuel
     try {
       const path = window.location.pathname
-      // Si on est dans /projects/cosmos-angre/... → aller au vol1
+      // Si on est dans /projects/building/... → aller au vol1
       if (path.includes('/projects/') && !path.includes('/vol1') && !path.includes('/vol2') && !path.includes('/vol3')) {
         const base = path.replace(/\/$/, '')
         window.location.hash = ''

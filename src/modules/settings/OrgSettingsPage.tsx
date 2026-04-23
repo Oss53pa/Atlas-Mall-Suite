@@ -20,7 +20,7 @@ import {
   ExternalLink,
   Sparkles,
 } from 'lucide-react'
-import Proph3tCapabilitiesPanel from '../cosmos-angre/shared/proph3t/components/Proph3tCapabilitiesPanel'
+import Proph3tCapabilitiesPanel from '../building/shared/proph3t/components/Proph3tCapabilitiesPanel'
 
 const SECTIONS = [
   { id: 'general', label: 'Informations légales', icon: Building2 },

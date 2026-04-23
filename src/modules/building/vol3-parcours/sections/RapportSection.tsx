@@ -63,7 +63,7 @@ export default function RapportSection() {
         const poi = enseignePois[i]
         if (i > 0) doc.addPage()
 
-        const url = poi.qrUrl ?? `/cosmos-angre/vol3/poi/${poi.id}`
+        const url = poi.qrUrl ?? `/building/vol3/poi/${poi.id}`
         const qrDataUrl = await QRCode.toDataURL(url, { width: 200, margin: 2 })
 
         doc.setFontSize(18)

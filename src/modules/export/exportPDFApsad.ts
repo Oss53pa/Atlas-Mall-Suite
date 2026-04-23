@@ -2,10 +2,10 @@
 
 import { jsPDF } from 'jspdf'
 import 'svg2pdf.js'
-import type { Vol2ExportData } from '../cosmos-angre/shared/proph3t/types'
+import type { Vol2ExportData } from '../building/shared/proph3t/types'
 import type { ASPADCartouche } from './exportTypes'
-import type { CotationSpec, CalibrationResult } from '../cosmos-angre/shared/planReader/planReaderTypes'
-import { renderCotationsOnPDF } from '../cosmos-angre/shared/planReader/cotationEngine'
+import type { CotationSpec, CalibrationResult } from '../building/shared/planReader/planReaderTypes'
+import { renderCotationsOnPDF } from '../building/shared/planReader/cotationEngine'
 import { registerPDFFonts, setHeadingFont, setBodyFont } from './pdfFonts'
 
 function hexRgb(hex: string): [number, number, number] {

@@ -2,7 +2,7 @@
 // `xlsx` (~110 kB gzip) est lazy-loadé : bundle initial allégé, chargé
 // uniquement quand l'utilisateur clique "Exporter CAPEX".
 
-import type { CAPEXBreakdown } from '../cosmos-angre/shared/proph3t/technicalCalculator'
+import type { CAPEXBreakdown } from '../building/shared/proph3t/technicalCalculator'
 
 export async function exportCAPEXExcel(capex: CAPEXBreakdown): Promise<Blob> {
   const XLSX = await import('xlsx')

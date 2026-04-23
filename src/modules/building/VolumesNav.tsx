@@ -40,7 +40,7 @@ const volumes: VolumeConfig[] = [
       { value: '12', label: 'Preneurs' },
       { value: '92%', label: 'Occupation' },
     ],
-    route: '/projects/cosmos-angre/vol1',
+    route: '/projects/building/vol1',
   },
   {
     id: 'vol2',
@@ -59,7 +59,7 @@ const volumes: VolumeConfig[] = [
       { value: '120+', label: 'Caméras' },
       { value: '24/7', label: 'Couverture' },
     ],
-    route: '/projects/cosmos-angre/vol2',
+    route: '/projects/building/vol2',
   },
   {
     id: 'vol3',
@@ -78,7 +78,7 @@ const volumes: VolumeConfig[] = [
       { value: '3', label: 'Niveaux' },
       { value: '\u221e', label: 'Expériences' },
     ],
-    route: '/projects/cosmos-angre/vol3',
+    route: '/projects/building/vol3',
   },
   {
     id: 'vol4',
@@ -97,7 +97,7 @@ const volumes: VolumeConfig[] = [
       { value: '<50ms', label: 'Calcul A*' },
       { value: '3', label: 'Plateformes' },
     ],
-    route: '/projects/cosmos-angre/vol4',
+    route: '/projects/building/vol4',
   },
 ]
 

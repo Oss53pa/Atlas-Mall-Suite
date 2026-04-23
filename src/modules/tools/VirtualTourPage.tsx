@@ -2,9 +2,9 @@
 
 import { useState, lazy, Suspense } from 'react'
 import { Loader2 } from 'lucide-react'
-import type { ScenarioRole, Waypoint, TourZone } from '../cosmos-angre/shared/virtual-tour/VirtualTourEngine'
+import type { ScenarioRole, Waypoint, TourZone } from '../building/shared/virtual-tour/VirtualTourEngine'
 
-const VirtualTourEngine = lazy(() => import('../cosmos-angre/shared/virtual-tour/VirtualTourEngine'))
+const VirtualTourEngine = lazy(() => import('../building/shared/virtual-tour/VirtualTourEngine'))
 
 // Demo data for The Mall
 const DEMO_ZONES: TourZone[] = [

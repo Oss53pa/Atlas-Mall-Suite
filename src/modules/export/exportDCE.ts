@@ -2,7 +2,7 @@
 // Le paquet `docx` (~120 kB gzip) est lazy-loadé pour ne pas alourdir le bundle
 // initial — il n'est téléchargé que si l'utilisateur clique "Exporter DCE".
 
-import type { Vol2ExportData } from '../cosmos-angre/shared/proph3t/types'
+import type { Vol2ExportData } from '../building/shared/proph3t/types'
 
 export async function exportDCE(data: Vol2ExportData): Promise<Blob> {
   const { Document, Paragraph, TextRun, Table, TableRow, TableCell, HeadingLevel, AlignmentType, WidthType, Packer } = await import('docx')

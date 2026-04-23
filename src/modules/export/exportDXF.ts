@@ -1,6 +1,6 @@
 // ═══ EXPORT DXF ANNOTÉ ═══
 
-import type { Vol2ExportData } from '../cosmos-angre/shared/proph3t/types'
+import type { Vol2ExportData } from '../building/shared/proph3t/types'
 
 export function exportAnnotatedDXF(data: Vol2ExportData): Blob {
   let dxf = '0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1027\n0\nENDSEC\n'

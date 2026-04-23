@@ -2,7 +2,7 @@
 // Layers : CAMERAS, FOV_CONES, ZONES_SURVEILLANCE, LABELS, PERIMETRE
 // Compatible AutoCAD / LibreCAD / BricsCAD
 
-import type { Camera, Zone, Door } from '../cosmos-angre/shared/proph3t/types'
+import type { Camera, Zone, Door } from '../building/shared/proph3t/types'
 
 interface PlanDimensions {
   widthM: number

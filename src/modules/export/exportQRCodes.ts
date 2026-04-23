@@ -2,7 +2,7 @@
 
 import { jsPDF } from 'jspdf'
 import QRCode from 'qrcode'
-import type { POI } from '../cosmos-angre/shared/proph3t/types'
+import type { POI } from '../building/shared/proph3t/types'
 import { registerPDFFonts, setHeadingFont, setBodyFont } from './pdfFonts'
 
 export async function exportQRCodesPDF(pois: POI[]): Promise<Blob> {
