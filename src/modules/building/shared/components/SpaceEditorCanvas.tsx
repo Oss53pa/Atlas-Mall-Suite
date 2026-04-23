@@ -1875,8 +1875,11 @@ export function SpaceEditorCanvas({
           <SpaceMetadataPanel
             space={editingSpace}
             onSave={(changes) => {
+              // IMPORTANT : ne PAS fermer le panneau ici. Toutes les modifs
+              // sont auto-save (type, niveau, texte, dimensions…) et le panneau
+              // doit rester ouvert pour permettre plusieurs edits en une session.
+              // La fermeture se fait via le bouton Fermer/Annuler ou clic ✕.
               updateSpace(editingSpace.id, changes)
-              setEditingSpaceId(null)
             }}
             onClose={() => setEditingSpaceId(null)}
             onDelete={() => {
