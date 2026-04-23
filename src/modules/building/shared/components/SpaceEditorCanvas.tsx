@@ -432,6 +432,8 @@ export function SpaceEditorCanvas({
   const draggingSpacesRef  = useRef<{ ids: Set<string>; startWorld: { x: number; y: number }; originalPolygons: Map<string, Geo.Polygon> } | null>(null)
   /** Ref threshold drag (distance écran avant de considérer que c'est un drag et pas un clic). */
   const dragSpacesThresholdRef = useRef<{ startX: number; startY: number; triggered: boolean } | null>(null)
+  /** Ref drag arête rectangle (resize linéaire orthogonal) */
+  const draggingEdgeRef = useRef<{ spaceId: string; edgeIdx: number } | null>(null)
   /** Snapshot avant le début d'un drag → un seul step d'historique en fin de drag */
   const preDragSpacesRef   = useRef<EditableSpace[]>([])
   /** Ref space key — évite la stale closure dans le useEffect */
@@ -550,8 +552,29 @@ export function SpaceEditorCanvas({
     const world = screenToWorld(e.clientX, e.clientY)
 
     if (mode === 'select') {
+      // Clic sur une poignée d'arête de rectangle (resize linéaire) ?
+      // On ne teste que sur les espaces sélectionnés ET rectangulaires
+      const edgeHitTolM = 10 / viewport.scale
+      for (const s of visibleSpaces) {
+        if (!selectedIdsRef.current.has(s.id)) continue
+        if (!Geo.isRectangular(s.polygon)) continue
+        for (let ei = 0; ei < 4; ei++) {
+          const p1 = s.polygon[ei]
+          const p2 = s.polygon[(ei + 1) % 4]
+          const midX = (p1.x + p2.x) / 2, midY = (p1.y + p2.y) / 2
+          const d = Math.hypot(world.x - midX, world.y - midY)
+          if (d <= edgeHitTolM) {
+            preDragSpacesRef.current = [...spacesRef.current]
+            draggingEdgeRef.current = { spaceId: s.id, edgeIdx: ei }
+            return
+          }
+        }
+      }
+
       // Clic sur un vertex ?
       for (const s of visibleSpaces) {
+        // Pas de drag vertex sur rectangles (on utilise les edges à la place)
+        if (Geo.isRectangular(s.polygon) && selectedIdsRef.current.has(s.id)) continue
         const vi = Geo.findClosestVertex(s.polygon, world, VERTEX_HIT_PX / viewport.scale)
         if (vi !== null) {
           // Snapshot avant drag (un seul step d'undo pour tout le drag)
@@ -708,6 +731,19 @@ export function SpaceEditorCanvas({
     const world = screenToWorld(e.clientX, e.clientY)
     setCursorWorld(world)
 
+    // Drag arête rectangle — resize en ligne droite (perpendiculaire à l'arête)
+    if (draggingEdgeRef.current) {
+      const de = draggingEdgeRef.current
+      const s = spacesRef.current.find(sp => sp.id === de.spaceId)
+      if (s) {
+        const newPoly = Geo.moveRectEdge(s.polygon, de.edgeIdx, world)
+        onSpacesChange(spaces.map(sp =>
+          sp.id === de.spaceId ? { ...sp, polygon: newPoly } : sp,
+        ))
+      }
+      return
+    }
+
     // Drag vertex — lu depuis la ref (set synchronement dans mouseDown)
     if (draggingVertexRef.current) {
       const dv = draggingVertexRef.current
@@ -778,6 +814,16 @@ export function SpaceEditorCanvas({
       }
       draggingVertexRef.current = null
       setDraggingVertex(null)
+      return
+    }
+
+    if (draggingEdgeRef.current) {
+      if (preDragSpacesRef.current.length > 0) {
+        historyRef.current = [...historyRef.current.slice(-49), preDragSpacesRef.current]
+        setCanUndo(true)
+        preDragSpacesRef.current = []
+      }
+      draggingEdgeRef.current = null
       return
     }
 
@@ -1407,8 +1453,8 @@ export function SpaceEditorCanvas({
                     strokeOpacity={hoveredSpaceId === s.id && !isSelected ? 0.7 : 1}
                   />
                 )}
-                {/* Vertices en mode select */}
-                {mode === 'select' && isSelected && screenPts.map((p, i) => (
+                {/* Vertices en mode select — masqués pour les rectangles (remplacés par poignées d'arêtes) */}
+                {mode === 'select' && isSelected && !Geo.isRectangular(s.polygon) && screenPts.map((p, i) => (
                   <circle
                     key={i}
                     cx={p.x} cy={p.y} r={5}
@@ -1416,6 +1462,30 @@ export function SpaceEditorCanvas({
                     stroke="#fff" strokeWidth={1.5}
                   />
                 ))}
+
+                {/* Poignées d'arêtes en mode select sur rectangles — resize en ligne droite */}
+                {mode === 'select' && isSelected && Geo.isRectangular(s.polygon) && screenPts.map((p, i) => {
+                  const next = screenPts[(i + 1) % screenPts.length]
+                  const mx = (p.x + next.x) / 2
+                  const my = (p.y + next.y) / 2
+                  const dx = next.x - p.x, dy = next.y - p.y
+                  const len = Math.hypot(dx, dy)
+                  if (len < 1) return null
+                  // Angle de l'arête en degrés pour orienter la poignée
+                  const angleDeg = (Math.atan2(dy, dx) * 180) / Math.PI
+                  const w = 14, h = 6
+                  return (
+                    <g key={`edge-${i}`} transform={`translate(${mx},${my}) rotate(${angleDeg})`}
+                       style={{ cursor: Math.abs(dx) > Math.abs(dy) ? 'ns-resize' : 'ew-resize' }}>
+                      <rect x={-w / 2} y={-h / 2} width={w} height={h} rx={2}
+                        fill="#fff"
+                        stroke={meta.color}
+                        strokeWidth={1.5}
+                        opacity={0.95}
+                      />
+                    </g>
+                  )
+                })}
                 {/* Edge insert indicator */}
                 {mode === 'select' && isSelected && hoveredEdge?.spaceId === s.id && (
                   <circle

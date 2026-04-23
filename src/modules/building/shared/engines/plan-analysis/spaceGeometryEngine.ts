@@ -465,6 +465,68 @@ export function rectDimensions(poly: Polygon): { long: number; short: number; an
   return { long: maxLen, short: shortSide, angleRad }
 }
 
+/** Vérifie si un polygone est "proche d'un rectangle" : 4 sommets avec
+ *  angles intérieurs tous ≈ 90° (tolérance 10°). Utile pour afficher
+ *  des poignées d'arêtes au lieu de poignées de sommets. */
+export function isRectangular(poly: Polygon, tolDeg = 10): boolean {
+  if (poly.length !== 4) return false
+  const tol = (tolDeg * Math.PI) / 180
+  for (let i = 0; i < 4; i++) {
+    const prev = poly[(i + 3) % 4]
+    const curr = poly[i]
+    const next = poly[(i + 1) % 4]
+    const v1x = prev.x - curr.x, v1y = prev.y - curr.y
+    const v2x = next.x - curr.x, v2y = next.y - curr.y
+    const l1 = Math.hypot(v1x, v1y), l2 = Math.hypot(v2x, v2y)
+    if (l1 === 0 || l2 === 0) return false
+    const dot = (v1x * v2x + v1y * v2y) / (l1 * l2)
+    const ang = Math.acos(Math.max(-1, Math.min(1, dot)))
+    if (Math.abs(ang - Math.PI / 2) > tol) return false
+  }
+  return true
+}
+
+/** Déplace l'arête `edgeIdx` (entre poly[edgeIdx] et poly[edgeIdx+1]) le
+ *  long de sa normale intérieure/extérieure d'une distance `distM`. Les
+ *  2 sommets de l'arête opposée restent fixes → rectangle redimensionné
+ *  sur un seul côté, orientation conservée.
+ *  Suppose un rectangle (4 sommets, arêtes opposées parallèles). */
+export function moveRectEdge(poly: Polygon, edgeIdx: number, newPos: Point): Polygon {
+  if (poly.length !== 4) return poly
+  const i1 = edgeIdx % 4
+  const i2 = (edgeIdx + 1) % 4
+  // Sommets opposés (arête fixe) = i3 et i4
+  const i3 = (edgeIdx + 2) % 4  // opposé de i2
+  const i4 = (edgeIdx + 3) % 4  // opposé de i1
+  const a = poly[i1], b = poly[i2]
+  const oppA = poly[i4], oppB = poly[i3]
+  // Direction de l'arête mobile
+  const ex = b.x - a.x, ey = b.y - a.y
+  const L = Math.hypot(ex, ey)
+  if (L === 0) return poly
+  const ux = ex / L, uy = ey / L
+  // Normale (perpendiculaire)
+  const nx = -uy, ny = ux
+  // Centre de l'arête mobile
+  const midAx = (a.x + b.x) / 2, midAy = (a.y + b.y) / 2
+  // Distance signée du new pos le long de la normale (depuis le milieu actuel)
+  const dNormal = (newPos.x - midAx) * nx + (newPos.y - midAy) * ny
+  // Déplace les 2 sommets de l'arête mobile le long de la normale ;
+  // l'arête opposée reste inchangée.
+  const out: Polygon = poly.slice()
+  out[i1] = { x: a.x + nx * dNormal, y: a.y + ny * dNormal }
+  out[i2] = { x: b.x + nx * dNormal, y: b.y + ny * dNormal }
+  out[i3] = { ...oppB }
+  out[i4] = { ...oppA }
+  // Garde-fou : ne pas retourner le rectangle si on dépasse l'arête opposée
+  const newWidth = Math.hypot(
+    ((out[i1].x + out[i2].x) / 2) - ((oppA.x + oppB.x) / 2),
+    ((out[i1].y + out[i2].y) / 2) - ((oppA.y + oppB.y) / 2),
+  )
+  if (newWidth < 0.02) return poly // < 2 cm → ignore
+  return out
+}
+
 /** Redimensionne un polygone rectangulaire tout en conservant son
  *  centroïde et son orientation. `newLong` = nouveau grand côté (passage
  *  utile pour une porte), `newShort` = nouveau petit côté (épaisseur).
