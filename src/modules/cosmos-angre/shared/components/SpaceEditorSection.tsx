@@ -21,6 +21,8 @@ import { autoDetectSpaceType } from '../proph3t/libraries/spaceTypeLibrary'
 import { loadAllPlanImages } from '../stores/planImageCache'
 import MapViewerShell from '../map-viewer/MapViewerShell'
 import { safeImageUrl } from '../../../../lib/urlSafety'
+import { getPlanFile } from '../stores/planFileCache'
+import { importPlan } from '../planReader'
 
 type SectionTab = 'editor' | 'map'
 
@@ -40,22 +42,65 @@ export default function SpaceEditorSection() {
     return entry ? imports.find(i => i.id === entry[0]) ?? null : imports[0] ?? null
   }, [parsedPlan, parsedPlans, imports])
 
-  const handleSwitchImport = useCallback((importId: string) => {
-    const success = loadParsedPlan(importId)
-    if (!success) {
-      console.warn('[SpaceEditor] Impossible de charger le plan', importId, '— rebuild nécessaire')
-    }
-  }, [loadParsedPlan])
+  const [rebuilding, setRebuilding] = useState<string | null>(null)
 
-  // Auto-charge : si aucun parsedPlan actif mais qu'un import (+ parsedPlan
-  // indexé) existe, charge le plus récent automatiquement. Évite "Aucun plan
-  // importé" alors que l'utilisateur vient de terminer un import.
+  /** Rebuild un ParsedPlan à la volée depuis le fichier DXF/PDF brut en cache.
+   *  Nécessaire pour les imports antérieurs au wiring setParsedPlan (ou si
+   *  le cache Dexie byImport a été vidé). */
+  const rebuildParsedPlan = useCallback(async (importId: string): Promise<boolean> => {
+    const rec = imports.find(i => i.id === importId)
+    if (!rec) return false
+    setRebuilding(importId)
+    try {
+      const file = await getPlanFile(importId)
+      if (!file) {
+        console.warn('[SpaceEditor] Fichier brut introuvable pour', importId)
+        return false
+      }
+      const state = await importPlan(file, rec.floorId)
+      if (!state.parsedPlan) {
+        console.warn('[SpaceEditor] Reparse a échoué — pas de parsedPlan', importId)
+        return false
+      }
+      const engine = usePlanEngineStore.getState()
+      engine.storeParsedPlan(importId, state.parsedPlan)
+      engine.setParsedPlan(state.parsedPlan)
+      engine.setSpaces(state.parsedPlan.spaces)
+      engine.setLayers(state.parsedPlan.layers)
+      return true
+    } catch (err) {
+      console.warn('[SpaceEditor] Rebuild a échoué', err)
+      return false
+    } finally {
+      setRebuilding(null)
+    }
+  }, [imports])
+
+  const handleSwitchImport = useCallback(async (importId: string) => {
+    const success = loadParsedPlan(importId)
+    if (success) return
+    // Fallback : rebuild depuis le fichier brut en cache
+    console.log('[SpaceEditor] Plan non indexé — tentative de rebuild depuis planFileCache', importId)
+    await rebuildParsedPlan(importId)
+  }, [loadParsedPlan, rebuildParsedPlan])
+
+  // Auto-charge : si aucun parsedPlan actif mais qu'un import existe :
+  //   1. Si indexé dans parsedPlans → loadParsedPlan direct (rapide)
+  //   2. Sinon → rebuild depuis planFileCache (fichier brut persisté)
   useEffect(() => {
     if (parsedPlan) return
     if (imports.length === 0) return
-    const firstWithPlan = imports.find(imp => parsedPlans[imp.id])
-    if (firstWithPlan) loadParsedPlan(firstWithPlan.id)
-  }, [parsedPlan, imports, parsedPlans, loadParsedPlan])
+    const indexed = imports.find(imp => parsedPlans[imp.id])
+    if (indexed) {
+      loadParsedPlan(indexed.id)
+      return
+    }
+    // Aucun parsedPlan indexé → reparse auto du plus récent
+    const mostRecent = [...imports].sort((a, b) =>
+      b.importedAt.localeCompare(a.importedAt),
+    )[0]
+    if (mostRecent && !rebuilding) void rebuildParsedPlan(mostRecent.id)
+  }, [parsedPlan, imports, parsedPlans, loadParsedPlan, rebuildParsedPlan, rebuilding])
 
   const planBounds = useMemo(() => ({
     width: parsedPlan?.bounds.width || 200,
@@ -100,23 +145,30 @@ export default function SpaceEditorSection() {
           {hasImportsButNoPlan ? (
             <>
               <p className="text-sm">
-                {imports.length} plan{imports.length > 1 ? 's' : ''} disponible{imports.length > 1 ? 's' : ''}. Choisissez-en un :
+                {rebuilding
+                  ? `Reconstruction du plan en cours… (parse DXF/PDF)`
+                  : `${imports.length} plan${imports.length > 1 ? 's' : ''} disponible${imports.length > 1 ? 's' : ''}. Choisissez-en un :`}
               </p>
               <div className="flex flex-col gap-1.5 mt-2 text-left">
-                {imports.map(imp => (
-                  <button
-                    key={imp.id}
-                    onClick={() => handleSwitchImport(imp.id)}
-                    className="px-3 py-2 rounded-lg bg-atlas-500/10 border border-atlas-500/30 text-atlas-200 text-[12px] hover:bg-atlas-500/20 flex items-center gap-2"
-                  >
-                    <FileText size={12} />
-                    <span className="flex-1 truncate">{imp.fileName}</span>
-                    {imp.floorLevel && <span className="text-[10px] text-slate-500">{imp.floorLevel}</span>}
-                  </button>
-                ))}
+                {imports.map(imp => {
+                  const isBuilding = rebuilding === imp.id
+                  return (
+                    <button
+                      key={imp.id}
+                      onClick={() => handleSwitchImport(imp.id)}
+                      disabled={!!rebuilding}
+                      className="px-3 py-2 rounded-lg bg-atlas-500/10 border border-atlas-500/30 text-atlas-200 text-[12px] hover:bg-atlas-500/20 disabled:opacity-50 disabled:cursor-wait flex items-center gap-2"
+                    >
+                      <FileText size={12} />
+                      <span className="flex-1 truncate">{imp.fileName}</span>
+                      {imp.floorLevel && <span className="text-[10px] text-slate-500">{imp.floorLevel}</span>}
+                      {isBuilding && <span className="text-[10px] text-atlas-400 animate-pulse">rebuild…</span>}
+                    </button>
+                  )
+                })}
               </div>
               <p className="text-[10px] text-slate-600 mt-2">
-                Si le chargement échoue, re-importez le plan depuis l'onglet <span className="text-emerald-400">Import</span>.
+                Si aucun fichier brut n'a été mis en cache (ancien import), re-importez le plan depuis l'onglet <span className="text-emerald-400">Import</span>.
               </p>
             </>
           ) : (
