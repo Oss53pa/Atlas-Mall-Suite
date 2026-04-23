@@ -445,6 +445,45 @@ export function flipPolygonV(poly: Polygon, pivot?: Point): Polygon {
   return poly.map(v => ({ x: v.x, y: 2 * p.y - v.y }))
 }
 
+/** Mesure la taille d'un polygone rectangulaire le long de son axe
+ *  principal (côté long) et perpendiculaire (côté court).
+ *  Utile pour les portes et objets axis-aligned même après rotation. */
+export function rectDimensions(poly: Polygon): { long: number; short: number; angleRad: number } {
+  if (poly.length < 2) return { long: 0, short: 0, angleRad: 0 }
+  // Trouver le côté le plus long — définit l'axe principal
+  let maxLen = 0, bestI = 0
+  for (let i = 0; i < poly.length; i++) {
+    const j = (i + 1) % poly.length
+    const d = Math.hypot(poly[j].x - poly[i].x, poly[j].y - poly[i].y)
+    if (d > maxLen) { maxLen = d; bestI = i }
+  }
+  const p1 = poly[bestI], p2 = poly[(bestI + 1) % poly.length]
+  const angleRad = Math.atan2(p2.y - p1.y, p2.x - p1.x)
+  // Calcul du côté perpendiculaire (le plus court adjacent)
+  const prev = poly[(bestI - 1 + poly.length) % poly.length]
+  const shortSide = Math.hypot(p1.x - prev.x, p1.y - prev.y)
+  return { long: maxLen, short: shortSide, angleRad }
+}
+
+/** Redimensionne un polygone rectangulaire tout en conservant son
+ *  centroïde et son orientation. `newLong` = nouveau grand côté (passage
+ *  utile pour une porte), `newShort` = nouveau petit côté (épaisseur).
+ *  Si le polygone n'a pas 4 sommets, on fait un fallback bounding box. */
+export function resizeRectPolygon(poly: Polygon, newLong: number, newShort: number): Polygon {
+  const center = polyCentroid(poly)
+  const dims = rectDimensions(poly)
+  const cos = Math.cos(dims.angleRad), sin = Math.sin(dims.angleRad)
+  const hl = newLong / 2, hs = newShort / 2
+  // 4 coins en coord locales (u,v) puis rotation vers monde
+  const corners: Array<[number, number]> = [
+    [-hl, -hs], [ hl, -hs], [ hl,  hs], [-hl,  hs],
+  ]
+  return corners.map(([u, v]) => ({
+    x: center.x + u * cos - v * sin,
+    y: center.y + u * sin + v * cos,
+  }))
+}
+
 // ─── Normalisation (orientation + dédoublonnage) ──
 
 export function normalizePolygon(poly: Polygon): Polygon {

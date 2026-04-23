@@ -149,6 +149,28 @@ function isDoorType(type: SpaceTypeKey): boolean {
   return type.startsWith('porte_') || type === 'sortie_secours'
 }
 
+/** Hit-test d'un espace avec tolérance étendue pour les portes.
+ *  Les portes étant des polygones très fins (0,2 m), un clic pixel-perfect
+ *  est impossible à faible zoom. On étend la zone cliquable à `toleranceM`
+ *  mètres autour des arêtes. */
+function pointHitsSpace(
+  world: { x: number; y: number },
+  space: EditableSpace,
+  toleranceM: number,
+): boolean {
+  // Intérieur polygone = hit normal
+  if (Geo.pointInPolygon(world.x, world.y, space.polygon)) return true
+  // Pour les portes (ou si tolérance > 0), on teste aussi la distance aux arêtes
+  if (!isDoorType(space.type) && toleranceM <= 0) return false
+  const pts = space.polygon
+  for (let i = 0; i < pts.length; i++) {
+    const j = (i + 1) % pts.length
+    const d = Geo.distancePointToSegment(world, pts[i], pts[j])
+    if (d <= toleranceM) return true
+  }
+  return false
+}
+
 /**
  * Rend une porte comme un trait architectural :
  *   ─ tiret central = feuille/vantail (le passage)
@@ -406,6 +428,10 @@ export function SpaceEditorCanvas({
   const panStartRef   = useRef<{ x: number; y: number; offX: number; offY: number } | null>(null)
   /** Ref drag vertex — set dans handleMouseDown, lu dans handleMouseMove/Up */
   const draggingVertexRef  = useRef<{ spaceId: string; idx: number } | null>(null)
+  /** Ref drag espaces entiers (translation de la sélection) */
+  const draggingSpacesRef  = useRef<{ ids: Set<string>; startWorld: { x: number; y: number }; originalPolygons: Map<string, Geo.Polygon> } | null>(null)
+  /** Ref threshold drag (distance écran avant de considérer que c'est un drag et pas un clic). */
+  const dragSpacesThresholdRef = useRef<{ startX: number; startY: number; triggered: boolean } | null>(null)
   /** Snapshot avant le début d'un drag → un seul step d'historique en fin de drag */
   const preDragSpacesRef   = useRef<EditableSpace[]>([])
   /** Ref space key — évite la stale closure dans le useEffect */
@@ -548,19 +574,39 @@ export function SpaceEditorCanvas({
           return
         }
       }
-      // Clic sur un polygone = sélection
+      // Clic sur un polygone = sélection (si nécessaire) + ARMER un drag
+      // différé (démarre seulement si le curseur bouge > 3 px écran). Gère
+      // d'un seul geste : 1 clic sans bouger = select pur, 1 clic+glisser
+      // = select + translate.
+      // Tolérance étendue pour les portes (sinon impossibles à cliquer à faible zoom).
+      const clickTolM = 12 / viewport.scale
       for (const s of visibleSpaces) {
-        if (Geo.pointInPolygon(world.x, world.y, s.polygon)) {
+        if (pointHitsSpace(world, s, clickTolM)) {
+          // Si espace non sélectionné (et pas Shift), on sélectionne d'abord
+          let ids: Set<string>
           if (e.shiftKey) {
-            setSelectedIds(sel => {
-              const next = new Set(sel)
-              if (next.has(s.id)) next.delete(s.id)
-              else next.add(s.id)
-              return next
-            })
+            const next = new Set(selectedIdsRef.current)
+            if (next.has(s.id)) next.delete(s.id)
+            else next.add(s.id)
+            setSelectedIds(next)
+            ids = next
           } else {
-            setSelectedIds(new Set([s.id]))
+            const wasSelected = selectedIdsRef.current.has(s.id)
+            if (!wasSelected) {
+              setSelectedIds(new Set([s.id]))
+              ids = new Set([s.id])
+            } else {
+              ids = new Set(selectedIdsRef.current)
+            }
           }
+          // Armer le drag (il démarrera réellement après un seuil dans mousemove)
+          const originalPolygons = new Map<string, Geo.Polygon>()
+          for (const sp of spacesRef.current) {
+            if (ids.has(sp.id)) originalPolygons.set(sp.id, sp.polygon.map(p => ({ ...p })))
+          }
+          draggingSpacesRef.current = { ids, startWorld: world, originalPolygons }
+          dragSpacesThresholdRef.current = { startX: e.clientX, startY: e.clientY, triggered: false }
+          preDragSpacesRef.current = spacesRef.current
           return
         }
       }
@@ -678,6 +724,28 @@ export function SpaceEditorCanvas({
       return
     }
 
+    // Drag espaces entiers (translation sélection — portes, zones)
+    if (draggingSpacesRef.current) {
+      // Seuil de 3 px écran avant de déclencher le drag : évite le drift
+      // d'un clic simple (sélection pure).
+      const thr = dragSpacesThresholdRef.current
+      if (thr && !thr.triggered) {
+        const dScreen = Math.hypot(e.clientX - thr.startX, e.clientY - thr.startY)
+        if (dScreen < 3) return
+        thr.triggered = true
+      }
+      const { ids, startWorld, originalPolygons } = draggingSpacesRef.current
+      const dx = world.x - startWorld.x
+      const dy = world.y - startWorld.y
+      onSpacesChange(spaces.map(sp => {
+        if (!ids.has(sp.id)) return sp
+        const orig = originalPolygons.get(sp.id)
+        if (!orig) return sp
+        return { ...sp, polygon: orig.map(p => ({ x: p.x + dx, y: p.y + dy })) }
+      }))
+      return
+    }
+
     // Hover detection en mode select
     if (mode === 'select') {
       let foundVertex: typeof hoveredVertex = null
@@ -713,6 +781,20 @@ export function SpaceEditorCanvas({
       return
     }
 
+    if (draggingSpacesRef.current) {
+      const moved = dragSpacesThresholdRef.current?.triggered === true
+      // On ne commit l'historique que si le drag a vraiment eu lieu
+      // (évite de spam l'historique pour un simple clic de sélection).
+      if (moved && preDragSpacesRef.current.length > 0) {
+        historyRef.current = [...historyRef.current.slice(-49), preDragSpacesRef.current]
+        setCanUndo(true)
+      }
+      preDragSpacesRef.current = []
+      draggingSpacesRef.current = null
+      dragSpacesThresholdRef.current = null
+      return
+    }
+
     if (mode === 'rect' && dragStart) {
       const end = screenToWorld(e.clientX, e.clientY)
       const minX = Math.min(dragStart.x, end.x), maxX = Math.max(dragStart.x, end.x)
@@ -739,8 +821,10 @@ export function SpaceEditorCanvas({
         }
       }
       // Double-clic sur un espace = ouvre éditeur métadata
+      // Tolérance étendue pour les portes
+      const dblTolM = 12 / viewport.scale
       for (const s of visibleSpaces) {
-        if (Geo.pointInPolygon(world.x, world.y, s.polygon)) {
+        if (pointHitsSpace(world, s, dblTolM)) {
           setEditingSpaceId(s.id)
           return
         }
@@ -936,6 +1020,7 @@ export function SpaceEditorCanvas({
 
   const cursor = isPanning ? 'grabbing'
     : spaceDown ? 'grab'
+    : draggingSpacesRef.current ? 'grabbing'
     : mode === 'select'
       ? (draggingVertex ? 'grabbing' : hoveredVertex ? 'grab' : 'grab')
     : mode === 'wall' && dragStart ? 'crosshair'
@@ -1297,8 +1382,8 @@ export function SpaceEditorCanvas({
                 {isDoorType(s.type) ? (
                   /* ── Porte = trait + jambages ── */
                   <>
-                    {/* Zone de clic invisible (rectangle fantôme) pour la sélection */}
-                    <path d={d} fill="transparent" stroke="none" />
+                    {/* Zone de clic invisible ÉPAISSE (~16 px) pour que les portes soient cliquables à tout zoom */}
+                    <path d={d} fill="transparent" stroke="transparent" strokeWidth={16} strokeLinecap="round" strokeLinejoin="round" style={{ cursor: 'pointer' }} />
                     {/* Contour sélection */}
                     {isSelected && (
                       <path d={d} fill="none"
@@ -1616,7 +1701,7 @@ export function SpaceEditorCanvas({
         {/* Aide flottante en mode select */}
         {mode === 'select' && selectedIds.size === 0 && spaces.length > 0 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg bg-surface-1/95 border border-white/10 text-[10px] text-slate-300 shadow-xl pointer-events-none">
-            💡 Clic espace = sélectionner · Glisser zone vide = déplacer le plan · Sommet = déformer · Double-clic = éditer · <kbd className="bg-slate-800 px-1 rounded border border-white/10">?</kbd> raccourcis
+            💡 Clic = sélect · Clic+glisser = déplacer · Sommet = déformer · Double-clic = éditer · <kbd className="bg-slate-800 px-1 rounded border border-white/10">?</kbd> raccourcis
           </div>
         )}
 
@@ -1647,12 +1732,13 @@ export function SpaceEditorCanvas({
                 {
                   title: 'Sélection & édition',
                   items: [
-                    { k: ['Clic'],              desc: 'Sélectionner un espace' },
-                    { k: ['Shift', '+', 'Clic'], desc: 'Ajouter à la sélection' },
-                    { k: ['Double-clic'],       desc: 'Éditer métadonnées de l\'espace' },
-                    { k: ['Delete'],            desc: 'Supprimer la sélection' },
-                    { k: ['Ctrl', '+', 'Z'],    desc: 'Annuler (undo)' },
-                    { k: ['Ctrl', '+', 'D'],    desc: 'Dupliquer la sélection' },
+                    { k: ['Clic'],                desc: 'Sélectionner un espace' },
+                    { k: ['Clic', '+', 'Glisser'], desc: 'Déplacer l\'espace (ou toute la sélection multi)' },
+                    { k: ['Shift', '+', 'Clic'],  desc: 'Ajouter à la sélection' },
+                    { k: ['Double-clic'],         desc: 'Éditer métadonnées (dimensions, type…)' },
+                    { k: ['Delete'],              desc: 'Supprimer la sélection' },
+                    { k: ['Ctrl', '+', 'Z'],      desc: 'Annuler (undo)' },
+                    { k: ['Ctrl', '+', 'D'],      desc: 'Dupliquer la sélection' },
                   ],
                 },
                 {
@@ -1846,6 +1932,11 @@ function SpaceMetadataPanel({
           </div>
           <p className="text-[10px] text-slate-600 mt-1">{SPACE_TYPE_META[type].description}</p>
         </div>
+
+        {/* ── Dimensions porte — visible uniquement pour les portes / ouvertures ── */}
+        {isDoorType(type) && (
+          <DoorDimensionsPanel space={space} onSave={onSave} />
+        )}
 
         {/* ── Section commerciale — visible uniquement pour les locaux commerciaux ── */}
         {isCommercial && (
@@ -2106,6 +2197,107 @@ function SpaceMetadataPanel({
           >
             Fermer
           </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Panel dimensions porte ───────────────────────────────
+
+function DoorDimensionsPanel({
+  space,
+  onSave,
+}: {
+  space: EditableSpace
+  onSave: (changes: Partial<EditableSpace>) => void
+}) {
+  const dims = Geo.rectDimensions(space.polygon)
+  const [widthCm, setWidthCm] = useState(Math.round(dims.long * 100))
+  const [thickCm, setThickCm] = useState(Math.round(dims.short * 100))
+
+  useEffect(() => {
+    const d = Geo.rectDimensions(space.polygon)
+    setWidthCm(Math.round(d.long * 100))
+    setThickCm(Math.round(d.short * 100))
+  }, [space.polygon])
+
+  const applyResize = (newW: number, newT: number) => {
+    const newPoly = Geo.resizeRectPolygon(space.polygon, newW / 100, newT / 100)
+    onSave({ polygon: newPoly })
+  }
+
+  const WIDTH_PRESETS: Array<{ w: number; label: string }> = [
+    { w: 70,  label: '70' },
+    { w: 80,  label: '80' },
+    { w: 90,  label: '90' },
+    { w: 100, label: '1m' },
+    { w: 120, label: '1,2m' },
+    { w: 150, label: '1,5m' },
+    { w: 180, label: '1,8m (double)' },
+    { w: 240, label: '2,4m (SAS)' },
+  ]
+
+  return (
+    <div className="rounded-lg border border-white/10 bg-surface-0 overflow-hidden">
+      <div className="px-3 py-2 border-b border-white/10 flex items-center gap-2"
+        style={{ background: 'rgba(16,185,129,0.12)' }}>
+        <span className="text-base leading-none">🚪</span>
+        <div className="flex-1">
+          <div className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider">Dimensions porte</div>
+          <div className="text-[10px] text-slate-500">Passage utile × épaisseur (tableau)</div>
+        </div>
+        <span className="text-[10px] text-slate-500 font-mono">
+          {Math.round(dims.angleRad * 180 / Math.PI)}°
+        </span>
+      </div>
+
+      <div className="p-3 space-y-3">
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Largeur (passage)</label>
+            <span className="text-[11px] text-emerald-300 font-mono tabular-nums">{widthCm} cm</span>
+          </div>
+          <div className="flex items-center gap-2 mb-2">
+            <input type="range" min={50} max={400} step={5} value={widthCm}
+              onChange={(e) => { const w = Number(e.target.value); setWidthCm(w); applyResize(w, thickCm) }}
+              className="flex-1 accent-emerald-500" />
+            <input type="number" min={30} max={600} value={widthCm}
+              onChange={(e) => { const w = Math.max(30, Math.min(600, Number(e.target.value) || 0)); setWidthCm(w); applyResize(w, thickCm) }}
+              className="w-16 px-2 py-1 rounded bg-surface-1 border border-white/10 text-[11px] text-white font-mono text-right" />
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {WIDTH_PRESETS.map(p => (
+              <button key={p.w}
+                onClick={() => { setWidthCm(p.w); applyResize(p.w, thickCm) }}
+                className={`px-2 py-0.5 rounded text-[9px] font-mono border transition-colors ${
+                  widthCm === p.w
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                    : 'text-slate-500 border-white/10 hover:text-white hover:border-white/20'
+                }`}>{p.label}</button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Épaisseur (tableau mur)</label>
+            <span className="text-[11px] text-emerald-300 font-mono tabular-nums">{thickCm} cm</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <input type="range" min={5} max={60} step={1} value={thickCm}
+              onChange={(e) => { const t = Number(e.target.value); setThickCm(t); applyResize(widthCm, t) }}
+              className="flex-1 accent-emerald-500" />
+            <input type="number" min={5} max={100} value={thickCm}
+              onChange={(e) => { const t = Math.max(5, Math.min(100, Number(e.target.value) || 0)); setThickCm(t); applyResize(widthCm, t) }}
+              className="w-16 px-2 py-1 rounded bg-surface-1 border border-white/10 text-[11px] text-white font-mono text-right" />
+          </div>
+        </div>
+
+        <div className="text-[9px] text-slate-600 leading-relaxed pt-1 border-t border-white/5">
+          💡 L'orientation est conservée. <kbd className="bg-slate-800 px-1 rounded border border-white/10">R</kbd> pivote,
+          <kbd className="bg-slate-800 px-1 rounded border border-white/10 ml-1">H</kbd>/<kbd className="bg-slate-800 px-1 rounded border border-white/10">V</kbd> inverse le sens,
+          clic+glisser dans le canvas pour déplacer.
         </div>
       </div>
     </div>
