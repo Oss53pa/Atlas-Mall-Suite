@@ -115,7 +115,7 @@ export default function LandingPage() {
             </button>
             <button onClick={() => navigate('/register')}
               className="text-xs sm:text-sm font-medium bg-atlas-500 hover:bg-atlas-400 text-white px-3 sm:px-4 py-2 rounded-xl transition-colors whitespace-nowrap">
-              Essai gratuit
+              Créer un compte
             </button>
           </div>
         </div>
@@ -154,16 +154,20 @@ export default function LandingPage() {
             pour centres commerciaux, hôtels, bureaux, hôpitaux, campus et ERP publics.
           </p>
 
-          <div className="flex items-center justify-center gap-4 mb-10 flex-wrap">
+          <div className="flex items-center justify-center gap-4 mb-6 flex-wrap">
             <button onClick={() => navigate('/register')}
               className="flex items-center gap-2 px-7 py-3.5 rounded-xl bg-atlas-500 hover:bg-atlas-400 text-white font-medium text-[15px] transition-all hover:-translate-y-0.5 shadow-lg shadow-bronze/20">
-              Démarrer gratuitement <ArrowRight size={18} />
+              Créer un compte <ArrowRight size={18} />
             </button>
             <button onClick={() => navigate('/dashboard')}
               className="flex items-center gap-2 px-6 py-3.5 rounded-xl border border-white/[0.1] text-gray-300 hover:text-white hover:border-white/20 font-medium text-[15px] transition-all">
               <Play size={16} /> Mode démo app
             </button>
           </div>
+          <p className="text-[12px] text-gray-500 mb-10 flex items-center justify-center gap-2">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-atlas-400 animate-pulse" />
+            Inscriptions publiques <span className="text-atlas-300 font-medium">bientôt disponibles</span> — rejoignez la liste d'attente.
+          </p>
 
           {/* Sélecteur de démos verticales */}
           <div className="mb-16">
@@ -410,13 +414,17 @@ export default function LandingPage() {
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
             <button onClick={() => navigate('/register')}
               className="flex items-center gap-2 px-6 sm:px-8 py-3.5 rounded-xl bg-atlas-500 hover:bg-atlas-400 text-white font-medium text-[15px] transition-all hover:-translate-y-0.5">
-              Créer mon compte <ArrowRight size={18} />
+              Créer un compte <ArrowRight size={18} />
             </button>
             <button onClick={() => navigate('/login')}
               className="px-6 py-3.5 rounded-xl border border-white/[0.1] text-gray-300 hover:text-white hover:border-white/20 font-medium text-[15px] transition-all">
               Se connecter
             </button>
           </div>
+          <p className="text-[12px] text-gray-500 mt-6 flex items-center justify-center gap-2">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-atlas-400 animate-pulse" />
+            Inscriptions publiques <span className="text-atlas-300 font-medium">bientôt disponibles</span>
+          </p>
         </div>
       </section>
 
