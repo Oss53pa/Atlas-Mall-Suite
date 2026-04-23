@@ -751,6 +751,35 @@ function buildRichHtml(): string {
 
   /* ─── Actions bar ─── */
   .actions-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--border); }
+  .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn.done { background: #10b981; color: #0f1115; border-color: #10b981; }
+
+  /* Modal overlay */
+  .modal-back { position: fixed; inset: 0; background: rgba(0,0,0,0.72); backdrop-filter: blur(3px); display: none; z-index: 9998; align-items: center; justify-content: center; padding: 20px; }
+  .modal-back.open { display: flex; }
+  .modal { width: min(680px, 100%); max-height: 85vh; overflow-y: auto; background: var(--card); border: 1px solid var(--border-2); border-radius: 6px; box-shadow: 0 24px 80px rgba(0,0,0,0.6); }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid var(--border); }
+  .modal-head .t { font-size: 16px; font-weight: 600; color: var(--ink); }
+  .modal-head .k { font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: 0.14em; color: var(--accent); text-transform: uppercase; margin-bottom: 4px; }
+  .modal-head .x { cursor: pointer; color: var(--muted); background: transparent; border: none; font-size: 18px; padding: 4px 8px; }
+  .modal-head .x:hover { color: var(--ink); }
+  .modal-body { padding: 22px 24px; color: var(--ink); font-size: 13px; line-height: 1.65; }
+  .modal-body label { display: block; font-family: ui-monospace, monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; margin-top: 14px; }
+  .modal-body select, .modal-body input[type=text], .modal-body input[type=email], .modal-body textarea {
+    width: 100%; background: var(--bg-alt); border: 1px solid var(--border-2); color: var(--ink); font: inherit; padding: 10px 12px; border-radius: 3px; outline: none; font-family: inherit;
+  }
+  .modal-body textarea { resize: vertical; min-height: 90px; }
+  .modal-body select:focus, .modal-body input:focus, .modal-body textarea:focus { border-color: var(--accent); }
+  .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--border); }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #10b981; color: #0f1115; padding: 12px 22px; border-radius: 3px; font-weight: 700; font-family: ui-monospace,monospace; font-size: 12px; letter-spacing: 0.08em; box-shadow: 0 12px 30px rgba(16,185,129,0.35); z-index: 10000; opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translate(-50%, -10px); }
+  .share-link { display: flex; gap: 8px; align-items: center; background: var(--bg-alt); border: 1px solid var(--border-2); padding: 10px 12px; border-radius: 3px; }
+  .share-link code { flex: 1; color: var(--info); font-size: 12px; overflow-x: auto; white-space: nowrap; }
+  .validated-banner { display: none; margin-top: 20px; padding: 14px 18px; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.4); border-radius: 3px; color: #6ee7b7; font-size: 13px; }
+  .validated-banner.show { display: flex; align-items: center; gap: 10px; }
+  .validated-banner .mono { font-family: ui-monospace, monospace; color: #10b981; font-weight: 700; }
+  .comment-badge { position: fixed; top: 20px; right: 20px; background: var(--accent); color: #0f1115; padding: 8px 14px; border-radius: 3px; font-family: ui-monospace,monospace; font-size: 11px; font-weight: 700; box-shadow: 0 8px 24px rgba(245,158,11,0.3); z-index: 9997; display: none; }
+  .comment-badge.show { display: block; }
   .btn { font-family: ui-monospace, monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 14px 22px; border-radius: 3px; border: 1px solid var(--border-2); background: transparent; color: var(--ink); cursor: pointer; transition: all 0.15s; }
   .btn:hover { border-color: var(--accent); color: var(--accent); }
   .btn.primary { background: var(--accent); color: #0f1115; border-color: var(--accent); }
@@ -1103,14 +1132,228 @@ function buildRichHtml(): string {
     </div>
 
     <div class="actions-row">
-      <button class="btn primary" onclick="alert('Validation enregistrée — Proph3t notifié. (démo)');">✓ Valider le rapport</button>
-      <button class="btn" onclick="alert('Éditeur de corrections ouvert dans l\\'app. (démo)');">Demander des corrections</button>
-      <button class="btn" onclick="alert('Commentaire envoyé avec contexte Proph3t. (démo)');">Commenter une section</button>
-      <button class="btn" onclick="window.print()">Exporter .PDF</button>
-      <button class="btn" onclick="alert('Partagé sur le board projet. (démo)');">Partager au board</button>
+      <button id="btn-validate" class="btn primary">✓ Valider le rapport</button>
+      <button id="btn-correct" class="btn">Demander des corrections</button>
+      <button id="btn-comment" class="btn">Commenter une section</button>
+      <button id="btn-pdf" class="btn">Exporter .PDF</button>
+      <button id="btn-share" class="btn">Partager au board</button>
+    </div>
+    <div id="validated-banner" class="validated-banner">
+      <span style="font-size:18px;">✓</span>
+      <div>
+        <strong>Rapport validé</strong>
+        — notification envoyée à Proph3t (journal d'audit mis à jour).
+        <span class="mono" id="validated-at"></span>
+      </div>
     </div>
     <div class="action-hint">Proph3t itère en &lt; 24 h sur toute demande de correction ou scénario alternatif (fermeture d'entrée, extension, reconfig Food Court…).</div>
   </section>
+
+  <!-- ═══ MODAL : Corrections ═══ -->
+  <div id="modal-correct" class="modal-back" onclick="if(event.target===this)closeModal(this)">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <div class="k">Action · Demander des corrections</div>
+          <div class="t">Envoyer une demande d'itération à Proph3t</div>
+        </div>
+        <button class="x" onclick="closeModal(this.closest('.modal-back'))">✕</button>
+      </div>
+      <div class="modal-body">
+        <label>Section visée</label>
+        <select id="correct-section">
+          <option value="01">01 · Plan 2D annoté</option>
+          <option value="02">02 · Synthèse exécutive</option>
+          <option value="03">03 · Analyse flux piétons</option>
+          <option value="04">04 · Densité temporelle</option>
+          <option value="05">05 · Vue 3D isométrique</option>
+          <option value="06">06 · Superposition multi-étages</option>
+          <option value="07">07 · Visite guidée</option>
+          <option value="08">08 · AR / VR</option>
+          <option value="09">09 · Plan d'action chiffré</option>
+          <option value="10">10 · Méthodologie</option>
+        </select>
+        <label>Type de correction</label>
+        <select id="correct-type">
+          <option>Hypothèse à revoir</option>
+          <option>Donnée erronée</option>
+          <option>Ajouter un scénario alternatif</option>
+          <option>Ajuster le ton / l'audience</option>
+          <option>Compléter une analyse</option>
+        </select>
+        <label>Description détaillée</label>
+        <textarea id="correct-body" placeholder="Exemple : Proph3t, simule l'impact d'une fermeture temporaire de l'entrée Nord pendant 2 semaines pour travaux. Adapter les recommandations en conséquence."></textarea>
+        <label>Échéance souhaitée</label>
+        <select id="correct-deadline">
+          <option>Urgent (&lt; 24 h)</option>
+          <option selected>Standard (&lt; 72 h)</option>
+          <option>Non urgent (&lt; 1 semaine)</option>
+        </select>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" onclick="closeModal(this.closest('.modal-back'))">Annuler</button>
+        <button class="btn primary" onclick="submitCorrection()">Envoyer à Proph3t</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL : Commenter ═══ -->
+  <div id="modal-comment" class="modal-back" onclick="if(event.target===this)closeModal(this)">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <div class="k">Action · Commenter une section</div>
+          <div class="t">Ajouter un commentaire persistant sur le rapport</div>
+        </div>
+        <button class="x" onclick="closeModal(this.closest('.modal-back'))">✕</button>
+      </div>
+      <div class="modal-body">
+        <label>Votre nom</label>
+        <input type="text" id="comment-name" value="Cheick Sanankoua" />
+        <label>Section</label>
+        <select id="comment-section">
+          <option value="02">02 · Synthèse exécutive</option>
+          <option value="03">03 · Analyse flux piétons</option>
+          <option value="09">09 · Plan d'action chiffré</option>
+          <option value="all">Rapport global</option>
+        </select>
+        <label>Commentaire</label>
+        <textarea id="comment-body" placeholder="Exemple : D'accord sur R01 et R02 à lancer immédiatement. Pour R04 (sanitaires), merci de prévoir une phase intermédiaire avec cabines modulaires pendant les travaux."></textarea>
+        <label>Destinataires notifiés</label>
+        <select id="comment-notify" multiple size="3" style="height:auto">
+          <option selected>Proph3t IA</option>
+          <option>Aminata Koné (DT)</option>
+          <option>Jean-Marc Dupont (Consultant)</option>
+          <option>Équipe exploitation</option>
+        </select>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" onclick="closeModal(this.closest('.modal-back'))">Annuler</button>
+        <button class="btn primary" onclick="submitComment()">Publier le commentaire</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL : Partager ═══ -->
+  <div id="modal-share" class="modal-back" onclick="if(event.target===this)closeModal(this)">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <div class="k">Action · Partager au board</div>
+          <div class="t">Diffuser le rapport à l'équipe ou au conseil</div>
+        </div>
+        <button class="x" onclick="closeModal(this.closest('.modal-back'))">✕</button>
+      </div>
+      <div class="modal-body">
+        <label>Lien de consultation (traçable)</label>
+        <div class="share-link">
+          <code id="share-link-url">https://app.atlasmallsuite.com/r/${ref}</code>
+          <button class="btn" style="padding:6px 10px;" onclick="copyShareLink()">Copier</button>
+        </div>
+        <label>Destinataires (emails)</label>
+        <textarea id="share-emails" placeholder="dg@newheavensa.ci&#10;investors@cosmosgroup.ci&#10;direction.tech@newheavensa.ci" style="min-height:70px">dg@newheavensa.ci
+investors@cosmosgroup.ci</textarea>
+        <label>Message d'introduction</label>
+        <textarea id="share-msg">Bonjour,
+
+Vous trouverez ci-joint le rapport d'analyse du parcours client de Cosmos Angré généré par Proph3t. Merci de valider vos sections d'intérêt avant mercredi.
+
+Cordialement,
+New Heaven SA</textarea>
+        <label>Options</label>
+        <div style="display:flex;flex-direction:column;gap:8px;font-family:inherit;">
+          <label style="margin:0;text-transform:none;letter-spacing:normal;font-family:inherit;font-size:13px;color:var(--ink);font-weight:400;"><input type="checkbox" checked /> Tracking lecture + clics</label>
+          <label style="margin:0;text-transform:none;letter-spacing:normal;font-family:inherit;font-size:13px;color:var(--ink);font-weight:400;"><input type="checkbox" checked /> Autoriser commentaires</label>
+          <label style="margin:0;text-transform:none;letter-spacing:normal;font-family:inherit;font-size:13px;color:var(--ink);font-weight:400;"><input type="checkbox" /> Expiration 30 jours</label>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" onclick="closeModal(this.closest('.modal-back'))">Annuler</button>
+        <button class="btn primary" onclick="submitShare()">Envoyer &amp; partager</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Toast ═══ -->
+  <div id="toast" class="toast"></div>
+  <div id="comment-badge" class="comment-badge"></div>
+
+  <script>
+    function openModal(id) {
+      document.getElementById(id).classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal(el) {
+      el.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function toast(msg) {
+      var t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(function(){ t.classList.remove('show'); }, 2600);
+    }
+    function submitCorrection() {
+      var s = document.getElementById('correct-section').value;
+      var t = document.getElementById('correct-type').value;
+      var b = document.getElementById('correct-body').value.trim();
+      if (!b) { alert('Merci de décrire la correction souhaitée.'); return; }
+      closeModal(document.getElementById('modal-correct'));
+      toast('✓ Demande envoyée à Proph3t · section ' + s + ' · ' + t);
+    }
+    function submitComment() {
+      var n = document.getElementById('comment-name').value.trim();
+      var s = document.getElementById('comment-section').value;
+      var b = document.getElementById('comment-body').value.trim();
+      if (!b) { alert('Merci de saisir un commentaire.'); return; }
+      closeModal(document.getElementById('modal-comment'));
+      toast('✓ Commentaire publié · section ' + s + ' · notification envoyée');
+      // Badge indicateur en haut à droite
+      var badge = document.getElementById('comment-badge');
+      var count = (parseInt(badge.dataset.count || '0', 10) + 1);
+      badge.dataset.count = count;
+      badge.textContent = '💬 ' + count + ' commentaire' + (count > 1 ? 's' : '') + ' — dernier : ' + n;
+      badge.classList.add('show');
+    }
+    function copyShareLink() {
+      var url = document.getElementById('share-link-url').textContent;
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = url; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+        toast('Lien copié dans le presse-papier');
+      } catch(e) {
+        toast('Copie impossible — sélectionnez manuellement');
+      }
+    }
+    function submitShare() {
+      var emails = document.getElementById('share-emails').value.split(/[\\s,;]+/).filter(Boolean);
+      if (emails.length === 0) { alert('Merci de saisir au moins un destinataire.'); return; }
+      closeModal(document.getElementById('modal-share'));
+      toast('✓ Rapport partagé avec ' + emails.length + ' destinataire' + (emails.length > 1 ? 's' : ''));
+    }
+
+    document.getElementById('btn-validate').addEventListener('click', function() {
+      if (this.classList.contains('done')) return;
+      this.classList.remove('primary');
+      this.classList.add('done');
+      this.disabled = true;
+      this.innerHTML = '✓ Validé';
+      var banner = document.getElementById('validated-banner');
+      document.getElementById('validated-at').textContent = ' · ' + new Date().toLocaleString('fr-FR');
+      banner.classList.add('show');
+      toast('✓ Validation enregistrée · Proph3t notifié · journal d\\'audit mis à jour');
+    });
+    document.getElementById('btn-correct').addEventListener('click', function() { openModal('modal-correct'); });
+    document.getElementById('btn-comment').addEventListener('click', function() { openModal('modal-comment'); });
+    document.getElementById('btn-share').addEventListener('click', function() { openModal('modal-share'); });
+    document.getElementById('btn-pdf').addEventListener('click', function() { toast('Ouverture du dialogue d\\'impression…'); setTimeout(function(){ window.print(); }, 300); });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-back.open').forEach(function(m){ closeModal(m); });
+      }
+    });
+  </script>
 
   <footer class="doc">
     <div>Atlas Mall Suite · Proph3t IA v2.4 · ${generatedAt} · ref <span style="color:var(--accent)">${ref}</span></div>
