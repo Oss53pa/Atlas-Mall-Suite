@@ -231,6 +231,7 @@ export function SpaceEditorCanvas({
   const [wallThicknessCm, setWallThicknessCm] = useState(20)
   const [editingSpaceId, setEditingSpaceId] = useState<string | null>(null)
   const [showOnlyActiveFloor, setShowOnlyActiveFloor] = useState(true)
+  const [showShortcuts, setShowShortcuts] = useState(false)
   const [cursorWorld, setCursorWorld] = useState<Geo.Point | null>(null)
   const [hoveredSpaceId, setHoveredSpaceId] = useState<string | null>(null)
   const [annotateType, setAnnotateType]   = useState<AnnotationType>('note')
@@ -360,6 +361,10 @@ export function SpaceEditorCanvas({
       }
       if (e.key === 'v' && !editingSpaceIdRef.current && !e.ctrlKey && !e.metaKey) {
         flipSelectedVRef.current()
+      }
+      // Toggle panneau raccourcis
+      if ((e.key === '?' || (e.key === '/' && e.shiftKey)) && !editingSpaceIdRef.current) {
+        setShowShortcuts(v => !v)
       }
     }
     window.addEventListener('keydown', handler)
@@ -1097,26 +1102,29 @@ export function SpaceEditorCanvas({
         <button
           onClick={() => rotateSelected(90)}
           disabled={selectedIds.size === 0}
-          className="p-1.5 rounded text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30"
-          title="Rotation 90° horaire (R)"
+          className="p-1.5 rounded text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 flex items-center gap-1"
+          title="Rotation 90° horaire — raccourci : R  (Shift+R = anti-horaire)"
         >
           <RotateCw className="w-3.5 h-3.5" />
+          <kbd className="hidden md:inline text-[9px] font-mono px-1 py-px bg-slate-800 rounded border border-white/10 leading-none">R</kbd>
         </button>
         <button
           onClick={flipSelectedH}
           disabled={selectedIds.size === 0}
-          className="p-1.5 rounded text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30"
-          title="Miroir horizontal — inverse gauche/droite (H)"
+          className="p-1.5 rounded text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 flex items-center gap-1"
+          title="Miroir horizontal — inverse gauche/droite — raccourci : H"
         >
           <FlipHorizontal className="w-3.5 h-3.5" />
+          <kbd className="hidden md:inline text-[9px] font-mono px-1 py-px bg-slate-800 rounded border border-white/10 leading-none">H</kbd>
         </button>
         <button
           onClick={flipSelectedV}
           disabled={selectedIds.size === 0}
-          className="p-1.5 rounded text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30"
-          title="Miroir vertical — inverse intérieur/extérieur (V)"
+          className="p-1.5 rounded text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 flex items-center gap-1"
+          title="Miroir vertical — inverse intérieur/extérieur — raccourci : V"
         >
           <FlipVertical className="w-3.5 h-3.5" />
+          <kbd className="hidden md:inline text-[9px] font-mono px-1 py-px bg-slate-800 rounded border border-white/10 leading-none">V</kbd>
         </button>
         <button
           onClick={() => {
@@ -1185,6 +1193,18 @@ export function SpaceEditorCanvas({
         <span className="text-[10px] text-slate-500 tabular-nums px-1">
           {Math.round(viewport.scale * 100) / 100}×
         </span>
+
+        <button
+          onClick={() => setShowShortcuts(v => !v)}
+          className={`ml-1 w-7 h-7 rounded text-[12px] font-bold flex items-center justify-center border transition-colors ${
+            showShortcuts
+              ? 'bg-atlas-500 text-white border-atlas-500'
+              : 'text-slate-400 hover:text-white border-white/10 hover:border-white/25'
+          }`}
+          title="Raccourcis clavier"
+        >
+          ?
+        </button>
 
         <div className="flex-1" />
 
@@ -1596,7 +1616,89 @@ export function SpaceEditorCanvas({
         {/* Aide flottante en mode select */}
         {mode === 'select' && selectedIds.size === 0 && spaces.length > 0 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-2 rounded-lg bg-surface-1/95 border border-white/10 text-[10px] text-slate-300 shadow-xl pointer-events-none">
-            💡 Clic espace = sélectionner · Glisser zone vide = déplacer le plan · Sommet = déformer · Double-clic = éditer
+            💡 Clic espace = sélectionner · Glisser zone vide = déplacer le plan · Sommet = déformer · Double-clic = éditer · <kbd className="bg-slate-800 px-1 rounded border border-white/10">?</kbd> raccourcis
+          </div>
+        )}
+
+        {/* ═══ Panneau Raccourcis clavier ═══ */}
+        {showShortcuts && (
+          <div className="absolute top-4 right-4 w-[340px] max-h-[calc(100%-2rem)] overflow-y-auto rounded-xl bg-surface-1/95 backdrop-blur border border-white/15 shadow-2xl text-[11px] text-slate-300 z-30">
+            <div className="sticky top-0 flex items-center justify-between px-4 py-3 border-b border-white/10 bg-surface-1/95 backdrop-blur">
+              <div>
+                <div className="text-[13px] font-semibold text-white">Raccourcis clavier</div>
+                <div className="text-[10px] text-slate-500 mt-0.5">Cliquez dans le canvas d'abord, pas dans un champ texte</div>
+              </div>
+              <button onClick={() => setShowShortcuts(false)}
+                className="p-1 text-slate-400 hover:text-white text-[14px] leading-none">✕</button>
+            </div>
+
+            <div className="p-4 space-y-5">
+              {[
+                {
+                  title: 'Outils de dessin',
+                  items: [
+                    { k: ['Esc'],          desc: 'Sortir du mode en cours / annuler l\'outil' },
+                    { k: ['Double-clic'],  desc: 'En mode Polygone/Courbe : fermer la forme' },
+                    { k: ['Molette'],      desc: 'Zoom centré curseur' },
+                    { k: ['Clic + glisser'], desc: 'Déplacer le plan (pan)' },
+                    { k: ['F'],            desc: 'Recadrer tout le plan' },
+                  ],
+                },
+                {
+                  title: 'Sélection & édition',
+                  items: [
+                    { k: ['Clic'],              desc: 'Sélectionner un espace' },
+                    { k: ['Shift', '+', 'Clic'], desc: 'Ajouter à la sélection' },
+                    { k: ['Double-clic'],       desc: 'Éditer métadonnées de l\'espace' },
+                    { k: ['Delete'],            desc: 'Supprimer la sélection' },
+                    { k: ['Ctrl', '+', 'Z'],    desc: 'Annuler (undo)' },
+                    { k: ['Ctrl', '+', 'D'],    desc: 'Dupliquer la sélection' },
+                  ],
+                },
+                {
+                  title: 'Portes & géométrie (sur sélection)',
+                  items: [
+                    { k: ['R'],                desc: 'Rotation 90° horaire', hi: true },
+                    { k: ['Shift', '+', 'R'],  desc: 'Rotation 90° anti-horaire', hi: true },
+                    { k: ['H'],                desc: 'Miroir horizontal (inverse gauche / droite)', hi: true },
+                    { k: ['V'],                desc: 'Miroir vertical (inverse intérieur / extérieur)', hi: true },
+                    { k: ['M'],                desc: 'Fusionner 2+ espaces sélectionnés' },
+                    { k: ['X'],                desc: 'Découper — tracer la ligne de coupe' },
+                  ],
+                },
+                {
+                  title: 'Astuces',
+                  items: [
+                    { k: ['SNAP'],  desc: 'Alignement 50 cm activable/désactivable' },
+                    { k: ['Grille'], desc: 'Affiche le quadrillage 5 m' },
+                  ],
+                },
+              ].map(group => (
+                <div key={group.title}>
+                  <div className="text-[9px] uppercase tracking-widest font-semibold text-atlas-400 mb-2">{group.title}</div>
+                  <div className="space-y-1.5">
+                    {group.items.map((item, i) => (
+                      <div key={i} className={`flex items-center justify-between gap-3 ${item.hi ? 'bg-atlas-500/[0.06] px-2 -mx-2 py-1 rounded' : ''}`}>
+                        <div className="flex items-center gap-0.5 flex-shrink-0">
+                          {item.k.map((k, j) => (
+                            k === '+' ? (
+                              <span key={j} className="text-slate-600 text-[10px] mx-0.5">+</span>
+                            ) : (
+                              <kbd key={j} className="px-1.5 py-0.5 bg-slate-800 border border-white/10 rounded text-[10px] font-mono text-slate-200 min-w-[22px] text-center">{k}</kbd>
+                            )
+                          ))}
+                        </div>
+                        <div className="text-[11px] text-slate-400 text-right leading-snug">{item.desc}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="sticky bottom-0 px-4 py-2 border-t border-white/10 bg-surface-1/95 backdrop-blur text-[10px] text-slate-500">
+              Astuce : <kbd className="bg-slate-800 px-1 rounded border border-white/10">?</kbd> pour ouvrir/fermer ce panneau
+            </div>
           </div>
         )}
         {mode === 'select' && spaces.length === 0 && (
