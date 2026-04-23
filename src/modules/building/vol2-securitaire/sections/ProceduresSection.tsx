@@ -1,43 +1,6 @@
 import { useState } from 'react'
 import { ClipboardList } from 'lucide-react'
-
-interface Procedure {
-  id: string
-  title: string
-  content: string
-}
-
-const procedures: Procedure[] = [
-  { id: 'poi', title: "Plan d'Opération Interne (POI) validé préfecture", content: "Le POI définit l'organisation des secours en cas de sinistre majeur. Il précise les rôles, les moyens d'alerte, les zones de regroupement et les interlocuteurs (pompiers, préfecture, SAMU). Validé par la préfecture d'Abidjan — dernière mise à jour : janvier 2026." },
-  { id: 'intrusion', title: 'Procédure : alerte intrusion', content: "1. Détection par analyse vidéo IA ou agent\n2. Confirmation visuelle PC sécurité\n3. Alerte chef de poste + envoi équipe mobile\n4. Sécurisation périmètre + confinement si nécessaire\n5. Appel forces de l'ordre si confirmé\n6. Rapport d'incident dans les 2h" },
-  { id: 'colis', title: 'Procédure : colis suspect', content: "1. Détection par agent ou analyse vidéo (objet abandonné)\n2. Périmètre de sécurité 50m minimum\n3. Alerte PC sécurité → chef de poste\n4. Évacuation partielle zone concernée\n5. Appel équipe de déminage / police\n6. Interdiction de toucher ou déplacer l'objet\n7. Rapport d'incident" },
-  { id: 'evacuation', title: 'Procédure : évacuation', content: "1. Déclenchement alarme générale (CMSI)\n2. Arrêt escalators, rappel ascenseurs au RDC\n3. Guides-files dirigent vers issues de secours\n4. Comptage aux points de rassemblement\n5. Vérification zones par serre-files\n6. Liaison pompiers (SDIS)\n7. Rapport de fin d'évacuation" },
-  { id: 'inondation', title: 'Procédure : inondation', content: "1. Détection par capteurs de niveau sous-sol\n2. Coupure électrique zones impactées (TGBT)\n3. Activation pompes de relevage\n4. Évacuation parking si niveau critique\n5. Protection équipements sensibles (bâchage)\n6. Appel prestataire assèchement\n7. Rapport et constat assurance" },
-]
-
-interface Agent {
-  nom: string
-  poste: string
-  ssiap: string
-  dateCertif: string
-  renouvellement: string
-  status: 'valide' | 'a_renouveler' | 'expire'
-}
-
-const agents: Agent[] = [
-  { nom: 'Kouadio Jean', poste: 'Chef de poste jour', ssiap: 'SSIAP 3', dateCertif: '2024-03-15', renouvellement: '2027-03-15', status: 'valide' },
-  { nom: 'Traoré Ibrahim', poste: 'Chef de poste nuit', ssiap: 'SSIAP 3', dateCertif: '2024-06-20', renouvellement: '2027-06-20', status: 'valide' },
-  { nom: 'Bamba Sékou', poste: 'Agent sécurité', ssiap: 'SSIAP 1', dateCertif: '2023-11-10', renouvellement: '2026-11-10', status: 'valide' },
-  { nom: 'Koné Fatou', poste: 'Agent sécurité', ssiap: 'SSIAP 1', dateCertif: '2024-01-22', renouvellement: '2027-01-22', status: 'valide' },
-  { nom: 'Ouattara Moussa', poste: 'Agent sécurité', ssiap: 'SSIAP 1', dateCertif: '2023-05-18', renouvellement: '2026-05-18', status: 'a_renouveler' },
-  { nom: 'Diallo Aminata', poste: 'Agent sécurité', ssiap: 'SSIAP 1', dateCertif: '2024-09-01', renouvellement: '2027-09-01', status: 'valide' },
-  { nom: 'Yao Patrick', poste: 'Agent sécurité', ssiap: 'SSIAP 2', dateCertif: '2024-04-12', renouvellement: '2027-04-12', status: 'valide' },
-  { nom: 'Koffi Emmanuel', poste: 'Agent sécurité', ssiap: 'SSIAP 1', dateCertif: '2023-02-28', renouvellement: '2026-02-28', status: 'expire' },
-  { nom: 'Touré Aïssata', poste: 'Agent sécurité', ssiap: 'SSIAP 1', dateCertif: '2024-07-15', renouvellement: '2027-07-15', status: 'valide' },
-  { nom: 'Coulibaly Drissa', poste: 'Agent sécurité', ssiap: 'SSIAP 1', dateCertif: '2024-02-10', renouvellement: '2027-02-10', status: 'valide' },
-  { nom: 'N\'Guessan Marie', poste: 'Agent sécurité', ssiap: 'SSIAP 1', dateCertif: '2024-08-22', renouvellement: '2027-08-22', status: 'valide' },
-  { nom: 'Dje Bi Serge', poste: 'Agent sécurité', ssiap: 'SSIAP 1', dateCertif: '2023-12-05', renouvellement: '2026-12-05', status: 'valide' },
-]
+import { useSecurityConfigForProject } from '../hooks/useSecurityConfigForProject'
 
 const certifColors = {
   valide: { bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.25)', text: '#22c55e' },
@@ -49,6 +12,7 @@ const certifLabels = { valide: 'Valide', a_renouveler: '< 3 mois', expire: 'Expi
 
 export default function ProceduresSection() {
   const [openProc, setOpenProc] = useState<string | null>(null)
+  const { procedures, securityAgents: agents } = useSecurityConfigForProject()
 
   const enseignesFormees = 78
   const totalEnseignes = 95

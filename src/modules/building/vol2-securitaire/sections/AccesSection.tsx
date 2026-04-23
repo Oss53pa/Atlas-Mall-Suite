@@ -1,46 +1,16 @@
 import { Sparkles } from 'lucide-react'
+import { useSecurityConfigForProject } from '../hooks/useSecurityConfigForProject'
+import type { EquipStatus } from '../store/securityConfigStore'
 
-interface Equipment {
-  name: string
-  description: string
-  status: 'Opérationnel' | 'En cours' | 'Planifié'
+const statusColors: Record<EquipStatus, { bg: string; border: string; text: string }> = {
+  'Opérationnel': { bg: 'rgba(34,197,94,0.08)',  border: 'rgba(34,197,94,0.25)',  text: '#22c55e' },
+  'En cours':     { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.25)', text: '#f59e0b' },
+  'Planifié':     { bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.25)', text: '#64748b' },
+  'Hors service': { bg: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.25)',  text: '#ef4444' },
 }
-
-const equipments: Equipment[] = [
-  { name: 'Portiques compteurs de flux', description: 'Entrées principales — comptage bidirectionnel temps réel', status: 'Opérationnel' },
-  { name: 'Badges RFID personnel + biométrie zones sensibles', description: 'Accès différencié par zone et niveau d\'habilitation', status: 'Opérationnel' },
-  { name: 'SAS livraisons avec vérification identité', description: 'Zone de livraison sécurisée — contrôle identité + badge temporaire', status: 'En cours' },
-  { name: 'Interphones vidéo sur accès techniques', description: 'Accès locaux techniques, TGBT, local SSI — vérification visuelle', status: 'Opérationnel' },
-  { name: 'Registre numérique visiteurs', description: 'Tablette accueil — enregistrement visiteurs avec photo + badge temporaire', status: 'Planifié' },
-]
-
-const statusColors = {
-  'Opérationnel': { bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.25)', text: '#22c55e' },
-  'En cours': { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.25)', text: '#f59e0b' },
-  'Planifié': { bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.25)', text: '#64748b' },
-}
-
-interface AccessRight {
-  zone: string
-  niveau: string
-  typeAcces: string
-  badge: boolean
-  biometrie: boolean
-  sas: boolean
-  reference: string
-}
-
-const accessRights: AccessRight[] = [
-  { zone: 'Galeries commerciales', niveau: 'RDC / R+1', typeAcces: 'Public', badge: false, biometrie: false, sas: false, reference: 'ACC-001' },
-  { zone: 'Parking sous-sol', niveau: 'B1', typeAcces: 'Semi-public', badge: false, biometrie: false, sas: false, reference: 'ACC-002' },
-  { zone: 'Locaux techniques', niveau: 'B1 / R+1', typeAcces: 'Restreint', badge: true, biometrie: false, sas: false, reference: 'ACC-003' },
-  { zone: 'PC Sécurité', niveau: 'RDC', typeAcces: 'Restreint', badge: true, biometrie: true, sas: false, reference: 'ACC-004' },
-  { zone: 'Local TGBT', niveau: 'B1', typeAcces: 'Restreint', badge: true, biometrie: true, sas: false, reference: 'ACC-005' },
-  { zone: 'Zone livraisons', niveau: 'B1', typeAcces: 'Contrôlé', badge: true, biometrie: false, sas: true, reference: 'ACC-006' },
-  { zone: 'Direction', niveau: 'R+1', typeAcces: 'Restreint', badge: true, biometrie: false, sas: false, reference: 'ACC-007' },
-]
 
 export default function AccesSection() {
+  const { accessEquipments: equipments, accessRights } = useSecurityConfigForProject()
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-8">
       <div>

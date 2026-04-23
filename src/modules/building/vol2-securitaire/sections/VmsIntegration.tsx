@@ -17,11 +17,14 @@ interface VmsConfig {
   lastSync: string | null
 }
 
+// Liste des providers VMS supportés — constante UI (catalogue produits).
+// L'état de connexion réel (URL, status, caméras synchronisées) est
+// stocké par projet dans `useSecurityConfigStore.vmsProviders`.
 const VMS_PROVIDERS: VmsConfig[] = [
-  { provider: 'milestone', label: 'Milestone XProtect', logo: 'MI', apiUrl: '', status: 'disconnected', camerasSynced: 0, lastSync: null },
-  { provider: 'genetec', label: 'Genetec Security Center', logo: 'GN', apiUrl: '', status: 'disconnected', camerasSynced: 0, lastSync: null },
-  { provider: 'dahua_dss', label: 'Dahua DSS', logo: 'DH', apiUrl: 'https://dss.cosmosangre.ci:8443', status: 'connected', camerasSynced: 48, lastSync: '2026-03-24T08:30:00' },
-  { provider: 'hikvision_ivms', label: 'Hikvision iVMS-4200', logo: 'HK', apiUrl: '', status: 'disconnected', camerasSynced: 0, lastSync: null },
+  { provider: 'milestone',      label: 'Milestone XProtect',       logo: 'MI', apiUrl: '', status: 'disconnected', camerasSynced: 0, lastSync: null },
+  { provider: 'genetec',        label: 'Genetec Security Center',  logo: 'GN', apiUrl: '', status: 'disconnected', camerasSynced: 0, lastSync: null },
+  { provider: 'dahua_dss',      label: 'Dahua DSS',                 logo: 'DH', apiUrl: '', status: 'disconnected', camerasSynced: 0, lastSync: null },
+  { provider: 'hikvision_ivms', label: 'Hikvision iVMS-4200',      logo: 'HK', apiUrl: '', status: 'disconnected', camerasSynced: 0, lastSync: null },
 ]
 
 const statusConfig: Record<ConnectionStatus, { color: string; label: string; icon: React.ElementType }> = {
@@ -40,14 +43,10 @@ interface CameraLiveStatus {
   lastAlert?: string
 }
 
-const LIVE_CAMERAS: CameraLiveStatus[] = [
-  { id: 'lc-01', reference: 'CAM-RDC-01', vmsStatus: 'online', fps: 25, recording: true },
-  { id: 'lc-02', reference: 'CAM-RDC-02', vmsStatus: 'online', fps: 25, recording: true },
-  { id: 'lc-03', reference: 'CAM-RDC-03', vmsStatus: 'alert', fps: 15, recording: true, lastAlert: 'Mouvement detecte zone 3' },
-  { id: 'lc-04', reference: 'CAM-B1-01', vmsStatus: 'online', fps: 25, recording: true },
-  { id: 'lc-05', reference: 'CAM-B1-02', vmsStatus: 'offline', fps: 0, recording: false },
-  { id: 'lc-06', reference: 'CAM-R1-01', vmsStatus: 'online', fps: 25, recording: true },
-]
+// Pas de caméras mockées en dur : la liste est remplie en live depuis
+// le VMS connecté (API Milestone/Genetec/Dahua/Hikvision). Vide tant
+// qu'aucun provider n'est configuré pour le projet.
+const LIVE_CAMERAS: CameraLiveStatus[] = []
 
 export default function VmsIntegration() {
   const [providers, _setProviders] = useState(VMS_PROVIDERS)

@@ -267,7 +267,7 @@ export default function NoticePage() {
             <SectionHeader icon={ShoppingBag} color="#10b981">7. Vol.1 — Mix commercial</SectionHeader>
             <ul className="text-[13px] space-y-1.5 pl-5 list-disc">
               <li><strong>Classification</strong> des enseignes : 31 types auto-détectés par similarité lexicale.</li>
-              <li><strong>Prévision CA</strong> : Random Forest entraîné sur benchmarks UEMOA.</li>
+              <li><strong>Prévision CA</strong> : Gradient-boosted trees (GBDT) calibrés sur benchmarks UEMOA.</li>
               <li><strong>Multi-scénarios</strong> : 4 emphases (revenue / diversité / charter / flagship).</li>
               <li>Cliquez <strong>Adopter</strong> sur un scénario pour appliquer son mix au projet.</li>
               <li>Export : PDF récapitulatif + feuille Excel des revenus prévisionnels.</li>

@@ -1,3 +1,8 @@
+// ═══ OrganigrammeSection — Layout visuel SVG ═══
+// Note: les coordonnées x/y sont des constantes UI propres à cette
+// représentation d'organigramme. Les données métier (qui est
+// responsable de quoi) sont dans `useSecurityConfigStore.orgNodes`
+// et peuvent être personnalisées par projet via l'UI si besoin.
 
 interface OrgNode {
   id: string

@@ -1,95 +1,179 @@
-import { useState } from 'react'
+// ═══ VOL.3 — Plan d'action (dynamique) ═══
+// Branché sur experienceStore. Actions créées manuellement OU générées
+// automatiquement par les skills Proph3t (via syncFromProph3t).
 
-type Priority = 'haute' | 'moyenne'
-type Phase = 'Pré-ouverture' | 'Ouverture' | 'Post-ouverture' | 'Croisière'
+import { useMemo, useState } from 'react'
+import { Plus, Trash2, RotateCw, Sparkles } from 'lucide-react'
+import { useExperienceForProject } from '../hooks/useExperienceForProject'
+import { useExperienceStore, type ActionItem, type ActionStatus, type ActionPriority } from '../store/experienceStore'
 
-interface Action {
-  id: string
-  title: string
-  description: string
-  priorite: Priority
-  phase: Phase
-  date: string
-  responsable: string
+const statusLabels: Record<ActionStatus, { label: string; color: string }> = {
+  a_faire:   { label: 'À faire',   color: '#94a3b8' },
+  en_cours:  { label: 'En cours',  color: '#3b82f6' },
+  termine:   { label: 'Terminé',   color: '#10b981' },
+  bloque:    { label: 'Bloqué',    color: '#ef4444' },
 }
 
-const actions: Action[] = [
-  { id: 'A01', title: 'Charte signalétique Cosmos complète', description: 'Concevoir la charte graphique de toute la signalétique (intérieure + extérieure + parking + étages). Polices Inter/Cormorant. Couleurs navy/gold/crème.', priorite: 'haute', phase: 'Pré-ouverture', date: 'Juillet 2026', responsable: 'Marketing + Fernand (design)' },
-  { id: 'A02', title: 'Installation 12 panneaux + totem + bâche', description: 'Autorisation mairie Cocody, pose 12 panneaux Bd Latrille/Mitterrand, totem lumineux H4m, bâche façade 600m².', priorite: 'haute', phase: 'Pré-ouverture', date: 'Septembre 2026', responsable: 'Operations + Mairie Cocody' },
-  { id: 'A03', title: 'App Cosmos Club iOS + Android', description: 'Développement React Native : fidélité, parking GPS indoor, événements, commande food court, réservation restaurant. Intégration Orange Money + Wave.', priorite: 'haute', phase: 'Pré-ouverture', date: 'Août 2026', responsable: 'DSI + Agence mobile' },
-  { id: 'A04', title: 'Formation personnel accueil Cosmos', description: 'Former 25 personnes : hôtesses, sécurité, conciergerie, agents parking. Protocole accueil Cosmos, gestion conflits, service Platinum.', priorite: 'haute', phase: 'Pré-ouverture', date: 'Septembre 2026', responsable: 'RH + Cabinet formation' },
-  { id: 'A05', title: 'CRM HubSpot + automatisations', description: 'Configuration CRM, 15 workflows automatisés (bienvenue, upgrade, anniversaire, win-back, NPS), segments personas.', priorite: 'haute', phase: 'Pré-ouverture', date: 'Août 2026', responsable: 'CRM Manager + DSI' },
-  { id: 'A06', title: 'Système parking ANPR + capteurs IoT', description: 'Installation capteurs 450 places sous-sol + caméras ANPR + bornes paiement (CB, Orange Money, Wave). Test charge.', priorite: 'haute', phase: 'Pré-ouverture', date: 'Septembre 2026', responsable: 'DSI + Intégrateur parking' },
-  { id: 'A07', title: 'Activation Cosmos Club J0', description: 'Inscriptions physiques desk + tablettes, activation cartes membres, lancement avantages inauguraux (Gold offert 6 mois aux 1 000 premiers).', priorite: 'haute', phase: 'Ouverture', date: '16 Oct 2026', responsable: 'CRM + Accueil' },
-  { id: 'A08', title: 'Protocole accueil J0 Soft Opening', description: '2 500 invités : hôtesses renforcées ×6, signalétique événement, welcome packs, DJ, photographe, sécurité renforcée.', priorite: 'haute', phase: 'Ouverture', date: '16 Oct 2026', responsable: 'Operations + Events' },
-  { id: 'A09', title: 'Lancement food court + Le Cosmos', description: 'Ouverture simultanée 12 enseignes food court + terrasse rooftop + restaurant Le Cosmos. Test QR commande J-7.', priorite: 'haute', phase: 'Ouverture', date: '16 Oct 2026', responsable: 'F&B Manager + DSI' },
-  { id: 'A10', title: 'Enquête NPS complète M+1', description: 'NPS global + parking + food court + enseignes + accueil. Échantillon 500 visiteurs. Rapport + plan correctif.', priorite: 'moyenne', phase: 'Post-ouverture', date: 'Novembre 2026', responsable: 'Marketing + CRM' },
-  { id: 'A11', title: 'Optimisation signalétique & flux M+2', description: 'Analyser heatmaps WiFi, ajuster signalétique étages, ajouter points repos si zones mortes détectées.', priorite: 'moyenne', phase: 'Post-ouverture', date: 'Décembre 2026', responsable: 'Operations + DSI' },
-  { id: 'A12', title: 'Programme « Cosmos Vivant » mensuel', description: 'Lancer le calendrier événementiel : 1er vendredi concert, 2ème samedi atelier enfants, 3ème jeudi afterwork, dernier dimanche marché créateurs CI.', priorite: 'moyenne', phase: 'Post-ouverture', date: 'Décembre 2026', responsable: 'Events Manager' },
-  { id: 'A13', title: 'Bilan parcours client An 1', description: 'Rapport complet : NPS, KPIs, analytics flux, benchmark Playce/Cap Sud, recommandations, budget ajustements An 2.', priorite: 'haute', phase: 'Croisière', date: 'Octobre 2027', responsable: 'Direction + Marketing + CRM' },
-]
-
-const allPhases: Phase[] = ['Pré-ouverture', 'Ouverture', 'Post-ouverture', 'Croisière']
-const phaseColors: Record<Phase, string> = { 'Pré-ouverture': '#3b82f6', 'Ouverture': '#22c55e', 'Post-ouverture': '#f59e0b', 'Croisière': '#a77d4c' }
-const prioriteColors: Record<Priority, string> = { haute: '#ef4444', moyenne: '#f59e0b' }
+const priorityLabels: Record<ActionPriority, { label: string; bg: string; text: string }> = {
+  p0: { label: 'P0 · Critique', bg: 'rgba(239,68,68,0.12)',  text: '#ef4444' },
+  p1: { label: 'P1 · Important', bg: 'rgba(245,158,11,0.12)', text: '#f59e0b' },
+  p2: { label: 'P2 · Nice-to-have', bg: 'rgba(100,116,139,0.12)', text: '#94a3b8' },
+}
 
 export default function PlanAction() {
-  const [activePhase, setActivePhase] = useState<string>('Toutes')
+  const { projectId, projectName, verticalId, actions } = useExperienceForProject()
+  const addAction       = useExperienceStore(s => s.addAction)
+  const updateAction    = useExperienceStore(s => s.updateAction)
+  const deleteAction    = useExperienceStore(s => s.deleteAction)
+  const resetToTemplate = useExperienceStore(s => s.resetToTemplate)
 
-  const filtered = activePhase === 'Toutes' ? actions : actions.filter(a => a.phase === activePhase)
+  const [filter, setFilter] = useState<'all' | ActionStatus>('all')
+
+  const filtered = useMemo(() =>
+    filter === 'all' ? actions : actions.filter(a => a.status === filter),
+    [actions, filter],
+  )
+  const counts = useMemo(() => ({
+    all: actions.length,
+    a_faire:  actions.filter(a => a.status === 'a_faire').length,
+    en_cours: actions.filter(a => a.status === 'en_cours').length,
+    termine:  actions.filter(a => a.status === 'termine').length,
+    bloque:   actions.filter(a => a.status === 'bloque').length,
+  }), [actions])
+  const proph3tCount = actions.filter(a => a.origin === 'proph3t').length
+
+  const handleAdd = () => {
+    const title = prompt('Titre de l\'action :')
+    if (!title) return
+    const category = prompt('Catégorie (ex: Digital, Travaux, RH) :') ?? 'Général'
+    const responsable = prompt('Responsable :') ?? 'À définir'
+    const priority = (prompt('Priorité (p0 / p1 / p2) :') ?? 'p1') as ActionPriority
+    addAction(projectId, {
+      title, category, responsable,
+      impact: '',
+      priority, status: 'a_faire',
+      origin: 'manual',
+    })
+  }
+
+  const handleReset = () => {
+    if (confirm(`Recharger les actions template pour « ${verticalId} » ?`)) {
+      resetToTemplate(projectId, verticalId)
+    }
+  }
+
+  const cycleStatus = (action: ActionItem) => {
+    const order: ActionStatus[] = ['a_faire', 'en_cours', 'termine', 'bloque']
+    const next = order[(order.indexOf(action.status) + 1) % order.length]
+    updateAction(projectId, action.id, { status: next })
+  }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-6">
-      <div>
-        <p className="text-[11px] tracking-[0.2em] font-medium mb-2" style={{ color: '#06b6d4' }}>VOL. 3 — M5 PLAN D'ACTION</p>
-        <h1 className="text-[28px] font-light text-white mb-3">Plan d'action · 13 actions · 4 phases</h1>
-      </div>
+    <div className="px-8 py-8 max-w-7xl mx-auto space-y-6">
+      <header className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-light text-white mb-2">Plan d'action</h1>
+          <p className="text-gray-400 max-w-2xl text-[13px] leading-relaxed">
+            Liste priorisée des actions à mener sur <strong className="text-white font-medium">{projectName}</strong>.
+            Mix d'actions manuelles et d'actions générées par Proph3t via les skills d'analyse.
+          </p>
+          {proph3tCount > 0 && (
+            <p className="text-[11px] text-atlas-300 mt-2 flex items-center gap-1">
+              <Sparkles size={11} /> {proph3tCount} action{proph3tCount > 1 ? 's' : ''} générée{proph3tCount > 1 ? 's' : ''} par Proph3t
+            </p>
+          )}
+        </div>
+        <div className="flex gap-2 flex-shrink-0">
+          <button onClick={handleAdd}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-white/[0.1] bg-white/[0.04] text-[12px] text-gray-300 hover:text-white hover:border-atlas-500/40 transition-colors">
+            <Plus size={13} /> Ajouter
+          </button>
+          <button onClick={handleReset}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-white/[0.1] bg-white/[0.04] text-[12px] text-gray-400 hover:text-white transition-colors">
+            <RotateCw size={13} /> Reset template
+          </button>
+        </div>
+      </header>
 
       <div className="flex flex-wrap gap-2">
-        {['Toutes', ...allPhases].map((phase) => {
-          const count = phase === 'Toutes' ? actions.length : actions.filter(a => a.phase === phase).length
-          const color = phase === 'Toutes' ? '#34d399' : phaseColors[phase as Phase]
+        {(['all', 'a_faire', 'en_cours', 'termine', 'bloque'] as const).map(f => {
+          const label = f === 'all' ? 'Toutes' : statusLabels[f].label
+          const count = counts[f]
+          const active = filter === f
           return (
-            <button
-              key={phase}
-              onClick={() => setActivePhase(phase)}
+            <button key={f} onClick={() => setFilter(f)}
               className="text-[12px] font-medium px-3 py-1.5 rounded-full transition-all"
               style={{
-                background: activePhase === phase ? `${color}15` : 'transparent',
-                border: `1px solid ${activePhase === phase ? `${color}50` : '#1e2a3a'}`,
-                color: activePhase === phase ? color : '#4a5568',
-              }}
-            >
-              {phase} ({count})
+                background: active ? 'rgba(245,158,11,0.12)' : 'transparent',
+                border: `1px solid ${active ? 'rgba(245,158,11,0.4)' : '#1e2a3a'}`,
+                color: active ? '#f59e0b' : '#4a5568',
+              }}>
+              {label} ({count})
             </button>
           )
         })}
       </div>
 
-      <div className="space-y-3">
-        {filtered.map((action) => {
-          const pc = phaseColors[action.phase]
-          return (
-            <div key={action.id} className="rounded-[10px] p-5" style={{ background: '#141e2e', border: '1px solid #1e2a3a' }}>
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <span className="text-[11px] font-mono font-bold" style={{ color: '#34d399' }}>{action.id}</span>
-                  <h3 className="text-[14px] font-semibold text-white">{action.title}</h3>
+      {filtered.length === 0 ? (
+        <div className="text-center py-16 rounded-xl border border-dashed border-white/[0.08] text-gray-500 text-sm">
+          Aucune action pour ce filtre.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map(action => {
+            const st = statusLabels[action.status]
+            const prio = priorityLabels[action.priority]
+            const budget = action.capexFcfa
+              ? `${(action.capexFcfa / 1_000_000).toFixed(1)} M FCFA CAPEX`
+              : action.opexFcfaPerYear
+                ? `${(action.opexFcfaPerYear / 1_000_000).toFixed(1)} M FCFA/an OPEX`
+                : null
+            return (
+              <article key={action.id} className="group rounded-xl p-4 border border-white/[0.06] hover:border-white/[0.12] transition-colors"
+                style={{ background: '#15181d' }}>
+                <div className="flex items-start gap-4">
+                  <button onClick={() => cycleStatus(action)}
+                    className="flex-shrink-0 w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center transition-colors"
+                    style={{ borderColor: st.color, background: action.status === 'termine' ? st.color : 'transparent' }}
+                    title={`Cliquer pour changer (actuel : ${st.label})`}>
+                    {action.status === 'termine' && <span className="text-[10px] text-white">✓</span>}
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start gap-3 flex-wrap mb-1">
+                      <h3 className="text-[14px] font-medium text-white flex-1">{action.title}</h3>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full"
+                        style={{ background: prio.bg, color: prio.text }}>{prio.label}</span>
+                      {action.origin === 'proph3t' && (
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-atlas-500/10 text-atlas-400 border border-atlas-500/30 flex items-center gap-1">
+                          <Sparkles size={9} /> Proph3t
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 text-[11px] text-gray-500 flex-wrap">
+                      <span><strong className="text-gray-300">Catégorie :</strong> {action.category}</span>
+                      <span className="text-gray-700">·</span>
+                      <span><strong className="text-gray-300">Responsable :</strong> {action.responsable}</span>
+                      {action.deadline && (<><span className="text-gray-700">·</span>
+                        <span><strong className="text-gray-300">Deadline :</strong> {action.deadline}</span></>)}
+                      {budget && (<><span className="text-gray-700">·</span>
+                        <span className="text-atlas-300 font-mono">{budget}</span></>)}
+                    </div>
+                    {action.impact && (
+                      <p className="text-[12px] text-gray-400 mt-2 italic">Impact attendu : {action.impact}</p>
+                    )}
+                  </div>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 flex gap-1">
+                    <button onClick={() => { if (confirm('Supprimer cette action ?')) deleteAction(projectId, action.id) }}
+                      className="p-1.5 text-gray-500 hover:text-red-400" title="Supprimer">
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: `${prioriteColors[action.priorite]}12`, border: `1px solid ${prioriteColors[action.priorite]}30`, color: prioriteColors[action.priorite] }}>{action.priorite}</span>
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: `${pc}12`, border: `1px solid ${pc}30`, color: pc }}>{action.phase}</span>
-                </div>
-              </div>
-              <p className="text-[12px] leading-[1.7] mb-3" style={{ color: '#94a3b8' }}>{action.description}</p>
-              <div className="flex items-center gap-4 text-[11px]" style={{ color: '#4a5568' }}>
-                <span>📅 {action.date}</span>
-                <span>👤 {action.responsable}</span>
-              </div>
-            </div>
-          )
-        })}
-      </div>
+              </article>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

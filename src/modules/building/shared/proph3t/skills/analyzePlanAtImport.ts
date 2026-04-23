@@ -1,4 +1,4 @@
-// ═══ SKILL Phase A — Analyse du plan à l'import (DBSCAN + Random-Forest-like + IsolationForest) ═══
+// ═══ SKILL Phase A — Analyse du plan à l'import (DBSCAN + IQR + règles géométriques) ═══
 // Combine algorithmes déterministes (DBSCAN re-clustering, anomalie géo, scoring qualité)
 // et un appel LLM optionnel (via Ollama) pour générer le narratif et les actions cliquables.
 
@@ -39,7 +39,7 @@ export interface AnalyzePlanPayload {
   }>
 }
 
-// ─── Heuristiques détection anomalies (proxy IsolationForest) ───
+// ─── Heuristiques détection outliers géométriques (IQR + aspect ratio) ───
 
 function detectGeometricAnomalies(plan: ParsedPlan): AnalyzePlanPayload['anomalies'] {
   const anomalies: AnalyzePlanPayload['anomalies'] = []
@@ -154,7 +154,7 @@ export async function analyzePlanAtImport(input: AnalyzePlanInput): Promise<Prop
   const avgArea = areas.reduce((s, v) => s + v, 0) / Math.max(1, areas.length)
   const medianArea = areas[Math.floor(areas.length / 2)] ?? 0
 
-  // Anomalies (proxy IsolationForest)
+  // Anomalies géométriques (IQR outliers)
   const anomalies = detectGeometricAnomalies(plan)
   // Calques suspects (proxy classifier exclusion)
   const suspiciousLayers = detectSuspiciousLayers(plan)
@@ -210,7 +210,7 @@ export async function analyzePlanAtImport(input: AnalyzePlanInput): Promise<Prop
       title: `${anomalies.length} anomalie(s) géométrique(s)`,
       description: 'Polygones probablement mal détectés ou surfaces aberrantes.',
       affectedIds: anomalies.map(a => a.spaceId),
-      sources: [citeAlgo('iqr-outlier', 'Détection IQR + ratio aspect (proxy IsolationForest)')],
+      sources: [citeAlgo('iqr-outlier', 'Détection IQR + ratio aspect')],
       confidence: confidence(0.7, 'Méthode statistique IQR'),
     })
   }

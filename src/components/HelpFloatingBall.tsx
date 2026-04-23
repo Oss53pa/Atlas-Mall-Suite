@@ -358,7 +358,7 @@ export function HelpFloatingBall() {
                   </h3>
                   <ul className="text-[11px] text-slate-300 m-0 pl-5 list-disc space-y-1">
                     <li><strong>Classification</strong> : vérifiez les types d'enseignes auto-détectés (31 types).</li>
-                    <li><strong>Prévision CA</strong> : Random Forest entraîné sur benchmarks UEMOA.</li>
+                    <li><strong>Prévision CA</strong> : Gradient-boosted trees (GBDT) calibrés sur benchmarks UEMOA.</li>
                     <li><strong>Multi-scénarios</strong> : 4 emphases (revenue / diversité / charter / flagship).</li>
                     <li>Cliquez <strong>Adopter</strong> sur un scénario pour appliquer son mix.</li>
                   </ul>

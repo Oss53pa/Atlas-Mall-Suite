@@ -1,28 +1,16 @@
 import { Sparkles } from 'lucide-react'
-
-type EquipStatus = 'Opérationnel' | 'En cours' | 'Planifié'
-
-interface Equipment {
-  name: string
-  description: string
-  status: EquipStatus
-}
-
-const equipments: Equipment[] = [
-  { name: 'Caméras PTZ haute définition sur mâts', description: 'Surveillance parking et voies d\'accès — rotation 360° et zoom ×30', status: 'Opérationnel' },
-  { name: 'Détection périmétrique par analyse vidéo IA', description: 'Détection intrusion automatique sur clôtures et limites de propriété', status: 'En cours' },
-  { name: 'Éclairage dissuasif automatique', description: 'Activation sur détection de mouvement — zones sombres du périmètre', status: 'Opérationnel' },
-  { name: 'Barrières levantes contrôlées', description: 'Entrées véhicules avec lecture de badge ou ticket — ouverture automatique Platinum', status: 'Opérationnel' },
-  { name: 'Rondes véhiculées — circuit GPS tracé', description: 'Circuit de ronde nocturne géolocalisé — rapport automatique via tablette', status: 'Planifié' },
-]
+import { useSecurityConfigForProject } from '../hooks/useSecurityConfigForProject'
+import type { EquipStatus } from '../store/securityConfigStore'
 
 const statusColors: Record<EquipStatus, { bg: string; border: string; text: string }> = {
-  'Opérationnel': { bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.25)', text: '#22c55e' },
-  'En cours': { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.25)', text: '#f59e0b' },
-  'Planifié': { bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.25)', text: '#64748b' },
+  'Opérationnel': { bg: 'rgba(34,197,94,0.08)',  border: 'rgba(34,197,94,0.25)',  text: '#22c55e' },
+  'En cours':     { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.25)', text: '#f59e0b' },
+  'Planifié':     { bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.25)', text: '#64748b' },
+  'Hors service': { bg: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.25)',  text: '#ef4444' },
 }
 
 export default function PerimetreSection() {
+  const { perimeterEquipments: equipments } = useSecurityConfigForProject()
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-8">
       <div>

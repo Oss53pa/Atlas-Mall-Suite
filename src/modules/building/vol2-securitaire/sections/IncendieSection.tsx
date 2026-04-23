@@ -1,43 +1,6 @@
 import { useState } from 'react'
 import { Play, CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
-
-const equipments = [
-  { name: 'SSI catégorie A — détection automatique intégrale', description: 'Détecteurs multi-capteurs tous locaux — report centralisé CMSI' },
-  { name: 'Désenfumage mécanique', description: 'Mall, parking, food court — ventilateurs extracteurs + amenées d\'air' },
-  { name: 'Sprinklers zones à risque + RIA tous les 30m', description: 'Réseau sprinkler sous-sol et food court — RIA DN 25/30 galeries' },
-  { name: 'Issues de secours balisées (BAES + blocs autonomes)', description: 'Balisage réglementaire NF C 71-800 — autonomie 1h minimum' },
-  { name: 'Exercices d\'évacuation trimestriels', description: 'Simulation avec chronométrage — rapport conformité NF S 61-938' },
-]
-
-interface Scenario { id: string; name: string; description: string }
-const scenarios: Scenario[] = [
-  { id: 'food-court', name: 'Incendie Zone Food Court', description: 'Départ de feu cuisine food court R+2 — évacuation partielle R+2 puis totale' },
-  { id: 'total', name: 'Évacuation totale', description: 'Alarme générale — évacuation simultanée des 3 niveaux' },
-  { id: 'confinement', name: 'Confinement', description: 'Menace extérieure — confinement zones intérieures, fermeture accès' },
-]
-
-interface Exercise { date: string; type: string; result: string; status: 'ok' | 'partiel' | 'echec' }
-const exercises: Exercise[] = [
-  { date: '15 Jan 2026', type: 'Évacuation totale', result: '2 min 45s — conforme', status: 'ok' },
-  { date: '12 Avr 2026', type: 'Incendie food court', result: 'Planifié', status: 'partiel' },
-  { date: '10 Juil 2026', type: 'Confinement', result: 'Planifié', status: 'partiel' },
-  { date: '08 Oct 2026', type: 'Évacuation totale (pré-ouverture)', result: 'Planifié', status: 'partiel' },
-]
-
-type Conformite = 'conforme' | 'non_conforme' | 'a_verifier'
-interface ErpCheck { item: string; status: Conformite }
-const erpChecks: ErpCheck[] = [
-  { item: 'SSI catégorie A installé et opérationnel', status: 'conforme' },
-  { item: 'Désenfumage mécanique conforme IT 246', status: 'conforme' },
-  { item: 'Issues de secours (2 par compartiment minimum)', status: 'conforme' },
-  { item: 'BAES conformes NF C 71-800', status: 'conforme' },
-  { item: 'Sprinklers conformes NF EN 12845', status: 'conforme' },
-  { item: 'Exercice évacuation réalisé (dernier < 6 mois)', status: 'conforme' },
-  { item: 'Plan d\'évacuation affiché chaque niveau', status: 'a_verifier' },
-  { item: 'Formation SSIAP agents de sécurité à jour', status: 'conforme' },
-  { item: 'Commission de sécurité — avis favorable', status: 'a_verifier' },
-  { item: 'Registre de sécurité tenu à jour', status: 'conforme' },
-]
+import { useSecurityConfigForProject } from '../hooks/useSecurityConfigForProject'
 
 const conformiteIcons = {
   conforme: { icon: CheckCircle, color: '#22c55e', label: 'Conforme' },
@@ -47,6 +10,7 @@ const conformiteIcons = {
 
 export default function IncendieSection() {
   const [selectedScenario, setSelectedScenario] = useState<string | null>(null)
+  const { fireEquipments: equipments, fireScenarios: scenarios, fireExercises: exercises, erpChecks } = useSecurityConfigForProject()
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-8">
