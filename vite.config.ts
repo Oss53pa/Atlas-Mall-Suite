@@ -38,11 +38,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      // Alias @core → ancien dossier cosmos-angre (historiquement nommé d'après le projet pilote).
+      // Alias @core → dossier building/ (multi-verticale).
       // Le dossier contient en réalité le code générique multi-projets (4 volumes + workspace).
-      // À terme, renommer physiquement src/modules/cosmos-angre/ → src/modules/core/
+      // Renommé le 2026-04-23 (pivot Atlas BIM).
       // puis faire pointer cet alias vers le nouveau chemin. Voir CONTRIBUTING.md.
-      '@core': path.resolve(__dirname, './src/modules/cosmos-angre'),
+      '@core': path.resolve(__dirname, './src/modules/building'),
     },
     dedupe: ['react', 'react-dom', 'zustand'],
   },
@@ -91,13 +91,13 @@ export default defineConfig({
           ) {
             return 'react-vendor'
           }
-          // ─── Shared cosmos-angre code ───
+          // ─── Shared building code ───
           // Must be in its own chunk (or merged with react-vendor) so it
           // evaluates before any vol{1,2,3} lazy chunk that imports from it.
           // Without this, cross-chunk TDZ hits constants like
           // ATLAS_STUDIO_GROUP_META, CANVAS_SCALE, etc.
-          if (id.includes('modules/cosmos-angre/shared/')) {
-            return 'cosmos-shared'
+          if (id.includes('modules/building/shared/')) {
+            return 'building-shared'
           }
           // ─── Volume code splitting ───
           if (id.includes('vol1-commercial'))    return 'vol1'
@@ -171,7 +171,7 @@ export default defineConfig({
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     coverage: {
       provider: 'v8',
-      include: ['src/modules/cosmos-angre/shared/**/*.ts'],
+      include: ['src/modules/building/shared/**/*.ts'],
       thresholds: {
         functions: 65,
         lines: 60,
