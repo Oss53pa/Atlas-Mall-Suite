@@ -57,6 +57,8 @@ import { PlanCanvasV2 } from '../shared/components/PlanCanvasV2'
 import { MallMap2D } from '../shared/components/MallMap2D'
 import { PlanLayerSelector } from '../shared/components/PlanLayerSelector'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
+import { useEditableSpaceStore } from '../shared/stores/editableSpaceStore'
+import { applyEditsToPlan } from '../shared/planReader/applyEditsToPlan'
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
 import { savePlanImageFromUrl, loadAllPlanImages } from '../shared/stores/planImageCache'
 const Vol3DModuleEmbed = lazy(() => import('../vol-3d/Vol3DModule'))
@@ -262,6 +264,19 @@ export default function Vol3Module() {
 
   // Plan courant pour le panneau PROPH3T (abonnement réactif)
   const parsedPlan = usePlanEngineStore(s => s.parsedPlan)
+  // Espaces modélisés par l'utilisateur dans Atlas Studio
+  const editableSpaces = useEditableSpaceStore(s => s.spaces)
+
+  /** Plan affiché au rendu 2D : uniquement les EditableSpace de l'utilisateur.
+   *  Le DXF brut sert uniquement de référence dans l'éditeur Atlas Studio —
+   *  il n'est jamais affiché dans les volumes. Si aucune modélisation faite,
+   *  on retourne null pour afficher un placeholder. */
+  const modeledPlan = useMemo(() => {
+    if (!parsedPlan) return null
+    if (editableSpaces.length === 0) return null
+    // Force une fusion fraîche à chaque changement des spaces édités
+    return applyEditsToPlan(parsedPlan, editableSpaces)
+  }, [parsedPlan, editableSpaces])
 
   // Synthétise des floors depuis parsedPlan si vol3Store.floors est vide
   const effectiveFloors = useMemo(() => {
@@ -969,11 +984,35 @@ export default function Vol3Module() {
             />
           )}
 
-          {/* ═══ VUE 2D MODÉLISÉE (propre, labels tenants, couleurs cat.) ═══
-              Remplace l'affichage DXF brut par une carte "mall directory".
+          {/* ═══ VUE 2D MODÉLISÉE ═══
+              N'affiche QUE les EditableSpace du user (pas le DXF brut).
               PlanCanvasV2 reste utilisé pour 3D / 3D+ (extrusion, XR). */}
           {parsedPlan && viewMode === '2d' ? (
-            <MallMap2D plan={parsedPlan} theme="light" />
+            modeledPlan ? (
+              <MallMap2D plan={modeledPlan} theme="light" smoothEdges={true} />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center p-8" style={{ background: '#f5f3ef', color: '#334155' }}>
+                <div className="max-w-md text-center space-y-4">
+                  <div className="text-6xl">📐</div>
+                  <h3 className="text-xl font-light" style={{ color: '#0f172a' }}>
+                    Aucun espace modélisé
+                  </h3>
+                  <p className="text-sm leading-relaxed" style={{ color: '#64748b' }}>
+                    Le plan interactif affiche uniquement les espaces que vous avez
+                    <strong style={{ color: '#0f172a' }}> dessinés et enregistrés </strong>
+                    dans Atlas Studio — pas le DXF brut.
+                  </p>
+                  <p className="text-[13px]" style={{ color: '#64748b' }}>
+                    Ouvrez <strong style={{ color: '#0f172a' }}>Atlas Studio → Éditeur</strong>,
+                    tracez vos espaces (rectangles, polygones, courbes), puis validez le modèle.
+                  </p>
+                  <div className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-[11px] font-mono"
+                    style={{ background: 'rgba(201,160,104,0.12)', color: '#7e5e3c', border: '1px solid rgba(201,160,104,0.3)' }}>
+                    DXF importé : {parsedPlan.spaces.length} polygones bruts · 0 dessiné
+                  </div>
+                </div>
+              </div>
+            )
           ) : parsedPlan ? (
             (() => {
               const plan = parsedPlan

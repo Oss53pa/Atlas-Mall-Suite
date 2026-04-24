@@ -215,6 +215,30 @@ function ServiceIcon({ type, x, y, size = 12 }: { type: string; x: number; y: nu
   )
 }
 
+// ─── Lissage Chaikin (arrondir les angles) ───────────────
+
+/** Algorithme de Chaikin : arrondit chaque angle du polygone en deux
+ *  nouveaux sommets à ~25 % et ~75 % de chaque arête. Appliqué 2 passes,
+ *  transforme un polygone rectiligne en forme "smoothed".
+ *  Ne s'applique QUE si le polygone a > 6 sommets ou si explicitement
+ *  demandé — sinon on garde les rectangles purs tels quels. */
+function chaikinSmooth(poly: Array<[number, number]>, iterations = 1): Array<[number, number]> {
+  let pts = poly
+  for (let it = 0; it < iterations; it++) {
+    const next: Array<[number, number]> = []
+    for (let i = 0; i < pts.length; i++) {
+      const [x1, y1] = pts[i]
+      const [x2, y2] = pts[(i + 1) % pts.length]
+      // Q = 75 % de P1 + 25 % de P2
+      next.push([0.75 * x1 + 0.25 * x2, 0.75 * y1 + 0.25 * y2])
+      // R = 25 % de P1 + 75 % de P2
+      next.push([0.25 * x1 + 0.75 * x2, 0.25 * y1 + 0.75 * y2])
+    }
+    pts = next
+  }
+  return pts
+}
+
 // ─── Composant principal ──────────────────────────────────
 
 export interface MallMap2DProps {
@@ -225,6 +249,9 @@ export interface MallMap2DProps {
   className?: string
   /** Theme clair (défaut) ou sombre. */
   theme?: 'light' | 'dark'
+  /** Applique un lissage Chaikin aux polygones à > 6 sommets.
+   *  N'altère pas les rectangles (conservés tels quels). Défaut true. */
+  smoothEdges?: boolean
 }
 
 export function MallMap2D({
@@ -233,6 +260,7 @@ export function MallMap2D({
   onSpaceClick,
   className = '',
   theme = 'light',
+  smoothEdges = true,
 }: MallMap2DProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
@@ -400,7 +428,12 @@ export function MallMap2D({
         {/* Espaces — rendu architectural (aplat + contour sombre épais) */}
         {visibleSpaces.map(s => {
           const color = s.color && s.color !== '' ? s.color : categoryColor(String(s.type))
-          const d = s.polygon.map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(p[0])} ${toY(p[1])}`).join(' ') + ' Z'
+          // Lissage Chaikin pour les formes complexes (> 6 sommets) ;
+          // les rectangles restent purs. Améliore le rendu des courbes libres.
+          const pts = smoothEdges && s.polygon.length > 6
+            ? chaikinSmooth(s.polygon, 2)
+            : s.polygon
+          const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(p[0])} ${toY(p[1])}`).join(' ') + ' Z'
           const meta = (s.metadata ?? {}) as { tenant?: string; localNumber?: string; vacant?: boolean }
           const cx = toX(s.bounds.centerX)
           const cy = toY(s.bounds.centerY)
