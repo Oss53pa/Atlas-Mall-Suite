@@ -25,6 +25,9 @@ const EditPlanFloatingButton = React.lazy(() =>
   import('./shared/components/EditPlanFloatingButton').then(m => ({ default: m.EditPlanFloatingButton }))
 )
 const AtlasStudioModule = React.lazy(() => import('./shared/components/AtlasStudioModule'))
+const GeometryQualityDashboard = React.lazy(() =>
+  import('./shared/components/GeometryQualityDashboard').then(m => ({ default: m.GeometryQualityDashboard }))
+)
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-surface-0 flex items-center justify-center">
@@ -80,6 +83,8 @@ export default function CosmosAngre() {
           {/* Vue 3D avancee / Editeur de scene */}
           <Route path="3d/*" element={<Vol3DModule />} />
           <Route path="scene-editor/*" element={<ErrorBoundary fallbackTitle="Erreur Editeur de Scene"><SceneEditor /></ErrorBoundary>} />
+          {/* Admin — qualité géométrique des polygones de l'éditeur (dashboard + cleanup dry-run). */}
+          <Route path="admin/geometry" element={<ErrorBoundary fallbackTitle="Erreur dashboard qualité"><div className="min-h-screen bg-surface-0"><GeometryQualityDashboard /></div></ErrorBoundary>} />
           <Route path="*" element={<Navigate to={`/projects/${projectId ?? 'cosmos-angre'}`} replace />} />
         </Routes>
         {/* Modal PROPH3T montée UNE SEULE FOIS au niveau projet (pas dans chaque volume) */}
