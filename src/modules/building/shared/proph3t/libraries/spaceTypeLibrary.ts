@@ -87,6 +87,14 @@ export type SpaceTypeKey =
   | 'parking_place_standard' | 'parking_place_pmr' | 'parking_place_ve'
   | 'parking_place_moto' | 'parking_place_livraison' | 'parking_place_famille'
   | 'parking_voie_circulation' | 'parking_fleche_sens'
+  | 'voie_principale' | 'voie_secondaire' | 'voie_pompier' | 'voie_livraison'
+  | 'rond_point' | 'carrefour' | 'passage_pieton'
+  // ── Routes publiques hors-site (environnement urbain)
+  | 'route_autoroute' | 'route_boulevard' | 'route_avenue'
+  | 'route_rue_principale' | 'route_rue_secondaire' | 'route_impasse'
+  | 'route_rond_point_public' | 'route_carrefour_public'
+  | 'route_pont' | 'route_tunnel'
+  | 'route_trottoir_public'
   | 'arret_taxi' | 'arret_bus_tram' | 'station_velo_libre_service'
   // ── Paysage & extérieur
   | 'exterieur_parvis' | 'exterieur_voie_pieton' | 'exterieur_voie_vehicule'
@@ -612,6 +620,26 @@ export const SPACE_TYPE_META: Record<SpaceTypeKey, SpaceTypeMeta> = {
   parking_place_famille:   { label: 'Place famille / enceinte',category: 'parking-voirie', icon: '👨‍👩‍👧', color: '#f472b6', expectedSqm: { min: 12, max: 18 }, description: 'Place élargie familles/femmes enceintes, proche entrée.' },
   // ── Voirie parking ──
   parking_voie_circulation: { label: 'Voie circulation parking', category: 'parking-voirie', icon: '═', color: '#94a3b8', expectedSqm: { min: 15, max: 2000 }, description: 'Allée de roulage interne parking — largeur réglementaire 5-6 m.' },
+  voie_principale:          { label: 'Voie principale',            category: 'parking-voirie', icon: '🛣️', color: '#4b5563', expectedSqm: { min: 80, max: 30000 }, description: 'Axe routier principal desservant le bâtiment — accès véhicules majeur.' },
+  voie_secondaire:          { label: 'Voie secondaire',            category: 'parking-voirie', icon: '═', color: '#64748b', expectedSqm: { min: 30, max: 10000 }, description: 'Voie de desserte secondaire, contre-allée, accès service.' },
+  voie_pompier:             { label: 'Voie pompiers',              category: 'parking-voirie', icon: '🚒', color: '#ef4444', expectedSqm: { min: 50, max: 8000 }, description: 'Voie d\'intervention pompiers — largeur min 4 m + dégagement 7 m.' },
+  voie_livraison:           { label: 'Voie livraison',              category: 'parking-voirie', icon: '🚚', color: '#f59e0b', expectedSqm: { min: 40, max: 5000 }, description: 'Voie dédiée aux livraisons / camions — quais de déchargement.' },
+  rond_point:               { label: 'Rond-point / Giratoire',     category: 'parking-voirie', icon: '🔄', color: '#6b7280', expectedSqm: { min: 80, max: 2500 }, description: 'Rond-point d\'accès ou giratoire de retournement.' },
+  carrefour:                { label: 'Carrefour',                  category: 'parking-voirie', icon: '✚',  color: '#6b7280', expectedSqm: { min: 40, max: 1500 }, description: 'Intersection de voies.' },
+  passage_pieton:           { label: 'Passage piéton',             category: 'parking-voirie', icon: '🚸', color: '#fbbf24', expectedSqm: { min: 4,  max: 200 }, description: 'Traversée piétonne sécurisée, zébras.' },
+
+  // ── Routes publiques (hors site — environnement urbain autour du bâtiment) ──
+  route_autoroute:          { label: 'Autoroute',                   category: 'paysage-exterieur', icon: '🛣️', color: '#334155', expectedSqm: { min: 500, max: 500000 }, description: 'Autoroute publique — circulation rapide, multiples voies.' },
+  route_boulevard:          { label: 'Boulevard',                   category: 'paysage-exterieur', icon: '🛣️', color: '#475569', expectedSqm: { min: 200, max: 50000 }, description: 'Boulevard public — voie principale urbaine à grande circulation.' },
+  route_avenue:             { label: 'Avenue',                      category: 'paysage-exterieur', icon: '🛣️', color: '#4b5563', expectedSqm: { min: 150, max: 30000 }, description: 'Avenue publique — voie urbaine structurante.' },
+  route_rue_principale:     { label: 'Rue principale',              category: 'paysage-exterieur', icon: '═',  color: '#57606a', expectedSqm: { min: 80,  max: 20000 }, description: 'Rue publique principale bordant ou traversant le site.' },
+  route_rue_secondaire:     { label: 'Rue secondaire',              category: 'paysage-exterieur', icon: '═',  color: '#64748b', expectedSqm: { min: 40,  max: 10000 }, description: 'Rue publique secondaire, desserte de quartier.' },
+  route_impasse:            { label: 'Impasse / Voie sans issue',   category: 'paysage-exterieur', icon: '⊣',  color: '#64748b', expectedSqm: { min: 20,  max: 3000 }, description: 'Impasse publique ou voie en cul-de-sac.' },
+  route_rond_point_public:  { label: 'Rond-point public',           category: 'paysage-exterieur', icon: '🔄', color: '#475569', expectedSqm: { min: 100, max: 5000 }, description: 'Rond-point public hors-site.' },
+  route_carrefour_public:   { label: 'Carrefour public',            category: 'paysage-exterieur', icon: '✚',  color: '#475569', expectedSqm: { min: 50,  max: 2500 }, description: 'Intersection publique (feux / stop).' },
+  route_pont:               { label: 'Pont',                        category: 'paysage-exterieur', icon: '🌉', color: '#6b7280', expectedSqm: { min: 50,  max: 10000 }, description: 'Pont routier public.' },
+  route_tunnel:             { label: 'Tunnel',                      category: 'paysage-exterieur', icon: '⬛', color: '#374151', expectedSqm: { min: 50,  max: 10000 }, description: 'Tunnel routier public.' },
+  route_trottoir_public:    { label: 'Trottoir public',             category: 'paysage-exterieur', icon: '🚶', color: '#a3a3a3', expectedSqm: { min: 10,  max: 5000 }, description: 'Trottoir public bordant les routes — hors du site.' },
   parking_fleche_sens:      { label: 'Flèche sens parking',      category: 'parking-voirie', icon: '↗', color: '#f59e0b', expectedSqm: { min: 0.5, max: 5 }, description: 'Marquage sol flèche directionnelle (sens circulation parking).' },
   // ── Transport extérieur ──
   arret_taxi: {
@@ -808,10 +836,17 @@ export const SPACE_TYPES_BY_CATEGORY: Record<SpaceTypeCategory, SpaceTypeKey[]> 
     'parking_place_moto', 'parking_place_livraison', 'parking_place_famille',
     // Voirie
     'parking_voie_circulation', 'parking_fleche_sens',
+    'voie_principale', 'voie_secondaire', 'voie_pompier', 'voie_livraison',
+    'rond_point', 'carrefour', 'passage_pieton',
     // Transport
     'arret_taxi', 'arret_bus_tram', 'station_velo_libre_service',
   ],
   'paysage-exterieur': [
+    // Routes publiques (hors-site)
+    'route_autoroute', 'route_boulevard', 'route_avenue',
+    'route_rue_principale', 'route_rue_secondaire', 'route_impasse',
+    'route_rond_point_public', 'route_carrefour_public',
+    'route_pont', 'route_tunnel', 'route_trottoir_public',
     // Espaces bâtis extérieurs
     'exterieur_parvis', 'exterieur_voie_pieton', 'exterieur_voie_vehicule',
     'exterieur_place_forum', 'exterieur_giratoire', 'exterieur_arret_transport',
@@ -954,6 +989,25 @@ const TYPE_PATTERNS: Array<{ key: SpaceTypeKey; pattern: RegExp }> = [
   { key: 'parking_place_famille',   pattern: /place[_\s]?(?:famille|enceinte|family|mother)/i },
   { key: 'parking_place_standard',  pattern: /place[_\s]?(?:parking|voit|auto|stationnement|stand)|parking[_\s]?stall/i },
   { key: 'parking_voie_circulation',pattern: /voie[_\s]?(?:parking|circul|parc)|allee[_\s]?parking/i },
+  { key: 'voie_principale',         pattern: /voie[_\s]?principale|axe[_\s]?principal|grand[_\s]?axe|main[_\s]?road/i },
+  { key: 'voie_secondaire',         pattern: /voie[_\s]?secondaire|contre[_\s]?allee|desserte[_\s]?secondaire/i },
+  { key: 'voie_pompier',            pattern: /voie[_\s]?pompier|fire[_\s]?lane|intervention[_\s]?pompier/i },
+  { key: 'voie_livraison',          pattern: /voie[_\s]?livraison|voie[_\s]?logistique|delivery[_\s]?lane/i },
+  { key: 'rond_point',              pattern: /rond[_\s-]?point|giratoire|roundabout/i },
+  { key: 'carrefour',               pattern: /carrefour|intersection|crossroad/i },
+  { key: 'passage_pieton',          pattern: /passage[_\s]?pieton|crosswalk|zebra/i },
+  // Routes publiques
+  { key: 'route_autoroute',         pattern: /autoroute|highway|motorway|^A\d+\b/i },
+  { key: 'route_boulevard',         pattern: /boulevard|\bbd\b|\bblvd\b/i },
+  { key: 'route_avenue',            pattern: /avenue|\bav\b|\bave\b/i },
+  { key: 'route_rue_principale',    pattern: /rue[_\s]?principale|main[_\s]?street|grande[_\s]?rue/i },
+  { key: 'route_rue_secondaire',    pattern: /^rue\b|\bstreet\b|ruelle/i },
+  { key: 'route_impasse',           pattern: /impasse|cul[_\s-]?de[_\s-]?sac|dead[_\s]?end/i },
+  { key: 'route_rond_point_public', pattern: /rond[_\s-]?point[_\s]?public|giratoire[_\s]?public/i },
+  { key: 'route_carrefour_public',  pattern: /carrefour[_\s]?public/i },
+  { key: 'route_pont',              pattern: /\bpont\b|bridge/i },
+  { key: 'route_tunnel',            pattern: /tunnel/i },
+  { key: 'route_trottoir_public',   pattern: /trottoir[_\s]?public|sidewalk/i },
   { key: 'parking_fleche_sens',     pattern: /fleche[_\s]?(?:parking|sens)|arrow[_\s]?park/i },
   { key: 'parking_velo',            pattern: /parking[_\s]?v[eé]lo|velo[_\s]?park|arceau/i },
   { key: 'parking_moto',            pattern: /parking[_\s]?(?:moto|2[_\s]?roues|scoot)/i },

@@ -23,39 +23,43 @@ import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
  *  Les circulations (mail, galerie, couloir) sont en BEIGE CRÈME
  *  clair — surtout pas rose (qui est réservé aux commerces). */
 const CATEGORY_COLOR: Record<string, string> = {
-  // Commerces & galerie
-  commerce:          '#f9a8d4',  // rose pastel (mode)
-  mode:              '#f9a8d4',
-  bijouterie:        '#fbcfe8',
-  beaute:            '#fda4af',
-  tech:              '#a5b4fc',
-  grande_surface:    '#93c5fd',
-  big_box:           '#60a5fa',
-  epicerie:          '#fde68a',
-  // Restauration
-  restaurant:        '#fdba74',  // orange pêche
-  restauration:      '#fdba74',
-  food:              '#fdba74',
-  cafe:              '#fcd34d',
-  bar:               '#fca5a5',
-  cuisine:           '#fca5a5',
-  // Loisirs
-  loisirs:           '#c4b5fd',  // violet pastel
-  cinema:            '#a78bfa',
-  fitness:           '#f9a8d4',
-  enfants:           '#fef3c7',
-  aire_jeu:          '#fef3c7',
-  // Santé / Services
-  sante:             '#86efac',  // vert pastel
-  pharmacie:         '#86efac',
-  medical:           '#86efac',
-  services:          '#99f6e4',  // cyan
-  service:           '#99f6e4',
-  banque:            '#99f6e4',
-  atm:               '#99f6e4',
-  bank:              '#99f6e4',
-  admin:             '#e0e7ff',
-  reception:         '#fef3c7',
+  // ─── Palette "planimetria" muted — inspirée plans architecte chinois/européens ───
+  // Tous les tons sont desaturés (saturation ~35-45%) pour ressembler à un
+  // plan d'architecte imprimé, pas à un écran saturé.
+
+  // Commerces & galerie — roses/saumons/coraux poudrés
+  commerce:          '#e8b4bd',  // rose poudré
+  mode:              '#e8b4bd',
+  bijouterie:        '#ddb0b8',  // rose salé plus clair
+  beaute:            '#d9a0a9',  // corail pastel
+  tech:              '#b3b8cc',  // bleu-gris doux
+  grande_surface:    '#a8bcc8',  // bleu ardoise doux
+  big_box:           '#95a9bb',  // bleu ardoise foncé
+  epicerie:          '#e0c984',  // moutarde pastel
+  // Restauration — pêche, abricot, butter
+  restaurant:        '#e8a87c',  // pêche
+  restauration:      '#e8a87c',
+  food:              '#e8a87c',
+  cafe:              '#e3b070',  // butter warm
+  bar:               '#cc7b6e',  // terracotta clair
+  cuisine:           '#cc7b6e',
+  // Loisirs — lavande, violet doux
+  loisirs:           '#b8a3c9',  // lavande
+  cinema:            '#a895b8',  // violet plus profond
+  fitness:           '#d9a0a9',
+  enfants:           '#e6d9a2',
+  aire_jeu:          '#e6d9a2',
+  // Santé / Services — vert sage, bleu-vert doux
+  sante:             '#a8c29a',  // sage
+  pharmacie:         '#a8c29a',
+  medical:           '#a8c29a',
+  services:          '#9cbfbc',  // vert d'eau
+  service:           '#9cbfbc',
+  banque:            '#9cbfbc',
+  atm:               '#9cbfbc',
+  bank:              '#9cbfbc',
+  admin:             '#c7ccd9',  // bleu doux
+  reception:         '#e6d9a2',
   // Circulation & extérieur — BEIGE CRÈME (pas rose !)
   circulation:       '#f3ecd8',  // crème chaud — couloirs intérieurs
   mail_central:      '#e8d9b8',  // beige sable — mail principal
@@ -69,8 +73,27 @@ const CATEGORY_COLOR: Record<string, string> = {
   ascenseur:         '#cbd5e1',
   parking:           '#6b7280',  // gris asphalte (pas beige — voitures)
   voie_circulation:  '#6b7280',
+  voie_principale:   '#4b5563',  // asphalte foncé — axe majeur
+  voie_secondaire:   '#64748b',  // asphalte moyen — desserte
+  voie_pompier:      '#ef4444',  // rouge — voie pompier
+  voie_livraison:    '#f59e0b',  // orange — voie livraison
+  rond_point:        '#6b7280',
+  carrefour:         '#6b7280',
+  passage_pieton:    '#fbbf24',  // zébras jaunes
   voirie:            '#6b7280',
   asphalte:          '#6b7280',
+  // Routes publiques hors-site — asphalte foncé (environnement urbain)
+  route_autoroute:       '#334155',
+  route_boulevard:       '#475569',
+  route_avenue:          '#4b5563',
+  route_rue_principale:  '#57606a',
+  route_rue_secondaire:  '#64748b',
+  route_impasse:         '#64748b',
+  route_rond_point_public: '#475569',
+  route_carrefour_public: '#475569',
+  route_pont:            '#6b7280',
+  route_tunnel:          '#374151',
+  route_trottoir_public: '#a3a3a3',
   terrasse:          '#d9c9a5',
   terre_plein:       '#7fa874',
   parvis:            '#e5dcc2',
@@ -84,38 +107,38 @@ const CATEGORY_COLOR: Record<string, string> = {
   porte_interieure:  '#e7e5e4',
   porte_service:     '#d6d3d1',
   sortie_secours:    '#fca5a5',
-  // Sanitaires / technique / stockage
-  wc:                '#a7f3d0',  // vert d'eau
-  sanitaire:         '#a7f3d0',
-  vestiaire:         '#d8b4fe',
-  technique:         '#d1d5db',  // gris froid
-  electrique:        '#d1d5db',
-  chaufferie:        '#d1d5db',
-  vmc:               '#d1d5db',
-  tgbt:              '#d1d5db',
-  ssi:               '#d1d5db',
-  local_technique:   '#d1d5db',
-  stockage:          '#fed7aa',  // beige orange
-  reserve:           '#fed7aa',
-  depot:             '#fed7aa',
-  archive:           '#fed7aa',
-  livraison:         '#fdba74',
-  quai:              '#fdba74',
-  // Atelier / culturel / exposition
-  atelier:           '#fca5a5',
-  workshop:          '#fca5a5',
-  salle:             '#fbcfe8',
-  exposition:        '#fecaca',
-  culturel:          '#ddd6fe',
-  amphitheatre:      '#ddd6fe',
-  auditorium:        '#ddd6fe',
-  bibliotheque:      '#fed7aa',
+  // Sanitaires / technique / stockage — tons terreux muted
+  wc:                '#b8d0bf',  // vert d'eau pastel
+  sanitaire:         '#b8d0bf',
+  vestiaire:         '#c2b5d1',  // lavande grisée
+  technique:         '#bcc0c6',  // gris froid
+  electrique:        '#bcc0c6',
+  chaufferie:        '#bcc0c6',
+  vmc:               '#bcc0c6',
+  tgbt:              '#bcc0c6',
+  ssi:               '#bcc0c6',
+  local_technique:   '#bcc0c6',
+  stockage:          '#d9c1a0',  // beige orangé doux
+  reserve:           '#d9c1a0',
+  depot:             '#d9c1a0',
+  archive:           '#d9c1a0',
+  livraison:         '#d4a980',  // terra
+  quai:              '#d4a980',
+  // Atelier / culturel / exposition — coraux et lavandes muted
+  atelier:           '#cc8f81',  // terracotta doux
+  workshop:          '#cc8f81',
+  salle:             '#ddb0b8',
+  exposition:        '#d9bdb8',
+  culturel:          '#c2b5d1',
+  amphitheatre:      '#c2b5d1',
+  auditorium:        '#c2b5d1',
+  bibliotheque:      '#d9c1a0',
   // Info
-  info:              '#bae6fd',
-  kiosk:             '#bae6fd',
+  info:              '#a8c2d6',  // bleu ciel pastel
+  kiosk:             '#a8c2d6',
   // Fallbacks
-  autre:             '#e7e5e4',
-  other:             '#e7e5e4',
+  autre:             '#d9d3c7',
+  other:             '#d9d3c7',
 }
 
 const DEFAULT_COLOR = '#e7e5e4'
@@ -168,6 +191,19 @@ function resolveLegendKey(t: string): string {
   if (/escalier|ascenseur/.test(t))                        return 'transit_vertical'
   if (/mail_central|atrium|promenade/.test(t))             return 'mail'
   if (/circulation|couloir|galerie/.test(t))               return 'circulation'
+  if (/^route_autoroute/.test(t))                           return 'route_autoroute'
+  if (/^route_boulevard/.test(t))                           return 'route_boulevard'
+  if (/^route_avenue/.test(t))                              return 'route_avenue'
+  if (/^route_rue_principale/.test(t))                      return 'route_rue_principale'
+  if (/^route_rue_secondaire|^route_impasse/.test(t))       return 'route_rue'
+  if (/^route_pont|^route_tunnel/.test(t))                  return 'route_ouvrage'
+  if (/^route_trottoir_public/.test(t))                     return 'route_trottoir'
+  if (/^route_/.test(t))                                    return 'route_autre'
+  if (/voie_principale/.test(t))                            return 'voie_principale'
+  if (/voie_pompier/.test(t))                               return 'voie_pompier'
+  if (/voie_livraison/.test(t))                             return 'voie_livraison'
+  if (/voie_secondaire|voie_circulation|voirie|rond_point|carrefour|exterieur_voie_vehicule/.test(t)) return 'voie_secondaire'
+  if (/passage_pieton/.test(t))                             return 'passage_pieton'
   if (/parking/.test(t))                                    return 'parking'
   if (/entree|porte_entree|porte_auto/.test(t))            return 'entree'
   if (/sortie|porte_secours|sortie_secours/.test(t))       return 'sortie'
@@ -194,6 +230,19 @@ const LEGEND_LABELS: Record<string, string> = {
   mail:             'Mail / Atrium',
   circulation:      'Circulation',
   parking:          'Parking',
+  voie_principale:  'Voie principale',
+  voie_secondaire:  'Voie secondaire / voirie',
+  voie_pompier:     'Voie pompiers',
+  voie_livraison:   'Voie livraison',
+  passage_pieton:   'Passage piéton',
+  route_autoroute:      'Autoroute',
+  route_boulevard:      'Boulevard',
+  route_avenue:         'Avenue',
+  route_rue_principale: 'Rue principale',
+  route_rue:            'Rue secondaire / impasse',
+  route_ouvrage:        'Pont / Tunnel',
+  route_trottoir:       'Trottoir public',
+  route_autre:          'Voirie publique',
   entree:           'Entrée',
   sortie:           'Sortie / Secours',
   porte:            'Porte',
@@ -232,6 +281,15 @@ function glyphForType(t: string): string {
   if (/exposition|culturel/.test(s))              return '🖼'
   if (/amphi|auditorium/.test(s))                 return '🎤'
   if (/bibliotheque/.test(s))                     return '📚'
+  if (/^route_autoroute|^route_boulevard|^route_avenue|^route_rue_principale/.test(s)) return '🛣'
+  if (/^route_pont/.test(s))                      return '🌉'
+  if (/^route_tunnel/.test(s))                    return '⬛'
+  if (/^route_trottoir_public/.test(s))           return '🚶'
+  if (/^route_/.test(s))                          return '═'
+  if (/voie_pompier/.test(s))                     return '🚒'
+  if (/voie_livraison/.test(s))                   return '🚚'
+  if (/voie_principale|voie_secondaire|voirie|rond_point|carrefour/.test(s)) return '🛣'
+  if (/passage_pieton/.test(s))                   return '🚸'
   if (/parking/.test(s))                          return 'P'
   if (/entree|porte_entree|porte_auto/.test(s))  return '↓'
   if (/sortie|porte_secours|sortie_secours/.test(s)) return '↑'
@@ -426,7 +484,7 @@ export function MallMap2D({
   const toX = (x: number) => x * viewport.scale + viewport.ox
   const toY = (y: number) => y * viewport.scale + viewport.oy
 
-  const bg = theme === 'light' ? '#f0ece4' : '#0f1115'
+  const bg = theme === 'light' ? '#f5f0e5' : '#0f1115'  // paper cream chaud
   const textColor = theme === 'light' ? '#0f172a' : '#f5f5f4'
   const mutedColor = theme === 'light' ? '#64748b' : '#94a3b8'
 
@@ -470,12 +528,16 @@ export function MallMap2D({
             <path d="M 6 0 L 6 12" stroke="#d5c59c" strokeWidth={0.3} />
           </pattern>
 
-          {/* Asphalte (parking/voirie) */}
-          <pattern id="asphalt" width={10} height={10} patternUnits="userSpaceOnUse">
-            <rect width="10" height="10" fill="#6b7280" />
-            <circle cx="2" cy="3" r="0.3" fill="#4b5563" opacity="0.6" />
-            <circle cx="7" cy="6" r="0.3" fill="#4b5563" opacity="0.6" />
-            <circle cx="4" cy="9" r="0.3" fill="#4b5563" opacity="0.6" />
+          {/* Asphalte uniforme (voirie/routes) */}
+          <pattern id="asphalt" width={8} height={8} patternUnits="userSpaceOnUse">
+            <rect width="8" height="8" fill="#9aa0a6" />
+          </pattern>
+          {/* Parking avec lignes de places (plus lisible qu'asphalte plein) */}
+          <pattern id="parkingSpots" width={20} height={40} patternUnits="userSpaceOnUse">
+            <rect width="20" height="40" fill="#9aa0a6" />
+            <line x1="0" y1="0" x2="20" y2="0" stroke="#ffffff" strokeWidth={0.5} strokeOpacity={0.7} />
+            <line x1="10" y1="0" x2="10" y2="18" stroke="#ffffff" strokeWidth={0.4} strokeOpacity={0.5} />
+            <line x1="10" y1="22" x2="10" y2="40" stroke="#ffffff" strokeWidth={0.4} strokeOpacity={0.5} />
           </pattern>
 
           {/* Vacant hachuré */}
@@ -545,11 +607,13 @@ export function MallMap2D({
           const typeStr = String(s.type).toLowerCase()
           const isMall = /mail_central|atrium|promenade/.test(typeStr)
           const isCorridor = /^circulation$|^couloir|galerie|couloir_secondaire|mail_secondaire/.test(typeStr)
-          const isAsphalt = /parking|voie_circulation|voirie|asphalte/.test(typeStr)
+          const isParking = /^parking(?!_voie)|parking_vehicule/.test(typeStr)
+          const isAsphalt = /parking|voie_circulation|voie_principale|voie_secondaire|voie_pompier|voie_livraison|rond_point|carrefour|voirie|asphalte|exterieur_voie_vehicule|route_/.test(typeStr)
           const isGreen = /espace_vert|pelouse|jardin|plantation|terre_plein/.test(typeStr)
           const isBuilding = /commerce|restau|cinema|grande_surface|big_box|loisirs|fitness|beaute|bijou|mode|tech|epicerie|pharma|sante|banque|service|admin|reception|atelier|exposition|culturel|amphi|auditorium|bibliotheque|stockage|reserve|depot|livraison|technique/.test(typeStr)
           const fillStyle = isMall     ? 'url(#tilingMall)'
                           : isCorridor ? 'url(#tilingCorridor)'
+                          : isParking  ? 'url(#parkingSpots)'
                           : isAsphalt  ? 'url(#asphalt)'
                           : color
           const meta = (s.metadata ?? {}) as { tenant?: string; localNumber?: string; vacant?: boolean }
@@ -567,8 +631,9 @@ export function MallMap2D({
           const secondaryLabel = (tenant && localN) ? `#${localN}` : ''
           const t = String(s.type).toLowerCase()
           const isServiceIcon = ['wc', 'sanitaire', 'atm', 'bank', 'info', 'kiosk', 'pharma'].some(k => t.includes(k))
-          const fillOpacity = meta.vacant ? 0.35 : isHover ? 0.95 : 0.78
-          const strokeDark = theme === 'light' ? '#1f2937' : '#f8fafc'
+          // Opacités subtiles façon plan d'architecte imprimé
+          const fillOpacity = meta.vacant ? 0.3 : isHover ? 0.75 : 0.55
+          const strokeDark = theme === 'light' ? '#4a5568' : '#cbd5e1'
           return (
             <g key={s.id}
               onMouseEnter={() => { if (!isPanning) setHoveredId(s.id) }}
@@ -585,16 +650,15 @@ export function MallMap2D({
                 fill={fillStyle}
                 fillOpacity={isMall || isCorridor || isAsphalt ? 1 : fillOpacity}
                 stroke={isHover ? '#c9a068' : strokeDark}
-                strokeWidth={isHover ? 1.8 : isBuilding ? 1.2 : 0.6}
-                strokeOpacity={isHover ? 1 : isBuilding ? 0.75 : 0.45}
+                strokeWidth={isHover ? 1.2 : 0.4}
+                strokeOpacity={isHover ? 0.9 : 0.55}
                 strokeLinejoin="miter"
-                filter={isBuilding && !isHover ? 'url(#bldgShadow)' : undefined}
               />
-              {/* Arbres pour espaces verts (3-8 selon la taille) */}
-              {isGreen && wPx > 40 && hPx > 40 && (() => {
-                const nx = Math.max(1, Math.floor(wPx / 40))
-                const ny = Math.max(1, Math.floor(hPx / 40))
-                const treeSize = Math.min(18, Math.max(8, Math.min(wPx, hPx) / Math.max(nx, ny) * 0.5))
+              {/* Arbres discrets dans les espaces verts (densité plus aérée) */}
+              {isGreen && wPx > 60 && hPx > 60 && (() => {
+                const nx = Math.max(1, Math.floor(wPx / 55))
+                const ny = Math.max(1, Math.floor(hPx / 55))
+                const treeSize = Math.min(14, Math.max(7, Math.min(wPx, hPx) / Math.max(nx, ny) * 0.35))
                 const trees: React.ReactNode[] = []
                 for (let ix = 0; ix < nx; ix++) {
                   for (let iy = 0; iy < ny; iy++) {
@@ -603,50 +667,14 @@ export function MallMap2D({
                     trees.push(<use key={`t-${ix}-${iy}`} href="#tree" x={tx - treeSize / 2} y={ty - treeSize / 2} width={treeSize} height={treeSize} />)
                   }
                 }
-                return <g style={{ pointerEvents: 'none' }}>{trees}</g>
-              })()}
-              {/* Voitures stationnées dans parkings spacieux */}
-              {isAsphalt && wPx > 100 && hPx > 30 && (() => {
-                const nx = Math.min(12, Math.max(2, Math.floor(wPx / 20)))
-                const ny = Math.min(3, Math.max(1, Math.floor(hPx / 22)))
-                const cars: React.ReactNode[] = []
-                for (let ix = 0; ix < nx; ix++) {
-                  for (let iy = 0; iy < ny; iy++) {
-                    const tx = toX(s.bounds.minX) + (ix + 0.5) / nx * wPx
-                    const ty = toY(s.bounds.minY) + (iy + 0.5) / ny * hPx
-                    cars.push(<use key={`c-${ix}-${iy}`} href="#car" x={tx - 8} y={ty - 4} width={16} height={8} />)
-                  }
-                }
-                return <g style={{ pointerEvents: 'none', opacity: 0.75 }}>{cars}</g>
+                return <g style={{ pointerEvents: 'none', opacity: 0.7 }}>{trees}</g>
               })()}
               {/* Hachure diagonale si vacant */}
               {meta.vacant && wPx > 30 && hPx > 30 && (
                 <path d={d} fill="url(#vacantHatch)" opacity={0.35} style={{ pointerEvents: 'none' }} />
               )}
-              {/* Icône centrale discrete — petit pastille avec glyph de la catégorie.
-                  Pas de label texte permanent : le détail s'affiche en popup au hover. */}
-              {!isTiny && (() => {
-                const rBadge = Math.min(10, Math.max(4, Math.min(wPx, hPx) * 0.12))
-                const glyph = glyphForType(String(s.type))
-                return (
-                  <g style={{ pointerEvents: 'none' }}>
-                    <circle cx={cx} cy={cy} r={rBadge}
-                      fill={theme === 'light' ? 'rgba(255,255,255,0.85)' : 'rgba(15,23,42,0.85)'}
-                      stroke={color}
-                      strokeWidth={1}
-                      strokeOpacity={0.7}
-                    />
-                    {glyph && rBadge >= 7 && (
-                      <text x={cx} y={cy + 0.5}
-                        textAnchor="middle" dominantBaseline="central"
-                        fontSize={rBadge * 1.1}
-                        style={{ userSelect: 'none', pointerEvents: 'none' }}>
-                        {glyph}
-                      </text>
-                    )}
-                  </g>
-                )
-              })()}
+              {/* Pas de pastille ni d'icône permanente sur les aplats —
+                  plan propre façon planimetria. Le détail s'ouvre en popup au survol. */}
             </g>
           )
         })}
