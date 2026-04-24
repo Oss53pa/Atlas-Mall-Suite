@@ -65,6 +65,7 @@ import type { FullProjectContext } from '../shared/proph3t/chatEngine'
 
 import FloorPlanCanvas from '../shared/components/FloorPlanCanvas'
 import { PlanCanvasV2 } from '../shared/components/PlanCanvasV2'
+import { useModeledPlan } from '../shared/hooks/useModeledPlan'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
 import Proph3tChat from '../shared/components/Proph3tChat'
@@ -352,6 +353,11 @@ export default function Vol2Module() {
 
   // Plan engine store — real imported plan data
   const parsedPlan = usePlanEngineStore(s => s.parsedPlan)
+  // Cohérence inter-volumes : Vol.2 rend lui aussi le plan modélisé
+  // (EditableSpace redressés), pas le DXF brut. Fallback parsedPlan si
+  // aucune modélisation.
+  const modeledPlan = useModeledPlan(parsedPlan)
+  const displayPlan = modeledPlan ?? parsedPlan
 
   const setActiveFloor = useVol2Store((s) => s.setActiveFloor)
   const selectEntity = useVol2Store((s) => s.selectEntity)
@@ -1179,7 +1185,7 @@ export default function Vol2Module() {
           {/* When a real DXF plan is imported, PlanCanvasV2 handles all view modes (2D/3D/3D+) */}
           {parsedPlan?.dxfBlobUrl ? (
             <PlanCanvasV2
-              plan={parsedPlan}
+              plan={displayPlan ?? parsedPlan}
               planImageUrl={activeFloor ? (planImageUrls[activeFloor.id] || usePlanImportStore.getState().getActivePlanUrl(activeFloor.id)) : undefined}
               overlayFloorId={activeFloor?.id}
               viewMode={viewMode === '3d-advanced' ? '3d-advanced' : viewMode === '3d' ? '3d' : '2d'}
@@ -1265,7 +1271,7 @@ export default function Vol2Module() {
           ) : viewMode === '2d' ? (
             parsedPlan ? (
             <PlanCanvasV2
-              plan={parsedPlan}
+              plan={displayPlan ?? parsedPlan}
               planImageUrl={activeFloor ? (planImageUrls[activeFloor.id] || usePlanImportStore.getState().getActivePlanUrl(activeFloor.id)) : undefined}
               overlayFloorId={activeFloor?.id}
             />

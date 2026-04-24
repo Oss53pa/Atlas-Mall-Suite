@@ -17,7 +17,7 @@ import {
   cleanupBatch,
   type BatchCleanupReport,
 } from '../engines/geometry/legacyCleanup'
-import { scorePolygonQuality } from '../engines/geometry/qualityScore'
+import { scorePolygonQualityForType } from '../engines/geometry/qualityScore'
 import { xyPolygonToMm } from '../engines/geometry/meterAdapter'
 import { pushEditableSpaces, type PushResult } from '../engines/geometry/cellsSyncAdapter'
 import { isOfflineMode } from '../../../../lib/supabase'
@@ -39,7 +39,8 @@ export function GeometryQualityDashboard(): React.ReactElement {
   const rows = useMemo(() => {
     return spaces.map(s => {
       const polyMm = xyPolygonToMm(s.polygon)
-      const q = scorePolygonQuality(polyMm)
+      // Scoring context-aware : portes/voies/organiques pondérées différemment.
+      const q = scorePolygonQualityForType(polyMm, String(s.type))
       return { id: s.id, name: s.name || s.id.slice(0, 8), type: String(s.type), score: q.score, breakdown: q.breakdown }
     })
   }, [spaces])

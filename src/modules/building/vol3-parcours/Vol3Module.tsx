@@ -58,22 +58,7 @@ import { MallMap2D } from '../shared/components/MallMap2D'
 import { PlanLayerSelector } from '../shared/components/PlanLayerSelector'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import { useEditableSpaceStore } from '../shared/stores/editableSpaceStore'
-import { applyEditsToPlan } from '../shared/planReader/applyEditsToPlan'
-import { applyCoherenceCorrections } from '../shared/engines/plan-analysis/coherenceEngine'
-import { cleanupPolygon } from '../shared/engines/geometry/legacyCleanup'
-import { tuplePolygonToMm, tuplePolygonToM } from '../shared/engines/geometry/meterAdapter'
-
-// Cache view-time cleanup — évite de recalculer 152 polygones à chaque
-// mount. Clé = id + count + premier/dernier sommet (suffisant pour détecter
-// modif). Globale module : survit aux remounts Vol3Module.
-const cleanupCache = new Map<string, Array<[number, number]>>()
-const CLEANUP_CACHE_MAX = 1000
-function cleanupCacheKey(id: string, poly: readonly [number, number][]): string {
-  if (!poly || poly.length === 0) return `${id}:0`
-  const [fx, fy] = poly[0]
-  const [lx, ly] = poly[poly.length - 1]
-  return `${id}:${poly.length}:${fx.toFixed(3)},${fy.toFixed(3)}:${lx.toFixed(3)},${ly.toFixed(3)}`
-}
+import { useModeledPlan } from '../shared/hooks/useModeledPlan'
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
 import { savePlanImageFromUrl, loadAllPlanImages } from '../shared/stores/planImageCache'
 const Vol3DModuleEmbed = lazy(() => import('../vol-3d/Vol3DModule'))
@@ -305,49 +290,7 @@ export default function Vol3Module() {
    *  Le DXF brut sert uniquement de référence dans l'éditeur Atlas Studio —
    *  il n'est jamais affiché dans les volumes. Si aucune modélisation faite,
    *  on retourne null pour afficher un placeholder. */
-  const modeledPlan = useMemo(() => {
-    if (!parsedPlan) return null
-    if (editableSpaces.length === 0) return null
-    const merged = applyEditsToPlan(parsedPlan, editableSpaces)
-    // Proph3t corrige les imperfections géométriques tout en conservant la cohérence
-    const { plan: corrected } = applyCoherenceCorrections(merged, {
-      adjacencyTolM: 0.5,
-      mergeAdjacent: true,
-    })
-    // ═══ Redressage géométrique À L'AFFICHAGE (view-time, avec cache) ═══
-    // Nettoie les polygones bancals AU MOMENT DU RENDU. Cache modul-global
-    // pour éviter de recalculer 152× cleanupPolygon à chaque changement
-    // d'une autre dépendance que `spaces`.
-    const straightenedSpaces = corrected.spaces.map(s => {
-      if (!s.polygon || s.polygon.length < 3) return s
-      const key = cleanupCacheKey(s.id, s.polygon)
-      const cached = cleanupCache.get(key)
-      if (cached) {
-        return cached === s.polygon ? s : { ...s, polygon: cached }
-      }
-      const polyMm = tuplePolygonToMm(s.polygon)
-      const result = cleanupPolygon(polyMm, {
-        gridMm: 100, minEdgeMm: 30, orthoAlignMm: 80, maxDriftMm: 400,
-      })
-      if (!result.changed) {
-        cleanupCache.set(key, s.polygon)
-        // Éviction LRU grossière
-        if (cleanupCache.size > CLEANUP_CACHE_MAX) {
-          const firstKey = cleanupCache.keys().next().value
-          if (firstKey) cleanupCache.delete(firstKey)
-        }
-        return s
-      }
-      const cleanedPolygon = tuplePolygonToM(result.cleaned)
-      cleanupCache.set(key, cleanedPolygon)
-      if (cleanupCache.size > CLEANUP_CACHE_MAX) {
-        const firstKey = cleanupCache.keys().next().value
-        if (firstKey) cleanupCache.delete(firstKey)
-      }
-      return { ...s, polygon: cleanedPolygon }
-    })
-    return { ...corrected, spaces: straightenedSpaces }
-  }, [parsedPlan, editableSpaces])
+  const modeledPlan = useModeledPlan(parsedPlan)
 
   // Synthétise des floors depuis parsedPlan si vol3Store.floors est vide
   const effectiveFloors = useMemo(() => {
@@ -1129,7 +1072,10 @@ export default function Vol3Module() {
             </div>
           ) : parsedPlan ? (
             (() => {
-              const plan = parsedPlan
+              // Cohérence : le 3D et 3D+ doivent eux aussi rendre le plan
+              // modélisé (EditableSpace redressés), pas le DXF brut. Fallback
+              // sur parsedPlan uniquement si aucune modélisation.
+              const plan = modeledPlan ?? parsedPlan
               const pw = plan.bounds.width || 200
               const ph = plan.bounds.height || 140
               const placeMode3D: 'poi' | 'signage' | 'moment' | null =

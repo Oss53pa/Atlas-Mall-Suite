@@ -8,6 +8,14 @@
 //                              spikes/zigzags). Un carré vaut 1, un long
 //                              rectangle tend vers 0.
 //
+// ⚠️ Certains types d'espaces ont une géométrie naturellement "non-parfaite" :
+//   • Portes : très allongées (compactness bas) et suivent l'angle du mur
+//     (orthogonality bas). Pondération adaptée via scorePolygonQualityForType.
+//   • Voies / couloirs : idem, allongés par nature.
+//   • Couverts végétaux / jardins : formes organiques, non-orthogonales.
+// Utiliser scorePolygonQualityForType(polygon, typeKey) pour bénéficier des
+// pondérations contextuelles. scorePolygonQuality(polygon) reste strict.
+//
 // Le score est stocké en base (cells.geometry_quality_score NUMERIC(3,2))
 // et affiché dans le dashboard admin qualité.
 //
@@ -41,7 +49,79 @@ const WEIGHTS = {
   compactness: 0.30,
 } as const
 
+/**
+ * Pondérations adaptées par catégorie de type. Pour les espaces dont la
+ * géométrie est naturellement non-orthogonale ou non-compacte (portes
+ * allongées, voies, jardins), on déporte le poids sur les critères qui
+ * restent pertinents (simpleRing surtout).
+ *
+ * Règle : simpleRing reste discriminant PARTOUT (un polygone qui se coupe
+ * lui-même est toujours invalide, quel que soit le type).
+ */
+const WEIGHTS_BY_CATEGORY: Record<string, typeof WEIGHTS> = {
+  // Portes : allongées, orientées selon le mur. On valorise simple_ring + edges propres.
+  door: {
+    orthogonality: 0.05,
+    closure: 0.25,
+    simpleRing: 0.55,
+    compactness: 0.15,
+  },
+  // Voies / couloirs / circulations linéaires.
+  linear: {
+    orthogonality: 0.15,
+    closure: 0.15,
+    simpleRing: 0.50,
+    compactness: 0.20,
+  },
+  // Espaces organiques (jardins, espaces verts, terrasses courbes).
+  organic: {
+    orthogonality: 0.05,
+    closure: 0.20,
+    simpleRing: 0.55,
+    compactness: 0.20,
+  },
+  // Défaut = WEIGHTS standard (commerces, bureaux, pièces fermées).
+  default: WEIGHTS,
+}
+
+type WeightCategory = keyof typeof WEIGHTS_BY_CATEGORY
+
+/** Mappe un type d'espace sur sa catégorie de pondération. */
+function weightCategoryForType(type: string): WeightCategory {
+  const t = type.toLowerCase()
+  if (t.startsWith('porte_') || t === 'porte') return 'door'
+  if (
+    t.startsWith('voie_') ||
+    t.startsWith('route_') ||
+    t.startsWith('acces_site_') ||
+    t === 'couloir' || t === 'couloir_secondaire' ||
+    t === 'galerie' || t === 'mail' || t === 'mail_central' || t === 'mail_secondaire' ||
+    t === 'circulation' || t === 'passage_pieton'
+  ) return 'linear'
+  if (
+    t === 'jardin' || t === 'pelouse' || t === 'terrasse_restaurant' ||
+    t === 'espace_vert' || t === 'massif_vegetal' || t === 'plantation' ||
+    t === 'terre_plein' || t === 'alignement_arbre' || t === 'haie' ||
+    t === 'rond_point' || t === 'giratoire' || t === 'rond_point_public'
+  ) return 'organic'
+  return 'default'
+}
+
+/**
+ * Scoring adapté au type de space : portes/voies/organiques obtiennent des
+ * pondérations réalistes (pas pénalisés pour leur géométrie naturelle).
+ * Pour un type inconnu ou "default", équivalent à scorePolygonQuality.
+ */
+export function scorePolygonQualityForType(polygon: PolygonMm, type: string): QualityResult {
+  const category = weightCategoryForType(type)
+  return scorePolygonQualityWithWeights(polygon, WEIGHTS_BY_CATEGORY[category])
+}
+
 export function scorePolygonQuality(polygon: PolygonMm): QualityResult {
+  return scorePolygonQualityWithWeights(polygon, WEIGHTS)
+}
+
+function scorePolygonQualityWithWeights(polygon: PolygonMm, weights: typeof WEIGHTS): QualityResult {
   const n = polygon.length
   if (n < 3) {
     return {
@@ -61,10 +141,10 @@ export function scorePolygonQuality(polygon: PolygonMm): QualityResult {
   const compactness = computeCompactness(areaMm2, perimeterMm)
 
   const score =
-    orthogonality * WEIGHTS.orthogonality +
-    closure * WEIGHTS.closure +
-    simpleRing * WEIGHTS.simpleRing +
-    compactness * WEIGHTS.compactness
+    orthogonality * weights.orthogonality +
+    closure * weights.closure +
+    simpleRing * weights.simpleRing +
+    compactness * weights.compactness
 
   return {
     score: Math.max(0, Math.min(1, score)),

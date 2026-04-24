@@ -20,7 +20,7 @@
 import type { EditableSpace } from '../../components/SpaceEditorCanvas'
 import type { PolygonMm } from './constraints'
 import { xyPolygonToMm, xyPolygonToM } from './meterAdapter'
-import { scorePolygonQuality } from './qualityScore'
+import { scorePolygonQuality, scorePolygonQualityForType } from './qualityScore'
 import { hasSelfIntersection } from './overlapDetection'
 import { supabase, isOfflineMode } from '../../../../../lib/supabase'
 
@@ -63,9 +63,12 @@ export interface SerializedCellGeometry {
 
 export function serializePolygonForCells(
   polygonM: readonly { x: number; y: number }[],
+  spaceType?: string,
 ): SerializedCellGeometry {
   const polyMm: PolygonMm = xyPolygonToMm(polygonM)
-  const q = scorePolygonQuality(polyMm)
+  // Scoring context-aware si le type est fourni (portes/voies/organiques
+  // ont des pondérations réalistes). Sinon fallback scoring strict.
+  const q = spaceType ? scorePolygonQualityForType(polyMm, spaceType) : scorePolygonQuality(polyMm)
   const simpleRing = !hasSelfIntersection(polyMm)
   const metadata: CellMetadata = {
     closed: true,
@@ -126,7 +129,7 @@ export async function pushEditableSpaces(
   for (let start = 0; start < spaces.length; start += BATCH) {
     const batch = spaces.slice(start, start + BATCH)
     const rows = batch.map(s => {
-      const geom = serializePolygonForCells(s.polygon)
+      const geom = serializePolygonForCells(s.polygon, String(s.type))
       return {
         id: s.id,
         project_id: projectId,

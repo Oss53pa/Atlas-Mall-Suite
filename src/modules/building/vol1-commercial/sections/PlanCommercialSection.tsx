@@ -27,6 +27,7 @@ import { formatFcfa } from '../../shared/utils/formatting'
 import { PlanLayerSelector } from '../../shared/components/PlanLayerSelector'
 import { usePlanEngineStore } from '../../shared/stores/planEngineStore'
 import { PlanCanvasV2 } from '../../shared/components/PlanCanvasV2'
+import { useModeledPlan } from '../../shared/hooks/useModeledPlan'
 import type { ParsedPlan, DetectedSpace } from '../../shared/planReader/planEngineTypes'
 import { runCommercialAnalysis } from '../../shared/engines/commercialEngine'
 import SpaceFormModal from '../components/SpaceFormModal'
@@ -73,7 +74,10 @@ export default function PlanCommercialSection() {
   const [showMapViewer, setShowMapViewer] = useState(false)
 
   // Active plan from engine store or empty placeholder
-  const plan = parsedPlan ?? EMPTY_PLAN
+  // Cohérence inter-volumes : rend le plan modélisé (EditableSpace redressés),
+  // pas le DXF brut. Fallback parsedPlan puis EMPTY_PLAN.
+  const modeledPlan = useModeledPlan(parsedPlan)
+  const plan = modeledPlan ?? parsedPlan ?? EMPTY_PLAN
 
   // ── Commercial analysis — always runs, updates live ──
   const commercialReport = useMemo(() => {
