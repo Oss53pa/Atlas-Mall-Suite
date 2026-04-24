@@ -54,6 +54,7 @@ import {
   downloadBlob
 } from './components/Vol3Overlays'
 import { PlanCanvasV2 } from '../shared/components/PlanCanvasV2'
+import { MallMap2D } from '../shared/components/MallMap2D'
 import { PlanLayerSelector } from '../shared/components/PlanLayerSelector'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
@@ -968,9 +969,12 @@ export default function Vol3Module() {
             />
           )}
 
-          {/* When a real plan is imported (parsedPlan exists), use PlanCanvasV2
-              (abonnement réactif pour se re-render quand le plan arrive) */}
-          {parsedPlan ? (
+          {/* ═══ VUE 2D MODÉLISÉE (propre, labels tenants, couleurs cat.) ═══
+              Remplace l'affichage DXF brut par une carte "mall directory".
+              PlanCanvasV2 reste utilisé pour 3D / 3D+ (extrusion, XR). */}
+          {parsedPlan && viewMode === '2d' ? (
+            <MallMap2D plan={parsedPlan} theme="light" />
+          ) : parsedPlan ? (
             (() => {
               const plan = parsedPlan
               const pw = plan.bounds.width || 200
