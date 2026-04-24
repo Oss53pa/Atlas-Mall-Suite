@@ -583,8 +583,12 @@ export function MallMap2D({
           return <path key={s.id} d={d} fill="none" stroke={mutedColor} strokeWidth={0.5} strokeOpacity={0.2} />
         })}
 
-        {/* Murs (wallSegments) — traits foncés par-dessus les aplats */}
-        {plan.wallSegments && plan.wallSegments.length > 0 && plan.wallSegments.slice(0, 5000).map((w, i) => (
+        {/* Murs (wallSegments) — traits foncés par-dessus les aplats.
+            Filtre défensif : wallSegments peuvent contenir des coords non
+            numériques (DXF corrompus ou entrées user). SVG refuse NaN. */}
+        {plan.wallSegments && plan.wallSegments.length > 0 && plan.wallSegments.slice(0, 5000).filter(w =>
+          Number.isFinite(w.x1) && Number.isFinite(w.y1) && Number.isFinite(w.x2) && Number.isFinite(w.y2)
+        ).map((w, i) => (
           <line key={`wall-${i}`}
             x1={toX(w.x1)} y1={toY(w.y1)}
             x2={toX(w.x2)} y2={toY(w.y2)}
