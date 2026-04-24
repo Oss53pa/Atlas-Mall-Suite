@@ -382,7 +382,7 @@ export function MallMap2D({
     const seen = new Map<string, { color: string; label: string; count: number }>()
     for (const s of visibleSpaces) {
       const t = String(s.type).toLowerCase()
-      const color = s.color && s.color !== '' ? s.color : categoryColor(t)
+      const color = categoryColor(t)
       const groupKey = resolveLegendKey(t)
       const existing = seen.get(groupKey)
       if (existing) existing.count++
@@ -601,7 +601,7 @@ export function MallMap2D({
 
         {/* Espaces — rendu architectural (aplat + contour sombre épais) */}
         {visibleSpaces.map(s => {
-          const color = s.color && s.color !== '' ? s.color : categoryColor(String(s.type))
+          const color = categoryColor(String(s.type))
           // Rendu strict du polygone tel que dessiné — aucun lissage,
           // aucune altération géométrique. Les rectangles restent rectangles,
           // les formes polygonales conservent leurs angles.
@@ -690,7 +690,7 @@ export function MallMap2D({
           const meta = (s.metadata ?? {}) as { tenant?: string; localNumber?: string; vacant?: boolean; notes?: string }
           const cx = toX(s.bounds.centerX)
           const cy = toY(s.bounds.centerY)
-          const color = s.color && s.color !== '' ? s.color : categoryColor(String(s.type))
+          const color = categoryColor(String(s.type))
           const legendKey = resolveLegendKey(String(s.type).toLowerCase())
           const typeLabel = legendLabelFor(legendKey)
           const lines: Array<{ k?: string; v: string }> = []
