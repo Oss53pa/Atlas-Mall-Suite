@@ -351,9 +351,27 @@ export function MallMap2D({
     })
   }, [size, planW, planH, bounds.minX, bounds.minY])
 
-  const zoomBy = useCallback((factor: number) => {
-    setViewport(v => ({ ...v, scale: Math.max(0.1, Math.min(80, v.scale * factor)) }))
+  /** Zoom autour d'un point d'ancrage screen (typiquement la position curseur).
+   *  Conserve le point sous le curseur fixe pendant le zoom — standard des éditeurs. */
+  const zoomAt = useCallback((factor: number, anchorX: number, anchorY: number) => {
+    setViewport(v => {
+      const newScale = Math.max(0.1, Math.min(80, v.scale * factor))
+      // Point world correspondant à l'anchor écran à l'ancien zoom
+      const worldX = (anchorX - v.ox) / v.scale
+      const worldY = (anchorY - v.oy) / v.scale
+      // Nouvel offset pour que ce même world soit sous le curseur après zoom
+      return {
+        scale: newScale,
+        ox: anchorX - worldX * newScale,
+        oy: anchorY - worldY * newScale,
+      }
+    })
   }, [])
+
+  const zoomBy = useCallback((factor: number) => {
+    // Zoom centré écran (pour les boutons +/−)
+    if (size.w > 0) zoomAt(factor, size.w / 2, size.h / 2)
+  }, [zoomAt, size.w, size.h])
 
   const resetView = useCallback(() => {
     if (size.w === 0 || planW === 0) return
@@ -369,22 +387,39 @@ export function MallMap2D({
     })
   }, [size, planW, planH, bounds.minX, bounds.minY])
 
-  // Pan
+  // Pan — fluide, avec flag "en cours" pour cursor grabbing
   const panStart = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null)
+  /** Vrai si l'utilisateur a vraiment draggé (mouvement > 4 px) depuis le mouseDown.
+   *  Sert à distinguer un vrai clic (sélection d'espace) d'un pan. */
+  const panDraggedRef = useRef(false)
+  const [isPanning, setIsPanning] = useState(false)
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return
     panStart.current = { x: e.clientX, y: e.clientY, ox: viewport.ox, oy: viewport.oy }
+    panDraggedRef.current = false
+    setIsPanning(true)
   }
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!panStart.current) return
     const dx = e.clientX - panStart.current.x
     const dy = e.clientY - panStart.current.y
+    if (!panDraggedRef.current && Math.hypot(dx, dy) > 4) {
+      panDraggedRef.current = true
+    }
     setViewport(v => ({ ...v, ox: (panStart.current?.ox ?? 0) + dx, oy: (panStart.current?.oy ?? 0) + dy }))
   }
-  const handleMouseUp = () => { panStart.current = null }
+  const handleMouseUp = () => {
+    panStart.current = null
+    setIsPanning(false)
+  }
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault()
-    zoomBy(e.deltaY < 0 ? 1.15 : 1 / 1.15)
+    // Zoom centré sur le CURSEUR (pas sur l'écran) — le point sous la souris reste fixe
+    const rect = svgRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const anchorX = e.clientX - rect.left
+    const anchorY = e.clientY - rect.top
+    zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, anchorX, anchorY)
   }
 
   // Helpers world → screen
@@ -405,7 +440,7 @@ export function MallMap2D({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
-        style={{ cursor: panStart.current ? 'grabbing' : 'grab' }}
+        style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
       >
         {/* ═══ DEFS : patterns, filtres, symboles réutilisables ═══ */}
         <defs>
@@ -536,10 +571,14 @@ export function MallMap2D({
           const strokeDark = theme === 'light' ? '#1f2937' : '#f8fafc'
           return (
             <g key={s.id}
-              onMouseEnter={() => setHoveredId(s.id)}
+              onMouseEnter={() => { if (!isPanning) setHoveredId(s.id) }}
               onMouseLeave={() => setHoveredId(null)}
-              onClick={() => onSpaceClick?.(s)}
-              style={{ cursor: onSpaceClick ? 'pointer' : 'default' }}
+              onClick={() => {
+                // Un clic qui fait suite à un drag pan ne doit PAS déclencher la sélection
+                if (panDraggedRef.current) return
+                onSpaceClick?.(s)
+              }}
+              style={{ cursor: onSpaceClick ? 'pointer' : 'inherit' }}
             >
               <path
                 d={d}
@@ -612,8 +651,8 @@ export function MallMap2D({
           )
         })}
 
-        {/* Popup au survol — style "modal" flottant */}
-        {hoveredId && (() => {
+        {/* Popup au survol — style "modal" flottant. Masqué pendant le pan. */}
+        {hoveredId && !isPanning && (() => {
           const s = visibleSpaces.find(v => v.id === hoveredId)
           if (!s) return null
           const meta = (s.metadata ?? {}) as { tenant?: string; localNumber?: string; vacant?: boolean; notes?: string }
