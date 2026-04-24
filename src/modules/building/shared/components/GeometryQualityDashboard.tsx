@@ -11,6 +11,7 @@
 // ou dans le Proph3t Quality panel.
 
 import React, { useMemo, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { useEditableSpaceStore } from '../stores/editableSpaceStore'
 import {
   cleanupBatch,
@@ -18,6 +19,8 @@ import {
 } from '../engines/geometry/legacyCleanup'
 import { scorePolygonQuality } from '../engines/geometry/qualityScore'
 import { xyPolygonToMm } from '../engines/geometry/meterAdapter'
+import { pushEditableSpaces, type PushResult } from '../engines/geometry/cellsSyncAdapter'
+import { isOfflineMode } from '../../../../lib/supabase'
 
 function badge(score: number): { color: string; label: string } {
   if (score >= 0.85) return { color: 'bg-emerald-500/20 text-emerald-300', label: 'OK' }
@@ -26,9 +29,12 @@ function badge(score: number): { color: string; label: string } {
 }
 
 export function GeometryQualityDashboard(): React.ReactElement {
+  const { projectId } = useParams<{ projectId: string }>()
   const spaces = useEditableSpaceStore(s => s.spaces)
   const setSpaces = useEditableSpaceStore(s => s.setSpaces)
   const [dryRun, setDryRun] = useState<BatchCleanupReport | null>(null)
+  const [pushState, setPushState] = useState<'idle' | 'pushing' | 'done'>('idle')
+  const [pushResult, setPushResult] = useState<PushResult | null>(null)
 
   const rows = useMemo(() => {
     return spaces.map(s => {
@@ -60,6 +66,24 @@ export function GeometryQualityDashboard(): React.ReactElement {
     })
     setSpaces(newSpaces)
     setDryRun(null)
+  }
+
+  const runManualPush = async () => {
+    if (!projectId) { alert('Pas de projectId dans l\'URL'); return }
+    setPushState('pushing')
+    setPushResult(null)
+    try {
+      const result = await pushEditableSpaces(projectId, spaces)
+      setPushResult(result)
+    } catch (err) {
+      setPushResult({
+        attempted: spaces.length, succeeded: 0, failed: spaces.length,
+        skippedOffline: false,
+        errors: [{ spaceId: '_', message: String(err) }],
+      })
+    } finally {
+      setPushState('done')
+    }
   }
 
   return (
@@ -109,6 +133,50 @@ export function GeometryQualityDashboard(): React.ReactElement {
           )}
         </div>
       )}
+
+      {/* ─── Sync cloud manuelle (debug + force) ─────────── */}
+      <div className="mb-4 p-3 bg-slate-800/30 rounded border border-slate-700">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <div className="text-xs font-bold">Sync Supabase (cells)</div>
+            <div className="text-[10px] text-slate-400 mt-0.5">
+              Projet : <span className="font-mono text-slate-200">{projectId ?? '(aucun)'}</span> ·
+              Mode : <span className={isOfflineMode ? 'text-amber-300' : 'text-emerald-300'}>
+                {isOfflineMode ? 'OFFLINE (env Supabase non configurée)' : 'ONLINE'}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={runManualPush}
+            disabled={pushState === 'pushing' || spaces.length === 0 || isOfflineMode}
+            className="px-3 py-1.5 rounded bg-sky-600 text-white text-xs hover:bg-sky-500 disabled:opacity-40"
+          >
+            {pushState === 'pushing' ? 'Push en cours…' : `Pousser maintenant (${spaces.length})`}
+          </button>
+        </div>
+
+        {pushResult && (
+          <div className="mt-2 pt-2 border-t border-slate-700 text-[11px] space-y-0.5 font-mono">
+            <div>Tentés : <span className="text-slate-200">{pushResult.attempted}</span></div>
+            <div>Réussis : <span className="text-emerald-300">{pushResult.succeeded}</span></div>
+            <div>Échecs : <span className={pushResult.failed > 0 ? 'text-rose-300' : 'text-slate-400'}>{pushResult.failed}</span></div>
+            {pushResult.skippedOffline && (
+              <div className="text-amber-300">⚠ Skip — mode offline détecté par le client</div>
+            )}
+            {pushResult.errors.length > 0 && (
+              <div className="mt-2">
+                <div className="text-rose-300 font-bold mb-1">Erreurs (3 premières) :</div>
+                {pushResult.errors.slice(0, 3).map((e, i) => (
+                  <div key={i} className="pl-2 border-l-2 border-rose-500/50">
+                    <span className="text-slate-400">{e.spaceId}</span> →
+                    <span className="text-rose-200"> {e.message}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="max-h-96 overflow-y-auto border border-slate-700 rounded">
         <table className="w-full text-xs">
