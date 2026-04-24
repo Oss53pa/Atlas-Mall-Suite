@@ -3,6 +3,8 @@ import { useVol3DStore } from './store/vol3dStore'
 import { useVol2Store } from '../vol2-securitaire/store/vol2Store'
 import { useVol3Store } from '../vol3-parcours/store/vol3Store'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
+import { useModeledPlan } from '../shared/hooks/useModeledPlan'
+import { CATEGORY_COLOR } from '../shared/components/MallMap2D'
 import ModeSwitch from './components/ModeSwitch'
 import LayerControls from './components/LayerControls'
 import ExportPanel3D from './components/ExportPanel3D'
@@ -35,11 +37,25 @@ export default function Vol3DModule() {
   const pois = useVol3Store(s => s.pois)
   const signageItems = useVol3Store(s => s.signageItems)
   const parsedPlan = usePlanEngineStore(s => s.parsedPlan)
+  // Cohérence inter-volumes : la 3D rend le plan modélisé (EditableSpace
+  // redressés), pas le DXF brut. Fallback sur parsedPlan.
+  const modeledPlan = useModeledPlan(parsedPlan)
+  const renderedPlan = modeledPlan ?? parsedPlan
+
+  // Palette unifiée avec MallMap2D — évite bleu électrique #3b82f6 saturé.
+  const resolveColor3D = (type: string): string => {
+    const t = String(type).toLowerCase()
+    if (CATEGORY_COLOR[t]) return CATEGORY_COLOR[t]
+    for (const key of Object.keys(CATEGORY_COLOR)) {
+      if (t.includes(key)) return CATEGORY_COLOR[key]
+    }
+    return '#d9d3c7' // beige défaut (cohérent avec DEFAULT_COLOR de MallMap2D)
+  }
 
   // When a real plan is imported, convert ParsedPlan spaces → Zone format for 3D
   const zones = useMemo(() => {
-    if (!parsedPlan || parsedPlan.spaces.length === 0) return storeZones
-    return parsedPlan.spaces.map((sp, _i) => ({
+    if (!renderedPlan || renderedPlan.spaces.length === 0) return storeZones
+    return renderedPlan.spaces.map((sp, _i) => ({
       id: sp.id,
       floorId: floors[0]?.id ?? 'floor-rdc',
       label: sp.label,
@@ -49,10 +65,12 @@ export default function Vol3DModule() {
       w: sp.bounds.width,
       h: sp.bounds.height,
       niveau: 2 as any,
-      color: sp.color ?? '#3b82f6',
+      // Palette MallMap2D unifiée (sp.color ignoré — il vient de l'ancienne
+      // spaceTypeLibrary avec teintes saturées).
+      color: resolveColor3D(String(sp.type)),
       surfaceM2: sp.areaSqm,
     }))
-  }, [parsedPlan, storeZones, floors])
+  }, [renderedPlan, storeZones, floors])
 
   // Use parsed plan dimensions for floor size when available
   const effectiveFloors = useMemo(() => {

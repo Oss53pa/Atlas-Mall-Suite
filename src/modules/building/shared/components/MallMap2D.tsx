@@ -22,7 +22,7 @@ import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
  *  (aplats pastels bien saturés pour distinguer les usages).
  *  Les circulations (mail, galerie, couloir) sont en BEIGE CRÈME
  *  clair — surtout pas rose (qui est réservé aux commerces). */
-const CATEGORY_COLOR: Record<string, string> = {
+export const CATEGORY_COLOR: Record<string, string> = {
   // ─── Palette "planimetria" muted — inspirée plans architecte chinois/européens ───
   // Tous les tons sont desaturés (saturation ~35-45%) pour ressembler à un
   // plan d'architecte imprimé, pas à un écran saturé.
