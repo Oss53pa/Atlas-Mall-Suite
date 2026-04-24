@@ -256,6 +256,10 @@ export function SpaceEditorCanvas({
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [cursorWorld, setCursorWorld] = useState<Geo.Point | null>(null)
   const [hoveredSpaceId, setHoveredSpaceId] = useState<string | null>(null)
+  /** Espace dont le badge icône est survolé. Déclenche le tooltip
+   *  uniquement sur l'icône (pas sur tout le polygone) pour ne pas
+   *  masquer les sommets et empêcher l'édition de forme. */
+  const [iconHoverSpaceId, setIconHoverSpaceId] = useState<string | null>(null)
   const [annotateType, setAnnotateType]   = useState<AnnotationType>('note')
   /** Dernier espace survolé — NE s'efface PAS sur mouseLeave.
    *  Reste actif jusqu'au prochain survol d'un autre espace ou clic vide.
@@ -584,16 +588,18 @@ export function SpaceEditorCanvas({
           return
         }
       }
-      // Clic sur une edge pour insérer un vertex
+      // Clic sur une arête d'un RECTANGLE sélectionné → arme le drag edge
+      // (resize en ligne droite sans création de point). Ne modifie rien
+      // tant que le curseur ne bouge pas. L'insertion de sommet sur les
+      // polygones libres se fait en DOUBLE-CLIC (cf. handleDoubleClick)
+      // pour éviter toute modification accidentelle au simple clic.
       for (const s of visibleSpaces) {
+        if (!Geo.isRectangular(s.polygon)) continue
+        if (!selectedIdsRef.current.has(s.id)) continue
         const hit = Geo.findClosestEdge(s.polygon, world, EDGE_HIT_PX / viewport.scale)
         if (hit) {
-          const newPoly = Geo.insertVertex(s.polygon, hit.edgeIdx, hit.point)
-          // Snapshot puis update direct (pas de changeSpaces → pas de history spam)
           preDragSpacesRef.current = [...spacesRef.current]
-          onSpacesChange(spaces.map(sp => sp.id === s.id ? { ...sp, polygon: newPoly } : sp))
-          draggingVertexRef.current = { spaceId: s.id, idx: hit.edgeIdx + 1 }
-          setDraggingVertex({ spaceId: s.id, idx: hit.edgeIdx + 1 })
+          draggingEdgeRef.current = { spaceId: s.id, edgeIdx: hit.edgeIdx }
           return
         }
       }
@@ -866,6 +872,19 @@ export function SpaceEditorCanvas({
           return
         }
       }
+      // Double-clic sur une arête d'un polygone LIBRE (non rectangle) sélectionné
+      // = insertion d'un sommet à cet endroit. (Rectangles : pas d'insertion,
+      // on utilise les poignées d'arêtes pour resize droit.)
+      for (const s of visibleSpaces) {
+        if (!selectedIdsRef.current.has(s.id)) continue
+        if (Geo.isRectangular(s.polygon)) continue
+        const hit = Geo.findClosestEdge(s.polygon, world, EDGE_HIT_PX / viewport.scale)
+        if (hit) {
+          const newPoly = Geo.insertVertex(s.polygon, hit.edgeIdx, hit.point)
+          updateSpace(s.id, { polygon: newPoly })
+          return
+        }
+      }
       // Double-clic sur un espace = ouvre éditeur métadata
       // Tolérance étendue pour les portes
       const dblTolM = 12 / viewport.scale
@@ -1108,7 +1127,7 @@ export function SpaceEditorCanvas({
             { m: 'wall',   icon: MoveHorizontal,label: `Mur (${wallThicknessCm} cm)` },
           ] as Array<{ m: DrawMode; icon: any; label: string }>).map(o => (
             <button key={o.m}
-              onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null) }}
+              onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null); setIconHoverSpaceId(null) }}
               className={`p-1.5 rounded text-[11px] flex items-center gap-1.5 ${
                 mode === o.m ? 'bg-atlas-500 text-white' : 'text-slate-400 hover:text-white'
               }`}
@@ -1144,7 +1163,7 @@ export function SpaceEditorCanvas({
             { m: 'parking-famille',   icon: Users2,        title: 'Famille 3×5 m',             color: '#f472b6' },
           ] as Array<{ m: DrawMode; icon: any; title: string; color: string }>).map(o => (
             <button key={o.m}
-              onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null) }}
+              onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null); setIconHoverSpaceId(null) }}
               className={`p-1.5 rounded text-[11px] flex items-center gap-1.5 ${
                 mode === o.m ? 'bg-atlas-500 text-white' : 'text-slate-400 hover:text-white'
               }`}
@@ -1190,7 +1209,7 @@ export function SpaceEditorCanvas({
             { m: 'door-service',     icon: DoorClosed,        title: 'Porte service 1m × 20cm',         color: '#0d9488' },
           ] as Array<{ m: DrawMode; icon: any; title: string; color: string }>).map(o => (
             <button key={o.m}
-              onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null) }}
+              onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null); setIconHoverSpaceId(null) }}
               className={`p-1.5 rounded text-[11px] flex items-center gap-1.5 ${
                 mode === o.m ? 'bg-atlas-500 text-white' : 'text-slate-400 hover:text-white'
               }`}
@@ -1419,11 +1438,15 @@ export function SpaceEditorCanvas({
             const areaSqm = Geo.polyArea(s.polygon)
             const anomaly = checkSurfaceAnomaly(s.type, areaSqm)
 
+            // En modes dessin, tout le groupe d'espace devient transparent aux clics :
+            // on peut tracer par-dessus sans être bloqué par un polygone ou son label.
+            const isDrawMode = mode !== 'select'
             return (
               <g
                 key={s.id}
-                onMouseEnter={() => { setHoveredSpaceId(s.id); lastFocusedSpaceIdRef.current = s.id }}
-                onMouseLeave={() => setHoveredSpaceId(null)}
+                onMouseEnter={() => { if (!isDrawMode) { setHoveredSpaceId(s.id); lastFocusedSpaceIdRef.current = s.id } }}
+                onMouseLeave={() => { if (!isDrawMode) setHoveredSpaceId(null) }}
+                style={isDrawMode ? { pointerEvents: 'none' } : undefined}
               >
                 {isDoorType(s.type) ? (
                   /* ── Porte = trait + jambages ── */
@@ -1486,8 +1509,9 @@ export function SpaceEditorCanvas({
                     </g>
                   )
                 })}
-                {/* Edge insert indicator */}
-                {mode === 'select' && isSelected && hoveredEdge?.spaceId === s.id && (
+                {/* Edge insert indicator — UNIQUEMENT sur polygones libres
+                    (sur rectangles on déplace l'arête, on n'insère pas de point) */}
+                {mode === 'select' && isSelected && hoveredEdge?.spaceId === s.id && !Geo.isRectangular(s.polygon) && (
                   <circle
                     cx={worldToScreen(hoveredEdge.point.x, hoveredEdge.point.y).x}
                     cy={worldToScreen(hoveredEdge.point.x, hoveredEdge.point.y).y}
@@ -1497,31 +1521,39 @@ export function SpaceEditorCanvas({
 
                 {/* ── Badge icône — masqué pour les portes (trait seul suffit) ── */}
                 {!isDoorType(s.type) && (
-                  <g transform={`translate(${cx}, ${cy})`} style={{ pointerEvents: 'none' }}>
+                  <g
+                    transform={`translate(${cx}, ${cy})`}
+                    onMouseEnter={() => { if (mode === 'select') setIconHoverSpaceId(s.id) }}
+                    onMouseLeave={() => setIconHoverSpaceId(null)}
+                    style={{ cursor: mode === 'select' ? 'help' : 'default' }}
+                  >
                     <circle
                       r={13}
                       fill="rgba(15,23,42,0.88)"
-                      stroke={isSelected ? '#ffffff' : meta.color}
-                      strokeWidth={isSelected ? 1.5 : 1}
+                      stroke={isSelected ? '#ffffff' : iconHoverSpaceId === s.id ? '#ffffff' : meta.color}
+                      strokeWidth={isSelected || iconHoverSpaceId === s.id ? 1.5 : 1}
                       strokeOpacity={0.7}
                     />
-                    <text textAnchor="middle" dominantBaseline="central" fontSize={13} y={1}>
+                    <text textAnchor="middle" dominantBaseline="central" fontSize={13} y={1}
+                      style={{ pointerEvents: 'none' }}>
                       {meta.icon}
                     </text>
                     {s.validated && (
-                      <circle cx={9} cy={-9} r={4} fill="#10b981" stroke="rgba(15,23,42,0.9)" strokeWidth={1} />
+                      <circle cx={9} cy={-9} r={4} fill="#10b981" stroke="rgba(15,23,42,0.9)" strokeWidth={1}
+                        style={{ pointerEvents: 'none' }} />
                     )}
                     {anomaly.aberrant && (
-                      <>
+                      <g style={{ pointerEvents: 'none' }}>
                         <circle cx={9} cy={-9} r={5} fill="#f59e0b" stroke="rgba(15,23,42,0.9)" strokeWidth={1} />
                         <text x={9} y={-9} textAnchor="middle" dominantBaseline="central" fontSize={7} fill="#000" fontWeight="bold">!</text>
-                      </>
+                      </g>
                     )}
                   </g>
                 )}
 
-                {/* ── Tooltip au survol ── */}
-                {hoveredSpaceId === s.id && (
+                {/* ── Tooltip au survol de l'ICÔNE uniquement (plus sur tout le polygone
+                    → ne masque plus les sommets/arêtes pendant l'édition de forme) ── */}
+                {iconHoverSpaceId === s.id && (
                   (() => {
                     const displayName = s.name || '(sans nom)'
                     const isCommercial = meta.category === 'commerces-services'
@@ -1623,15 +1655,61 @@ export function SpaceEditorCanvas({
 
           {/* Draft poly/curve en cours */}
           {draftPoints.length > 0 && (
-            <g>
+            <g style={{ pointerEvents: 'none' }}>
+              {/* Courbe lissée prévisualisée en direct (mode curve) */}
+              {mode === 'curve' && draftPoints.length >= 3 && (() => {
+                const preview = Geo.catmullRomSmooth(draftPoints, 8, 0.5)
+                const pts = preview.map(p => worldToScreen(p.x, p.y))
+                const d = pts.map((s, i) => `${i === 0 ? 'M' : 'L'} ${s.x} ${s.y}`).join(' ') + ' Z'
+                return <path d={d} fill="rgba(201,160,104,0.08)" stroke="#c9a068" strokeWidth={1.8} />
+              })()}
+              {/* Polyline brute (points de contrôle) */}
               <polyline
                 points={draftPoints.map(p => worldToScreen(p.x, p.y)).map(s => `${s.x},${s.y}`).join(' ')}
-                fill="none" stroke="#c9a068" strokeWidth={1.5} strokeDasharray="4 2"
+                fill="none" stroke="#c9a068" strokeWidth={1}
+                strokeDasharray={mode === 'curve' ? '2 2' : '4 2'}
+                opacity={mode === 'curve' ? 0.5 : 1}
               />
+              {/* Rubber-band : trait en pointillé vers le curseur */}
+              {cursorWorld && (
+                <line
+                  x1={worldToScreen(draftPoints[draftPoints.length - 1].x, draftPoints[draftPoints.length - 1].y).x}
+                  y1={worldToScreen(draftPoints[draftPoints.length - 1].x, draftPoints[draftPoints.length - 1].y).y}
+                  x2={worldToScreen(cursorWorld.x, cursorWorld.y).x}
+                  y2={worldToScreen(cursorWorld.x, cursorWorld.y).y}
+                  stroke="#c9a068" strokeWidth={1} strokeDasharray="3 3" opacity={0.6}
+                />
+              )}
+              {/* Points de contrôle numérotés */}
               {draftPoints.map((p, i) => {
                 const s = worldToScreen(p.x, p.y)
-                return <circle key={i} cx={s.x} cy={s.y} r={3} fill="#c9a068" />
+                const isFirst = i === 0
+                return (
+                  <g key={i}>
+                    <circle cx={s.x} cy={s.y} r={isFirst ? 5 : 3.5}
+                      fill={isFirst ? '#10b981' : '#c9a068'}
+                      stroke="#fff" strokeWidth={1}
+                    />
+                    {isFirst && draftPoints.length >= 3 && (
+                      <text x={s.x + 10} y={s.y - 8}
+                        fontSize={9} fill="#10b981" fontWeight="bold">
+                        double-clic ici pour fermer
+                      </text>
+                    )}
+                  </g>
+                )
               })}
+              {/* Aide contextuelle mode courbe */}
+              {mode === 'curve' && (
+                <text
+                  x={worldToScreen(draftPoints[draftPoints.length - 1].x, draftPoints[draftPoints.length - 1].y).x + 10}
+                  y={worldToScreen(draftPoints[draftPoints.length - 1].x, draftPoints[draftPoints.length - 1].y).y + 16}
+                  fontSize={9} fill="#94a3b8">
+                  {draftPoints.length < 3
+                    ? `${draftPoints.length}/3 points minimum`
+                    : `${draftPoints.length} points · double-clic = fermer`}
+                </text>
+              )}
             </g>
           )}
 

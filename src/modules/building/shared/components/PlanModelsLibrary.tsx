@@ -14,6 +14,8 @@ import {
 } from 'lucide-react'
 import { usePlanModelsStore, type PlanModel } from '../stores/planModelsStore'
 import { usePlanEngineStore } from '../stores/planEngineStore'
+import { useEditableSpaceStore } from '../stores/editableSpaceStore'
+import { applyEditsToPlan } from '../planReader/applyEditsToPlan'
 
 interface Props {
   projectId: string
@@ -23,6 +25,10 @@ export function PlanModelsLibrary({ projectId }: Props) {
   const parsedPlan = usePlanEngineStore((s) => s.parsedPlan)
   const setParsedPlan = usePlanEngineStore((s) => s.setParsedPlan)
   const validatePlan = usePlanEngineStore((s) => s.validatePlan)
+  // Les polygones dessinés/édités par l'utilisateur dans l'éditeur Atlas Studio
+  // doivent remplacer les DetectedSpace bruts à la sauvegarde du modèle, sinon
+  // les volumes continuent à afficher le plan DXF non-remodelé.
+  const editableSpaces = useEditableSpaceStore((s) => s.spaces)
 
   // IMPORTANT : sélectionner directement `models` (référence stable) puis
   // filtrer/trier dans useMemo pour éviter les boucles de re-render Zustand
@@ -51,7 +57,10 @@ export function PlanModelsLibrary({ projectId }: Props) {
   const handleSave = () => {
     if (!parsedPlan) { alert('Aucun plan importé à enregistrer.'); return }
     if (!saveName.trim()) { alert('Nom requis.'); return }
-    saveCurrentAsModel(projectId, saveName, parsedPlan, {
+    // Fusionne les éditions utilisateur (EditableSpace) dans le plan avant
+    // sauvegarde — sans ça, les volumes voient le DXF brut et non le remodelage.
+    const merged = applyEditsToPlan(parsedPlan, editableSpaces)
+    saveCurrentAsModel(projectId, saveName, merged, {
       description: saveDesc || undefined,
       status: 'brouillon',
     })
@@ -65,10 +74,13 @@ export function PlanModelsLibrary({ projectId }: Props) {
   }
 
   const handleValidate = (m: PlanModel) => {
-    updateModel(m.id, { status: 'valide' })
-    // Activer + verrouiller la baseline (déblocage des volumes)
+    // Re-fusionner les edits au moment de la validation si l'utilisateur
+    // a continué à modifier depuis la dernière sauvegarde. On met à jour
+    // le modèle avec le plan remodelé final.
+    const mergedPlan = applyEditsToPlan(m.plan, editableSpaces)
+    updateModel(m.id, { status: 'valide', plan: mergedPlan })
     setActiveModel(projectId, m.id)
-    setParsedPlan(m.plan)
+    setParsedPlan(mergedPlan)
     validatePlan()
   }
 
