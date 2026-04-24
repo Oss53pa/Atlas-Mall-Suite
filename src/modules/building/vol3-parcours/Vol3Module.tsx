@@ -62,6 +62,18 @@ import { applyEditsToPlan } from '../shared/planReader/applyEditsToPlan'
 import { applyCoherenceCorrections } from '../shared/engines/plan-analysis/coherenceEngine'
 import { cleanupPolygon } from '../shared/engines/geometry/legacyCleanup'
 import { tuplePolygonToMm, tuplePolygonToM } from '../shared/engines/geometry/meterAdapter'
+
+// Cache view-time cleanup — évite de recalculer 152 polygones à chaque
+// mount. Clé = id + count + premier/dernier sommet (suffisant pour détecter
+// modif). Globale module : survit aux remounts Vol3Module.
+const cleanupCache = new Map<string, Array<[number, number]>>()
+const CLEANUP_CACHE_MAX = 1000
+function cleanupCacheKey(id: string, poly: readonly [number, number][]): string {
+  if (!poly || poly.length === 0) return `${id}:0`
+  const [fx, fy] = poly[0]
+  const [lx, ly] = poly[poly.length - 1]
+  return `${id}:${poly.length}:${fx.toFixed(3)},${fy.toFixed(3)}:${lx.toFixed(3)},${ly.toFixed(3)}`
+}
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
 import { savePlanImageFromUrl, loadAllPlanImages } from '../shared/stores/planImageCache'
 const Vol3DModuleEmbed = lazy(() => import('../vol-3d/Vol3DModule'))
@@ -176,7 +188,17 @@ export default function Vol3Module() {
   // ── Source du plan 2D (uniquement utilisé en viewMode='2d') ──
   // 'modeled' = EditableSpace du user (rendu épuré, palette architecturale)
   // 'raw'     = polygones DXF bruts tels qu'importés (plus dense, pour vérif)
-  const [planSource, setPlanSource] = useState<'modeled' | 'raw'>('modeled')
+  // Persisté en localStorage : le choix de l'user survit aux reloads.
+  const [planSource, setPlanSource] = useState<'modeled' | 'raw'>(() => {
+    if (typeof window === 'undefined') return 'modeled'
+    const saved = localStorage.getItem('atlas-vol3-plan-source')
+    return saved === 'raw' ? 'raw' : 'modeled'
+  })
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('atlas-vol3-plan-source', planSource)
+    }
+  }, [planSource])
 
   // ── PROPH3T parcours détaillés (calculés à la demande) ──
   const [proph3tJourneys, _setProph3tJourneys] = useState<import('../shared/engines/plan-analysis/detailedJourneyEngine').DetailedJourney[] | null>(null)
@@ -292,23 +314,36 @@ export default function Vol3Module() {
       adjacencyTolM: 0.5,
       mergeAdjacent: true,
     })
-    // ═══ Redressage géométrique À L'AFFICHAGE (view-time) ═══
-    // Nettoie les polygones bancals (angles quasi-droits, coins qui ne se
-    // touchent pas, micro-arêtes) AU MOMENT DU RENDU. Les données stockées
-    // ne sont pas modifiées — le cleanup définitif passe par le dashboard
-    // admin. Paramètres agressifs : grille 10 cm, drift max 40 cm, car on
-    // redresse des plans rc.0 saisis sans contraintes.
+    // ═══ Redressage géométrique À L'AFFICHAGE (view-time, avec cache) ═══
+    // Nettoie les polygones bancals AU MOMENT DU RENDU. Cache modul-global
+    // pour éviter de recalculer 152× cleanupPolygon à chaque changement
+    // d'une autre dépendance que `spaces`.
     const straightenedSpaces = corrected.spaces.map(s => {
       if (!s.polygon || s.polygon.length < 3) return s
+      const key = cleanupCacheKey(s.id, s.polygon)
+      const cached = cleanupCache.get(key)
+      if (cached) {
+        return cached === s.polygon ? s : { ...s, polygon: cached }
+      }
       const polyMm = tuplePolygonToMm(s.polygon)
       const result = cleanupPolygon(polyMm, {
-        gridMm: 100,       // 10 cm
-        minEdgeMm: 30,     // 3 cm
-        orthoAlignMm: 80,  // 8 cm
-        maxDriftMm: 400,   // 40 cm (plus permissif qu'au dashboard)
+        gridMm: 100, minEdgeMm: 30, orthoAlignMm: 80, maxDriftMm: 400,
       })
-      if (!result.changed) return s
+      if (!result.changed) {
+        cleanupCache.set(key, s.polygon)
+        // Éviction LRU grossière
+        if (cleanupCache.size > CLEANUP_CACHE_MAX) {
+          const firstKey = cleanupCache.keys().next().value
+          if (firstKey) cleanupCache.delete(firstKey)
+        }
+        return s
+      }
       const cleanedPolygon = tuplePolygonToM(result.cleaned)
+      cleanupCache.set(key, cleanedPolygon)
+      if (cleanupCache.size > CLEANUP_CACHE_MAX) {
+        const firstKey = cleanupCache.keys().next().value
+        if (firstKey) cleanupCache.delete(firstKey)
+      }
       return { ...s, polygon: cleanedPolygon }
     })
     return { ...corrected, spaces: straightenedSpaces }

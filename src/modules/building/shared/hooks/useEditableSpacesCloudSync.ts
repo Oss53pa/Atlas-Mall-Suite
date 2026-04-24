@@ -32,33 +32,44 @@ export function useEditableSpacesCloudSync(config: CloudSyncConfig): void {
 
   const spaces = useEditableSpaceStore(s => s.spaces)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const lastPushedCountRef = useRef<number>(-1)
+  const lastPushedSignatureRef = useRef<string>('')
 
   useEffect(() => {
     if (!enabled) return
-    // Skip push initial (hydratation du store au mount)
-    if (lastPushedCountRef.current === -1 && spaces.length === 0) {
-      lastPushedCountRef.current = 0
+    // Signature : count + 5 derniers IDs + somme longueurs polygones.
+    // Change à chaque édit pertinente. Si identique à la dernière poussée
+    // réussie → pas de re-push (évite boucles, mais marche sur hydratation
+    // puisque la signature passe de "" à qqchose).
+    const signature = computeSignature(spaces)
+    if (signature === lastPushedSignatureRef.current) return
+    if (spaces.length === 0) {
+      // Rien à pousser mais on retient la signature vide pour éviter
+      // de spammer un upsert de zéro row à chaque hydratation.
+      lastPushedSignatureRef.current = signature
       return
     }
 
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => {
-      // Capture la liste au moment du push (évite race avec nouvelles édits)
       const snapshot = useEditableSpaceStore.getState().spaces
+      const snapshotSig = computeSignature(snapshot)
       pushEditableSpaces(config.projectId, snapshot)
         .then(result => {
-          lastPushedCountRef.current = snapshot.length
+          // Ne retient la signature que si le push a RÉUSSI (au moins partiellement)
+          // sinon on continue à essayer à la prochaine édit.
+          if (result.succeeded > 0) {
+            lastPushedSignatureRef.current = snapshotSig
+          }
           if (result.failed > 0) {
-            // Log groupé sans spam : 1 ligne par batch
             console.warn(
               `[cells-sync] ${result.failed}/${result.attempted} spaces failed`,
               result.errors.slice(0, 3),
             )
+          } else if (result.succeeded > 0) {
+            console.info(`[cells-sync] ${result.succeeded} spaces synced`)
           }
         })
         .catch(err => {
-          // Defensive — pushEditableSpaces ne devrait jamais throw
           console.warn('[cells-sync] unexpected error', err)
         })
     }, debounce)
@@ -67,4 +78,11 @@ export function useEditableSpacesCloudSync(config: CloudSyncConfig): void {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
   }, [enabled, spaces, config.projectId, debounce])
+}
+
+function computeSignature(spaces: readonly { id: string; polygon: readonly { x: number; y: number }[] }[]): string {
+  if (spaces.length === 0) return 'empty'
+  const tailIds = spaces.slice(-5).map(s => s.id).join('|')
+  const polyLen = spaces.reduce((sum, s) => sum + (s.polygon?.length ?? 0), 0)
+  return `${spaces.length}:${polyLen}:${tailIds}`
 }
