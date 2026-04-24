@@ -55,6 +55,7 @@ import {
 import { AnnotationsLayer }     from './AnnotationsLayer'
 import type { AnnotationType }  from '../stores/annotationsStore'
 import * as Geo from '../engines/plan-analysis/spaceGeometryEngine'
+import { useGeometryConstraints } from '../hooks/useGeometryConstraints'
 import {
   SPACE_TYPE_META,
   SPACE_TYPES_BY_CATEGORY,
@@ -171,6 +172,27 @@ function pointHitsSpace(
   return false
 }
 
+/** Retourne l'espace "topmost" au point world : le plus petit polygone qui
+ *  contient le point. Résout le problème des espaces imbriqués — si un petit
+ *  espace est dessiné DANS un plus grand, le clic sélectionne le petit. */
+function findTopSpaceAt(
+  spaces: EditableSpace[],
+  world: { x: number; y: number },
+  toleranceM: number,
+): EditableSpace | null {
+  const hits: EditableSpace[] = []
+  for (const s of spaces) {
+    if (pointHitsSpace(world, s, toleranceM)) hits.push(s)
+  }
+  if (hits.length === 0) return null
+  if (hits.length === 1) return hits[0]
+  // Plusieurs espaces contiennent le point → on prend le PLUS PETIT
+  // (aire minimale) = le plus imbriqué = visuellement au-dessus.
+  return hits.reduce((min, s) =>
+    Geo.polyArea(s.polygon) < Geo.polyArea(min.polygon) ? s : min,
+  )
+}
+
 /**
  * Rend une porte comme un trait architectural :
  *   ─ tiret central = feuille/vantail (le passage)
@@ -255,7 +277,36 @@ export function SpaceEditorCanvas({
   const [showOnlyActiveFloor, setShowOnlyActiveFloor] = useState(true)
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [cursorWorld, setCursorWorld] = useState<Geo.Point | null>(null)
+  const [lastSnapKind, setLastSnapKind] = useState<'none' | 'grid' | 'ortho' | 'neighbor-vertex' | 'neighbor-edge'>('none')
   const [hoveredSpaceId, setHoveredSpaceId] = useState<string | null>(null)
+
+  // ─── Contraintes géométriques (Step 2 refonte éditeur) ─────
+  // Source unique pour snap grille / ortho / snap voisin.
+  // Les préférences sont persistées dans localStorage (clé `atlas-editor-geom-prefs`).
+  const geomConstraints = useGeometryConstraints()
+
+  /**
+   * Applique les contraintes au point brut (en mètres) pendant le TRACÉ.
+   * - prevM : dernier point du tracé en cours (pour ortho)
+   * - shiftHeld : force ortho ponctuel
+   * - excludeSpaceId : exclut ce space des voisins (évite de se snapper sur soi-même pendant l'édition)
+   * Retourne le point corrigé en mètres + met à jour le badge UI.
+   */
+  const applyDrawConstraints = useCallback((
+    rawM: readonly [number, number],
+    prevM: readonly [number, number] | null,
+    shiftHeld: boolean,
+    excludeSpaceId?: string,
+  ): [number, number] => {
+    const neighborsM: [number, number][][] = spacesRef.current
+      .filter(sp => sp.id !== excludeSpaceId)
+      .map(sp => sp.polygon.map(p => [p.x, p.y] as [number, number]))
+    const res = geomConstraints.applyToPoint({
+      rawM, prevM, shiftHeld, neighborsM,
+    })
+    setLastSnapKind(res.appliedSnap)
+    return res.pointM
+  }, [geomConstraints])
   /** Espace dont le badge icône est survolé. Déclenche le tooltip
    *  uniquement sur l'icône (pas sur tout le polygone) pour ne pas
    *  masquer les sommets et empêcher l'édition de forme. */
@@ -608,36 +659,38 @@ export function SpaceEditorCanvas({
       // d'un seul geste : 1 clic sans bouger = select pur, 1 clic+glisser
       // = select + translate.
       // Tolérance étendue pour les portes (sinon impossibles à cliquer à faible zoom).
+      // findTopSpaceAt : priorise le plus petit espace = celui imbriqué
+      // visuellement au-dessus (ex: bijouterie dans galerie mode).
       const clickTolM = 12 / viewport.scale
-      for (const s of visibleSpaces) {
-        if (pointHitsSpace(world, s, clickTolM)) {
-          // Si espace non sélectionné (et pas Shift), on sélectionne d'abord
-          let ids: Set<string>
-          if (e.shiftKey) {
-            const next = new Set(selectedIdsRef.current)
-            if (next.has(s.id)) next.delete(s.id)
-            else next.add(s.id)
-            setSelectedIds(next)
-            ids = next
+      const topSpace = findTopSpaceAt(visibleSpaces, world, clickTolM)
+      if (topSpace) {
+        const s = topSpace
+        // Si espace non sélectionné (et pas Shift), on sélectionne d'abord
+        let ids: Set<string>
+        if (e.shiftKey) {
+          const next = new Set(selectedIdsRef.current)
+          if (next.has(s.id)) next.delete(s.id)
+          else next.add(s.id)
+          setSelectedIds(next)
+          ids = next
+        } else {
+          const wasSelected = selectedIdsRef.current.has(s.id)
+          if (!wasSelected) {
+            setSelectedIds(new Set([s.id]))
+            ids = new Set([s.id])
           } else {
-            const wasSelected = selectedIdsRef.current.has(s.id)
-            if (!wasSelected) {
-              setSelectedIds(new Set([s.id]))
-              ids = new Set([s.id])
-            } else {
-              ids = new Set(selectedIdsRef.current)
-            }
+            ids = new Set(selectedIdsRef.current)
           }
-          // Armer le drag (il démarrera réellement après un seuil dans mousemove)
-          const originalPolygons = new Map<string, Geo.Polygon>()
-          for (const sp of spacesRef.current) {
-            if (ids.has(sp.id)) originalPolygons.set(sp.id, sp.polygon.map(p => ({ ...p })))
-          }
-          draggingSpacesRef.current = { ids, startWorld: world, originalPolygons }
-          dragSpacesThresholdRef.current = { startX: e.clientX, startY: e.clientY, triggered: false }
-          preDragSpacesRef.current = spacesRef.current
-          return
         }
+        // Armer le drag (il démarrera réellement après un seuil dans mousemove)
+        const originalPolygons = new Map<string, Geo.Polygon>()
+        for (const sp of spacesRef.current) {
+          if (ids.has(sp.id)) originalPolygons.set(sp.id, sp.polygon.map(p => ({ ...p })))
+        }
+        draggingSpacesRef.current = { ids, startWorld: world, originalPolygons }
+        dragSpacesThresholdRef.current = { startX: e.clientX, startY: e.clientY, triggered: false }
+        preDragSpacesRef.current = spacesRef.current
+        return
       }
       // Clic sur zone vide = pan du plan + désélection + reset focus sticky
       setSelectedIds(new Set())
@@ -648,20 +701,27 @@ export function SpaceEditorCanvas({
     }
 
     if (mode === 'poly' || mode === 'curve') {
-      setDraftPoints([...draftPoints, world])
+      const prev = draftPoints.length > 0 ? draftPoints[draftPoints.length - 1] : null
+      const prevM: [number, number] | null = prev ? [prev.x, prev.y] : null
+      const corrected = applyDrawConstraints([world.x, world.y], prevM, e.shiftKey)
+      setDraftPoints([...draftPoints, { x: corrected[0], y: corrected[1] }])
       return
     }
 
     if (mode === 'rect') {
-      setDragStart(world)
+      const corrected = applyDrawConstraints([world.x, world.y], null, e.shiftKey)
+      setDragStart({ x: corrected[0], y: corrected[1] })
       return
     }
 
     if (mode === 'wall') {
       if (!dragStart) {
-        setDragStart(world)
+        const corrected = applyDrawConstraints([world.x, world.y], null, e.shiftKey)
+        setDragStart({ x: corrected[0], y: corrected[1] })
       } else {
-        const snapped = e.shiftKey ? Geo.snapAngle(dragStart, world, 45) : world
+        const correctedEnd = applyDrawConstraints([world.x, world.y], [dragStart.x, dragStart.y], e.shiftKey)
+        const endWorld: Geo.Point = { x: correctedEnd[0], y: correctedEnd[1] }
+        const snapped = e.shiftKey ? Geo.snapAngle(dragStart, endWorld, 45) : endWorld
         const poly = Geo.wallSegmentToPoly(dragStart, snapped, wallThicknessCm / 100)
         createSpace(poly)
         setDragStart(null)
@@ -886,13 +946,12 @@ export function SpaceEditorCanvas({
         }
       }
       // Double-clic sur un espace = ouvre éditeur métadata
-      // Tolérance étendue pour les portes
+      // Tolérance étendue pour les portes + priorité au plus petit imbriqué
       const dblTolM = 12 / viewport.scale
-      for (const s of visibleSpaces) {
-        if (pointHitsSpace(world, s, dblTolM)) {
-          setEditingSpaceId(s.id)
-          return
-        }
+      const dblTop = findTopSpaceAt(visibleSpaces, world, dblTolM)
+      if (dblTop) {
+        setEditingSpaceId(dblTop.id)
+        return
       }
     }
     if (mode === 'poly' && draftPoints.length >= 3) {
@@ -1311,10 +1370,63 @@ export function SpaceEditorCanvas({
         <button
           onClick={() => setSnapEnabled(!snapEnabled)}
           className={`px-2 py-1 rounded text-[10px] font-bold ${snapEnabled ? 'bg-atlas-500 text-white' : 'text-slate-500'}`}
-          title="Snap grille 50 cm"
+          title="Snap grille 50 cm (legacy Geo)"
         >
           SNAP
         </button>
+
+        {/* Nouveau : barre contraintes géométriques (grille mm / ortho / voisins) */}
+        <div className="flex items-center gap-1 px-1 border-l border-white/10">
+          <span className="text-[9px] text-slate-500 uppercase tracking-wider">Grille</span>
+          {[100, 250, 500, 1000].map(g => (
+            <button
+              key={g}
+              onClick={() => geomConstraints.setGridMm(geomConstraints.prefs.gridMm === g ? 0 : g)}
+              className={`px-1.5 py-0.5 rounded text-[9px] font-mono ${
+                geomConstraints.prefs.gridMm === g
+                  ? 'bg-atlas-500 text-white'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+              title={`Grille ${g >= 1000 ? `${g / 1000}m` : `${g}mm`}`}
+            >
+              {g >= 1000 ? `${g / 1000}m` : `${g / 10}cm`}
+            </button>
+          ))}
+          <button
+            onClick={geomConstraints.toggleOrtho}
+            className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+              geomConstraints.prefs.orthoAlways
+                ? 'bg-atlas-500 text-white'
+                : 'text-slate-400 hover:text-white'
+            }`}
+            title="Mode orthogonal toujours actif (sinon maintenir Shift)"
+          >
+            ⊥
+          </button>
+          <button
+            onClick={geomConstraints.toggleSnapNeighbors}
+            className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+              geomConstraints.prefs.snapNeighbors
+                ? 'bg-atlas-500 text-white'
+                : 'text-slate-400 hover:text-white'
+            }`}
+            title="Snap sur sommets/arêtes voisins"
+          >
+            ⊕
+          </button>
+          {lastSnapKind !== 'none' && (
+            <span
+              className={`px-1.5 py-0.5 rounded text-[8px] font-mono ${
+                lastSnapKind.startsWith('neighbor') ? 'bg-emerald-500/20 text-emerald-300' :
+                lastSnapKind === 'ortho' ? 'bg-sky-500/20 text-sky-300' :
+                'bg-slate-700 text-slate-300'
+              }`}
+              title="Dernière contrainte appliquée"
+            >
+              {lastSnapKind}
+            </span>
+          )}
+        </div>
 
         <div className="h-5 w-px bg-white/10 mx-1" />
 
@@ -1423,8 +1535,9 @@ export function SpaceEditorCanvas({
             fill="none" stroke="#334155" strokeWidth={1} strokeDasharray="4 2"
           />
 
-          {/* Espaces */}
-          {visibleSpaces.map(s => {
+          {/* Espaces — tri par aire décroissante : grands dessous, petits
+              dessus. Permet de cliquer un espace imbriqué dans un plus grand. */}
+          {[...visibleSpaces].sort((a, b) => Geo.polyArea(b.polygon) - Geo.polyArea(a.polygon)).map(s => {
             const meta = SPACE_TYPE_META[s.type]
             const isSelected = selectedIds.has(s.id)
             const screenPts = s.polygon.map(p => worldToScreen(p.x, p.y))
