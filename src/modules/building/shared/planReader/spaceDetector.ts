@@ -221,23 +221,29 @@ export function classifySpaceType(layer: string, label: string): SpaceType {
 
 // ─── COLOR FOR SPACE TYPE ─────────────────────────────────
 
+/**
+ * Palette unifiée Atlas BIM — même teintes que MallMap2D (pastels sourds,
+ * rendu "plan d'architecte"). Ne pas dériver de cette palette : toute vue
+ * 2D des volumes (Vol.1/2/3/4) doit partager ces couleurs pour la cohérence.
+ * Si tu veux enrichir : édite en miroir dans MallMap2D.tsx → CATEGORY_COLOR.
+ */
 export function spaceTypeColor(type: SpaceType): string {
   const colors: Record<string, string> = {
-    parking: '#64748b',
-    restauration: '#f59e0b',
-    commerce: '#3b82f6',
-    services: '#14b8a6',
-    loisirs: '#06b6d4',
-    technique: '#ef4444',
-    backoffice: '#a77d4c',
-    financier: '#dc2626',
-    sortie_secours: '#22c55e',
-    circulation: '#e5e7eb',
-    hotel: '#b38a5a',
-    exterieur: '#84cc16',
-    bureaux: '#a77d4c',
+    parking:         '#6b7280', // gris asphalte
+    restauration:    '#e8a87c', // terracotta doux
+    commerce:        '#e8b4bd', // rose poudré
+    services:        '#9cbfbc', // sauge grisée
+    loisirs:         '#b8a3c9', // lavande
+    technique:       '#bcc0c6', // gris technique
+    backoffice:      '#d9c1a0', // beige rosé
+    financier:       '#c7ccd9', // gris-bleu
+    sortie_secours:  '#a8c29a', // vert sauge (visibilité douce)
+    circulation:     '#f3ecd8', // beige pâle (couloirs)
+    hotel:           '#d6bfa1', // beige chaud
+    exterieur:       '#bed0b0', // vert pastel
+    bureaux:         '#c7ccd9', // gris-bleu (comme financier)
   }
-  return colors[type] ?? '#3b82f6'
+  return colors[type] ?? '#e8b4bd' // défaut = rose poudré commerce
 }
 
 export function statusColor(status?: string): string {

@@ -60,6 +60,8 @@ import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import { useEditableSpaceStore } from '../shared/stores/editableSpaceStore'
 import { applyEditsToPlan } from '../shared/planReader/applyEditsToPlan'
 import { applyCoherenceCorrections } from '../shared/engines/plan-analysis/coherenceEngine'
+import { cleanupPolygon } from '../shared/engines/geometry/legacyCleanup'
+import { tuplePolygonToMm, tuplePolygonToM } from '../shared/engines/geometry/meterAdapter'
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
 import { savePlanImageFromUrl, loadAllPlanImages } from '../shared/stores/planImageCache'
 const Vol3DModuleEmbed = lazy(() => import('../vol-3d/Vol3DModule'))
@@ -290,7 +292,26 @@ export default function Vol3Module() {
       adjacencyTolM: 0.5,
       mergeAdjacent: true,
     })
-    return corrected
+    // ═══ Redressage géométrique À L'AFFICHAGE (view-time) ═══
+    // Nettoie les polygones bancals (angles quasi-droits, coins qui ne se
+    // touchent pas, micro-arêtes) AU MOMENT DU RENDU. Les données stockées
+    // ne sont pas modifiées — le cleanup définitif passe par le dashboard
+    // admin. Paramètres agressifs : grille 10 cm, drift max 40 cm, car on
+    // redresse des plans rc.0 saisis sans contraintes.
+    const straightenedSpaces = corrected.spaces.map(s => {
+      if (!s.polygon || s.polygon.length < 3) return s
+      const polyMm = tuplePolygonToMm(s.polygon)
+      const result = cleanupPolygon(polyMm, {
+        gridMm: 100,       // 10 cm
+        minEdgeMm: 30,     // 3 cm
+        orthoAlignMm: 80,  // 8 cm
+        maxDriftMm: 400,   // 40 cm (plus permissif qu'au dashboard)
+      })
+      if (!result.changed) return s
+      const cleanedPolygon = tuplePolygonToM(result.cleaned)
+      return { ...s, polygon: cleanedPolygon }
+    })
+    return { ...corrected, spaces: straightenedSpaces }
   }, [parsedPlan, editableSpaces])
 
   // Synthétise des floors depuis parsedPlan si vol3Store.floors est vide

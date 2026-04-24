@@ -32,14 +32,14 @@ function SpaceOverlayInner({
             onClick={(e) => { e.stopPropagation(); onSpaceClick(space) }}
             style={{ cursor: 'pointer' }}
           >
-            {/* Filled polygon — very light fill, visible border */}
+            {/* Filled polygon — palette MallMap2D unifiée (pastels sourds) */}
             <polygon
               points={points}
               fill={fill}
-              fillOpacity={isSelected ? 0.3 : 0.08}
-              stroke={isSelected ? '#ffffff' : fill}
-              strokeWidth={isSelected ? 2.5 * invScale : 1 * invScale}
-              strokeOpacity={isSelected ? 1 : 0.6}
+              fillOpacity={isSelected ? 0.85 : 0.55}
+              stroke={isSelected ? '#ffffff' : '#4a5568'}
+              strokeWidth={isSelected ? 2.5 * invScale : 0.8 * invScale}
+              strokeOpacity={isSelected ? 1 : 0.45}
               vectorEffect="non-scaling-stroke"
             />
 
