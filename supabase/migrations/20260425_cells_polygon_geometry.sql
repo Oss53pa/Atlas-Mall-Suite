@@ -9,7 +9,9 @@
 
 -- ─── Table cells (création si absente) ─────────────────────
 create table if not exists public.cells (
-  id uuid primary key default gen_random_uuid(),
+  -- id en TEXT : les EditableSpace sont créés côté app avec des IDs lisibles
+  -- genre "sp-1776976491970-xoj9" (timestamp + suffixe random). Pas d'UUID.
+  id text primary key default ('cell-' || substr(md5(random()::text), 1, 16)),
   -- project_id en TEXT : Atlas BIM identifie les projets par slug
   -- (ex: 'cosmos-angre') stocké dans Dexie/localStorage. Pas de table
   -- `projects` côté Supabase en rc.1 — le cloud est best-effort.
