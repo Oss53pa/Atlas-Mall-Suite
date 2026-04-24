@@ -999,7 +999,7 @@ export default function Vol3Module() {
               PlanCanvasV2 reste utilisé pour 3D / 3D+ (extrusion, XR). */}
           {parsedPlan && viewMode === '2d' ? (
             modeledPlan ? (
-              <MallMap2D plan={modeledPlan} theme="light" smoothEdges={true} />
+              <MallMap2D plan={modeledPlan} theme="light" smoothEdges={false} />
             ) : (
               <div className="h-full w-full flex items-center justify-center p-8" style={{ background: '#f5f3ef', color: '#334155' }}>
                 <div className="max-w-md text-center space-y-4">
