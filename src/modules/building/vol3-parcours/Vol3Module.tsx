@@ -171,6 +171,11 @@ export default function Vol3Module() {
   // ── View mode ──
   const [viewMode, setViewMode] = useState<'2d' | '3d' | '3d-advanced'>('2d')
 
+  // ── Source du plan 2D (uniquement utilisé en viewMode='2d') ──
+  // 'modeled' = EditableSpace du user (rendu épuré, palette architecturale)
+  // 'raw'     = polygones DXF bruts tels qu'importés (plus dense, pour vérif)
+  const [planSource, setPlanSource] = useState<'modeled' | 'raw'>('modeled')
+
   // ── PROPH3T parcours détaillés (calculés à la demande) ──
   const [proph3tJourneys, _setProph3tJourneys] = useState<import('../shared/engines/plan-analysis/detailedJourneyEngine').DetailedJourney[] | null>(null)
   const [_computingJourneys, _setComputingJourneys] = useState(false)
@@ -998,31 +1003,74 @@ export default function Vol3Module() {
               N'affiche QUE les EditableSpace du user (pas le DXF brut).
               PlanCanvasV2 reste utilisé pour 3D / 3D+ (extrusion, XR). */}
           {parsedPlan && viewMode === '2d' ? (
-            modeledPlan ? (
-              <MallMap2D plan={modeledPlan} theme="light" smoothEdges={false} />
-            ) : (
-              <div className="h-full w-full flex items-center justify-center p-8" style={{ background: '#f5f3ef', color: '#334155' }}>
-                <div className="max-w-md text-center space-y-4">
-                  <div className="text-6xl">📐</div>
-                  <h3 className="text-xl font-light" style={{ color: '#0f172a' }}>
-                    Aucun espace modélisé
-                  </h3>
-                  <p className="text-sm leading-relaxed" style={{ color: '#64748b' }}>
-                    Le plan interactif affiche uniquement les espaces que vous avez
-                    <strong style={{ color: '#0f172a' }}> dessinés et enregistrés </strong>
-                    dans Atlas Studio — pas le DXF brut.
-                  </p>
-                  <p className="text-[13px]" style={{ color: '#64748b' }}>
-                    Ouvrez <strong style={{ color: '#0f172a' }}>Atlas Studio → Éditeur</strong>,
-                    tracez vos espaces (rectangles, polygones, courbes), puis validez le modèle.
-                  </p>
-                  <div className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-[11px] font-mono"
-                    style={{ background: 'rgba(201,160,104,0.12)', color: '#7e5e3c', border: '1px solid rgba(201,160,104,0.3)' }}>
-                    DXF importé : {parsedPlan.spaces.length} polygones bruts · 0 dessiné
-                  </div>
+            <div className="relative h-full w-full">
+              {/* Toggle source du plan 2D — visible uniquement si on a le choix */}
+              {modeledPlan && (
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-0 rounded-lg overflow-hidden shadow-lg border border-white/20"
+                  style={{ background: 'rgba(15,23,42,0.78)', backdropFilter: 'blur(8px)' }}>
+                  <button
+                    onClick={() => setPlanSource('modeled')}
+                    className={`px-3 py-1.5 text-[11px] font-medium transition-colors ${
+                      planSource === 'modeled'
+                        ? 'bg-atlas-500 text-white'
+                        : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                    }`}
+                    title={`Plan modélisé — ${modeledPlan.spaces.length} espaces dessinés`}
+                  >
+                    Modélisé ({modeledPlan.spaces.length})
+                  </button>
+                  <button
+                    onClick={() => setPlanSource('raw')}
+                    className={`px-3 py-1.5 text-[11px] font-medium transition-colors ${
+                      planSource === 'raw'
+                        ? 'bg-atlas-500 text-white'
+                        : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                    }`}
+                    title={`DXF brut — ${parsedPlan.spaces.length} polygones importés`}
+                  >
+                    DXF brut ({parsedPlan.spaces.length})
+                  </button>
                 </div>
-              </div>
-            )
+              )}
+
+              {(() => {
+                // Plan à afficher selon la source choisie
+                const planToShow = planSource === 'raw' ? parsedPlan : modeledPlan
+                if (planToShow) {
+                  return <MallMap2D plan={planToShow} theme="light" smoothEdges={false} />
+                }
+                // Pas de plan modélisé et source = modélisé → placeholder explicatif
+                return (
+                  <div className="h-full w-full flex items-center justify-center p-8" style={{ background: '#f5f3ef', color: '#334155' }}>
+                    <div className="max-w-md text-center space-y-4">
+                      <div className="text-6xl">📐</div>
+                      <h3 className="text-xl font-light" style={{ color: '#0f172a' }}>
+                        Aucun espace modélisé
+                      </h3>
+                      <p className="text-sm leading-relaxed" style={{ color: '#64748b' }}>
+                        Le plan interactif affiche uniquement les espaces que vous avez
+                        <strong style={{ color: '#0f172a' }}> dessinés et enregistrés </strong>
+                        dans Atlas Studio — pas le DXF brut.
+                      </p>
+                      <p className="text-[13px]" style={{ color: '#64748b' }}>
+                        Ouvrez <strong style={{ color: '#0f172a' }}>Atlas Studio → Éditeur</strong>,
+                        tracez vos espaces (rectangles, polygones, courbes), puis validez le modèle.
+                      </p>
+                      <div className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-[11px] font-mono"
+                        style={{ background: 'rgba(201,160,104,0.12)', color: '#7e5e3c', border: '1px solid rgba(201,160,104,0.3)' }}>
+                        DXF importé : {parsedPlan.spaces.length} polygones bruts · 0 dessiné
+                      </div>
+                      <button
+                        onClick={() => setPlanSource('raw')}
+                        className="text-[11px] underline text-slate-600 hover:text-slate-900"
+                      >
+                        Afficher quand même le DXF brut →
+                      </button>
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
           ) : parsedPlan ? (
             (() => {
               const plan = parsedPlan
