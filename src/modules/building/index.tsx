@@ -4,6 +4,7 @@ import { useOnboardingStore } from './shared/stores/onboardingStore'
 import type { OnboardingResult } from './shared/components/OnboardingWizard'
 import { ErrorBoundary } from './shared/components/ErrorBoundary'
 import { usePlanHydration } from './shared/hooks/usePlanHydration'
+import { useEditableSpacesCloudSync } from './shared/hooks/useEditableSpacesCloudSync'
 import { usePlanEngineStore } from './shared/stores/planEngineStore'
 import { Lock, AlertCircle } from 'lucide-react'
 
@@ -43,6 +44,10 @@ export default function CosmosAngre() {
   usePlanHydration()
 
   const { projectId } = useParams<{ projectId: string }>()
+
+  // Sync cloud best-effort des EditableSpace → Supabase cells.
+  // Debounce 8 s, no-op hors-ligne, pas de blocage UI.
+  useEditableSpacesCloudSync({ projectId: projectId ?? '', enabled: !!projectId })
 
   const onboardingCompleted = useOnboardingStore((s) => s.completed)
   const markComplete = useOnboardingStore((s) => s.markComplete)
