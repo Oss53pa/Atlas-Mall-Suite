@@ -391,7 +391,7 @@ export function MallMap2D({
   const toX = (x: number) => x * viewport.scale + viewport.ox
   const toY = (y: number) => y * viewport.scale + viewport.oy
 
-  const bg = theme === 'light' ? '#f5f3ef' : '#0f1115'
+  const bg = theme === 'light' ? '#f0ece4' : '#0f1115'
   const textColor = theme === 'light' ? '#0f172a' : '#f5f5f4'
   const mutedColor = theme === 'light' ? '#64748b' : '#94a3b8'
 
@@ -407,8 +407,9 @@ export function MallMap2D({
         onWheel={handleWheel}
         style={{ cursor: panStart.current ? 'grabbing' : 'grab' }}
       >
-        {/* Fond grille très discret */}
+        {/* ═══ DEFS : patterns, filtres, symboles réutilisables ═══ */}
         <defs>
+          {/* Grille technique de fond (très discrète) */}
           <pattern id="mallgrid" width={20 * viewport.scale} height={20 * viewport.scale}
             patternUnits="userSpaceOnUse" patternTransform={`translate(${viewport.ox}, ${viewport.oy})`}>
             <rect width="100%" height="100%" fill="none" />
@@ -416,6 +417,56 @@ export function MallMap2D({
               stroke={theme === 'light' ? '#e5e0d4' : '#1f232a'}
               strokeWidth={0.5} />
           </pattern>
+
+          {/* Pavage de sol pour les zones de circulation (mail, galerie) */}
+          <pattern id="tilingMall" width={8} height={8} patternUnits="userSpaceOnUse">
+            <rect width="8" height="8" fill="#e8d9b8" />
+            <circle cx="4" cy="4" r="0.5" fill={theme === 'light' ? '#b8a478' : '#5a4e38'} opacity="0.6" />
+            <circle cx="0" cy="0" r="0.3" fill={theme === 'light' ? '#b8a478' : '#5a4e38'} opacity="0.4" />
+            <circle cx="8" cy="0" r="0.3" fill={theme === 'light' ? '#b8a478' : '#5a4e38'} opacity="0.4" />
+            <circle cx="0" cy="8" r="0.3" fill={theme === 'light' ? '#b8a478' : '#5a4e38'} opacity="0.4" />
+            <circle cx="8" cy="8" r="0.3" fill={theme === 'light' ? '#b8a478' : '#5a4e38'} opacity="0.4" />
+          </pattern>
+
+          {/* Pavage sol pour couloirs/galeries (grille de dalles) */}
+          <pattern id="tilingCorridor" width={12} height={12} patternUnits="userSpaceOnUse">
+            <rect width="12" height="12" fill="#efe5cd" />
+            <path d="M 0 0 L 12 0 M 0 6 L 12 6" stroke="#d5c59c" strokeWidth={0.3} />
+            <path d="M 6 0 L 6 12" stroke="#d5c59c" strokeWidth={0.3} />
+          </pattern>
+
+          {/* Asphalte (parking/voirie) */}
+          <pattern id="asphalt" width={10} height={10} patternUnits="userSpaceOnUse">
+            <rect width="10" height="10" fill="#6b7280" />
+            <circle cx="2" cy="3" r="0.3" fill="#4b5563" opacity="0.6" />
+            <circle cx="7" cy="6" r="0.3" fill="#4b5563" opacity="0.6" />
+            <circle cx="4" cy="9" r="0.3" fill="#4b5563" opacity="0.6" />
+          </pattern>
+
+          {/* Vacant hachuré */}
+          <pattern id="vacantHatch" width="6" height="6" patternUnits="userSpaceOnUse">
+            <path d="M 0 6 L 6 0" stroke="#1f2937" strokeWidth={0.6} strokeOpacity={0.4} />
+          </pattern>
+
+          {/* Ombre portée douce pour les bâtiments */}
+          <filter id="bldgShadow" x="-5%" y="-5%" width="110%" height="110%">
+            <feDropShadow dx="1.5" dy="2" stdDeviation="1.5" floodColor="#000" floodOpacity="0.15" />
+          </filter>
+
+          {/* Symbole arbre (réutilisable pour espaces verts) */}
+          <symbol id="tree" viewBox="-10 -10 20 20">
+            <circle r="9" fill="#7fa874" opacity="0.85" />
+            <circle r="6" fill="#8fb884" opacity="0.9" />
+            <circle cx="-3" cy="-3" r="2.5" fill="#a6cd9a" opacity="0.7" />
+            <circle cx="3" cy="2" r="2" fill="#a6cd9a" opacity="0.7" />
+          </symbol>
+
+          {/* Symbole voiture (petit picto pour parkings) */}
+          <symbol id="car" viewBox="-5 -3 10 6">
+            <rect x="-4" y="-1.8" width="8" height="3.6" rx="0.8"
+              fill="#94a3b8" stroke="#475569" strokeWidth={0.3} />
+            <rect x="-2.5" y="-1.2" width="5" height="2.4" rx="0.4" fill="#e2e8f0" opacity="0.6" />
+          </symbol>
         </defs>
         <rect width="100%" height="100%" fill="url(#mallgrid)" />
 
@@ -455,6 +506,17 @@ export function MallMap2D({
           // les formes polygonales conservent leurs angles.
           void smoothEdges  // conservé pour compat API, non utilisé
           const d = s.polygon.map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(p[0])} ${toY(p[1])}`).join(' ') + ' Z'
+          // Détecte les types "texturés" (remplis avec un motif plutôt qu'un aplat)
+          const typeStr = String(s.type).toLowerCase()
+          const isMall = /mail_central|atrium|promenade/.test(typeStr)
+          const isCorridor = /^circulation$|^couloir|galerie|couloir_secondaire|mail_secondaire/.test(typeStr)
+          const isAsphalt = /parking|voie_circulation|voirie|asphalte/.test(typeStr)
+          const isGreen = /espace_vert|pelouse|jardin|plantation|terre_plein/.test(typeStr)
+          const isBuilding = /commerce|restau|cinema|grande_surface|big_box|loisirs|fitness|beaute|bijou|mode|tech|epicerie|pharma|sante|banque|service|admin|reception|atelier|exposition|culturel|amphi|auditorium|bibliotheque|stockage|reserve|depot|livraison|technique/.test(typeStr)
+          const fillStyle = isMall     ? 'url(#tilingMall)'
+                          : isCorridor ? 'url(#tilingCorridor)'
+                          : isAsphalt  ? 'url(#asphalt)'
+                          : color
           const meta = (s.metadata ?? {}) as { tenant?: string; localNumber?: string; vacant?: boolean }
           const cx = toX(s.bounds.centerX)
           const cy = toY(s.bounds.centerY)
@@ -481,13 +543,43 @@ export function MallMap2D({
             >
               <path
                 d={d}
-                fill={color}
-                fillOpacity={fillOpacity}
+                fill={fillStyle}
+                fillOpacity={isMall || isCorridor || isAsphalt ? 1 : fillOpacity}
                 stroke={isHover ? '#c9a068' : strokeDark}
-                strokeWidth={isHover ? 1.8 : 0.8}
-                strokeOpacity={isHover ? 1 : 0.55}
-                strokeLinejoin="round"
+                strokeWidth={isHover ? 1.8 : isBuilding ? 1.2 : 0.6}
+                strokeOpacity={isHover ? 1 : isBuilding ? 0.75 : 0.45}
+                strokeLinejoin="miter"
+                filter={isBuilding && !isHover ? 'url(#bldgShadow)' : undefined}
               />
+              {/* Arbres pour espaces verts (3-8 selon la taille) */}
+              {isGreen && wPx > 40 && hPx > 40 && (() => {
+                const nx = Math.max(1, Math.floor(wPx / 40))
+                const ny = Math.max(1, Math.floor(hPx / 40))
+                const treeSize = Math.min(18, Math.max(8, Math.min(wPx, hPx) / Math.max(nx, ny) * 0.5))
+                const trees: React.ReactNode[] = []
+                for (let ix = 0; ix < nx; ix++) {
+                  for (let iy = 0; iy < ny; iy++) {
+                    const tx = toX(s.bounds.minX) + (ix + 0.5) / nx * wPx
+                    const ty = toY(s.bounds.minY) + (iy + 0.5) / ny * hPx
+                    trees.push(<use key={`t-${ix}-${iy}`} href="#tree" x={tx - treeSize / 2} y={ty - treeSize / 2} width={treeSize} height={treeSize} />)
+                  }
+                }
+                return <g style={{ pointerEvents: 'none' }}>{trees}</g>
+              })()}
+              {/* Voitures stationnées dans parkings spacieux */}
+              {isAsphalt && wPx > 100 && hPx > 30 && (() => {
+                const nx = Math.min(12, Math.max(2, Math.floor(wPx / 20)))
+                const ny = Math.min(3, Math.max(1, Math.floor(hPx / 22)))
+                const cars: React.ReactNode[] = []
+                for (let ix = 0; ix < nx; ix++) {
+                  for (let iy = 0; iy < ny; iy++) {
+                    const tx = toX(s.bounds.minX) + (ix + 0.5) / nx * wPx
+                    const ty = toY(s.bounds.minY) + (iy + 0.5) / ny * hPx
+                    cars.push(<use key={`c-${ix}-${iy}`} href="#car" x={tx - 8} y={ty - 4} width={16} height={8} />)
+                  }
+                }
+                return <g style={{ pointerEvents: 'none', opacity: 0.75 }}>{cars}</g>
+              })()}
               {/* Hachure diagonale si vacant */}
               {meta.vacant && wPx > 30 && hPx > 30 && (
                 <path d={d} fill="url(#vacantHatch)" opacity={0.35} style={{ pointerEvents: 'none' }} />
