@@ -23,122 +23,127 @@ import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
  *  Les circulations (mail, galerie, couloir) sont en BEIGE CRÈME
  *  clair — surtout pas rose (qui est réservé aux commerces). */
 export const CATEGORY_COLOR: Record<string, string> = {
-  // ─── Palette "planimetria" muted — inspirée plans architecte chinois/européens ───
-  // Tous les tons sont desaturés (saturation ~35-45%) pour ressembler à un
-  // plan d'architecte imprimé, pas à un écran saturé.
+  // ─── Palette "Mall Directory" style Hankyu / Lalaport / Aeon ───
+  // 4 grandes familles distinctes + spécialisations parking/circulation.
+  // Aplats UNIS, pas de patterns. Saturation moyenne (~35%) pour rester
+  // doux mais bien tranché entre catégories. Le fond du plan est crème.
 
-  // Commerces & galerie — roses/saumons/coraux poudrés
-  commerce:          '#e8b4bd',  // rose poudré
-  mode:              '#e8b4bd',
-  bijouterie:        '#ddb0b8',  // rose salé plus clair
-  beaute:            '#d9a0a9',  // corail pastel
-  tech:              '#b3b8cc',  // bleu-gris doux
-  grande_surface:    '#a8bcc8',  // bleu ardoise doux
-  big_box:           '#95a9bb',  // bleu ardoise foncé
-  epicerie:          '#e0c984',  // moutarde pastel
-  // Restauration — pêche, abricot, butter
-  restaurant:        '#e8a87c',  // pêche
-  restauration:      '#e8a87c',
-  food:              '#e8a87c',
-  cafe:              '#e3b070',  // butter warm
-  bar:               '#cc7b6e',  // terracotta clair
-  cuisine:           '#cc7b6e',
-  // Loisirs — lavande, violet doux
-  loisirs:           '#b8a3c9',  // lavande
-  cinema:            '#a895b8',  // violet plus profond
-  fitness:           '#d9a0a9',
-  enfants:           '#e6d9a2',
-  aire_jeu:          '#e6d9a2',
-  // Santé / Services — vert sage, bleu-vert doux
-  sante:             '#a8c29a',  // sage
-  pharmacie:         '#a8c29a',
-  medical:           '#a8c29a',
-  services:          '#9cbfbc',  // vert d'eau
-  service:           '#9cbfbc',
-  banque:            '#9cbfbc',
-  atm:               '#9cbfbc',
-  bank:              '#9cbfbc',
-  admin:             '#c7ccd9',  // bleu doux
-  reception:         '#e6d9a2',
-  // Circulation & extérieur — BEIGE CRÈME (pas rose !)
-  circulation:       '#f3ecd8',  // crème chaud — couloirs intérieurs
-  mail_central:      '#e8d9b8',  // beige sable — mail principal
-  mail_secondaire:   '#ece0c4',
-  atrium:            '#e8d9b8',
-  galerie:           '#efe5cd',  // beige galerie marchande
-  couloir:           '#f3ecd8',
-  couloir_secondaire:'#f3ecd8',
-  promenade:         '#e8d9b8',
-  escalier:          '#cbd5e1',
-  ascenseur:         '#cbd5e1',
-  parking:           '#6b7280',  // gris asphalte (pas beige — voitures)
-  voie_circulation:  '#6b7280',
-  voie_principale:   '#4b5563',  // asphalte foncé — axe majeur
-  voie_secondaire:   '#64748b',  // asphalte moyen — desserte
-  voie_pompier:      '#ef4444',  // rouge — voie pompier
-  voie_livraison:    '#f59e0b',  // orange — voie livraison
-  rond_point:        '#6b7280',
-  carrefour:         '#6b7280',
-  passage_pieton:    '#fbbf24',  // zébras jaunes
-  voirie:            '#6b7280',
-  asphalte:          '#6b7280',
-  // Routes publiques hors-site — asphalte foncé (environnement urbain)
-  route_autoroute:       '#334155',
-  route_boulevard:       '#475569',
-  route_avenue:          '#4b5563',
-  route_rue_principale:  '#57606a',
-  route_rue_secondaire:  '#64748b',
-  route_impasse:         '#64748b',
-  route_rond_point_public: '#475569',
-  route_carrefour_public: '#475569',
-  route_pont:            '#6b7280',
-  route_tunnel:          '#374151',
-  route_trottoir_public: '#a3a3a3',
+  // ─── 1. FASHION / MODE — vert sage moyen ─────────────────
+  commerce:          '#7fa874',  // vert sage Hankyu
+  mode:              '#7fa874',
+  bijouterie:        '#7fa874',
+  beaute:            '#7fa874',
+  // ─── 2. INTERIOR / TECH / GOODS — bleu canard pâle ──────
+  tech:              '#9fc4cc',
+  grande_surface:    '#9fc4cc',
+  big_box:           '#9fc4cc',
+  epicerie:          '#9fc4cc',
+  // ─── 3. FOOD — orange pêche moyen ────────────────────────
+  restaurant:        '#e8a878',
+  restauration:      '#e8a878',
+  food:              '#e8a878',
+  cafe:              '#e8a878',
+  bar:               '#e8a878',
+  cuisine:           '#e8a878',
+  // ─── 4. SERVICES / OTHER — rose poudré pâle ──────────────
+  services:          '#e6b5b8',
+  service:           '#e6b5b8',
+  banque:            '#e6b5b8',
+  atm:               '#e6b5b8',
+  bank:              '#e6b5b8',
+  admin:             '#e6b5b8',
+  reception:         '#e6b5b8',
+  loisirs:           '#e6b5b8',
+  cinema:            '#e6b5b8',
+  fitness:           '#e6b5b8',
+  enfants:           '#e6b5b8',
+  aire_jeu:          '#e6b5b8',
+  sante:             '#e6b5b8',
+  pharmacie:         '#e6b5b8',
+  medical:           '#e6b5b8',
+  info:              '#e6b5b8',
+  kiosk:             '#e6b5b8',
+  culturel:          '#e6b5b8',
+  exposition:        '#e6b5b8',
+  bibliotheque:      '#e6b5b8',
+  amphitheatre:      '#e6b5b8',
+  auditorium:        '#e6b5b8',
+  salle:             '#e6b5b8',
+  // ─── 5. CIRCULATION INTÉRIEURE — quasi blanc, très clair ─
+  circulation:       '#fdfaf3',
+  mail_central:      '#fdfaf3',
+  mail_secondaire:   '#fdfaf3',
+  atrium:            '#fdfaf3',
+  galerie:           '#fdfaf3',
+  couloir:           '#fdfaf3',
+  couloir_secondaire:'#fdfaf3',
+  promenade:         '#fdfaf3',
+  // ─── 6. TRANSITIONS VERTICALES — gris très clair ────────
+  escalier:          '#d4d4d0',
+  ascenseur:         '#d4d4d0',
+  // ─── 7. PARKING — gris-beige clair uni avec icône P ──────
+  parking:           '#e8e6e0',
+  // ─── 8. VOIRIE INTERNE — gris asphalte moyen ────────────
+  voie_circulation:  '#c8c5bd',
+  voie_principale:   '#b8b5ad',
+  voie_secondaire:   '#c8c5bd',
+  voie_pompier:      '#d4a098',  // rose-rouge muted
+  voie_livraison:    '#d4b878',  // ocre muted
+  rond_point:        '#c8c5bd',
+  carrefour:         '#c8c5bd',
+  voirie:            '#c8c5bd',
+  asphalte:          '#c8c5bd',
+  passage_pieton:    '#e8e6e0',
+  // ─── 9. ROUTES PUBLIQUES HORS-SITE — asphalte gris ──────
+  route_autoroute:       '#a8a59d',
+  route_boulevard:       '#b8b5ad',
+  route_avenue:          '#bcb9b1',
+  route_rue_principale:  '#c0bdb5',
+  route_rue_secondaire:  '#c4c1b9',
+  route_impasse:         '#c4c1b9',
+  route_rond_point_public: '#b8b5ad',
+  route_carrefour_public: '#b8b5ad',
+  route_pont:            '#b0ada5',
+  route_tunnel:          '#9c9991',
+  route_trottoir_public: '#dbd8d0',
+  // ─── 10. EXTÉRIEUR / ESPACES VERTS — vert tendre clair ──
   terrasse:          '#d9c9a5',
-  terre_plein:       '#7fa874',
-  parvis:            '#e5dcc2',
-  trottoir:          '#d7cfbf',
-  pedestrian:        '#d7cfbf',
-  entree:            '#bbf7d0',
-  sortie:            '#fecaca',
-  porte_entree:      '#bbf7d0',
-  porte_automatique: '#bbf7d0',
-  porte_secours:     '#fca5a5',
-  porte_interieure:  '#e7e5e4',
-  porte_service:     '#d6d3d1',
-  sortie_secours:    '#fca5a5',
-  // Sanitaires / technique / stockage — tons terreux muted
-  wc:                '#b8d0bf',  // vert d'eau pastel
-  sanitaire:         '#b8d0bf',
-  vestiaire:         '#c2b5d1',  // lavande grisée
-  technique:         '#bcc0c6',  // gris froid
-  electrique:        '#bcc0c6',
-  chaufferie:        '#bcc0c6',
-  vmc:               '#bcc0c6',
-  tgbt:              '#bcc0c6',
-  ssi:               '#bcc0c6',
-  local_technique:   '#bcc0c6',
-  stockage:          '#d9c1a0',  // beige orangé doux
-  reserve:           '#d9c1a0',
-  depot:             '#d9c1a0',
-  archive:           '#d9c1a0',
-  livraison:         '#d4a980',  // terra
-  quai:              '#d4a980',
-  // Atelier / culturel / exposition — coraux et lavandes muted
-  atelier:           '#cc8f81',  // terracotta doux
-  workshop:          '#cc8f81',
-  salle:             '#ddb0b8',
-  exposition:        '#d9bdb8',
-  culturel:          '#c2b5d1',
-  amphitheatre:      '#c2b5d1',
-  auditorium:        '#c2b5d1',
-  bibliotheque:      '#d9c1a0',
-  // Info
-  info:              '#a8c2d6',  // bleu ciel pastel
-  kiosk:             '#a8c2d6',
-  // Fallbacks
-  autre:             '#d9d3c7',
-  other:             '#d9d3c7',
+  terre_plein:       '#bcd5b0',
+  parvis:            '#ede9dd',
+  trottoir:          '#dbd8d0',
+  pedestrian:        '#dbd8d0',
+  // ─── 11. PORTES / ACCÈS — vert/rouge code couleur ───────
+  entree:            '#a8c29a',
+  sortie:            '#d4a098',
+  porte_entree:      '#a8c29a',
+  porte_automatique: '#a8c29a',
+  porte_secours:     '#d4a098',
+  porte_interieure:  '#e8e6e0',
+  porte_service:     '#dbd8d0',
+  sortie_secours:    '#d4a098',
+  // ─── 12. SANITAIRES — bleu canard distinct ─────────────
+  wc:                '#9fc4cc',
+  sanitaire:         '#9fc4cc',
+  vestiaire:         '#9fc4cc',
+  // ─── 13. TECHNIQUE / STOCKAGE — gris-beige neutre ──────
+  technique:         '#cfcdc6',
+  electrique:        '#cfcdc6',
+  chaufferie:        '#cfcdc6',
+  vmc:               '#cfcdc6',
+  tgbt:              '#cfcdc6',
+  ssi:               '#cfcdc6',
+  local_technique:   '#cfcdc6',
+  stockage:          '#d8d2c4',
+  reserve:           '#d8d2c4',
+  depot:             '#d8d2c4',
+  archive:           '#d8d2c4',
+  livraison:         '#d4b878',
+  quai:              '#d4b878',
+  atelier:           '#d8d2c4',
+  workshop:          '#d8d2c4',
+  // ─── Fallbacks ───────────────────────────────────────────
+  autre:             '#e6b5b8',  // → catégorie Services par défaut
+  other:             '#e6b5b8',
 }
 
 const DEFAULT_COLOR = '#e7e5e4'
@@ -484,7 +489,7 @@ export function MallMap2D({
   const toX = (x: number) => x * viewport.scale + viewport.ox
   const toY = (y: number) => y * viewport.scale + viewport.oy
 
-  const bg = theme === 'light' ? '#f5f0e5' : '#0f1115'  // paper cream chaud
+  const bg = theme === 'light' ? '#fafaf6' : '#0f1115'  // crème blanc cassé style mall directory
   const textColor = theme === 'light' ? '#0f172a' : '#f5f5f4'
   const mutedColor = theme === 'light' ? '#64748b' : '#94a3b8'
 
@@ -583,10 +588,11 @@ export function MallMap2D({
           return <path key={s.id} d={d} fill="none" stroke={mutedColor} strokeWidth={0.5} strokeOpacity={0.2} />
         })}
 
-        {/* Murs (wallSegments) — traits foncés par-dessus les aplats.
-            Filtre défensif : wallSegments peuvent contenir des coords non
-            numériques (DXF corrompus ou entrées user). SVG refuse NaN. */}
-        {plan.wallSegments && plan.wallSegments.length > 0 && plan.wallSegments.slice(0, 5000).filter(w =>
+        {/* Murs (wallSegments) — DÉSACTIVÉS par défaut dans le style mall
+            directory. Les contours des polygones suffisent à structurer le
+            plan. Garder les murs en 5000 lignes par-dessus tout = bruit
+            visuel + inutile car les espaces sont déjà bordés. */}
+        {false && plan.wallSegments && plan.wallSegments.length > 0 && plan.wallSegments.slice(0, 5000).filter(w =>
           Number.isFinite(w.x1) && Number.isFinite(w.y1) && Number.isFinite(w.x2) && Number.isFinite(w.y2)
         ).map((w, i) => (
           <line key={`wall-${i}`}
@@ -607,19 +613,17 @@ export function MallMap2D({
           // les formes polygonales conservent leurs angles.
           void smoothEdges  // conservé pour compat API, non utilisé
           const d = s.polygon.map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(p[0])} ${toY(p[1])}`).join(' ') + ' Z'
-          // Détecte les types "texturés" (remplis avec un motif plutôt qu'un aplat)
+          // Style "Mall Directory" : aplats UNIS, pas de patterns visuels
+          // (les patterns rendaient le plan visuellement bruité). Seul le
+          // type "vacant" garde une hachure pour signaler l'état.
           const typeStr = String(s.type).toLowerCase()
           const isMall = /mail_central|atrium|promenade/.test(typeStr)
           const isCorridor = /^circulation$|^couloir|galerie|couloir_secondaire|mail_secondaire/.test(typeStr)
           const isParking = /^parking(?!_voie)|parking_vehicule/.test(typeStr)
-          const isAsphalt = /parking|voie_circulation|voie_principale|voie_secondaire|voie_pompier|voie_livraison|rond_point|carrefour|voirie|asphalte|exterieur_voie_vehicule|route_/.test(typeStr)
+          const isAsphalt = false // patterns asphalte retirés — gris uni plus lisible
           const isGreen = /espace_vert|pelouse|jardin|plantation|terre_plein/.test(typeStr)
           const isBuilding = /commerce|restau|cinema|grande_surface|big_box|loisirs|fitness|beaute|bijou|mode|tech|epicerie|pharma|sante|banque|service|admin|reception|atelier|exposition|culturel|amphi|auditorium|bibliotheque|stockage|reserve|depot|livraison|technique/.test(typeStr)
-          const fillStyle = isMall     ? 'url(#tilingMall)'
-                          : isCorridor ? 'url(#tilingCorridor)'
-                          : isParking  ? 'url(#parkingSpots)'
-                          : isAsphalt  ? 'url(#asphalt)'
-                          : color
+          const fillStyle = color // Aplat uni pour TOUT — style mall directory
           const meta = (s.metadata ?? {}) as { tenant?: string; localNumber?: string; vacant?: boolean }
           const cx = toX(s.bounds.centerX)
           const cy = toY(s.bounds.centerY)
@@ -635,8 +639,8 @@ export function MallMap2D({
           const secondaryLabel = (tenant && localN) ? `#${localN}` : ''
           const t = String(s.type).toLowerCase()
           const isServiceIcon = ['wc', 'sanitaire', 'atm', 'bank', 'info', 'kiosk', 'pharma'].some(k => t.includes(k))
-          // Opacités subtiles façon plan d'architecte imprimé
-          const fillOpacity = meta.vacant ? 0.3 : isHover ? 0.75 : 0.55
+          // Opacité plus haute pour aplats francs (style mall directory)
+          const fillOpacity = meta.vacant ? 0.4 : isHover ? 0.95 : 0.85
           const strokeDark = theme === 'light' ? '#4a5568' : '#cbd5e1'
           return (
             <g key={s.id}
