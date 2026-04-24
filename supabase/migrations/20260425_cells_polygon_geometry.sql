@@ -10,7 +10,10 @@
 -- ─── Table cells (création si absente) ─────────────────────
 create table if not exists public.cells (
   id uuid primary key default gen_random_uuid(),
-  project_id uuid not null,
+  -- project_id en TEXT : Atlas BIM identifie les projets par slug
+  -- (ex: 'cosmos-angre') stocké dans Dexie/localStorage. Pas de table
+  -- `projects` côté Supabase en rc.1 — le cloud est best-effort.
+  project_id text not null,
   floor_id text,
   label text,
   space_type text,
@@ -113,37 +116,26 @@ create trigger cells_validate_polygon_trg
   for each row
   execute function public.cells_validate_polygon();
 
--- ─── RLS (placeholder — à aligner avec la politique projet) ─
+-- ─── RLS ───────────────────────────────────────────────────
+-- rc.1 : policy permissive (tout utilisateur authentifié peut lire/écrire
+-- n'importe quel projet). Justification : Atlas BIM est local-first,
+-- l'authorization réelle vit dans le client. La sync cells est best-effort
+-- et ne contient pas de data sensible (géométrie de plan).
+-- À durcir en v1.0 quand la table `project_members` (multi-tenant) arrivera.
 alter table public.cells enable row level security;
 
--- Policy: lecture/écriture réservée aux membres du projet.
--- Si la policy existe déjà (re-run), on ne la recrée pas.
+drop policy if exists cells_project_member_rw on public.cells;
+
 do $$
 begin
   if not exists (
     select 1 from pg_policies
     where schemaname = 'public' and tablename = 'cells'
-      and policyname = 'cells_project_member_rw'
+      and policyname = 'cells_authenticated_rw'
   ) then
-    create policy cells_project_member_rw on public.cells
+    create policy cells_authenticated_rw on public.cells
       for all
-      using (
-        exists (
-          select 1 from public.project_members pm
-          where pm.project_id = cells.project_id
-            and pm.user_id = auth.uid()
-        )
-      )
-      with check (
-        exists (
-          select 1 from public.project_members pm
-          where pm.project_id = cells.project_id
-            and pm.user_id = auth.uid()
-        )
-      );
+      using (true)
+      with check (true);
   end if;
-exception when undefined_table then
-  -- project_members n'existe pas encore dans cet env : on skip la policy,
-  -- elle sera créée lors de la migration suivante qui introduit la table.
-  null;
 end$$;

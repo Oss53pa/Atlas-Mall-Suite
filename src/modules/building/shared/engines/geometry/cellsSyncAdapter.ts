@@ -28,6 +28,7 @@ import { supabase, isOfflineMode } from '../../../../../lib/supabase'
 
 export interface CellRow {
   readonly id: string
+  /** Slug Atlas BIM (ex: 'cosmos-angre') — colonne TEXT côté DB. */
   readonly project_id: string
   readonly floor_id: string | null
   readonly label: string | null
