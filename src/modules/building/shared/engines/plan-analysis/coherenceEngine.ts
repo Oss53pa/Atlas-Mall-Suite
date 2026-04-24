@@ -20,10 +20,43 @@ import { unionPolygons } from './spaceGeometryEngine'
 /** Groupes de types où la fusion géométrique fait sens :
  *  un "parking" coupé en 3 cases adjacentes = en réalité 1 parking. */
 const MERGEABLE_GROUPS: Array<{ id: string; match: RegExp; label: string }> = [
-  { id: 'parking-veh',  match: /parking|voie_circulation|circulation_vehicule/i, label: 'Réseau parking/véhicules' },
-  { id: 'circulation',  match: /^circulation$|couloir|galerie|mail|atrium|promenade/i, label: 'Circulation piétonne' },
-  { id: 'pedestrian',   match: /trottoir|parvis|pedestrian/i, label: 'Espaces piétons' },
-  { id: 'green',        match: /espace_vert|pelouse|jardin|plantation/i, label: 'Espaces verts' },
+  // Voies circulées par véhicules DU SITE (intérieur parking/mall)
+  {
+    id: 'vehicle-roads-site',
+    match: /^(parking|voie_|exterieur_voie_vehicule|exterieur_voirie|carrefour$|rond_point$|giratoire|asphalte|voirie|chauss[eé]e|^road$)/i,
+    label: 'Voirie du site',
+  },
+  // Routes publiques HORS-SITE — fusionnent entre elles pour former le
+  // réseau routier urbain continu (bd, av, rue, autoroute...).
+  {
+    id: 'public-roads',
+    match: /^route_(autoroute|boulevard|avenue|rue_principale|rue_secondaire|impasse|rond_point_public|carrefour_public|pont|tunnel)/i,
+    label: 'Réseau routier public',
+  },
+  // Trottoirs publics
+  {
+    id: 'public-sidewalks',
+    match: /^route_trottoir_public$/i,
+    label: 'Trottoirs publics',
+  },
+  // Circulations piétonnes internes
+  {
+    id: 'circulation',
+    match: /^(circulation$|couloir|galerie|mail|atrium|promenade|mail_central|mail_secondaire|couloir_secondaire)/i,
+    label: 'Circulation piétonne',
+  },
+  // Espaces piétons extérieurs
+  {
+    id: 'pedestrian',
+    match: /trottoir|parvis|pedestrian|exterieur_voie_pieton|passage_pieton/i,
+    label: 'Espaces piétons extérieurs',
+  },
+  // Espaces verts
+  {
+    id: 'green',
+    match: /espace_vert|pelouse|jardin|plantation|terre_plein|massif_vegetal|alignement_arbre|haie/i,
+    label: 'Espaces verts',
+  },
 ]
 
 /** Trouve le groupe fusionnable auquel appartient un type. */

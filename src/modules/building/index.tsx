@@ -4,6 +4,7 @@ import { useOnboardingStore } from './shared/stores/onboardingStore'
 import type { OnboardingResult } from './shared/components/OnboardingWizard'
 import { ErrorBoundary } from './shared/components/ErrorBoundary'
 import { usePlanHydration } from './shared/hooks/usePlanHydration'
+import { useEditableSpacesCloudSync } from './shared/hooks/useEditableSpacesCloudSync'
 import { usePlanEngineStore } from './shared/stores/planEngineStore'
 import { Lock, AlertCircle } from 'lucide-react'
 
@@ -25,6 +26,9 @@ const EditPlanFloatingButton = React.lazy(() =>
   import('./shared/components/EditPlanFloatingButton').then(m => ({ default: m.EditPlanFloatingButton }))
 )
 const AtlasStudioModule = React.lazy(() => import('./shared/components/AtlasStudioModule'))
+const GeometryQualityDashboard = React.lazy(() =>
+  import('./shared/components/GeometryQualityDashboard').then(m => ({ default: m.GeometryQualityDashboard }))
+)
 
 const LoadingFallback = () => (
   <div className="min-h-screen bg-surface-0 flex items-center justify-center">
@@ -40,6 +44,10 @@ export default function CosmosAngre() {
   usePlanHydration()
 
   const { projectId } = useParams<{ projectId: string }>()
+
+  // Sync cloud best-effort des EditableSpace → Supabase cells.
+  // Debounce 8 s, no-op hors-ligne, pas de blocage UI.
+  useEditableSpacesCloudSync({ projectId: projectId ?? '', enabled: !!projectId })
 
   const onboardingCompleted = useOnboardingStore((s) => s.completed)
   const markComplete = useOnboardingStore((s) => s.markComplete)
@@ -80,6 +88,8 @@ export default function CosmosAngre() {
           {/* Vue 3D avancee / Editeur de scene */}
           <Route path="3d/*" element={<Vol3DModule />} />
           <Route path="scene-editor/*" element={<ErrorBoundary fallbackTitle="Erreur Editeur de Scene"><SceneEditor /></ErrorBoundary>} />
+          {/* Admin — qualité géométrique des polygones de l'éditeur (dashboard + cleanup dry-run). */}
+          <Route path="admin/geometry" element={<ErrorBoundary fallbackTitle="Erreur dashboard qualité"><div className="min-h-screen bg-surface-0"><GeometryQualityDashboard /></div></ErrorBoundary>} />
           <Route path="*" element={<Navigate to={`/projects/${projectId ?? 'cosmos-angre'}`} replace />} />
         </Routes>
         {/* Modal PROPH3T montée UNE SEULE FOIS au niveau projet (pas dans chaque volume) */}
