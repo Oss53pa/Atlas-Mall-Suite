@@ -19,7 +19,9 @@ import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
 // ─── Palette type "planimetria" — tous types couverts ───
 
 /** Couleur par catégorie/type, inspirée des plans architecturaux
- *  (aplats pastels bien saturés pour distinguer les usages). */
+ *  (aplats pastels bien saturés pour distinguer les usages).
+ *  Les circulations (mail, galerie, couloir) sont en BEIGE CRÈME
+ *  clair — surtout pas rose (qui est réservé aux commerces). */
 const CATEGORY_COLOR: Record<string, string> = {
   // Commerces & galerie
   commerce:          '#f9a8d4',  // rose pastel (mode)
@@ -54,16 +56,26 @@ const CATEGORY_COLOR: Record<string, string> = {
   bank:              '#99f6e4',
   admin:             '#e0e7ff',
   reception:         '#fef3c7',
-  // Circulation & extérieur
-  circulation:       '#f5f5f4',  // presque blanc
-  mail_central:      '#e8d9b8',  // beige mall
+  // Circulation & extérieur — BEIGE CRÈME (pas rose !)
+  circulation:       '#f3ecd8',  // crème chaud — couloirs intérieurs
+  mail_central:      '#e8d9b8',  // beige sable — mail principal
+  mail_secondaire:   '#ece0c4',
   atrium:            '#e8d9b8',
-  galerie:           '#f5f5f4',
-  couloir:           '#f5f5f4',
+  galerie:           '#efe5cd',  // beige galerie marchande
+  couloir:           '#f3ecd8',
+  couloir_secondaire:'#f3ecd8',
   promenade:         '#e8d9b8',
   escalier:          '#cbd5e1',
   ascenseur:         '#cbd5e1',
-  parking:           '#d6d3d1',
+  parking:           '#6b7280',  // gris asphalte (pas beige — voitures)
+  voie_circulation:  '#6b7280',
+  voirie:            '#6b7280',
+  asphalte:          '#6b7280',
+  terrasse:          '#d9c9a5',
+  terre_plein:       '#7fa874',
+  parvis:            '#e5dcc2',
+  trottoir:          '#d7cfbf',
+  pedestrian:        '#d7cfbf',
   entree:            '#bbf7d0',
   sortie:            '#fecaca',
   porte_entree:      '#bbf7d0',
@@ -193,6 +205,40 @@ function legendLabelFor(key: string): string {
   return LEGEND_LABELS[key] ?? key
 }
 
+// ─── Glyph central par catégorie ──────────────────────────
+
+/** Emoji/glyph discret à afficher au centre de chaque espace selon son type. */
+function glyphForType(t: string): string {
+  const s = t.toLowerCase()
+  if (/commerce|mode|bijou|beaute/.test(s))      return '🛍'
+  if (/tech/.test(s))                             return '💻'
+  if (/grande_surface|big_box|anchor/.test(s))   return '🏪'
+  if (/epicerie/.test(s))                         return '🥖'
+  if (/restau|food|cafe|bar|cuisine/.test(s))    return '🍴'
+  if (/cinema/.test(s))                           return '🎬'
+  if (/fitness/.test(s))                          return '🏋'
+  if (/loisirs|enfants|aire_jeu/.test(s))        return '🎈'
+  if (/pharma|sante|medical/.test(s))            return '⚕'
+  if (/banque|atm|bank/.test(s))                  return '💵'
+  if (/wc|sanitaire/.test(s))                     return '🚻'
+  if (/vestiaire/.test(s))                        return '👔'
+  if (/info|kiosk/.test(s))                       return 'ℹ'
+  if (/escalier/.test(s))                         return '↕'
+  if (/ascenseur/.test(s))                        return '▭'
+  if (/technique|tgbt|ssi|vmc|chaufferie|electr/.test(s)) return '⚙'
+  if (/stockage|reserve|depot|archive/.test(s))  return '📦'
+  if (/livraison|quai/.test(s))                   return '🚚'
+  if (/atelier|workshop/.test(s))                 return '🔨'
+  if (/exposition|culturel/.test(s))              return '🖼'
+  if (/amphi|auditorium/.test(s))                 return '🎤'
+  if (/bibliotheque/.test(s))                     return '📚'
+  if (/parking/.test(s))                          return 'P'
+  if (/entree|porte_entree|porte_auto/.test(s))  return '↓'
+  if (/sortie|porte_secours|sortie_secours/.test(s)) return '↑'
+  if (/mail_central|atrium/.test(s))              return '✦'
+  return ''
+}
+
 // ─── Icônes de service (SVG inline, pas de dép externe) ──
 
 function ServiceIcon({ type, x, y, size = 12 }: { type: string; x: number; y: number; size?: number }) {
@@ -249,8 +295,8 @@ export interface MallMap2DProps {
   className?: string
   /** Theme clair (défaut) ou sombre. */
   theme?: 'light' | 'dark'
-  /** Applique un lissage Chaikin aux polygones à > 6 sommets.
-   *  N'altère pas les rectangles (conservés tels quels). Défaut true. */
+  /** Lissage Chaikin des polygones complexes. Désactivé par défaut —
+   *  déforme les rectangles et les formes architecturales pures. */
   smoothEdges?: boolean
 }
 
@@ -260,7 +306,7 @@ export function MallMap2D({
   onSpaceClick,
   className = '',
   theme = 'light',
-  smoothEdges = true,
+  smoothEdges = false,
 }: MallMap2DProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
@@ -471,42 +517,106 @@ export function MallMap2D({
               {meta.vacant && wPx > 30 && hPx > 30 && (
                 <path d={d} fill="url(#vacantHatch)" opacity={0.35} style={{ pointerEvents: 'none' }} />
               )}
-              {/* Icône service pour les petits espaces utilitaires */}
-              {!isTiny && isServiceIcon && (
-                <ServiceIcon type={String(s.type)} x={cx} y={cy} size={Math.min(20, Math.max(10, wPx * 0.35))} />
-              )}
-              {/* Label pour les espaces visibles (pas tiny et pas service-icon) */}
-              {!isTiny && !isServiceIcon && primaryLabel && (() => {
-                // Taille de police adaptative
-                const maxByWidth = wPx / Math.max(1, primaryLabel.length) * 1.6
-                const maxByHeight = hPx / 2.5
-                const fontSize = Math.min(14, Math.max(6, Math.min(maxByWidth, maxByHeight)))
-                const shown = primaryLabel.length > 22 ? primaryLabel.slice(0, 21) + '…' : primaryLabel
+              {/* Icône centrale discrete — petit pastille avec glyph de la catégorie.
+                  Pas de label texte permanent : le détail s'affiche en popup au hover. */}
+              {!isTiny && (() => {
+                const rBadge = Math.min(10, Math.max(4, Math.min(wPx, hPx) * 0.12))
+                const glyph = glyphForType(String(s.type))
                 return (
-                  <>
-                    <text x={cx} y={cy - (secondaryLabel ? 5 : 0)}
-                      textAnchor="middle" dominantBaseline="central"
-                      fontSize={fontSize}
-                      fill={strokeDark}
-                      fontWeight={isSmall ? 500 : 600}
-                      style={{ userSelect: 'none', pointerEvents: 'none' }}>
-                      {shown}
-                    </text>
-                    {secondaryLabel && fontSize >= 8 && (
-                      <text x={cx} y={cy + fontSize * 0.7}
+                  <g style={{ pointerEvents: 'none' }}>
+                    <circle cx={cx} cy={cy} r={rBadge}
+                      fill={theme === 'light' ? 'rgba(255,255,255,0.85)' : 'rgba(15,23,42,0.85)'}
+                      stroke={color}
+                      strokeWidth={1}
+                      strokeOpacity={0.7}
+                    />
+                    {glyph && rBadge >= 7 && (
+                      <text x={cx} y={cy + 0.5}
                         textAnchor="middle" dominantBaseline="central"
-                        fontSize={Math.max(6, fontSize - 3)}
-                        fill={mutedColor}
+                        fontSize={rBadge * 1.1}
                         style={{ userSelect: 'none', pointerEvents: 'none' }}>
-                        {secondaryLabel}
+                        {glyph}
                       </text>
                     )}
-                  </>
+                  </g>
                 )
               })()}
             </g>
           )
         })}
+
+        {/* Popup au survol — style "modal" flottant */}
+        {hoveredId && (() => {
+          const s = visibleSpaces.find(v => v.id === hoveredId)
+          if (!s) return null
+          const meta = (s.metadata ?? {}) as { tenant?: string; localNumber?: string; vacant?: boolean; notes?: string }
+          const cx = toX(s.bounds.centerX)
+          const cy = toY(s.bounds.centerY)
+          const color = s.color && s.color !== '' ? s.color : categoryColor(String(s.type))
+          const legendKey = resolveLegendKey(String(s.type).toLowerCase())
+          const typeLabel = legendLabelFor(legendKey)
+          const lines: Array<{ k?: string; v: string }> = []
+          if (s.label) lines.push({ v: s.label })
+          if (meta.tenant)      lines.push({ k: 'Enseigne',  v: meta.tenant })
+          if (meta.localNumber) lines.push({ k: 'N° local',  v: '#' + meta.localNumber })
+          lines.push({ k: 'Type',      v: typeLabel })
+          lines.push({ k: 'Surface',   v: `${s.areaSqm.toFixed(1)} m²` })
+          if (s.floorId)        lines.push({ k: 'Niveau',    v: s.floorId })
+          if (meta.vacant !== undefined) {
+            lines.push({ k: 'Statut', v: meta.vacant ? '🔴 Vacant' : '🟢 Occupé' })
+          }
+          if (meta.notes)       lines.push({ k: 'Notes',     v: meta.notes })
+
+          // Dimensionnement du popup
+          const popupW = 230
+          const lineH = 16
+          const padding = 10
+          const popupH = padding * 2 + lines.length * lineH + 22  // +22 pour titre catégorie
+          // Placer le popup sans sortir du viewport
+          let px = cx + 14
+          let py = cy - popupH / 2
+          if (px + popupW > size.w - 8) px = cx - 14 - popupW
+          if (py < 8) py = 8
+          if (py + popupH > size.h - 8) py = size.h - 8 - popupH
+
+          return (
+            <g style={{ pointerEvents: 'none' }}>
+              {/* Flèche/ligne vers le centre de l'espace */}
+              <line x1={cx} y1={cy} x2={px + (px < cx ? popupW : 0)} y2={py + popupH / 2}
+                stroke={color} strokeWidth={1} strokeDasharray="3 2" strokeOpacity={0.4} />
+              <rect x={px} y={py} width={popupW} height={popupH} rx={6}
+                fill={theme === 'light' ? '#ffffff' : '#15181d'}
+                stroke={color}
+                strokeWidth={1.5}
+                style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.15))' }}
+              />
+              {/* Bandeau catégorie coloré */}
+              <rect x={px} y={py} width={popupW} height={4} rx={2} fill={color} />
+              <text x={px + padding} y={py + padding + 8}
+                fontSize={9}
+                fontWeight={700}
+                fill={color}
+                letterSpacing="0.08em"
+                style={{ textTransform: 'uppercase' }}>
+                {typeLabel}
+              </text>
+              {lines.map((ln, i) => (
+                <g key={i} transform={`translate(${px + padding}, ${py + padding + 22 + i * lineH})`}>
+                  {ln.k && (
+                    <text fontSize={9} fill={mutedColor}>
+                      {ln.k}
+                    </text>
+                  )}
+                  <text x={ln.k ? 58 : 0} fontSize={11}
+                    fill={textColor}
+                    fontWeight={ln.k ? 500 : 600}>
+                    {ln.v.length > 28 ? ln.v.slice(0, 27) + '…' : ln.v}
+                  </text>
+                </g>
+              ))}
+            </g>
+          )
+        })()}
 
         <defs>
           <pattern id="vacantHatch" width="6" height="6" patternUnits="userSpaceOnUse">

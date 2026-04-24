@@ -59,6 +59,7 @@ import { PlanLayerSelector } from '../shared/components/PlanLayerSelector'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import { useEditableSpaceStore } from '../shared/stores/editableSpaceStore'
 import { applyEditsToPlan } from '../shared/planReader/applyEditsToPlan'
+import { applyCoherenceCorrections } from '../shared/engines/plan-analysis/coherenceEngine'
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
 import { savePlanImageFromUrl, loadAllPlanImages } from '../shared/stores/planImageCache'
 const Vol3DModuleEmbed = lazy(() => import('../vol-3d/Vol3DModule'))
@@ -267,15 +268,24 @@ export default function Vol3Module() {
   // Espaces modélisés par l'utilisateur dans Atlas Studio
   const editableSpaces = useEditableSpaceStore(s => s.spaces)
 
-  /** Plan affiché au rendu 2D : uniquement les EditableSpace de l'utilisateur.
+  /** Plan affiché au rendu 2D : uniquement les EditableSpace de l'utilisateur,
+   *  avec corrections de cohérence Proph3t :
+   *    • Fusion des voies parking/circulation adjacentes (évite les cadres
+   *      bleus délimités artificiellement — on obtient un réseau continu).
+   *    • Fusion des couloirs / galeries de même type qui se touchent.
    *  Le DXF brut sert uniquement de référence dans l'éditeur Atlas Studio —
    *  il n'est jamais affiché dans les volumes. Si aucune modélisation faite,
    *  on retourne null pour afficher un placeholder. */
   const modeledPlan = useMemo(() => {
     if (!parsedPlan) return null
     if (editableSpaces.length === 0) return null
-    // Force une fusion fraîche à chaque changement des spaces édités
-    return applyEditsToPlan(parsedPlan, editableSpaces)
+    const merged = applyEditsToPlan(parsedPlan, editableSpaces)
+    // Proph3t corrige les imperfections géométriques tout en conservant la cohérence
+    const { plan: corrected } = applyCoherenceCorrections(merged, {
+      adjacencyTolM: 0.5,
+      mergeAdjacent: true,
+    })
+    return corrected
   }, [parsedPlan, editableSpaces])
 
   // Synthétise des floors depuis parsedPlan si vol3Store.floors est vide
