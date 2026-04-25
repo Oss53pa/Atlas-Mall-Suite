@@ -62,8 +62,10 @@ export function useModeledPlan(parsedPlan: ParsedPlan | null): ParsedPlan | null
         return cached === s.polygon ? s : { ...s, polygon: cached }
       }
       const polyMm = tuplePolygonToMm(s.polygon)
+      // Params plus agressifs pour rc.0 où les polygones sont franchement
+      // bancals : grille 25 cm, ortho à 15 cm, drift max 80 cm.
       const result = cleanupPolygon(polyMm, {
-        gridMm: 100, minEdgeMm: 30, orthoAlignMm: 80, maxDriftMm: 400,
+        gridMm: 250, minEdgeMm: 50, orthoAlignMm: 150, maxDriftMm: 800,
       })
       if (!result.changed) {
         cleanupCache.set(key, s.polygon)
@@ -76,14 +78,14 @@ export function useModeledPlan(parsedPlan: ParsedPlan | null): ParsedPlan | null
       return { ...s, polygon: cleanedPolygon }
     })
 
-    // 4. ═══ HARMONISATION GLOBALE ═══
-    // Aligne les coordonnées proches entre polygones DIFFÉRENTS. Sans cette
-    // passe, deux commerces voisins peuvent avoir leurs murs partagés à
-    // 5 cm de différence — l'œil voit un défaut d'alignement même si chaque
-    // polygone est individuellement propre. Tolérance 12 cm = couvre la
-    // saisie souris bancale rc.0 sans déformer les vraies différences.
+    // 4. ═══ HARMONISATION GLOBALE (agressive rc.0) ═══
+    // Aligne les coordonnées proches entre polygones DIFFÉRENTS. Tolérance
+    // 30 cm + drift max 60 cm : couvre les saisies vraiment bancales du
+    // rc.0 où deux commerces mitoyens peuvent avoir leurs murs partagés
+    // décalés de 30-50 cm. Au-delà de 60 cm c'est une vraie différence
+    // architecturale qu'on ne touche pas.
     const polysM = straightened.map(s => s.polygon.map(([x, y]) => ({ x, y })))
-    const harmonized = harmonizePolygons(polysM, { toleranceM: 0.12, maxDisplacementM: 0.25 })
+    const harmonized = harmonizePolygons(polysM, { toleranceM: 0.30, maxDisplacementM: 0.60 })
     const harmonizedSpaces = straightened.map((s, i) => {
       const h = harmonized[i]
       if (!h) return s

@@ -13,22 +13,20 @@ import type { EditableSpace } from '../components/SpaceEditorCanvas'
 import type { FloorLevelKey, SpaceTypeKey } from '../proph3t/libraries/spaceTypeLibrary'
 import { SPACE_TYPE_META } from '../proph3t/libraries/spaceTypeLibrary'
 
-/** Convertit une clé SpaceTypeKey de l'éditeur → SpaceType du pipeline. */
+/**
+ * BUG ROOT CAUSE rc.0 : cette fonction dégradait les ~150 SpaceTypeKey
+ * granulaires (commerce_supermarche, parking_vehicule, terre_plein,
+ * voie_principale, mail_central, route_avenue...) en 9 buckets grossiers
+ * (commerce/parking/other/circulation/...). Conséquence : tous les types
+ * non listés tombaient sur 'other' → couleur par défaut + extrusion 4 m.
+ *
+ * Fix : on PRÉSERVE la SpaceTypeKey originale telle quelle. Les renderers
+ * (MallMap2D categoryColor, isometricEngine defaultHeightForType, etc.)
+ * utilisent du string/regex matching et acceptent n'importe quelle valeur.
+ * SpaceType est typé string-based donc le cast est sûr.
+ */
 function mapEditableTypeToDetected(k: SpaceTypeKey): SpaceType {
-  // SpaceType est un surensemble de SpaceTypeKey selon le domaine ;
-  // fallback sur 'other' si inconnu.
-  const meta = SPACE_TYPE_META[k]
-  const raw = String(k).toLowerCase()
-  if (raw.startsWith('commerce') || meta?.category === 'commerces-services') return 'commerce' as SpaceType
-  if (raw.startsWith('restaurant') || raw.includes('resto') || raw.includes('food')) return 'restaurant' as SpaceType
-  if (raw.startsWith('porte_') || raw === 'sortie_secours') return 'door' as SpaceType
-  if (raw.includes('parking')) return 'parking' as SpaceType
-  if (raw.includes('sanitaire') || raw.includes('wc')) return 'wc' as SpaceType
-  if (raw.includes('technique')) return 'technical' as SpaceType
-  if (raw.includes('circulation') || raw.includes('couloir') || raw.includes('mail')) return 'circulation' as SpaceType
-  if (raw.includes('escalier')) return 'stair' as SpaceType
-  if (raw.includes('ascenseur')) return 'elevator' as SpaceType
-  return 'other' as SpaceType
+  return String(k) as SpaceType
 }
 
 /** Mappe un FloorLevelKey (éditeur) vers une valeur string (canonical). */
