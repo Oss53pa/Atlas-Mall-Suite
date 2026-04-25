@@ -55,6 +55,7 @@ import {
 } from './components/Vol3Overlays'
 import { PlanCanvasV2 } from '../shared/components/PlanCanvasV2'
 import { MallMap2D } from '../shared/components/MallMap2D'
+import { SpatialCoreScene } from '../shared/components/SpatialCoreScene'
 import { PlanLayerSelector } from '../shared/components/PlanLayerSelector'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import { useEditableSpaceStore } from '../shared/stores/editableSpaceStore'
@@ -169,6 +170,19 @@ export default function Vol3Module() {
 
   // ── View mode ──
   const [viewMode, setViewMode] = useState<'2d' | '3d' | '3d-advanced'>('2d')
+
+  // ── Nouveau renderer 3D spatial-core (beta, opt-in) ──
+  // Quand activé, remplace PlanCanvasV2 (3D) ET Vol3DModuleEmbed (3D+) par
+  // <SpatialCoreScene> qui consomme @atlas-studio/spatial-core. Persisté.
+  const [use3DCore, setUse3DCore] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem('atlas-vol3-use-3d-core') === 'true'
+  })
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('atlas-vol3-use-3d-core', use3DCore ? 'true' : 'false')
+    }
+  }, [use3DCore])
 
   // ── Source du plan 2D (uniquement utilisé en viewMode='2d') ──
   // 'modeled' = EditableSpace du user (rendu épuré, palette architecturale)
@@ -914,7 +928,7 @@ export default function Vol3Module() {
 
         {/* ── Center: Floor Plan Canvas / 3D ── */}
         <main className="flex-1 relative overflow-hidden bg-surface-1/50">
-          {viewMode === '3d-advanced' ? (
+          {viewMode === '3d-advanced' && !use3DCore ? (
             <Suspense fallback={
               <div className="w-full h-full flex items-center justify-center bg-surface-0">
                 <div className="flex items-center gap-2 text-gray-500 text-sm">
@@ -925,6 +939,11 @@ export default function Vol3Module() {
             }>
               <Vol3DModuleEmbed />
             </Suspense>
+          ) : viewMode === '3d-advanced' && use3DCore && parsedPlan ? (
+            <SpatialCoreScene
+              plan={modeledPlan ?? parsedPlan}
+              projectId={projectId ?? 'cosmos-angre'}
+            />
           ) : (<>
           {/* Placement indicator */}
           {placeTool && (
@@ -1001,6 +1020,22 @@ export default function Vol3Module() {
           {/* ═══ VUE 2D MODÉLISÉE ═══
               N'affiche QUE les EditableSpace du user (pas le DXF brut).
               PlanCanvasV2 reste utilisé pour 3D / 3D+ (extrusion, XR). */}
+          {/* Toggle floating "Nouveau moteur 3D" — visible uniquement en 3D/3D+ */}
+          {(viewMode === '3d' || viewMode === '3d-advanced') && (
+            <button
+              onClick={() => setUse3DCore(v => !v)}
+              className="absolute top-3 right-1/2 translate-x-1/2 z-20 px-3 py-1.5 rounded-lg shadow-lg text-[11px] font-medium border border-white/20 transition-colors"
+              style={{
+                background: use3DCore ? 'rgba(14,165,233,0.92)' : 'rgba(15,23,42,0.78)',
+                color: '#fff',
+                backdropFilter: 'blur(8px)',
+              }}
+              title="Bascule entre l'ancien renderer Vol3DModule/PlanCanvasV2 et le nouveau spatial-core (extrusions correctes, palette unifiée)"
+            >
+              {use3DCore ? '✓ ' : ''}Nouveau moteur 3D {use3DCore ? '(actif)' : '(beta)'}
+            </button>
+          )}
+
           {parsedPlan && viewMode === '2d' ? (
             <div className="relative h-full w-full">
               {/* Toggle source du plan 2D — visible uniquement si on a le choix */}
@@ -1083,6 +1118,16 @@ export default function Vol3Module() {
                 placeTool === 'signage' ? 'signage' :
                 placeTool === 'moment' ? 'moment' :
                 null
+              // Si toggle "Nouveau moteur 3D" actif, on bypasse PlanCanvasV2
+              // et on rend SpatialCoreScene à la place.
+              if (use3DCore && (viewMode === '3d' || viewMode === '3d-advanced')) {
+                return (
+                  <SpatialCoreScene
+                    plan={plan}
+                    projectId={projectId ?? 'cosmos-angre'}
+                  />
+                )
+              }
               return (
                 <PlanCanvasV2
                   plan={plan}

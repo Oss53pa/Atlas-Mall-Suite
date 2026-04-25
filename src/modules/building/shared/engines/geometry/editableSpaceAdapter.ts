@@ -11,6 +11,7 @@
 //   const suggestions = detectMisalignments(spatial)
 
 import type { EditableSpace } from '../../components/SpaceEditorCanvas'
+import type { DetectedSpace } from '../../planReader/planEngineTypes'
 import type {
   SpatialEntity,
   Polygon,
@@ -145,4 +146,47 @@ export function editableSpacesToSpatialEntities(
   projectId: string,
 ): SpatialEntity[] {
   return spaces.map(s => editableSpaceToSpatialEntity(s, projectId))
+}
+
+/**
+ * Convertit un DetectedSpace (issu du modeledPlan, avec type granulaire
+ * grâce au fix 691d612) en SpatialEntity. Permet de feeder `<SceneRenderer>`
+ * directement depuis le pipeline existant Vol.3 sans changer la structure
+ * de données upstream.
+ */
+export function detectedSpaceToSpatialEntity(ds: DetectedSpace, projectId: string): SpatialEntity {
+  const entityType = mapEditableTypeToEntityType(String(ds.type))
+  const meta = getEntityMetadata(entityType)
+  const outer: Point2D[] = ds.polygon.map(([x, y]) => ({ x, y }))
+  const geometry: Polygon = { outer }
+  return {
+    id: ds.id,
+    projectId,
+    type: entityType,
+    level: String(ds.floorId ?? 'rdc'),
+    geometry,
+    extrusion: { ...meta.defaultExtrusion },
+    material: meta.defaultMaterial,
+    snapBehavior: meta.snapBehavior,
+    mergeWithNeighbors: meta.mergeWithSameType,
+    childrenIds: [],
+    label: ds.label,
+    customProperties: {
+      legacyType: String(ds.type),
+      areaSqm: ds.areaSqm,
+      layer: ds.layer,
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    createdBy: 'detected-space-adapter',
+    isAutoCorrected: false,
+    correctionAuditTrail: [],
+  }
+}
+
+export function detectedSpacesToSpatialEntities(
+  spaces: ReadonlyArray<DetectedSpace>,
+  projectId: string,
+): SpatialEntity[] {
+  return spaces.map(s => detectedSpaceToSpatialEntity(s, projectId))
 }
