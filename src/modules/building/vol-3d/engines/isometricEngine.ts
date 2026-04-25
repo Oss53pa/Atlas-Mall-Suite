@@ -189,51 +189,124 @@ export function defaultHeightForType(type: string): number {
   const t = String(type).toLowerCase()
 
   // ─── Marquages au sol — h ≈ 0 (pas extrudés) ─────────────
+  // Couvre TOUS les types de spaceTypeLibrary qui sont des SURFACES, pas
+  // des volumes : parkings, voies internes, routes publiques, accès au site,
+  // entrées de parking, parvis, esplanades, places publiques.
   if (
     /^parking/.test(t) ||
     /^voie_/.test(t) ||
     /^route_/.test(t) ||
+    /^acces_site_/.test(t) ||           // accès piéton/véhicule du site
+    /^entree_parking/.test(t) ||        // entree_parking, entree_parking_vehicule_*
+    /^exterieur_voie_/.test(t) ||       // exterieur_voie_pieton/vehicule
     t === 'voirie' || t === 'asphalte' ||
     t === 'rond_point' || t === 'carrefour' ||
     t === 'passage_pieton' ||
     t === 'trottoir' || t === 'pedestrian' ||
     t === 'parvis' ||
-    t === 'exterieur_voie_pieton' || t === 'exterieur_voie_vehicule'
+    t === 'exterieur_parvis' ||
+    t === 'exterieur_voirie' ||
+    t === 'exterieur_giratoire' ||
+    t === 'exterieur_place_forum'
   ) return 0.05
 
-  // ─── Espaces verts — h ≈ 0.3 (massif léger, pas mur) ────
+  // ─── Espaces verts / paysage — h ≈ 0.3 (massif léger) ───
   if (
     t === 'jardin' || t === 'pelouse' || t === 'espace_vert' ||
     t === 'plantation' || t === 'terre_plein' ||
-    t === 'massif_vegetal' || t === 'alignement_arbre' || t === 'haie'
+    t === 'massif_vegetal' ||
+    t === 'alignement_arbre' || t === 'alignement_arbres' ||
+    t === 'haie' ||
+    t === 'exterieur_zone_detente' ||
+    t === 'exterieur_aire_jeux' ||
+    t === 'exterieur_fontaine' ||
+    t === 'terrasse_agrement' || t === 'terrasse_toit'
   ) return 0.3
 
-  // ─── Portes / accès — plats ──────────────────────────────
+  // ─── Arbre isolé — vrai volume vertical ──────────────────
+  if (t === 'arbre_isole') return 8.0
+
+  // ─── Portes / accès personnels — plats ──────────────────
   if (
     /^porte_/.test(t) || t === 'porte' ||
     t === 'entree' || t === 'sortie' || t === 'sortie_secours'
   ) return 0.1
 
+  // ─── Entrées de bâtiment (zone d'accueil au sol) ────────
+  if (
+    t === 'entree_principale' || t === 'entree_secondaire' ||
+    t === 'entree_service'
+  ) return 0.1
+
+  // ─── Mobilier / contrôle accès (hauteur humaine) ────────
+  if (
+    t === 'controle_acces' || t === 'sas_securite' || t === 'portique_securite' ||
+    t === 'arret_taxi' || t === 'arret_bus_tram' ||
+    t === 'exterieur_arret_transport' ||
+    t === 'station_velo_libre_service' ||
+    t === 'borne_wayfinder' || t === 'point_information' ||
+    t === 'cabine_photomaton' || t === 'guichet_caisse' || t === 'guichet_service'
+  ) return 2.5
+
   // ─── Volumes verticaux (vraie hauteur d'étage) ───────────
   const h: Record<string, number> = {
-    commerce: 4.5, restauration: 4.0, restaurant: 4.0, food: 4.0,
+    // Commerces
+    commerce: 4.5, local_commerce: 4.5,
+    commerce_supermarche: 5.5, commerce_restaurant: 4.0, commerce_mode: 4.5,
+    commerce_accessoires: 4.0, commerce_banque_assurance: 3.8,
+    commerce_services: 3.8, commerce_beaute_sante: 3.8,
+    commerce_cadeaux_alimentaire: 4.0, commerce_multimedia: 4.0,
+    big_box: 6.0, market: 5.0, kiosque: 3.0, kiosk: 2.5,
+    tabac_presse: 3.5, auto_lavage: 5.0, location_vehicule: 4.0,
+    // Restauration
+    restauration: 4.0, restaurant: 4.0, food: 4.0, food_court: 5.0,
     cafe: 4.0, bar: 4.0, cuisine: 4.0,
-    circulation: 5.0, galerie: 5.0, couloir: 5.0,
-    mail_central: 6.0, mail_secondaire: 5.0, atrium: 8.0, promenade: 5.0,
-    technique: 3.0, backoffice: 3.5, financier: 3.5,
-    loisirs: 6.0, cinema: 8.0,
-    services: 3.5, hotel: 3.2, bureaux: 3.0,
-    sante: 3.5, pharmacie: 3.5, medical: 3.5,
-    grande_surface: 6.0, big_box: 6.0, epicerie: 4.5,
-    sanitaire: 2.7, wc: 2.7, vestiaire: 2.7,
-    stockage: 4.0, reserve: 4.0, depot: 4.0, archive: 3.5,
-    livraison: 5.0, quai: 4.0,
-    atelier: 4.0, workshop: 4.0,
+    terrasse_restaurant: 0.15, terrasse_commerciale: 0.15,
+    // Hébergement
+    hotel: 3.2, hotel_residence: 3.2,
+    // Loisirs / culturel
+    loisirs: 6.0, cinema: 8.0, cinema_multiplex: 8.0,
+    salle_spectacle: 8.0, zone_exposition: 4.5,
+    showroom: 4.5, galerie_art: 4.5,
     salle: 3.5, exposition: 4.5, culturel: 4.5,
     bibliotheque: 4.0, auditorium: 8.0, amphitheatre: 8.0,
-    escalier: 0.1, ascenseur: 0.1,
+    // Bureaux / admin
+    bureaux: 3.0, bureau_immeuble: 3.0, bureau_direction: 3.2,
+    bureau_open_space: 3.0, salle_reunion: 3.0, salle_conference: 4.0,
+    accueil_administratif: 3.5, archives: 3.0,
+    backoffice: 3.5, financier: 3.5,
+    // Services & santé
+    services: 3.5, sante: 3.5, pharmacie: 3.5, medical: 3.5,
+    grande_surface: 6.0, epicerie: 4.5,
+    espace_bebe: 2.7, poste_premiers_secours: 2.7,
+    salle_priere: 3.0, consigne_bagages: 2.5, espace_fumeur: 2.5,
+    atm: 2.2,
+    // Sanitaires
+    sanitaire: 2.7, sanitaires: 2.7, wc: 2.7,
+    vestiaire: 2.7, vestiaires_personnel: 2.7,
+    refectoire_personnel: 2.7,
+    // Technique / stockage
+    technique: 3.0, zone_technique: 3.5,
+    local_electrique_tgbt: 2.7, local_chaufferie_cvc: 3.5,
+    local_sprinkler: 2.7, local_groupe_electrogene: 3.5,
+    local_telecom: 2.7, local_menage: 2.7, local_informatique: 2.7,
+    local_securite_ssiap: 2.7, local_poubelles: 3.0,
+    stockage: 4.0, local_stockage: 4.0,
+    reserve: 4.0, depot: 4.0, archive: 3.5,
+    livraison: 5.0, zone_livraison: 5.0, quai: 4.0,
+    atelier: 4.0, workshop: 4.0,
+    // Circulation / mall
+    circulation: 5.0, galerie: 5.0, couloir: 5.0, couloir_secondaire: 4.0,
+    couloir_service: 3.0, cour_service: 0.05,
+    mail_central: 6.0, mail_secondaire: 5.0,
+    atrium: 8.0, promenade: 5.0, hall_distribution: 5.5,
+    passage_pieton_couvert: 4.0,
+    // Transitions verticales (rendues séparément, mais on garde 0.1)
+    escalier: 0.1, escalier_fixe: 0.1, escalator: 0.5, ascenseur: 0.1,
+    rampe_pmr: 0.05,
+    // Extérieur générique
     terrasse: 0.1, exterieur: 0.05,
-    info: 2.5, kiosk: 2.5,
+    info: 2.5,
   }
   return h[t] ?? 4.0
 }
