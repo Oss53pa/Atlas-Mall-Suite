@@ -179,7 +179,61 @@ function buildIsoGrid(floor: Floor | undefined, baseElev: number, scale: number)
   return lines
 }
 
+/**
+ * Hauteur d'extrusion par type. Les MARQUAGES SOL (parking, voiries,
+ * trottoirs, espaces verts, terre-pleins) retournent une hauteur quasi
+ * nulle pour rester à plat — sinon ils apparaissent comme des blocs
+ * hideux dans la 3D.
+ */
 export function defaultHeightForType(type: string): number {
-  const h: Record<string, number> = { parking: 3.0, commerce: 4.5, restauration: 4.0, circulation: 5.0, technique: 3.0, backoffice: 3.5, financier: 3.5, sortie_secours: 4.0, loisirs: 6.0, services: 3.5, hotel: 3.2, bureaux: 3.0, exterieur: 0.1 }
-  return h[type] ?? 4.0
+  const t = String(type).toLowerCase()
+
+  // ─── Marquages au sol — h ≈ 0 (pas extrudés) ─────────────
+  if (
+    /^parking/.test(t) ||
+    /^voie_/.test(t) ||
+    /^route_/.test(t) ||
+    t === 'voirie' || t === 'asphalte' ||
+    t === 'rond_point' || t === 'carrefour' ||
+    t === 'passage_pieton' ||
+    t === 'trottoir' || t === 'pedestrian' ||
+    t === 'parvis' ||
+    t === 'exterieur_voie_pieton' || t === 'exterieur_voie_vehicule'
+  ) return 0.05
+
+  // ─── Espaces verts — h ≈ 0.3 (massif léger, pas mur) ────
+  if (
+    t === 'jardin' || t === 'pelouse' || t === 'espace_vert' ||
+    t === 'plantation' || t === 'terre_plein' ||
+    t === 'massif_vegetal' || t === 'alignement_arbre' || t === 'haie'
+  ) return 0.3
+
+  // ─── Portes / accès — plats ──────────────────────────────
+  if (
+    /^porte_/.test(t) || t === 'porte' ||
+    t === 'entree' || t === 'sortie' || t === 'sortie_secours'
+  ) return 0.1
+
+  // ─── Volumes verticaux (vraie hauteur d'étage) ───────────
+  const h: Record<string, number> = {
+    commerce: 4.5, restauration: 4.0, restaurant: 4.0, food: 4.0,
+    cafe: 4.0, bar: 4.0, cuisine: 4.0,
+    circulation: 5.0, galerie: 5.0, couloir: 5.0,
+    mail_central: 6.0, mail_secondaire: 5.0, atrium: 8.0, promenade: 5.0,
+    technique: 3.0, backoffice: 3.5, financier: 3.5,
+    loisirs: 6.0, cinema: 8.0,
+    services: 3.5, hotel: 3.2, bureaux: 3.0,
+    sante: 3.5, pharmacie: 3.5, medical: 3.5,
+    grande_surface: 6.0, big_box: 6.0, epicerie: 4.5,
+    sanitaire: 2.7, wc: 2.7, vestiaire: 2.7,
+    stockage: 4.0, reserve: 4.0, depot: 4.0, archive: 3.5,
+    livraison: 5.0, quai: 4.0,
+    atelier: 4.0, workshop: 4.0,
+    salle: 3.5, exposition: 4.5, culturel: 4.5,
+    bibliotheque: 4.0, auditorium: 8.0, amphitheatre: 8.0,
+    escalier: 0.1, ascenseur: 0.1,
+    terrasse: 0.1, exterieur: 0.05,
+    info: 2.5, kiosk: 2.5,
+  }
+  return h[t] ?? 4.0
 }
