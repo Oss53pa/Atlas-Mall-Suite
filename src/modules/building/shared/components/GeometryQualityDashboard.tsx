@@ -21,6 +21,7 @@ import { scorePolygonQualityForType } from '../engines/geometry/qualityScore'
 import { xyPolygonToMm } from '../engines/geometry/meterAdapter'
 import { pushEditableSpaces, type PushResult } from '../engines/geometry/cellsSyncAdapter'
 import { isOfflineMode } from '../../../../lib/supabase'
+import { batchSuggestRelabels, type RelabelSuggestion } from '../engines/geometry/relabelByLabel'
 
 function badge(score: number): { color: string; label: string } {
   if (score >= 0.85) return { color: 'bg-emerald-500/20 text-emerald-300', label: 'OK' }
@@ -35,6 +36,7 @@ export function GeometryQualityDashboard(): React.ReactElement {
   const [dryRun, setDryRun] = useState<BatchCleanupReport | null>(null)
   const [pushState, setPushState] = useState<'idle' | 'pushing' | 'done'>('idle')
   const [pushResult, setPushResult] = useState<PushResult | null>(null)
+  const [relabelSuggestions, setRelabelSuggestions] = useState<RelabelSuggestion[] | null>(null)
 
   const rows = useMemo(() => {
     return spaces.map(s => {
@@ -67,6 +69,27 @@ export function GeometryQualityDashboard(): React.ReactElement {
     })
     setSpaces(newSpaces)
     setDryRun(null)
+  }
+
+  const runRelabelDryRun = () => {
+    const sugs = batchSuggestRelabels(spaces.map(s => ({
+      id: s.id, type: String(s.type), label: s.name, name: s.name,
+    })))
+    setRelabelSuggestions(sugs)
+  }
+
+  const applyRelabels = () => {
+    if (!relabelSuggestions || relabelSuggestions.length === 0) return
+    const highOnly = relabelSuggestions.filter(s => s.confidence === 'high')
+    if (!confirm(`Appliquer ${highOnly.length} re-typages confidence HIGH ? (les ${relabelSuggestions.length - highOnly.length} medium/low restent à valider à la main)`)) return
+    const byId = new Map(highOnly.map(s => [s.spaceId, s]))
+    const newSpaces = spaces.map(s => {
+      const sug = byId.get(s.id)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return sug ? { ...s, type: sug.suggestedType as any } : s
+    })
+    setSpaces(newSpaces)
+    setRelabelSuggestions(null)
   }
 
   const runManualPush = async () => {
@@ -134,6 +157,66 @@ export function GeometryQualityDashboard(): React.ReactElement {
           )}
         </div>
       )}
+
+      {/* ─── Re-typage par labels (PROPH3T mode B) ──────── */}
+      <div className="mb-4 p-3 bg-slate-800/30 rounded border border-slate-700">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <div className="text-xs font-bold">Reclassification heuristique sur labels</div>
+            <div className="text-[10px] text-slate-400 mt-0.5">
+              Détecte les espaces dont le label suggère un type différent de celui assigné
+              (ex: labellé "TERRE PLEIN" mais typé `commerce`).
+            </div>
+          </div>
+          <button
+            onClick={runRelabelDryRun}
+            disabled={spaces.length === 0}
+            className="px-3 py-1.5 rounded bg-violet-600 text-white text-xs hover:bg-violet-500 disabled:opacity-40"
+          >
+            Analyser ({spaces.length})
+          </button>
+        </div>
+
+        {relabelSuggestions && (
+          <div className="mt-2 pt-2 border-t border-slate-700">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-[11px]">
+                <span className="text-slate-200 font-bold">{relabelSuggestions.length}</span>
+                <span className="text-slate-400"> suggestions ·</span>
+                <span className="text-emerald-300 ml-1">{relabelSuggestions.filter(s => s.confidence === 'high').length} HIGH</span>
+                <span className="text-amber-300 ml-1">{relabelSuggestions.filter(s => s.confidence === 'medium').length} MEDIUM</span>
+                <span className="text-rose-300 ml-1">{relabelSuggestions.filter(s => s.confidence === 'low').length} LOW</span>
+              </div>
+              <button
+                onClick={applyRelabels}
+                disabled={!relabelSuggestions.some(s => s.confidence === 'high')}
+                className="px-3 py-1 rounded bg-emerald-600 text-white text-[10px] hover:bg-emerald-500 disabled:opacity-40"
+              >
+                Appliquer les HIGH
+              </button>
+            </div>
+            <div className="max-h-60 overflow-y-auto text-[10px] font-mono space-y-0.5">
+              {relabelSuggestions.slice(0, 50).map(s => (
+                <div key={s.spaceId} className="flex items-center gap-2 py-0.5 border-b border-slate-800/50">
+                  <span className={`px-1 rounded ${
+                    s.confidence === 'high' ? 'bg-emerald-500/20 text-emerald-300' :
+                    s.confidence === 'medium' ? 'bg-amber-500/20 text-amber-300' :
+                    'bg-rose-500/20 text-rose-300'
+                  }`}>{s.confidence[0].toUpperCase()}</span>
+                  <span className="text-slate-300 flex-1 truncate" title={s.matchedText}>{s.matchedText.slice(0, 40)}</span>
+                  <span className="text-rose-300">{s.currentType}</span>
+                  <span className="text-slate-500">→</span>
+                  <span className="text-emerald-300">{s.suggestedType}</span>
+                  <span className="text-slate-500 text-[9px]">({s.matchedRule})</span>
+                </div>
+              ))}
+              {relabelSuggestions.length > 50 && (
+                <div className="text-slate-500 text-center pt-1">... et {relabelSuggestions.length - 50} autres</div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* ─── Sync cloud manuelle (debug + force) ─────────── */}
       <div className="mb-4 p-3 bg-slate-800/30 rounded border border-slate-700">
