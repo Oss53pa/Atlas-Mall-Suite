@@ -1,0 +1,32 @@
+{
+  "name": "@atlas-studio/spatial-core",
+  "version": "2.0.0",
+  "description": "Atlas Studio — couche spatiale partagée (entités typées, correction géométrique, migration legacy, rendu 3D conditionnel)",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./domain": "./src/domain/index.ts",
+    "./domain/extensions/*": "./src/domain/extensions/*.ts",
+    "./rendering": "./src/rendering/index.ts",
+    "./tools": "./src/tools/index.ts",
+    "./migration": "./src/migration/index.ts",
+    "./persistence": "./src/persistence/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "react": "^18.3.0",
+    "three": "^0.183.0",
+    "@react-three/fiber": "^8.18.0",
+    "@react-three/drei": "^9.0.0",
+    "zustand": "^5.0.0",
+    "polygon-clipping": "^0.15.0",
+    "rbush": "^4.0.0",
+    "earcut": "^3.0.0"
+  }
+}

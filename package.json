@@ -4,6 +4,9 @@
   "private": true,
   "version": "1.0.0-rc.1",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
