@@ -17,6 +17,7 @@ import { applyEditsToPlan } from '../planReader/applyEditsToPlan'
 import { applyCoherenceCorrections } from '../engines/plan-analysis/coherenceEngine'
 import { cleanupPolygon } from '../engines/geometry/legacyCleanup'
 import { tuplePolygonToMm, tuplePolygonToM } from '../engines/geometry/meterAdapter'
+import { harmonizePolygons } from '../engines/geometry/harmonize'
 
 // Cache module-global — survit aux remounts.
 const cleanupCache = new Map<string, Array<[number, number]>>()
@@ -75,6 +76,24 @@ export function useModeledPlan(parsedPlan: ParsedPlan | null): ParsedPlan | null
       return { ...s, polygon: cleanedPolygon }
     })
 
-    return { ...corrected, spaces: straightened }
+    // 4. ═══ HARMONISATION GLOBALE ═══
+    // Aligne les coordonnées proches entre polygones DIFFÉRENTS. Sans cette
+    // passe, deux commerces voisins peuvent avoir leurs murs partagés à
+    // 5 cm de différence — l'œil voit un défaut d'alignement même si chaque
+    // polygone est individuellement propre. Tolérance 12 cm = couvre la
+    // saisie souris bancale rc.0 sans déformer les vraies différences.
+    const polysM = straightened.map(s => s.polygon.map(([x, y]) => ({ x, y })))
+    const harmonized = harmonizePolygons(polysM, { toleranceM: 0.12, maxDisplacementM: 0.25 })
+    const harmonizedSpaces = straightened.map((s, i) => {
+      const h = harmonized[i]
+      if (!h) return s
+      // Convertit retour en tuples [x, y] (format DetectedSpace)
+      const newPolygon = h.map(p => [p.x, p.y] as [number, number])
+      // Si rien n'a bougé pour ce space → retourne l'objet original (référence stable)
+      const same = s.polygon.every((p, j) => p[0] === newPolygon[j][0] && p[1] === newPolygon[j][1])
+      return same ? s : { ...s, polygon: newPolygon }
+    })
+
+    return { ...corrected, spaces: harmonizedSpaces }
   }, [parsedPlan, editableSpaces])
 }
