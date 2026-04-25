@@ -22,6 +22,9 @@ import { xyPolygonToMm } from '../engines/geometry/meterAdapter'
 import { pushEditableSpaces, type PushResult } from '../engines/geometry/cellsSyncAdapter'
 import { isOfflineMode } from '../../../../lib/supabase'
 import { batchSuggestRelabels, type RelabelSuggestion } from '../engines/geometry/relabelByLabel'
+import { editableSpacesToSpatialEntities } from '../engines/geometry/editableSpaceAdapter'
+import { auditPlan, type AuditReport } from '../../../../../packages/spatial-core/src/proph3t/proph3tAudit'
+import { detectMisalignments, type AlignmentSuggestion } from '../../../../../packages/spatial-core/src/proph3t/proph3tAdvise'
 
 function badge(score: number): { color: string; label: string } {
   if (score >= 0.85) return { color: 'bg-emerald-500/20 text-emerald-300', label: 'OK' }
@@ -37,6 +40,8 @@ export function GeometryQualityDashboard(): React.ReactElement {
   const [pushState, setPushState] = useState<'idle' | 'pushing' | 'done'>('idle')
   const [pushResult, setPushResult] = useState<PushResult | null>(null)
   const [relabelSuggestions, setRelabelSuggestions] = useState<RelabelSuggestion[] | null>(null)
+  const [auditReport, setAuditReport] = useState<AuditReport | null>(null)
+  const [alignmentSuggestions, setAlignmentSuggestions] = useState<AlignmentSuggestion[] | null>(null)
 
   const rows = useMemo(() => {
     return spaces.map(s => {
@@ -90,6 +95,39 @@ export function GeometryQualityDashboard(): React.ReactElement {
     })
     setSpaces(newSpaces)
     setRelabelSuggestions(null)
+  }
+
+  const runAudit = () => {
+    const spatial = editableSpacesToSpatialEntities(spaces, projectId ?? 'cosmos-angre')
+    setAuditReport(auditPlan(spatial, projectId ?? 'cosmos-angre'))
+  }
+
+  const runDetectAlignments = () => {
+    const spatial = editableSpacesToSpatialEntities(spaces, projectId ?? 'cosmos-angre')
+    setAlignmentSuggestions(detectMisalignments(spatial, 0.5))
+  }
+
+  const exportLegacyJson = () => {
+    const pid = projectId ?? 'cosmos-angre'
+    // Format LegacyEntity attendu par le LegacyPlanMigrator
+    const legacy = spaces.map(s => ({
+      id: s.id,
+      projectId: pid,
+      type: String(s.type),
+      geometry: { outer: s.polygon.map(p => ({ x: p.x, y: p.y })) },
+      label: s.name,
+      notes: s.notes,
+      level: String(s.floorLevel ?? 'rdc'),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }))
+    const blob = new Blob([JSON.stringify(legacy, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${pid}-legacy-spaces.json`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   const runManualPush = async () => {
@@ -157,6 +195,115 @@ export function GeometryQualityDashboard(): React.ReactElement {
           )}
         </div>
       )}
+
+      {/* ─── Export pour CLI migrator ─────────────────────── */}
+      <div className="mb-3">
+        <button
+          onClick={exportLegacyJson}
+          disabled={spaces.length === 0}
+          className="px-3 py-1.5 rounded bg-slate-700 text-white text-xs hover:bg-slate-600 disabled:opacity-40"
+          title="Télécharge un JSON LegacyEntity[] consommable par scripts/migrate-plan.ts (npm run migrate:plan)"
+        >
+          ⬇️ Exporter pour migrator CLI ({spaces.length} legacy)
+        </button>
+      </div>
+
+      {/* ─── PROPH3T mode D — Audit du plan ──────────────── */}
+      <div className="mb-4 p-3 bg-slate-800/30 rounded border border-slate-700">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <div className="text-xs font-bold flex items-center gap-2">
+              <span>Audit du plan</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">PROPH3T mode D</span>
+            </div>
+            <div className="text-[10px] text-slate-400 mt-0.5">
+              Analyse statique : polygones invalides, hauteurs aberrantes, parents orphelins,
+              compliance ERP basique. Lecture seule.
+            </div>
+          </div>
+          <button
+            onClick={runAudit}
+            disabled={spaces.length === 0}
+            className="px-3 py-1.5 rounded bg-amber-600 text-white text-xs hover:bg-amber-500 disabled:opacity-40"
+          >
+            Auditer ({spaces.length})
+          </button>
+        </div>
+
+        {auditReport && (
+          <div className="mt-2 pt-2 border-t border-slate-700 text-[11px]">
+            <div className="text-slate-200 mb-1">{auditReport.summary}</div>
+            <div className="text-[10px] text-slate-400 mb-2 font-mono">
+              GLA : <span className="text-emerald-300">{auditReport.glaSqm.toFixed(0)} m²</span> ·
+              Catégories : {Object.entries(auditReport.countByCategory).slice(0, 5).map(([k, v]) => `${k}=${v}`).join(' · ')}
+            </div>
+            {auditReport.findings.length === 0 ? (
+              <div className="text-emerald-300">✓ Aucune anomalie détectée.</div>
+            ) : (
+              <div className="max-h-60 overflow-y-auto space-y-0.5 font-mono text-[10px]">
+                {auditReport.findings.slice(0, 50).map((f, i) => (
+                  <div key={i} className="flex items-start gap-2 py-0.5 border-b border-slate-800/50">
+                    <span className={`px-1 rounded text-[9px] flex-shrink-0 ${
+                      f.severity === 'critical' ? 'bg-rose-500/20 text-rose-300' :
+                      f.severity === 'warning' ? 'bg-amber-500/20 text-amber-300' :
+                      'bg-sky-500/20 text-sky-300'
+                    }`}>{f.severity[0].toUpperCase()}</span>
+                    <span className="text-slate-300 flex-1">{f.message}</span>
+                  </div>
+                ))}
+                {auditReport.findings.length > 50 && (
+                  <div className="text-slate-500 text-center pt-1">... et {auditReport.findings.length - 50} autres</div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ─── PROPH3T mode A — Suggestions alignement ─────── */}
+      <div className="mb-4 p-3 bg-slate-800/30 rounded border border-slate-700">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <div className="text-xs font-bold flex items-center gap-2">
+              <span>Suggestions d'alignement</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-mono">PROPH3T mode A</span>
+            </div>
+            <div className="text-[10px] text-slate-400 mt-0.5">
+              Détecte les murs voisins quasi-alignés (tol 50 cm) et propose
+              de les harmoniser sur la médiane. Calculé par moteur TS pur.
+            </div>
+          </div>
+          <button
+            onClick={runDetectAlignments}
+            disabled={spaces.length === 0}
+            className="px-3 py-1.5 rounded bg-sky-600 text-white text-xs hover:bg-sky-500 disabled:opacity-40"
+          >
+            Détecter ({spaces.length})
+          </button>
+        </div>
+
+        {alignmentSuggestions && (
+          <div className="mt-2 pt-2 border-t border-slate-700 text-[11px]">
+            <div className="text-slate-200 mb-2">
+              <span className="font-bold">{alignmentSuggestions.length}</span> suggestion(s) d'alignement.
+              {alignmentSuggestions.length === 0 && <span className="text-emerald-300 ml-2">Plan déjà bien aligné.</span>}
+            </div>
+            {alignmentSuggestions.length > 0 && (
+              <div className="max-h-60 overflow-y-auto space-y-0.5 font-mono text-[10px]">
+                {alignmentSuggestions.slice(0, 30).map(s => (
+                  <div key={s.id} className="flex items-start gap-2 py-1 border-b border-slate-800/50">
+                    <span className="px-1 rounded bg-sky-500/20 text-sky-300 text-[9px] flex-shrink-0">{s.axis.toUpperCase()}</span>
+                    <span className="text-slate-300 flex-1">{s.humanReadable}</span>
+                  </div>
+                ))}
+                {alignmentSuggestions.length > 30 && (
+                  <div className="text-slate-500 text-center pt-1">... et {alignmentSuggestions.length - 30} autres</div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* ─── Re-typage par labels (PROPH3T mode B) ──────── */}
       <div className="mb-4 p-3 bg-slate-800/30 rounded border border-slate-700">
