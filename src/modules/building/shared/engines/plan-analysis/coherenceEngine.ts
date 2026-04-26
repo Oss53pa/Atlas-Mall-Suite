@@ -18,44 +18,68 @@ import { unionPolygons } from './spaceGeometryEngine'
 // ─── Types qui doivent être fusionnés quand adjacents ────
 
 /** Groupes de types où la fusion géométrique fait sens :
- *  un "parking" coupé en 3 cases adjacentes = en réalité 1 parking. */
-const MERGEABLE_GROUPS: Array<{ id: string; match: RegExp; label: string }> = [
-  // Voies circulées par véhicules DU SITE (intérieur parking/mall)
+ *  un "parking" coupé en 8 bandes parallèles = en réalité 1 parking.
+ *  Chaque groupe a sa propre tolérance d'adjacence : les bandes de
+ *  parking ont des allées de roulage (5-7m) entre elles, on tolère
+ *  large. À l'inverse, les couloirs intérieurs sont serrés. */
+const MERGEABLE_GROUPS: Array<{ id: string; match: RegExp; label: string; toleranceM: number }> = [
+  // Parkings — bandes parallèles avec allées roulage 5-7m -> tol large
+  {
+    id: 'parking-zones',
+    match: /^(parking(?!_voie)|parking_vehicule|parking_place_)/i,
+    label: 'Zones de parking',
+    toleranceM: 8.0,
+  },
+  // Voies internes du site (routes carrossables) — souvent contiguës mais
+  // séparées par bandes piétonnes/marquages -> tol moyenne
   {
     id: 'vehicle-roads-site',
-    match: /^(parking|voie_|exterieur_voie_vehicule|exterieur_voirie|carrefour$|rond_point$|giratoire|asphalte|voirie|chauss[eé]e|^road$)/i,
+    match: /^(voie_|exterieur_voie_vehicule|exterieur_voirie|carrefour$|rond_point$|giratoire|asphalte|voirie|chauss[eé]e|parking_voie_circulation)/i,
     label: 'Voirie du site',
+    toleranceM: 5.0,
   },
-  // Routes publiques HORS-SITE — fusionnent entre elles pour former le
-  // réseau routier urbain continu (bd, av, rue, autoroute...).
+  // Routes publiques HORS-SITE — formant le réseau urbain continu
   {
     id: 'public-roads',
     match: /^route_(autoroute|boulevard|avenue|rue_principale|rue_secondaire|impasse|rond_point_public|carrefour_public|pont|tunnel)/i,
     label: 'Réseau routier public',
+    toleranceM: 4.0,
   },
   // Trottoirs publics
   {
     id: 'public-sidewalks',
     match: /^route_trottoir_public$/i,
     label: 'Trottoirs publics',
+    toleranceM: 3.0,
   },
-  // Circulations piétonnes internes
+  // Circulations piétonnes intérieures (mail/galerie/couloirs)
+  // Plus large car les couloirs partagent souvent un mail central commun
   {
     id: 'circulation',
-    match: /^(circulation$|couloir|galerie|mail|atrium|promenade|mail_central|mail_secondaire|couloir_secondaire)/i,
+    match: /^(circulation$|couloir|galerie|mail|atrium|promenade|mail_central|mail_secondaire|couloir_secondaire|hall_distribution)/i,
     label: 'Circulation piétonne',
+    toleranceM: 2.5,
   },
   // Espaces piétons extérieurs
   {
     id: 'pedestrian',
-    match: /trottoir|parvis|pedestrian|exterieur_voie_pieton|passage_pieton/i,
+    match: /trottoir|parvis|pedestrian|exterieur_voie_pieton|passage_pieton|exterieur_parvis/i,
     label: 'Espaces piétons extérieurs',
+    toleranceM: 2.0,
   },
-  // Espaces verts
+  // Espaces verts (pelouses contiguës, jardins juxtaposés)
   {
     id: 'green',
-    match: /espace_vert|pelouse|jardin|plantation|terre_plein|massif_vegetal|alignement_arbre|haie/i,
+    match: /espace_vert|pelouse|jardin|plantation|terre_plein|massif_vegetal|alignement_arbre|haie|exterieur_zone_detente/i,
     label: 'Espaces verts',
+    toleranceM: 3.0,
+  },
+  // Accès au site (pieton/vehicule) -> souvent fragmenté
+  {
+    id: 'site-access',
+    match: /^acces_site_/i,
+    label: 'Accès au site',
+    toleranceM: 4.0,
   },
 ]
 
@@ -65,6 +89,12 @@ function findMergeGroup(type: string): string | null {
     if (g.match.test(type)) return g.id
   }
   return null
+}
+
+/** Retourne la tolérance d'adjacence du groupe (en mètres). */
+function toleranceForGroup(groupId: string, fallback: number): number {
+  const g = MERGEABLE_GROUPS.find(g => g.id === groupId)
+  return g?.toleranceM ?? fallback
 }
 
 // ─── Test d'adjacence géométrique ─────────────────────────
@@ -189,7 +219,10 @@ export function applyCoherenceCorrections(
       continue
     }
     // Trouve composantes connexes adjacentes dans ce groupe
-    const components = buildComponents(members, adjacencyTolM)
+    // Tolérance par groupe (parking 8m, voirie 5m, circulation 2.5m, etc.)
+    // qui surclasse adjacencyTolM si définie. Sinon fallback sur le param global.
+    const groupTol = toleranceForGroup(groupId, adjacencyTolM)
+    const components = buildComponents(members, groupTol)
     const absorbedIdx = new Set<number>()
     for (const comp of components) {
       if (comp.length < 2) continue

@@ -941,7 +941,7 @@ export default function Vol3Module() {
             </Suspense>
           ) : viewMode === '3d-advanced' && use3DCore && parsedPlan ? (
             <SpatialCoreScene
-              plan={modeledPlan ?? parsedPlan}
+              plan={planSource === 'raw' ? parsedPlan : (modeledPlan ?? parsedPlan)}
               projectId={projectId ?? 'cosmos-angre'}
             />
           ) : (<>
@@ -1020,20 +1020,43 @@ export default function Vol3Module() {
           {/* ═══ VUE 2D MODÉLISÉE ═══
               N'affiche QUE les EditableSpace du user (pas le DXF brut).
               PlanCanvasV2 reste utilisé pour 3D / 3D+ (extrusion, XR). */}
-          {/* Toggle floating "Nouveau moteur 3D" — visible uniquement en 3D/3D+ */}
+          {/* Toggle floating "Nouveau moteur 3D" — visible en 3D/3D+ */}
           {(viewMode === '3d' || viewMode === '3d-advanced') && (
-            <button
-              onClick={() => setUse3DCore(v => !v)}
-              className="absolute top-3 right-1/2 translate-x-1/2 z-20 px-3 py-1.5 rounded-lg shadow-lg text-[11px] font-medium border border-white/20 transition-colors"
-              style={{
-                background: use3DCore ? 'rgba(14,165,233,0.92)' : 'rgba(15,23,42,0.78)',
-                color: '#fff',
-                backdropFilter: 'blur(8px)',
-              }}
-              title="Bascule entre l'ancien renderer Vol3DModule/PlanCanvasV2 et le nouveau spatial-core (extrusions correctes, palette unifiée)"
-            >
-              {use3DCore ? '✓ ' : ''}Nouveau moteur 3D {use3DCore ? '(actif)' : '(beta)'}
-            </button>
+            <>
+              <button
+                onClick={() => setUse3DCore(v => !v)}
+                className="absolute top-3 right-1/2 translate-x-1/2 z-20 px-3 py-1.5 rounded-lg shadow-lg text-[11px] font-medium border border-white/20 transition-colors"
+                style={{
+                  background: use3DCore ? 'rgba(14,165,233,0.92)' : 'rgba(15,23,42,0.78)',
+                  color: '#fff',
+                  backdropFilter: 'blur(8px)',
+                }}
+                title="Bascule entre l'ancien renderer (Vol3DModule/PlanCanvasV2) et le nouveau @atlas-studio/spatial-core (extrusions correctes par type, palette unifiée, marquages sol restent au sol)"
+              >
+                {use3DCore ? '✓ ' : ''}Nouveau moteur 3D {use3DCore ? '(actif)' : '(beta)'}
+              </button>
+              {/* Toggle Modélisé/DXF brut accessible aussi en 3D — affiche
+                  ce qui est rendu en 3D selon la même source que la 2D. */}
+              {modeledPlan && (
+                <div className="absolute top-3 left-3 z-20 flex items-center gap-0 rounded-lg overflow-hidden shadow-lg border border-white/20"
+                  style={{ background: 'rgba(15,23,42,0.78)', backdropFilter: 'blur(8px)' }}>
+                  <button
+                    onClick={() => setPlanSource('modeled')}
+                    className={`px-3 py-1.5 text-[11px] font-medium ${planSource === 'modeled' ? 'bg-atlas-500 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700/50'}`}
+                    title={`Plan modélisé — ${modeledPlan.spaces.length} espaces`}
+                  >
+                    Modélisé ({modeledPlan.spaces.length})
+                  </button>
+                  <button
+                    onClick={() => setPlanSource('raw')}
+                    className={`px-3 py-1.5 text-[11px] font-medium ${planSource === 'raw' ? 'bg-atlas-500 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700/50'}`}
+                    title={`DXF brut — ${parsedPlan?.spaces.length ?? 0} polygones`}
+                  >
+                    DXF brut ({parsedPlan?.spaces.length ?? 0})
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
           {parsedPlan && viewMode === '2d' ? (
@@ -1107,10 +1130,11 @@ export default function Vol3Module() {
             </div>
           ) : parsedPlan ? (
             (() => {
-              // Cohérence : le 3D et 3D+ doivent eux aussi rendre le plan
-              // modélisé (EditableSpace redressés), pas le DXF brut. Fallback
-              // sur parsedPlan uniquement si aucune modélisation.
-              const plan = modeledPlan ?? parsedPlan
+              // Cohérence : le 3D respecte la même source que la 2D :
+              //  - planSource='modeled' (défaut) → modeledPlan ?? parsedPlan
+              //  - planSource='raw' → parsedPlan brut (DXF importé)
+              // Le toggle 2D contrôle aussi la 3D.
+              const plan = (planSource === 'raw' ? parsedPlan : (modeledPlan ?? parsedPlan))
               const pw = plan.bounds.width || 200
               const ph = plan.bounds.height || 140
               const placeMode3D: 'poi' | 'signage' | 'moment' | null =
