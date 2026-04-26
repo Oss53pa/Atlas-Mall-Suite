@@ -19,6 +19,7 @@ import { cleanupPolygon } from '../engines/geometry/legacyCleanup'
 import { tuplePolygonToMm, tuplePolygonToM } from '../engines/geometry/meterAdapter'
 import { harmonizePolygons } from '../engines/geometry/harmonize'
 import { suggestType } from '../engines/geometry/relabelByLabel'
+import { trimOverlapsBatch, type TrimableEntity } from '../engines/geometry/trimOverlaps'
 
 // Cache module-global — survit aux remounts.
 // Reset complet quand la signature du jeu d'EditableSpace change (count + 5
@@ -129,6 +130,31 @@ export function useModeledPlan(parsedPlan: ParsedPlan | null): ParsedPlan | null
       return same ? s : { ...s, polygon: newPolygon }
     })
 
-    return { ...corrected, spaces: harmonizedSpaces }
+    // 5. ═══ TRIM OVERLAPS — boolean difference vs voisins prioritaires ═══
+    // Les murs/sanitaires/boutiques gardent leur forme. Les circulations
+    // se font soustraire les boutiques. Les voiries se font soustraire les
+    // bâtiments. Les jardins / paysage absorbent ce qui dépasse.
+    // Garantit qu'aucun polygone ne déborde sur un voisin plus prioritaire.
+    const trimable: TrimableEntity[] = harmonizedSpaces.map(s => ({
+      id: s.id,
+      type: String(s.type),
+      polygon: s.polygon.map(([x, y]) => ({ x, y })),
+      bounds: { minX: s.bounds.minX, minY: s.bounds.minY, maxX: s.bounds.maxX, maxY: s.bounds.maxY },
+    }))
+    const trimmed = trimOverlapsBatch(trimable)
+    const trimmedById = new Map(trimmed.map(t => [t.id, t]))
+    const finalSpaces = harmonizedSpaces.flatMap(s => {
+      const t = trimmedById.get(s.id)
+      if (!t) return [] // absorbé par un voisin prioritaire
+      // Reconstruit polygon en format tuple [number,number][]
+      const newPoly = t.polygon.map(p => [p.x, p.y] as [number, number])
+      // Si rien n'a changé (référence identique aux x/y), retourne tel quel
+      const same = s.polygon.length === newPoly.length &&
+        s.polygon.every((p, j) => p[0] === newPoly[j][0] && p[1] === newPoly[j][1])
+      if (same) return [s]
+      return [{ ...s, polygon: newPoly, bounds: { ...s.bounds, ...t.bounds, width: t.bounds.maxX - t.bounds.minX, height: t.bounds.maxY - t.bounds.minY, centerX: (t.bounds.minX + t.bounds.maxX) / 2, centerY: (t.bounds.minY + t.bounds.maxY) / 2 } }]
+    })
+
+    return { ...corrected, spaces: finalSpaces }
   }, [parsedPlan, editableSpaces])
 }
