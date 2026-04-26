@@ -69,7 +69,7 @@ const RULES: Rule[] = [
   { pattern: /\bparking\s+moto|\bplace\s+moto|\b2\s*roues?/,                  type: 'parking_place_moto',  confidence: 'high', ruleId: 'parking_moto' },
   { pattern: /\bplace\s+livraison/,                                           type: 'parking_place_livraison', confidence: 'high', ruleId: 'parking_livraison' },
   { pattern: /\bparking\s+velo|\bvelos?\b/,                                   type: 'parking_velo',        confidence: 'high', ruleId: 'parking_velo' },
-  { pattern: /\bparking|\bstationnement/,                                     type: 'parking_vehicule',    confidence: 'medium', ruleId: 'parking_default' },
+  { pattern: /\bparking|\bstationnement/,                                     type: 'parking_vehicule',    confidence: 'high', ruleId: 'parking_default' },
 
   // ─── Routes publiques hors-site ───────────────────────────────────────
   { pattern: /\bautoroute\b/,                                                 type: 'route_autoroute',     confidence: 'high', ruleId: 'route_autoroute' },

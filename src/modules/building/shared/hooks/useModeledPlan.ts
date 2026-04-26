@@ -63,11 +63,13 @@ export function useModeledPlan(parsedPlan: ParsedPlan | null): ParsedPlan | null
     // Beaucoup d'EditableSpace rc.0 ont type='commerce' par défaut alors
     // que leur label dit clairement autre chose ("PARKING C5", "TERRE PLEIN",
     // "VOIE PRINCIPALE"). On corrige le type EN MÉMOIRE (pas dans le store)
-    // pour que coherenceEngine puisse identifier et fusionner correctement.
-    // Seules les suggestions confidence=high sont appliquées.
+    // pour que coherenceEngine puisse identifier et fusionner correctement,
+    // ET pour que defaultHeightForType retourne 0.05 (plat) au lieu de 4.5 (mur).
+    // Seuil élargi à HIGH + MEDIUM : les patterns medium (terrasse_default,
+    // mall_default, hall, couloir_generic) sont fiables sur des labels nets.
     const reTypedSpaces = merged.spaces.map(s => {
       const sug = suggestType(s.id, String(s.type), s.label ?? '', s.label ?? '')
-      if (sug && sug.confidence === 'high') {
+      if (sug && (sug.confidence === 'high' || sug.confidence === 'medium')) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return { ...s, type: sug.suggestedType as any }
       }
