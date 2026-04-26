@@ -33,3 +33,8 @@ dist-ssr
 
 # Supabase CLI temp
 supabase/.temp/
+
+# Textures téléchargées par scripts/setup-textures.ts (cache local)
+tmp/
+migration-input/
+migration-reports/

@@ -23,7 +23,8 @@
     "build:analyze": "vite build --mode analyze",
     "precommit": "npm run typecheck && npm run lint:ci",
     "prepare-release": "npm run typecheck && npm run lint:ci && npm test && npm run build",
-    "migrate:plan": "node --import tsx scripts/migrate-plan.ts"
+    "migrate:plan": "node --import tsx scripts/migrate-plan.ts",
+    "setup:textures": "node --import tsx scripts/setup-textures.ts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",
