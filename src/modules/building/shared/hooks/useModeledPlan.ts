@@ -18,10 +18,22 @@ import { applyCoherenceCorrections } from '../engines/plan-analysis/coherenceEng
 import { cleanupPolygon } from '../engines/geometry/legacyCleanup'
 import { tuplePolygonToMm, tuplePolygonToM } from '../engines/geometry/meterAdapter'
 import { harmonizePolygons } from '../engines/geometry/harmonize'
+import { suggestType } from '../engines/geometry/relabelByLabel'
 
 // Cache module-global — survit aux remounts.
+// Reset complet quand la signature du jeu d'EditableSpace change (count + 5
+// derniers ids). Évite de retourner des polys obsolètes après une fusion.
 const cleanupCache = new Map<string, Array<[number, number]>>()
+let cacheKeySetSignature = ''
 const CACHE_MAX = 1000
+
+function invalidateCacheIfStale(spaces: ReadonlyArray<{ id: string }>): void {
+  const sig = `${spaces.length}:${spaces.slice(-5).map(s => s.id).join('|')}`
+  if (sig !== cacheKeySetSignature) {
+    cleanupCache.clear()
+    cacheKeySetSignature = sig
+  }
+}
 
 function cacheKey(id: string, poly: readonly [number, number][]): string {
   if (!poly || poly.length === 0) return `${id}:0`
@@ -47,13 +59,32 @@ export function useModeledPlan(parsedPlan: ParsedPlan | null): ParsedPlan | null
     // 1. Fusionne les edits user sur le plan importé
     const merged = applyEditsToPlan(parsedPlan, editableSpaces)
 
+    // 1b. ═══ Re-typage automatique par labels (PROPH3T mode B inline) ═══
+    // Beaucoup d'EditableSpace rc.0 ont type='commerce' par défaut alors
+    // que leur label dit clairement autre chose ("PARKING C5", "TERRE PLEIN",
+    // "VOIE PRINCIPALE"). On corrige le type EN MÉMOIRE (pas dans le store)
+    // pour que coherenceEngine puisse identifier et fusionner correctement.
+    // Seules les suggestions confidence=high sont appliquées.
+    const reTypedSpaces = merged.spaces.map(s => {
+      const sug = suggestType(s.id, String(s.type), s.label ?? '', s.label ?? '')
+      if (sug && sug.confidence === 'high') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return { ...s, type: sug.suggestedType as any }
+      }
+      return s
+    })
+    const reTypedPlan = { ...merged, spaces: reTypedSpaces }
+
     // 2. Corrections de cohérence Proph3t (fusion voies/couloirs adjacents, etc.)
-    const { plan: corrected } = applyCoherenceCorrections(merged, {
-      adjacencyTolM: 0.5,
+    //    Avec tolérances par groupe (parking 8m, voirie 5m, circulation 2.5m).
+    //    adjacencyTolM est le fallback global si un groupe n'a pas sa tolérance.
+    const { plan: corrected } = applyCoherenceCorrections(reTypedPlan, {
+      adjacencyTolM: 1.0,
       mergeAdjacent: true,
     })
 
     // 3. Redressage géométrique à l'affichage (view-time, avec cache)
+    invalidateCacheIfStale(corrected.spaces)
     const straightened = corrected.spaces.map(s => {
       if (!s.polygon || s.polygon.length < 3) return s
       const key = cacheKey(s.id, s.polygon)
