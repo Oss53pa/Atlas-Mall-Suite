@@ -184,6 +184,16 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
   /** Place TOUS les manquants en un clic (couvre tout le plan). */
   const handlePlaceAllMissing = () => {
     if (!planResult) return
+    const totalToPlace = planResult.payload.recommendations
+      .reduce((s, r) => s + r.suggestedLocations.length, 0)
+    if (totalToPlace > 50) {
+      const ok = confirm(
+        `Vous allez ajouter ${totalToPlace} panneaux d'un coup sur le plan.\n\n` +
+        `Cela peut saturer visuellement. Recommandation : utilisez plutôt les boutons "+N" par ligne pour placer catégorie par catégorie (Parcours client d'abord, puis Sécurité ERP, etc.).\n\n` +
+        `Continuer quand même ?`,
+      )
+      if (!ok) return
+    }
     let total = 0
     for (const rec of planResult.payload.recommendations) {
       if (rec.suggestedLocations.length === 0) continue
@@ -204,6 +214,19 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
     setFeedback(`✅ ${total} panneaux placés (plan complet)`)
     setTimeout(() => setFeedback(null), 3000)
     handleRecommendPlan()
+  }
+
+  /** EMERGENCY : retire TOUS les panneaux du projet (auto + manuel). */
+  const handleRemoveAll = () => {
+    if (placedForProject.length === 0) return
+    const ok = confirm(
+      `Retirer TOUS les ${placedForProject.length} panneaux du plan (auto + manuels) ?\n\n` +
+      `Cette action est irréversible (mais tu peux toujours relancer "Plan signalétique complet").`,
+    )
+    if (!ok) return
+    clearForProject(projectId)
+    setFeedback(`🗑️ ${placedForProject.length} panneaux retirés`)
+    setTimeout(() => setFeedback(null), 2500)
   }
 
   const handleImplement = () => {
@@ -352,6 +375,15 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
             >
               <Trash2 size={10} />
               Retirer la signalétique auto
+            </button>
+          )}
+          {placedForProject.length > 0 && (
+            <button
+              onClick={handleRemoveAll}
+              className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded text-[10px] font-bold text-white bg-rose-700 hover:bg-rose-600 border border-rose-500"
+            >
+              <Trash2 size={11} />
+              🚨 Tout retirer ({placedForProject.length})
             </button>
           )}
 

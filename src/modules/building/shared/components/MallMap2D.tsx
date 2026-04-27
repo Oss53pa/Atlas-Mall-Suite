@@ -1077,7 +1077,9 @@ function SignagePlacementsLayer({
     })
   }, [editMode, addKind, addOne, projectId, fromX, fromY])
 
-  const r = Math.max(10, 14 * Math.min(1.5, scale))
+  // Taille adaptative : plus de signs = plus petits pour éviter saturation
+  const sizeReduction = signs.length > 100 ? 0.55 : signs.length > 50 ? 0.7 : signs.length > 20 ? 0.85 : 1
+  const r = Math.max(7, 14 * Math.min(1.5, scale) * sizeReduction)
 
   return (
     <g>
@@ -1114,8 +1116,10 @@ function SignagePlacementsLayer({
                 if (confirm(`Supprimer ce panneau ${def.label} ?`)) removeSign(s.id)
               }}
             >
-              {/* Halo de visibilité ~ portée du panneau (lié à priority) */}
-              <circle cx={cx} cy={cy} r={15 * scale} fill={def.color} fillOpacity={isDragging ? 0.15 : 0.06} />
+              {/* Halo de visibilité — désactivé si beaucoup de signs (saturation) */}
+              {signs.length < 30 && (
+                <circle cx={cx} cy={cy} r={15 * scale} fill={def.color} fillOpacity={isDragging ? 0.15 : 0.04} />
+              )}
               {/* Anneau extérieur — orange pulsant si à valider */}
               <circle cx={cx} cy={cy} r={r + 3}
                 fill="none"

@@ -151,6 +151,46 @@ function distributeInPolygon(poly: [number, number][], n: number): Array<[number
   return out
 }
 
+// ─── Caps de quantité par type (évite les surcharges visuelles) ───
+// Plafond raisonnable par type pour un mall standard. Au-delà, l'utilisateur
+// doit segmenter (par niveau) plutôt que de saturer le plan.
+const MAX_QTY_PER_CODE: Record<string, number> = {
+  'DIR-S': 40,        // directionnels suspendus — un toutes les ~30m
+  'DIR-M': 25,        // muraux couloirs secondaires
+  'DIR-SOL': 30,      // marquage sol — pas tous les 5m mais tous les ~25m
+  'TOT-EXT': 4,
+  'PLAN-M': 8,
+  'LOT-N': 200,       // 1 par local — peut être beaucoup mais légitime
+  'ENS': 100,
+  'REP': 4,
+  'SEC-IS': 80,       // BAES sortie de secours — 1 / 30m sur évac
+  'SEC-EXT': 40,
+  'SEC-RIA': 20,
+  'SEC-EVA': 10,
+  'SEC-BAES': 60,
+  'SEC-INT': 15,
+  'SRV-WC': 10,
+  'SRV-ASC': 8,
+  'SRV-PKG': 6,
+  'SRV-HOR': 6,
+  'SRV-ACC': 2,
+  'PMR': 30,
+  'COM-ECR': 8,
+  'COM-KAK': 0,       // événementiel — pas placé auto
+  'COM-VIT': 50,
+  'COM-LED': 1,
+  'WAY-BOR': 6,
+  'WAY-QR': 30,
+  'WAY-BLE': 40,
+}
+
+const DEFAULT_MAX = 50
+
+function applyCap(code: string, qty: number): number {
+  const cap = MAX_QTY_PER_CODE[code] ?? DEFAULT_MAX
+  return Math.min(qty, cap)
+}
+
 // ─── Calcul de quantité par règle ──────────────────
 
 function computeQuantityForRule(
@@ -196,8 +236,10 @@ function computeQuantityForRule(
     case 'per-wc-block':
       return { qty: Math.max(1, ctx.wcBlockCount), rationale: `${ctx.wcBlockCount} bloc(s) sanitaires` }
     case 'per-meters-path': {
-      const qty = Math.ceil(ctx.promenadeMeters / r.everyM)
-      return { qty, rationale: `${qty} panneaux pour couvrir ${ctx.promenadeMeters.toFixed(0)}m de parcours d'évacuation (1 tous les ${r.everyM}m)` }
+      // Multiplier par 1.5 pour éviter perimeter-counting double (intérieur+extérieur)
+      const effectiveMeters = ctx.promenadeMeters / 1.5
+      const qty = Math.ceil(effectiveMeters / r.everyM)
+      return { qty, rationale: `${qty} panneaux pour couvrir ~${effectiveMeters.toFixed(0)}m de parcours d'évacuation (1 tous les ${r.everyM}m)` }
     }
     case 'per-area-sqm': {
       const qty = Math.max(1, Math.ceil(ctx.totalAreaSqm / r.everySqm))
@@ -219,8 +261,11 @@ function computeQuantityForRule(
       return { qty: r.count, rationale: `Quantité fixe : ${r.count}` }
     case 'per-secondary-corridor':
       return { qty: ctx.secondaryCorridorCount, rationale: `${ctx.secondaryCorridorCount} couloir(s) secondaire(s) > ${r.minLengthM}m` }
-    case 'per-promenade-meter':
-      return { qty: Math.ceil(ctx.promenadeMeters / 5), rationale: `Marquage tous les 5m sur ${ctx.promenadeMeters.toFixed(0)}m de promenade` }
+    case 'per-promenade-meter': {
+      // Marquage au sol : 1 tous les 25m (pas 5 — ça flooderait le plan)
+      const qty = Math.ceil((ctx.promenadeMeters / 1.5) / 25)
+      return { qty, rationale: `Marquage au sol tous les 25m (~${qty} sur ${(ctx.promenadeMeters / 1.5).toFixed(0)}m de promenade)` }
+    }
     case 'per-carrefour-promenade':
       return { qty: Math.max(1, Math.ceil(ctx.carrefourCount / r.divisor)), rationale: `${ctx.carrefourCount} carrefours / ${r.divisor}` }
     case 'custom-event':
@@ -400,22 +445,38 @@ export async function recommendSignagePlan(
   // ─── Calcul recommandation par type ───
   const recommendations: SignageRecommendation[] = []
   for (const [code, meta] of Object.entries(SIGNAGE_CATALOG)) {
-    const { qty, rationale } = computeQuantityForRule(meta, ctx)
-    if (qty <= 0) continue // skip types non applicables (custom-event sans planning)
+    const { qty: rawQty, rationale: rawRationale } = computeQuantityForRule(meta, ctx)
+    if (rawQty <= 0) continue // skip types non applicables (custom-event sans planning)
+    // Plafond pour éviter saturation visuelle
+    const qty = applyCap(code, rawQty)
+    const rationale = qty < rawQty
+      ? `${rawRationale} · plafonné à ${qty} pour lisibilité du plan (théorique : ${rawQty})`
+      : rawRationale
     const currentQty = input.alreadyPlaced?.[code] ?? 0
     const missingQty = Math.max(0, qty - currentQty)
-    const suggestedLocations = missingQty > 0
+    const rawLocations = missingQty > 0
       ? computeLocationsForType(meta, missingQty, ctx)
       : []
+    // ─── Espacement minimum 8m entre placements proposés ───
+    const MIN_SPACING_M = 8
+    const suggestedLocations: typeof rawLocations = []
+    for (const loc of rawLocations) {
+      const tooClose = suggestedLocations.some(other =>
+        Math.hypot(loc.x - other.x, loc.y - other.y) < MIN_SPACING_M,
+      )
+      if (!tooClose) suggestedLocations.push(loc)
+    }
+    // Si l'espacement a réduit, on ajuste missingQty au nombre réel de positions valides
+    const effectiveMissingQty = Math.min(missingQty, suggestedLocations.length || missingQty)
     recommendations.push({
       code,
       meta,
       requiredQty: qty,
       currentQty,
-      missingQty,
+      missingQty: effectiveMissingQty,
       suggestedLocations,
       rationale,
-      costMissingFcfa: missingQty * meta.priceFcfa,
+      costMissingFcfa: effectiveMissingQty * meta.priceFcfa,
     })
   }
 
