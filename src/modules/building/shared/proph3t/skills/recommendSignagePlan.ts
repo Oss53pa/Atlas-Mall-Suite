@@ -76,6 +76,16 @@ export interface RecommendSignagePlanPayload {
     /** Top types proposés dans cette zone. */
     topTypes: Array<{ code: string; qty: number }>
   }>
+  /** Inventaire détection Prophet — pour que le user vérifie avant placement. */
+  detectionInventory: {
+    commerces: Array<{ id: string; label: string; type?: string; areaSqm: number }>
+    elevators: Array<{ id: string; label: string; type?: string; areaSqm: number }>
+    escalators: Array<{ id: string; label: string; type?: string; areaSqm: number }>
+    stairs: Array<{ id: string; label: string; type?: string; areaSqm: number }>
+    wcs: Array<{ id: string; label: string; type?: string; areaSqm: number }>
+    entrances: Array<{ id: string; label: string }>
+    anchors: Array<{ id: string; label: string }>
+  }
 }
 
 // ─── Helpers ───────────────────────────────────────
@@ -125,8 +135,26 @@ const ZONE_LABELS: Record<PlanZone, string> = {
   unknown: 'Autre',
 }
 
+/** Match strict : prefère le type canonique, fallback sur label uniquement
+ *  si le type est vide. Évite les faux positifs (ex : "WC" dans des
+ *  labels auto-générés sans rapport avec un sanitaire réel). */
 function matchesType(s: PlanSpace, re: RegExp): boolean {
-  return re.test(String(s.type ?? '')) || re.test(String(s.label ?? ''))
+  const type = String(s.type ?? '').trim()
+  if (type.length > 0) return re.test(type)
+  return re.test(String(s.label ?? ''))
+}
+
+/** Sanity check d'aire : un sanitaire fait 2-100m², un ascenseur 2-15m², etc. */
+const SERVICE_AREA_RANGES: Record<string, { min: number; max: number }> = {
+  wc:        { min: 2,  max: 100 },
+  elevator:  { min: 2,  max: 30 },
+  escalator: { min: 5,  max: 80 },
+  stair:     { min: 2,  max: 80 },
+}
+
+function isReasonableServiceSize(s: PlanSpace, kind: keyof typeof SERVICE_AREA_RANGES): boolean {
+  const range = SERVICE_AREA_RANGES[kind]
+  return s.areaSqm >= range.min && s.areaSqm <= range.max
 }
 
 function polygonCentroid(poly: [number, number][]): [number, number] {
@@ -370,16 +398,16 @@ function computeLocationsForType(
 
   // Cas 1 : par espace de service — utilise placement contextuel (centre + pré-service)
   if (r.kind === 'per-elevator') {
-    return contextualServicePlacements(meta, qty, ctx, ELEVATOR_RE, 'Ascenseur')
+    return contextualServicePlacements(meta, qty, ctx, ELEVATOR_RE, 'Ascenseur', 'elevator')
   }
   if (r.kind === 'per-escalator') {
-    return contextualServicePlacements(meta, qty, ctx, ESCALATOR_RE, 'Escalator')
+    return contextualServicePlacements(meta, qty, ctx, ESCALATOR_RE, 'Escalator', 'escalator')
   }
   if (r.kind === 'per-stair') {
-    return contextualServicePlacements(meta, qty, ctx, STAIRS_RE, 'Escalier')
+    return contextualServicePlacements(meta, qty, ctx, STAIRS_RE, 'Escalier', 'stair')
   }
   if (r.kind === 'per-wc-block') {
-    return contextualServicePlacements(meta, qty, ctx, WC_RE, 'Sanitaires')
+    return contextualServicePlacements(meta, qty, ctx, WC_RE, 'Sanitaires', 'wc')
   }
 
   // Cas 1bis : per-local (commerce) — centroïde du polygone
@@ -568,9 +596,19 @@ function contextualServicePlacements(
   ctx: Parameters<typeof computeQuantityForRule>[1],
   serviceMatcher: RegExp,
   serviceTypeName: string,
+  areaKind?: keyof typeof SERVICE_AREA_RANGES,
 ): Array<{ x: number; y: number; reason: string }> {
   const out: Array<{ x: number; y: number; reason: string }> = []
-  const services = ctx.spaces.filter(s => matchesType(s, serviceMatcher))
+  let services = ctx.spaces.filter(s => matchesType(s, serviceMatcher))
+  // Filtre par taille raisonnable
+  if (areaKind) {
+    services = services.filter(s => isReasonableServiceSize(s, areaKind))
+  }
+  // Exclut tout ce qui tombe en zone parking ou extérieure
+  services = services.filter(s => {
+    const z = classifyZone(s)
+    return z !== 'parking' && z !== 'exterior'
+  })
   if (services.length === 0) return out
 
   // Si beaucoup de services détectés, on se limite au centroïde (pas de
@@ -658,10 +696,18 @@ export async function recommendSignagePlan(
   const circulationSqm = circulationSpaces.reduce((s, sp) => s + sp.areaSqm, 0)
 
   const commerceCount = input.spaces.filter(s => COMMERCE_RE.test(s.type ?? '') || COMMERCE_RE.test(s.label ?? '')).length
-  const elevatorCount = input.spaces.filter(s => matchesType(s, ELEVATOR_RE)).length
-  const escalatorCount = input.spaces.filter(s => matchesType(s, ESCALATOR_RE)).length
-  const stairCount = input.spaces.filter(s => matchesType(s, STAIRS_RE)).length
-  const wcBlockCount = Math.max(1, input.spaces.filter(s => matchesType(s, WC_RE)).length)
+  // Helper : filtre service avec garde-fous (taille + zone non-parking/extérieur)
+  const filterValidService = (re: RegExp, areaKind: keyof typeof SERVICE_AREA_RANGES) =>
+    input.spaces.filter(s =>
+      matchesType(s, re)
+      && isReasonableServiceSize(s, areaKind)
+      && classifyZone(s) !== 'parking'
+      && classifyZone(s) !== 'exterior',
+    )
+  const elevatorCount = filterValidService(ELEVATOR_RE, 'elevator').length
+  const escalatorCount = filterValidService(ESCALATOR_RE, 'escalator').length
+  const stairCount = filterValidService(STAIRS_RE, 'stair').length
+  const wcBlockCount = filterValidService(WC_RE, 'wc').length // pas de Math.max(1) — si 0 détecté, 0 placements
   const parkingEntranceCount = Math.max(1, input.pois.filter(p => PARKING_RE.test(p.label)).length)
   const vehicleAccessCount = parkingEntranceCount
   const entranceCount = Math.max(1, input.pois.filter(p => ENTRANCE_RE.test(p.label) || p.priority === 1).length)
@@ -877,6 +923,16 @@ export async function recommendSignagePlan(
     erpRequiredCount,
     erpCompliancePct,
     zoneSummary,
+    detectionInventory: {
+      commerces: input.spaces.filter(s => COMMERCE_RE.test(s.type ?? '') || COMMERCE_RE.test(s.label ?? ''))
+        .map(s => ({ id: s.id, label: s.label, type: s.type, areaSqm: s.areaSqm })),
+      elevators: filterValidService(ELEVATOR_RE, 'elevator').map(s => ({ id: s.id, label: s.label, type: s.type, areaSqm: s.areaSqm })),
+      escalators: filterValidService(ESCALATOR_RE, 'escalator').map(s => ({ id: s.id, label: s.label, type: s.type, areaSqm: s.areaSqm })),
+      stairs: filterValidService(STAIRS_RE, 'stair').map(s => ({ id: s.id, label: s.label, type: s.type, areaSqm: s.areaSqm })),
+      wcs: filterValidService(WC_RE, 'wc').map(s => ({ id: s.id, label: s.label, type: s.type, areaSqm: s.areaSqm })),
+      entrances: input.pois.filter(p => ENTRANCE_RE.test(p.label) || p.priority === 1).map(p => ({ id: p.id, label: p.label })),
+      anchors: input.pois.filter(p => p.priority === 1 && !ENTRANCE_RE.test(p.label) && !EXIT_RE.test(p.label)).map(p => ({ id: p.id, label: p.label })),
+    },
   }
 
   return {

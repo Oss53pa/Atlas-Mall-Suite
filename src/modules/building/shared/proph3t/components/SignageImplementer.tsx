@@ -1085,6 +1085,27 @@ function SignagePlanModal({
             <Kpi label="Conformité ERP" value={p.erpCompliancePct.toFixed(0)} unit="%" color={p.erpCompliancePct === 100 ? 'emerald' : 'rose'} />
           </div>
 
+          {/* ═══ INVENTAIRE DÉTECTION — vérifie avant de placer ═══ */}
+          {p.detectionInventory && (
+            <section className="rounded-lg border border-amber-500/30 bg-amber-950/15 p-4">
+              <h3 className="text-[12px] font-bold text-amber-200 uppercase tracking-wider mb-2">
+                🔍 Détection Prophet — vérifie avant placement
+              </h3>
+              <p className="text-[11px] text-amber-100 mb-3">
+                Si Prophet n'a pas correctement détecté les sanitaires, ascenseurs ou ancres, les placements seront mal positionnés. Vérifie ci-dessous puis ajuste les types dans Atlas Studio si nécessaire.
+              </p>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-[10px]">
+                <DetectionGroup label="🚻 Sanitaires" items={p.detectionInventory.wcs} emptyLabel="Aucun sanitaire détecté" />
+                <DetectionGroup label="🛗 Ascenseurs" items={p.detectionInventory.elevators} emptyLabel="Aucun ascenseur détecté" />
+                <DetectionGroup label="↗ Escalators" items={p.detectionInventory.escalators} emptyLabel="Aucun escalator détecté" />
+                <DetectionGroup label="🪜 Escaliers" items={p.detectionInventory.stairs} emptyLabel="Aucun escalier détecté" />
+                <DetectionGroup label="🚪 Entrées" items={p.detectionInventory.entrances.map(e => ({ ...e, areaSqm: 0 }))} emptyLabel="Aucune entrée — défaut centre du plan" hideArea />
+                <DetectionGroup label="🏬 POI ancres" items={p.detectionInventory.anchors.map(a => ({ ...a, areaSqm: 0 }))} emptyLabel="Aucune ancre P1 — placements sans cible" hideArea />
+                <DetectionGroup label="🏪 Commerces" items={p.detectionInventory.commerces.slice(0, 8)} emptyLabel="Aucun commerce" extraNote={p.detectionInventory.commerces.length > 8 ? `+${p.detectionInventory.commerces.length - 8} autres` : undefined} />
+              </div>
+            </section>
+          )}
+
           {/* ═══ ZONES DU PLAN DÉTECTÉES PAR PROPHET ═══ */}
           {p.zoneSummary && p.zoneSummary.length > 0 && (
             <section className="rounded-lg border border-emerald-500/30 bg-emerald-950/15 p-4">
@@ -1241,6 +1262,39 @@ function SignagePlanModal({
           </section>
         </div>
       </div>
+    </div>
+  )
+}
+
+function DetectionGroup({
+  label, items, emptyLabel, hideArea, extraNote,
+}: {
+  label: string
+  items: Array<{ id: string; label: string; type?: string; areaSqm: number }>
+  emptyLabel: string
+  hideArea?: boolean
+  extraNote?: string
+}) {
+  return (
+    <div className="rounded border border-white/10 bg-surface-0 p-2">
+      <div className="text-[10px] font-bold text-white mb-1">
+        {label} <span className="text-amber-300 font-mono">({items.length})</span>
+      </div>
+      {items.length === 0 ? (
+        <div className="text-[9px] text-rose-300 italic">{emptyLabel}</div>
+      ) : (
+        <ul className="space-y-0.5 max-h-[80px] overflow-y-auto">
+          {items.map(item => (
+            <li key={item.id} className="text-[9px] text-slate-400 flex items-baseline justify-between gap-1">
+              <span className="truncate">{item.label || item.id}</span>
+              {!hideArea && item.areaSqm > 0 && (
+                <span className="text-slate-500 font-mono shrink-0">{item.areaSqm.toFixed(0)}m²</span>
+              )}
+            </li>
+          ))}
+          {extraNote && <li className="text-[9px] text-slate-500 italic">{extraNote}</li>}
+        </ul>
+      )}
     </div>
   )
 }
