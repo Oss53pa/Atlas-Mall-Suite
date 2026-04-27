@@ -149,6 +149,17 @@ export const CATEGORY_COLOR: Record<string, string> = {
 
 const DEFAULT_COLOR = '#e7e5e4'
 
+function pointInPoly(px: number, py: number, poly: ReadonlyArray<[number, number]> | Array<[number, number]>): boolean {
+  let inside = false
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], yi = poly[i][1]
+    const xj = poly[j][0], yj = poly[j][1]
+    const hit = ((yi > py) !== (yj > py)) && (px < ((xj - xi) * (py - yi)) / (yj - yi) + xi)
+    if (hit) inside = !inside
+  }
+  return inside
+}
+
 function categoryColor(type: string): string {
   const t = type.toLowerCase()
   if (CATEGORY_COLOR[t]) return CATEGORY_COLOR[t]
@@ -508,6 +519,28 @@ export function MallMap2D({
         ref={svgRef}
         data-mallmap2d="true"
         width="100%" height="100%"
+        onContextMenu={(e) => {
+          // Hit-test global : trouve le polygone le PLUS PETIT contenant le
+          // point de clic-droit, peu importe l'ordre de rendu SVG.
+          // Permet de cliquer-droit sur une petite porte même imprécisément.
+          if (!onSpaceContextMenu) return
+          const rect = svgRef.current?.getBoundingClientRect()
+          if (!rect) return
+          const sx = e.clientX - rect.left
+          const sy = e.clientY - rect.top
+          const wx = (sx - viewport.ox) / viewport.scale
+          const wy = (sy - viewport.oy) / viewport.scale
+          // Polygone-point test ; collecte ceux qui contiennent + tri ASC area
+          const hits: DetectedSpace[] = []
+          for (const s of visibleSpaces) {
+            if (pointInPoly(wx, wy, s.polygon)) hits.push(s)
+          }
+          if (hits.length === 0) return
+          hits.sort((a, b) => a.areaSqm - b.areaSqm)
+          e.preventDefault()
+          e.stopPropagation()
+          onSpaceContextMenu(hits[0], e.clientX, e.clientY)
+        }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -895,6 +928,9 @@ export function MallMap2D({
         )}
         {plan.wallSegments && plan.wallSegments.length > 0 && (
           <span style={{ color: mutedColor }}> · {plan.wallSegments.length} murs</span>
+        )}
+        {onSpaceContextMenu && (
+          <span style={{ color: '#d97706' }} className="ml-2">· 💡 Clic-droit pour éditer</span>
         )}
       </div>
 
