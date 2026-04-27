@@ -457,6 +457,10 @@ export function MallMap2D({
   const [isPanning, setIsPanning] = useState(false)
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return
+    // En mode ajout signalétique OU drag d'un sign : pas de pan (le clic doit
+    // atteindre le rect/sign sans déclencher le panning).
+    const editMode = useSignageEditUiStore.getState().mode
+    if (editMode === 'add' || editMode === 'drag') return
     panStart.current = { x: e.clientX, y: e.clientY, ox: viewport.ox, oy: viewport.oy }
     panDraggedRef.current = false
     setIsPanning(true)
@@ -1062,7 +1066,10 @@ function SignagePlacementsLayer({
   const handleAddClick = React.useCallback((e: React.MouseEvent<SVGRectElement>) => {
     if (editMode !== 'add') return
     e.stopPropagation()
-    const rect = (e.currentTarget.ownerSVGElement as SVGSVGElement).getBoundingClientRect()
+    e.preventDefault()
+    const svgEl = e.currentTarget.ownerSVGElement as SVGSVGElement | null
+    if (!svgEl) return
+    const rect = svgEl.getBoundingClientRect()
     const wx = fromX(e.clientX - rect.left)
     const wy = fromY(e.clientY - rect.top)
     addOne(projectId, {
@@ -1082,6 +1089,7 @@ function SignagePlacementsLayer({
           x={-1e6} y={-1e6} width={2e6} height={2e6}
           fill="rgba(8, 145, 178, 0.05)"
           style={{ cursor: 'crosshair' }}
+          onMouseDown={(e) => { e.stopPropagation() }}
           onClick={handleAddClick}
         />
       )}
