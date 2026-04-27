@@ -3,10 +3,8 @@
 
 import { test, expect } from '@playwright/test'
 
-// TODO(e2e): ces tests partent de `/projects/cosmos-angre` mais en CI
-// vierge l'OnboardingWizard + BaselineGuard bloquent l'accès a Vol.4.
-// A reactiver avec un beforeEach qui seed localStorage (onboarding completed)
-// + parsedPlan + planValidated via addInitScript. Cf src/modules/building/index.tsx.
+// TODO(#1): seed onboarding + parsedPlan + planValidated via addInitScript
+// pour passer OnboardingWizard + BaselineGuard. Cf src/modules/building/index.tsx.
 test.describe.skip('Wayfinder Designer — Flow complet', () => {
 
   test('Navigation 6 onglets', async ({ page }) => {
