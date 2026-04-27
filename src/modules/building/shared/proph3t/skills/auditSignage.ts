@@ -59,6 +59,20 @@ export interface AuditSignagePayload {
 
 const CIRC_RE = /circul|hall|mall|mail|couloir|passage|piet|piéton|voie|parvis|entr|access|porte/i
 
+// Types catalogue qui sont LÉGITIMEMENT placés HORS circulation par design :
+// enseignes au-dessus des locaux, vitrophanie sur vitres, totems extérieurs,
+// extincteurs/RIA fixés aux murs (parfois hors circulation stricte), accueil
+// physique, écran dynamique, plan d'évacuation mural, BAES sortie de secours
+// (placés au-dessus des portes des locaux).
+const PLACEMENT_OUT_OF_CIRC_OK = new Set<string>([
+  'ENS', 'COM-VIT', 'COM-LED', 'TOT-EXT', 'COM-KAK',
+  'SEC-EXT', 'SEC-RIA', 'SEC-EVA', 'SEC-BAES',
+  'SRV-ACC', 'COM-ECR', 'LOT-N', 'WAY-BLE',
+])
+/** Tolérance de placement (m) autour du polygone de circulation —
+ *  un sign à <2m d'un polygone de circulation est considéré comme valide. */
+const PLACEMENT_TOLERANCE_M = 2
+
 function pointInPolygon(px: number, py: number, poly: [number, number][]): boolean {
   let inside = false
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
@@ -72,6 +86,24 @@ function pointInPolygon(px: number, py: number, poly: [number, number][]): boole
 
 function distance(a: [number, number], b: [number, number]): number {
   return Math.hypot(a[0] - b[0], a[1] - b[1])
+}
+
+/** Distance signée d'un point à un polygone (négatif si dedans, positif sinon). */
+function distanceToPolygon(px: number, py: number, poly: [number, number][]): number {
+  let minDist = Infinity
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const x1 = poly[i][0], y1 = poly[i][1]
+    const x2 = poly[j][0], y2 = poly[j][1]
+    // Distance segment-point
+    const dx = x2 - x1, dy = y2 - y1
+    const len2 = dx * dx + dy * dy
+    let t = len2 > 0 ? ((px - x1) * dx + (py - y1) * dy) / len2 : 0
+    t = Math.max(0, Math.min(1, t))
+    const cx = x1 + t * dx, cy = y1 + t * dy
+    const d = Math.hypot(px - cx, py - cy)
+    if (d < minDist) minDist = d
+  }
+  return pointInPolygon(px, py, poly) ? -minDist : minDist
 }
 
 export async function auditSignage(input: AuditSignageInput): Promise<Proph3tResult<AuditSignagePayload>> {
@@ -111,9 +143,20 @@ export async function auditSignage(input: AuditSignageInput): Promise<Proph3tRes
   const density = circulationSqm > 0 ? (signs.length / circulationSqm) * 100 : 0
 
   // 3. Signs en zone non-circulation (placement douteux)
+  // Règles d'exception :
+  //   • Tolérance 2m autour des polygones de circulation
+  //   • Certains types (enseignes, vitrophanie, totems, extincteurs)
+  //     sont légitimement placés hors circulation
   const signsInNonCirculation: AuditedSign[] = signs.filter(s => {
-    const inCirc = circulations.some(c => pointInPolygon(s.x, s.y, c.polygon))
-    return !inCirc
+    if (PLACEMENT_OUT_OF_CIRC_OK.has(s.kind)) return false
+    // Distance signée au polygone le plus proche
+    let minDistOutside = Infinity
+    for (const c of circulations) {
+      const d = distanceToPolygon(s.x, s.y, c.polygon)
+      if (d < minDistOutside) minDistOutside = d
+    }
+    // Si on est dedans (négatif) ou à <2m, OK
+    return minDistOutside > PLACEMENT_TOLERANCE_M
   })
 
   // 4. Signs orphelins (aucun POI accessible dans 4×visRadius)
@@ -147,18 +190,41 @@ export async function auditSignage(input: AuditSignageInput): Promise<Proph3tRes
     .sort((a, b) => b.areaSqm - a.areaSqm)
     .slice(0, 10)
 
-  // 6. Benchmark densité ERP : 1 à 2 panneaux / 100 m² de circulation
+  // 6. Benchmark densité ERP : plage acceptable 0.7-2.5/100m² (cible 1.5)
   const benchmarkDensity = {
-    min: 1, max: 2, current: density,
-    status: density < 1 ? 'sous' : density > 2 ? 'sur' : 'ok',
+    min: 0.7, max: 2.5, current: density,
+    status: density < 0.7 ? 'sous' : density > 2.5 ? 'sur' : 'ok',
   } as const
 
   // 7. Score breakdown
   const coverageScore = Math.round((coveragePct / 100) * 40)
-  let densityScore = 20
-  if (density < 0.5 || density > 3) densityScore = 5
-  else if (density < 1 || density > 2) densityScore = 12
-  const placementScore = Math.round(20 * (1 - Math.min(1, signsInNonCirculation.length / Math.max(1, signs.length))))
+
+  // ─── Densité : barème continu (cible 0.7 à 2.5/100m²) ───
+  // Une cloche autour du sweet spot 1.5/100m². Hors plage extrême reste 8.
+  let densityScore: number
+  if (density >= 0.7 && density <= 2.5) {
+    densityScore = 20
+  } else if (density >= 0.4 && density < 0.7) {
+    // Linear ramp 14 → 20 entre 0.4 et 0.7
+    densityScore = Math.round(14 + ((density - 0.4) / 0.3) * 6)
+  } else if (density > 2.5 && density <= 3.5) {
+    densityScore = Math.round(20 - ((density - 2.5) / 1) * 6)
+  } else if (density >= 0.2 && density < 0.4) {
+    densityScore = Math.round(8 + ((density - 0.2) / 0.2) * 6) // 8 → 14
+  } else if (density > 3.5 && density <= 5) {
+    densityScore = Math.round(14 - ((density - 3.5) / 1.5) * 6) // 14 → 8
+  } else {
+    densityScore = 8 // très loin de la cible mais pas zéro
+  }
+
+  // ─── Placement : avec exceptions par type ───
+  // Le ratio est calculé sur les signs SOUMIS à l'évaluation
+  // (on retire les types légitimement hors circulation du dénominateur).
+  const evaluableForPlacement = signs.filter(s => !PLACEMENT_OUT_OF_CIRC_OK.has(s.kind))
+  const placementScore = evaluableForPlacement.length === 0
+    ? 20
+    : Math.round(20 * (1 - Math.min(1, signsInNonCirculation.length / evaluableForPlacement.length)))
+
   const orphansScore = Math.round(20 * (1 - Math.min(1, orphanSigns.length / Math.max(1, signs.length))))
   const totalScore = coverageScore + densityScore + placementScore + orphansScore
 
@@ -198,23 +264,23 @@ export async function auditSignage(input: AuditSignageInput): Promise<Proph3tRes
       affectedIds: orphanSigns.map(s => s.id),
     })
   }
-  if (benchmarkDensity.status === 'sous') {
+  if (benchmarkDensity.status === 'sous' && density < 0.4) {
     findings.push({
       id: 'audit-density-low',
       severity: 'info',
-      title: `Densité sous norme : ${density.toFixed(2)} / 100 m²`,
-      description: `Norme ERP indicative : 1 à 2 panneaux / 100 m² de circulation. Manque ${Math.ceil(circulationSqm / 100 - signs.length)} panneau(x) pour atteindre 1/100 m².`,
+      title: `Densité faible : ${density.toFixed(2)} / 100 m²`,
+      description: `Plage cible : 0,7 à 2,5 panneaux / 100 m² de circulation (cible 1,5). Pour atteindre 0,7 il faudrait ajouter ~${Math.max(0, Math.ceil(circulationSqm * 0.7 / 100 - signs.length))} panneau(x). Acceptable selon configuration du mall.`,
       sources: [citeAlgo('audit-signage', 'Benchmark ERP signalétique')],
-      confidence: confidence(0.7, 'Norme indicative'),
+      confidence: confidence(0.6, 'Norme indicative — flexible'),
       metric: { name: 'density', value: density, unit: '/100m²' },
       affectedIds: [],
     })
-  } else if (benchmarkDensity.status === 'sur') {
+  } else if (benchmarkDensity.status === 'sur' && density > 3) {
     findings.push({
       id: 'audit-density-high',
       severity: 'info',
       title: `Densité sur-dimensionnée : ${density.toFixed(2)} / 100 m²`,
-      description: `Au-dessus de 2 panneaux / 100 m² — risque de pollution visuelle et de redondance. Envisager retrait des doublons.`,
+      description: `Au-dessus de 2,5 panneaux / 100 m² — risque de pollution visuelle. Envisager retrait des doublons.`,
       sources: [citeAlgo('audit-signage', 'Benchmark ERP')],
       confidence: confidence(0.65, 'Norme indicative'),
       affectedIds: [],
