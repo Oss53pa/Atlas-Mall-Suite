@@ -1236,7 +1236,7 @@ export function SpaceEditorCanvas({
   return (
     <div className="h-full w-full flex flex-col bg-surface-0">
       {/* Toolbar */}
-      <div className="flex items-center gap-1 px-3 py-2 border-b border-white/10 bg-surface-1">
+      <div className="flex flex-wrap items-center gap-1 px-3 py-2 border-b border-white/10 bg-surface-1">
         {/* Mode selectors */}
         <div className="flex items-center gap-0.5 p-0.5 bg-surface-0 rounded">
           {([
