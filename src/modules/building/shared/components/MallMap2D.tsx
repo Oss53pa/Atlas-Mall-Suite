@@ -12,7 +12,7 @@
 //   • Aucune donnée mockée — tout vient de `plan.spaces` + metadata
 //     utilisateur issue de l'éditeur Atlas Studio.
 
-import { useMemo, useState, useRef, useEffect, useCallback } from 'react'
+import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import type { ParsedPlan, DetectedSpace } from '../planReader/planEngineTypes'
 import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
 import { useProph3tOverlaysStore } from '../stores/proph3tOverlaysStore'
