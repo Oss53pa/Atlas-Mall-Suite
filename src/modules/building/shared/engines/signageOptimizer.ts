@@ -27,6 +27,12 @@ export interface ProposedSign {
   /** POIs pointés par ce panneau (3 max). */
   targets: string[]
   reason: string
+  /** Confiance algorithmique 0..1 (POIs proches, qualité géométrique du nœud, gain couverture). */
+  confidence: number
+  /** True si Proph3t hésite — placement à valider par humain. */
+  needsReview: boolean
+  /** Raison de l'hésitation (affichée dans le walkthrough). */
+  reviewReason?: string
 }
 
 export interface SignageOptimizerInput {
@@ -215,6 +221,46 @@ export function optimizeSignage(input: SignageOptimizerInput): SignageOptimizerR
       reason = `Accès ancre : ${bestScored.nearby.find(x => (x.p.priority ?? 2) === 1)!.p.label}`
     }
 
+    // ─── Confiance algorithmique 0..1 ───
+    // Composantes pondérées :
+    //   • Nb POIs proches (0 = doute pour direction/zone-entrance, ok pour you-are-here)
+    //   • Distance au POI le plus proche (proche = bon)
+    //   • Gain de couverture (gros = bon)
+    //   • Distance au bord du polygone (centre = bon, bord = doute)
+    const poiCountConf = kind === 'you-are-here'
+      ? 0.85 // les "you-are-here" ne nécessitent pas de POI
+      : Math.min(1, bestScored.nearby.length / 2) // 2+ POIs = pleine confiance
+    const closestPoi = bestScored.nearby[0]
+    const distConf = closestPoi
+      ? Math.max(0.3, 1 - closestPoi.d / (visRadius * 4))
+      : 0.5
+    const coverGainConf = Math.min(1, bestScored.coverGain / Math.max(1, minCoverGain * 3))
+
+    // Test "centre du polygone" : approximé par distance au centroïde de la circulation parente
+    const parentCirc = circs.find(c => c.id === winner.fromCircId)
+    let centerConf = 0.7
+    if (parentCirc) {
+      const [pcx, pcy] = polygonCentroid(parentCirc.polygon)
+      const distToCenter = Math.hypot(winner.x - pcx, winner.y - pcy)
+      const xs = parentCirc.polygon.map(p => p[0])
+      const ys = parentCirc.polygon.map(p => p[1])
+      const halfDiag = Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) / 2
+      centerConf = halfDiag > 0 ? Math.max(0.4, 1 - (distToCenter / halfDiag) * 0.5) : 0.6
+    }
+
+    const conf = (poiCountConf * 0.4 + distConf * 0.25 + coverGainConf * 0.2 + centerConf * 0.15)
+
+    let reviewReason: string | undefined
+    const needsReview = conf < 0.55
+    if (needsReview) {
+      const reasons: string[] = []
+      if (poiCountConf < 0.5) reasons.push('peu/pas de POI proche')
+      if (distConf < 0.5) reasons.push('POI le plus proche éloigné')
+      if (coverGainConf < 0.4) reasons.push('faible gain couverture')
+      if (centerConf < 0.55) reasons.push('proche du bord de la circulation')
+      reviewReason = `Doute : ${reasons.join(' · ')}`
+    }
+
     proposed.push({
       id: `sign-auto-${proposed.length + 1}`,
       x: winner.x,
@@ -222,6 +268,9 @@ export function optimizeSignage(input: SignageOptimizerInput): SignageOptimizerR
       kind,
       targets: bestScored.nearby.map(n => n.p.id),
       reason,
+      confidence: conf,
+      needsReview,
+      reviewReason,
     })
   }
 

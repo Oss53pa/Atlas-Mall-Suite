@@ -1100,6 +1100,7 @@ function SignagePlacementsLayer({
           const cy = toY(s.y)
           const style = SIGN_STYLE[s.kind] ?? SIGN_STYLE['direction']
           const isDragging = draggingId === s.id
+          const isUncertain = s.needsReview && !s.reviewed
           return (
             <g
               key={s.id}
@@ -1117,15 +1118,28 @@ function SignagePlacementsLayer({
             >
               {/* Halo de visibilité 15m */}
               <circle cx={cx} cy={cy} r={15 * scale} fill={style.color} fillOpacity={isDragging ? 0.15 : 0.06} />
-              {/* Anneau extérieur */}
-              <circle cx={cx} cy={cy} r={r + 3} fill="none" stroke={style.ring} strokeWidth={isDragging ? 2.5 : 1.5} strokeOpacity={0.85} />
+              {/* Anneau extérieur — orange pulsant si à valider */}
+              <circle cx={cx} cy={cy} r={r + 3}
+                fill="none"
+                stroke={isUncertain ? '#f59e0b' : style.ring}
+                strokeWidth={isDragging ? 2.5 : isUncertain ? 2.2 : 1.5}
+                strokeOpacity={isUncertain ? 1 : 0.85}
+                strokeDasharray={isUncertain ? '4 2' : undefined}
+              />
               {/* Pastille */}
               <circle cx={cx} cy={cy} r={r} fill={style.color} stroke={isDragging ? '#fbbf24' : '#fff'} strokeWidth={isDragging ? 2.5 : 1.8} />
               {/* Pictogramme */}
               <text x={cx} y={cy + r * 0.32} textAnchor="middle" fontSize={r * 0.95} fill="#fff" fontWeight="bold" style={{ pointerEvents: 'none' }}>
                 {style.icon}
               </text>
-              <title>{`${style.label}${s.label ? ' — ' + s.label : ''}\n${s.reason}\n\nGlisser pour déplacer · Clic-droit pour supprimer`}</title>
+              {/* Badge "?" si à valider */}
+              {isUncertain && (
+                <g style={{ pointerEvents: 'none' }}>
+                  <circle cx={cx + r * 0.85} cy={cy - r * 0.85} r={r * 0.55} fill="#f59e0b" stroke="#fff" strokeWidth={1.2} />
+                  <text x={cx + r * 0.85} y={cy - r * 0.55} textAnchor="middle" fontSize={r * 0.7} fill="#fff" fontWeight="bold">?</text>
+                </g>
+              )}
+              <title>{`${style.label}${s.label ? ' — ' + s.label : ''}\n${s.reason}${isUncertain ? `\n\n⚠️ ${s.reviewReason ?? 'À valider par humain'}` : ''}\n\nGlisser pour déplacer · Clic-droit pour supprimer`}</title>
             </g>
           )
         })}

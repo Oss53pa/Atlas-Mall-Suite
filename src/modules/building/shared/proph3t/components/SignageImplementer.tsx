@@ -15,6 +15,7 @@ import { runSkill } from '../orchestrator'
 import type { Proph3tResult } from '../orchestrator.types'
 import type { AuditSignagePayload } from '../skills/auditSignage'
 import { Proph3tResultPanel } from './Proph3tResultPanel'
+import { SignageReviewModal } from './SignageReviewModal'
 
 const KIND_META = {
   'direction':     { label: 'Directionnel',   color: '#0891b2', icon: '➜', desc: 'Indique la direction d\'un POI proche' },
@@ -56,6 +57,7 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
   const setAddKind = useSignageEditUiStore(s => s.setAddKind)
 
   const [reportOpen, setReportOpen] = useState(false)
+  const [reviewOpen, setReviewOpen] = useState(false)
   const [auditOpen, setAuditOpen] = useState(false)
   const [auditing, setAuditing] = useState(false)
   const [auditResult, setAuditResult] = useState<Proph3tResult<AuditSignagePayload> | null>(null)
@@ -125,8 +127,15 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
       label: p.targets.map(id => poiLabels[id]).filter(Boolean).slice(0, 2).join(' / '),
       reason: p.reason,
       source: 'proph3t-auto' as const,
+      confidence: p.confidence,
+      needsReview: p.needsReview,
+      reviewReason: p.reviewReason,
+      reviewed: false,
     })))
-    setFeedback(`✅ ${proposals.length} panneaux placés sur le plan`)
+    const uncertainCount = proposals.filter(p => p.needsReview).length
+    setFeedback(uncertainCount > 0
+      ? `✅ ${proposals.length} panneaux placés · ${uncertainCount} à valider`
+      : `✅ ${proposals.length} panneaux placés (haute confiance)`)
     setTimeout(() => setFeedback(null), 3000)
   }
 
@@ -151,6 +160,7 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
   }
   const coveredSqm = (circulationSqm * coveragePct) / 100
   const placedAuto = placedForProject.filter(s => s.source === 'proph3t-auto').length
+  const uncertainCount = placedForProject.filter(s => s.needsReview && !s.reviewed).length
 
   const positionClass = position === 'bottom-left' ? 'bottom-4 left-4' : 'bottom-4 right-4'
 
@@ -163,6 +173,9 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
             <div className="text-[12px] font-bold text-white">Signalétique optimisée</div>
             <div className="text-[9px] text-slate-500">
               {proposals.length} proposés · {placedAuto} placés · couverture {coveragePct.toFixed(0)}%
+              {uncertainCount > 0 && (
+                <span className="text-amber-300 font-bold"> · {uncertainCount} à valider</span>
+              )}
             </div>
           </div>
         </div>
@@ -176,6 +189,16 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
             <CheckCircle2 size={14} />
             Implémenter signalétique optimisée
           </button>
+
+          {uncertainCount > 0 && (
+            <button
+              onClick={() => setReviewOpen(true)}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded bg-amber-600 hover:bg-amber-500 text-white text-[12px] font-bold border-2 border-amber-300/40 animate-pulse"
+            >
+              <ShieldCheck size={14} />
+              {uncertainCount} placement{uncertainCount > 1 ? 's' : ''} à valider
+            </button>
+          )}
 
           <button
             onClick={() => setReportOpen(true)}
@@ -264,6 +287,19 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
           )}
         </div>
       </div>
+
+      {/* ═══ MODAL VALIDATION HUMAINE (placements à valider) ═══ */}
+      <SignageReviewModal
+        open={reviewOpen}
+        onClose={() => setReviewOpen(false)}
+        onStartCorrection={(signId) => {
+          // Ferme la modal puis active le drag focalisé : l'utilisateur
+          // peut directement glisser le panneau à la bonne position.
+          import('../../stores/signageEditUiStore').then(({ useSignageEditUiStore }) => {
+            useSignageEditUiStore.getState().startDrag(signId)
+          })
+        }}
+      />
 
       {/* ═══ MODAL RAPPORT D'AUDIT ═══ */}
       {auditOpen && auditResult && (

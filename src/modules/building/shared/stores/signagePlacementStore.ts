@@ -28,6 +28,14 @@ export interface PlacedSign {
   source: 'proph3t-auto' | 'manual'
   /** floorId optionnel. */
   floorId?: string
+  /** Confiance algorithmique 0..1 (1 si manuel — l'humain valide). */
+  confidence?: number
+  /** True si Proph3t hésite et attend une validation humaine. */
+  needsReview?: boolean
+  /** Raison de l'hésitation. */
+  reviewReason?: string
+  /** True si l'utilisateur a explicitement validé/déplacé/réajusté. */
+  reviewed?: boolean
   createdAt: string
 }
 
@@ -37,6 +45,7 @@ interface PlacementState {
   addOne: (projectId: string, sign: Omit<PlacedSign, 'id' | 'projectId' | 'createdAt'>) => string
   updatePosition: (id: string, x: number, y: number) => void
   updateKind: (id: string, kind: SignKind) => void
+  markReviewed: (id: string) => void
   remove: (id: string) => void
   clearForProject: (projectId: string) => void
   byProject: (projectId: string) => PlacedSign[]
@@ -73,6 +82,11 @@ export const useSignagePlacementStore = create<PlacementState>()(
       })),
       updateKind: (id, kind) => set(s => ({
         signs: s.signs.map(sign => sign.id === id ? { ...sign, kind } : sign),
+      })),
+      markReviewed: (id) => set(s => ({
+        signs: s.signs.map(sign => sign.id === id
+          ? { ...sign, reviewed: true, needsReview: false }
+          : sign),
       })),
       remove: (id) => set(s => ({ signs: s.signs.filter(x => x.id !== id) })),
       clearForProject: (projectId) => set(s => ({
