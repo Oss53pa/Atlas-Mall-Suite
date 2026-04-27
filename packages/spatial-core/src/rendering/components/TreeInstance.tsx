@@ -5,6 +5,8 @@
 
 import type { SpatialEntity, PointGeometry } from '../../domain/SpatialEntity'
 import { isPoint } from '../../domain/SpatialEntity'
+import { getMaterial } from '../../domain/MaterialRegistry'
+import { GLBOrFallback } from './GLBOrFallback'
 
 interface Props {
   readonly entity: SpatialEntity
@@ -29,19 +31,21 @@ export function TreeInstance({ entity, height }: Props) {
   const trunkH = height * 0.35
   const crownR = Math.max(0.8, height * 0.25)
   const crownY = trunkH + crownR * 0.7
+  const treeMat = getMaterial('tree_oak')
 
   return (
     <group position={[cx, 0, cz]}>
-      {/* Tronc */}
-      <mesh position={[0, trunkH / 2, 0]} castShadow>
-        <cylinderGeometry args={[0.18, 0.22, trunkH, 8]} />
-        <meshStandardMaterial color="#5c3a1e" roughness={0.95} />
-      </mesh>
-      {/* Feuillage */}
-      <mesh position={[0, crownY, 0]} castShadow>
-        <sphereGeometry args={[crownR, 12, 8]} />
-        <meshStandardMaterial color="#2d5016" roughness={0.9} />
-      </mesh>
+      <GLBOrFallback url={treeMat.modelUrl} scale={treeMat.modelScale ?? 1}>
+        {/* Fallback procédural : tronc + sphère feuillage */}
+        <mesh position={[0, trunkH / 2, 0]} castShadow>
+          <cylinderGeometry args={[0.18, 0.22, trunkH, 8]} />
+          <meshStandardMaterial color="#5c3a1e" roughness={0.95} />
+        </mesh>
+        <mesh position={[0, crownY, 0]} castShadow>
+          <sphereGeometry args={[crownR, 12, 8]} />
+          <meshStandardMaterial color="#2d5016" roughness={0.9} />
+        </mesh>
+      </GLBOrFallback>
     </group>
   )
 }

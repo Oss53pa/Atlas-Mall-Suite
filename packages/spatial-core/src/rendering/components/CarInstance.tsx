@@ -6,6 +6,8 @@
 import { useMemo } from 'react'
 import type { SpatialEntity } from '../../domain/SpatialEntity'
 import { isPoint, isPolygon } from '../../domain/SpatialEntity'
+import { getMaterial } from '../../domain/MaterialRegistry'
+import { GLBOrFallback } from './GLBOrFallback'
 
 const COLORS = ['#1f2937', '#4b5563', '#94a3b8', '#e5e7eb', '#dc2626', '#1e40af', '#0f172a']
 
@@ -43,36 +45,44 @@ export function CarInstance({ entity }: Props) {
     return COLORS[h % COLORS.length]
   }, [entity.id])
 
+  // Charge le GLB si MaterialRegistry.car_paint.modelUrl est défini,
+  // sinon rend la voiture procédurale (4 boxes + 4 cylindres roues).
+  const carMat = getMaterial('car_paint')
+
   // Dimensions standard voiture compacte : 4.5 × 1.8 × 1.5 m
   const L = 4.5, W = 1.8, Hbody = 0.9, Hcabin = 0.55
 
   return (
     <group position={[cx, 0, cz]} rotation={[0, -rotation, 0]}>
-      {/* Châssis */}
-      <mesh position={[0, Hbody / 2 + 0.25, 0]} castShadow receiveShadow>
-        <boxGeometry args={[L, Hbody, W]} />
-        <meshStandardMaterial color={color} metalness={0.7} roughness={0.25} />
-      </mesh>
-      {/* Cabine */}
-      <mesh position={[0, Hbody + Hcabin / 2 + 0.25, 0]} castShadow>
-        <boxGeometry args={[L * 0.55, Hcabin, W * 0.92]} />
-        <meshStandardMaterial color={color} metalness={0.5} roughness={0.2} />
-      </mesh>
-      {/* Vitres latérales (transparent foncé) */}
-      <mesh position={[0, Hbody + Hcabin / 2 + 0.25, 0]}>
-        <boxGeometry args={[L * 0.55 - 0.05, Hcabin - 0.1, W * 0.95]} />
-        <meshStandardMaterial color="#0c0c10" metalness={0.1} roughness={0.05} opacity={0.7} transparent />
-      </mesh>
-      {/* 4 roues — cylindres horizontaux */}
-      {[
-        [L * 0.32, -W * 0.45], [L * 0.32, W * 0.45],
-        [-L * 0.32, -W * 0.45], [-L * 0.32, W * 0.45],
-      ].map(([dx, dz], i) => (
-        <mesh key={i} position={[dx, 0.27, dz]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-          <cylinderGeometry args={[0.27, 0.27, 0.18, 14]} />
-          <meshStandardMaterial color="#0a0a0a" roughness={0.85} />
+      <GLBOrFallback
+        url={carMat.modelUrl}
+        scale={carMat.modelScale ?? 1}
+        position={[0, 0, 0]}
+        rotation={[0, 0, 0]}
+      >
+        {/* Fallback procédural — 4 boxes + 4 roues */}
+        <mesh position={[0, Hbody / 2 + 0.25, 0]} castShadow receiveShadow>
+          <boxGeometry args={[L, Hbody, W]} />
+          <meshStandardMaterial color={color} metalness={0.7} roughness={0.25} />
         </mesh>
-      ))}
+        <mesh position={[0, Hbody + Hcabin / 2 + 0.25, 0]} castShadow>
+          <boxGeometry args={[L * 0.55, Hcabin, W * 0.92]} />
+          <meshStandardMaterial color={color} metalness={0.5} roughness={0.2} />
+        </mesh>
+        <mesh position={[0, Hbody + Hcabin / 2 + 0.25, 0]}>
+          <boxGeometry args={[L * 0.55 - 0.05, Hcabin - 0.1, W * 0.95]} />
+          <meshStandardMaterial color="#0c0c10" metalness={0.1} roughness={0.05} opacity={0.7} transparent />
+        </mesh>
+        {[
+          [L * 0.32, -W * 0.45], [L * 0.32, W * 0.45],
+          [-L * 0.32, -W * 0.45], [-L * 0.32, W * 0.45],
+        ].map(([dx, dz], i) => (
+          <mesh key={i} position={[dx, 0.27, dz]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <cylinderGeometry args={[0.27, 0.27, 0.18, 14]} />
+            <meshStandardMaterial color="#0a0a0a" roughness={0.85} />
+          </mesh>
+        ))}
+      </GLBOrFallback>
     </group>
   )
 }

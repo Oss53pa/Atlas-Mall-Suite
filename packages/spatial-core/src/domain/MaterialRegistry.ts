@@ -26,6 +26,12 @@ export interface MaterialDef {
   readonly repeat: { x: number; y: number }        // UV repeat factor
   readonly emissive?: string                       // pour signalétique lumineuse
   readonly emissiveIntensity?: number
+  /** URL GLB optionnelle pour les instances ponctuelles (voitures, arbres,
+   *  lampadaires, mobilier). Si présente, R3F charge le modèle via useGLTF
+   *  au lieu de générer une forme procédurale. */
+  readonly modelUrl?: string
+  /** Échelle à appliquer au GLB (1.0 = taille natale du modèle). */
+  readonly modelScale?: number
 }
 
 const TEXTURE_BUCKET_BASE = 'https://wrdtatquhpiwzxmdupfi.supabase.co/storage/v1/object/public/spatial-textures'
