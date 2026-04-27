@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { usePlanModelsStore } from '../stores/planModelsStore'
 import { usePlanEngineStore } from '../stores/planEngineStore'
+import { useEditableSpaceStore } from '../stores/editableSpaceStore'
 
 interface Props {
   projectId: string
@@ -58,7 +59,13 @@ export function PlanModelSelector({ projectId, accentColor = '#b38a5a', compact 
     const model = allModels.find(m => m.id === modelId)
     if (!model) return
     setActiveModel(projectId, modelId)
-    setParsedPlan(model.plan)   // propagation au planEngineStore pour alimenter le volume
+    setParsedPlan(model.plan)   // propagation au planEngineStore
+    // Restaure aussi les EditableSpace[] du draft enregistré (si présents)
+    // pour que l'éditeur affiche le même état que lors de la sauvegarde.
+    if (model.editableSpaces) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useEditableSpaceStore.getState().setSpaces(model.editableSpaces as any)
+    }
     setOpen(false)
   }
 

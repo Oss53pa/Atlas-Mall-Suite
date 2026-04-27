@@ -11,6 +11,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { ParsedPlan } from '../planReader/planEngineTypes'
+// Type opaque pour éviter import cyclique avec SpaceEditorCanvas.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type EditableSpaceSnapshot = any
 
 // ─── Types ──────────────────────────────
 
@@ -22,6 +25,10 @@ export interface PlanModel {
   description?: string
   /** Snapshot du parsedPlan (entities, wallSegments, spaces, layers...). */
   plan: ParsedPlan
+  /** Snapshot des EditableSpace[] au moment de la sauvegarde. Permet
+   *  de revenir au draft tel qu'il était lors du save quand on active
+   *  ce modèle ailleurs. */
+  editableSpaces?: ReadonlyArray<EditableSpaceSnapshot>
   /** Identifiant du projet auquel ce modèle appartient. */
   projectId: string
   createdAt: string
@@ -51,7 +58,13 @@ interface PlanModelsState {
     projectId: string,
     name: string,
     plan: ParsedPlan,
-    opts?: { description?: string; status?: PlanModel['status']; color?: string },
+    opts?: {
+      description?: string
+      status?: PlanModel['status']
+      color?: string
+      /** Snapshot des EditableSpace pour pouvoir revenir au draft. */
+      editableSpaces?: ReadonlyArray<EditableSpaceSnapshot>
+    },
   ) => PlanModel
 
   duplicateModel: (modelId: string, newName?: string) => PlanModel | null
@@ -104,6 +117,7 @@ export const usePlanModelsStore = create<PlanModelsState>()(
           name: name.trim() || 'Modèle sans nom',
           description: opts.description,
           plan,
+          editableSpaces: opts.editableSpaces ? Array.from(opts.editableSpaces) : undefined,
           createdAt: now,
           updatedAt: now,
           status: opts.status ?? 'brouillon',

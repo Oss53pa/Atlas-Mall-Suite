@@ -63,6 +63,8 @@ export function PlanModelsLibrary({ projectId }: Props) {
     saveCurrentAsModel(projectId, saveName, merged, {
       description: saveDesc || undefined,
       status: 'brouillon',
+      // Snapshot des EditableSpace pour pouvoir restaurer le draft a l'identique
+      editableSpaces,
     })
     setSaveName(''); setSaveDesc(''); setSaveOpen(false)
   }
