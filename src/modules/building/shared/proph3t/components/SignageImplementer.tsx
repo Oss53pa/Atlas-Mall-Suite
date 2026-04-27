@@ -14,6 +14,7 @@ import { useActiveProjectId } from '../../../../../hooks/useActiveProject'
 import { runSkill } from '../orchestrator'
 import type { Proph3tResult } from '../orchestrator.types'
 import type { AuditSignagePayload } from '../skills/auditSignage'
+import type { RecommendSignagePlanPayload } from '../skills/recommendSignagePlan'
 import { Proph3tResultPanel } from './Proph3tResultPanel'
 import { SignageReviewModal } from './SignageReviewModal'
 import {
@@ -71,6 +72,9 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
   const [auditOpen, setAuditOpen] = useState(false)
   const [auditing, setAuditing] = useState(false)
   const [auditResult, setAuditResult] = useState<Proph3tResult<AuditSignagePayload> | null>(null)
+  const [planOpen, setPlanOpen] = useState(false)
+  const [planning, setPlanning] = useState(false)
+  const [planResult, setPlanResult] = useState<Proph3tResult<RecommendSignagePlanPayload> | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
 
   // On affiche TOUJOURS le panneau (même sans proposal) pour permettre l'ajout
@@ -119,6 +123,87 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
     } finally {
       setAuditing(false)
     }
+  }
+
+  const handleRecommendPlan = async () => {
+    if (!buildAuditInput) {
+      setFeedback('⚠️ Plan indisponible'); setTimeout(() => setFeedback(null), 2500); return
+    }
+    const inp = buildAuditInput()
+    if (!inp) {
+      setFeedback('⚠️ Plan indisponible'); setTimeout(() => setFeedback(null), 2500); return
+    }
+    setPlanning(true)
+    try {
+      const { listSkills } = await import('../orchestrator')
+      if (!listSkills().includes('recommendSignagePlan')) {
+        const { bootstrapProph3t } = await import('../bootstrap')
+        await bootstrapProph3t()
+      }
+      // Compte les déjà placés par code
+      const alreadyPlaced: Record<string, number> = {}
+      for (const s of placedForProject) {
+        alreadyPlaced[s.kind] = (alreadyPlaced[s.kind] ?? 0) + 1
+      }
+      const r = await runSkill<typeof inp & { alreadyPlaced: Record<string, number> }, RecommendSignagePlanPayload>(
+        'recommendSignagePlan',
+        { ...inp, alreadyPlaced },
+      )
+      setPlanResult(r)
+      setPlanOpen(true)
+    } catch (err) {
+      console.error('[SignageImplementer] plan failed', err)
+      setFeedback(`⚠️ Plan échoué : ${(err as Error).message}`)
+      setTimeout(() => setFeedback(null), 4000)
+    } finally {
+      setPlanning(false)
+    }
+  }
+
+  /** Place tous les manquants d'une recommandation aux locations suggérées. */
+  const handlePlaceRecommendation = (rec: RecommendSignagePlanPayload['recommendations'][number]) => {
+    if (rec.suggestedLocations.length === 0) return
+    addMany(projectId, rec.suggestedLocations.map(loc => ({
+      x: loc.x, y: loc.y,
+      kind: rec.code,
+      targets: [],
+      label: rec.meta.label,
+      reason: loc.reason,
+      source: 'proph3t-auto' as const,
+      confidence: 0.85,
+      needsReview: false,
+      reviewReason: undefined,
+      reviewed: false,
+    })))
+    setFeedback(`✅ ${rec.suggestedLocations.length} × ${rec.code} placés`)
+    setTimeout(() => setFeedback(null), 2500)
+    // Refresh planResult pour mettre à jour les compteurs
+    handleRecommendPlan()
+  }
+
+  /** Place TOUS les manquants en un clic (couvre tout le plan). */
+  const handlePlaceAllMissing = () => {
+    if (!planResult) return
+    let total = 0
+    for (const rec of planResult.payload.recommendations) {
+      if (rec.suggestedLocations.length === 0) continue
+      addMany(projectId, rec.suggestedLocations.map(loc => ({
+        x: loc.x, y: loc.y,
+        kind: rec.code,
+        targets: [],
+        label: rec.meta.label,
+        reason: loc.reason,
+        source: 'proph3t-auto' as const,
+        confidence: 0.85,
+        needsReview: false,
+        reviewReason: undefined,
+        reviewed: false,
+      })))
+      total += rec.suggestedLocations.length
+    }
+    setFeedback(`✅ ${total} panneaux placés (plan complet)`)
+    setTimeout(() => setFeedback(null), 3000)
+    handleRecommendPlan()
   }
 
   const handleImplement = () => {
@@ -229,6 +314,16 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
             setMode={setMode}
             setAddKind={setAddKind}
           />
+
+          {/* ─── Plan signalétique complet (PRESCRIPTIF) ─── */}
+          <button
+            onClick={handleRecommendPlan}
+            disabled={planning}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white text-[12px] font-bold disabled:opacity-40 mt-1"
+          >
+            {planning ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+            {planning ? 'Calcul du plan…' : 'Plan signalétique complet (combien · où · quel type)'}
+          </button>
 
           {/* ─── Audit Proph3t ─── */}
           <button
@@ -465,6 +560,15 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
         open={financialOpen}
         onClose={() => setFinancialOpen(false)}
         signs={placedForProject}
+      />
+
+      {/* ═══ MODAL PLAN SIGNALÉTIQUE COMPLET ═══ */}
+      <SignagePlanModal
+        open={planOpen}
+        onClose={() => setPlanOpen(false)}
+        result={planResult}
+        onPlaceOne={handlePlaceRecommendation}
+        onPlaceAll={handlePlaceAllMissing}
       />
     </>
   )
@@ -793,6 +897,191 @@ function FinancialReportModal({
             Le total inclut pose mais ne couvre pas la maintenance ni les consommables (piles beacons, films vitrophanie remplacés tous les 2 ans).
           </section>
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ═══ SUB-COMPONENT : Modal plan signalétique complet ════════════════════
+
+function SignagePlanModal({
+  open, onClose, result, onPlaceOne, onPlaceAll,
+}: {
+  open: boolean
+  onClose: () => void
+  result: Proph3tResult<RecommendSignagePlanPayload> | null
+  onPlaceOne: (rec: RecommendSignagePlanPayload['recommendations'][number]) => void
+  onPlaceAll: () => void
+}) {
+  if (!open || !result) return null
+  const p = result.payload
+  // Tri ERP d'abord, puis par priorité, puis par missing desc
+  const sorted = useMemo(() => {
+    return [...p.recommendations].sort((a, b) => {
+      if (a.meta.erpRequired !== b.meta.erpRequired) return a.meta.erpRequired ? -1 : 1
+      const prio = { P1: 0, P2: 1, P3: 2 }
+      const pa = prio[a.meta.priority] - prio[b.meta.priority]
+      if (pa !== 0) return pa
+      return b.missingQty - a.missingQty
+    })
+  }, [p.recommendations])
+
+  return (
+    <div
+      className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-sm flex items-center justify-center p-6"
+      onClick={onClose}
+    >
+      <div
+        className="bg-surface-1 border border-cyan-500/40 rounded-xl max-w-7xl w-full max-h-[92vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="sticky top-0 bg-surface-1 border-b border-white/10 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Sparkles className="text-cyan-300" size={20} />
+            <div>
+              <h2 className="text-lg font-bold text-white">Plan signalétique prescriptif</h2>
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                Calcul depuis SIGNAGE_CATALOG (règles métier + normes ERP) ·
+                Conformité ERP : <span className={p.erpCompliancePct === 100 ? 'text-emerald-300' : 'text-amber-300'}>{p.erpCompliancePct.toFixed(0)}%</span>
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {p.totalMissing > 0 && (
+              <button
+                onClick={onPlaceAll}
+                className="flex items-center gap-2 px-3 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-[12px] font-bold"
+              >
+                <CheckCircle2 size={14} /> Tout placer ({p.totalMissing} panneaux)
+              </button>
+            )}
+            <button onClick={onClose} className="text-slate-400 hover:text-white">
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Résumé */}
+          <div className="grid grid-cols-5 gap-3">
+            <Kpi label="Total requis" value={p.totalRequired} unit="panneaux" color="cyan" />
+            <Kpi label="Déjà placés" value={p.totalCurrent} unit="panneaux" color="emerald" />
+            <Kpi label="Manquants" value={p.totalMissing} unit="panneaux" color={p.totalMissing > 0 ? 'amber' : 'slate'} />
+            <Kpi label="Budget restant" value={(p.costMissingFcfa / 1_000_000).toFixed(1)} unit="M FCFA" color="amber" />
+            <Kpi label="Conformité ERP" value={p.erpCompliancePct.toFixed(0)} unit="%" color={p.erpCompliancePct === 100 ? 'emerald' : 'rose'} />
+          </div>
+
+          {/* Table */}
+          <section>
+            <h3 className="text-[12px] font-bold text-white uppercase tracking-wider mb-3">
+              Recommandations par type ({sorted.length})
+            </h3>
+            <div className="rounded-lg border border-white/10 overflow-hidden">
+              <table className="w-full text-[11px]">
+                <thead className="bg-surface-0 border-b border-white/10 sticky top-[60px]">
+                  <tr>
+                    <th className="px-2 py-2 text-left text-slate-400 font-semibold">Code</th>
+                    <th className="px-2 py-2 text-left text-slate-400 font-semibold">Type</th>
+                    <th className="px-2 py-2 text-center text-slate-400 font-semibold">P</th>
+                    <th className="px-2 py-2 text-center text-slate-400 font-semibold">ERP</th>
+                    <th className="px-2 py-2 text-right text-slate-400 font-semibold">Requis</th>
+                    <th className="px-2 py-2 text-right text-slate-400 font-semibold">Placés</th>
+                    <th className="px-2 py-2 text-right text-slate-400 font-semibold">Manque</th>
+                    <th className="px-2 py-2 text-right text-slate-400 font-semibold">Coût FCFA</th>
+                    <th className="px-2 py-2 text-left text-slate-400 font-semibold">Justification</th>
+                    <th className="px-2 py-2 text-center text-slate-400 font-semibold"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sorted.map((r, i) => (
+                    <tr key={r.code} className={`${i % 2 === 0 ? 'bg-surface-0/30' : ''} ${r.meta.erpRequired ? 'border-l-2 border-rose-500/40' : ''}`}>
+                      <td className="px-2 py-2 font-mono text-cyan-300">{r.code}</td>
+                      <td className="px-2 py-2 text-slate-200">
+                        <div className="flex items-center gap-1.5">
+                          <span style={{ color: r.meta.color }} className="text-base">{r.meta.icon}</span>
+                          <span>{r.meta.label}</span>
+                        </div>
+                      </td>
+                      <td className="px-2 py-2 text-center">
+                        <span className="px-1 rounded text-[9px] font-bold"
+                          style={{
+                            background: r.meta.priority === 'P1' ? '#dc262640' : r.meta.priority === 'P2' ? '#f59e0b40' : '#3b82f640',
+                            color: r.meta.priority === 'P1' ? '#fca5a5' : r.meta.priority === 'P2' ? '#fcd34d' : '#93c5fd',
+                          }}>
+                          {r.meta.priority}
+                        </span>
+                      </td>
+                      <td className="px-2 py-2 text-center">
+                        {r.meta.erpRequired ? (
+                          <span className="px-1.5 rounded bg-rose-900/40 text-rose-300 text-[9px] font-bold">OUI</span>
+                        ) : (
+                          <span className="text-slate-600 text-[9px]">—</span>
+                        )}
+                      </td>
+                      <td className="px-2 py-2 text-right text-slate-200 font-mono font-semibold">{r.requiredQty}</td>
+                      <td className="px-2 py-2 text-right text-emerald-300 font-mono">{r.currentQty}</td>
+                      <td className="px-2 py-2 text-right">
+                        {r.missingQty > 0 ? (
+                          <span className="text-amber-300 font-mono font-bold">{r.missingQty}</span>
+                        ) : (
+                          <span className="text-emerald-400 font-mono">✓ 0</span>
+                        )}
+                      </td>
+                      <td className="px-2 py-2 text-right text-amber-200 font-mono text-[10px]">
+                        {r.costMissingFcfa > 0 ? r.costMissingFcfa.toLocaleString('fr-FR') : '—'}
+                      </td>
+                      <td className="px-2 py-2 text-slate-400 text-[10px] max-w-[280px]">{r.rationale}</td>
+                      <td className="px-2 py-2 text-center">
+                        {r.missingQty > 0 && r.suggestedLocations.length > 0 && (
+                          <button
+                            onClick={() => onPlaceOne(r)}
+                            className="px-2 py-1 rounded bg-cyan-700 hover:bg-cyan-600 text-white text-[9px] font-bold"
+                            title={`Placer ${r.missingQty} panneaux aux positions calculées`}
+                          >
+                            +{r.missingQty}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {/* Méthodologie */}
+          <section className="rounded-lg border border-cyan-500/20 bg-cyan-950/20 p-4 text-[11px] text-slate-300">
+            <h4 className="font-bold text-cyan-200 mb-2 uppercase tracking-wider text-[10px]">Comment les quantités sont calculées</h4>
+            <ul className="space-y-1 list-disc pl-5">
+              <li><strong>per-decision-node</strong> : 1 panneau par centroïde + médian d'arête longue dans les circulations.</li>
+              <li><strong>per-meters-path</strong> (BAES, balisage) : 1 tous les N mètres sur les périmètres des évacuations (ex : 30m pour SEC-IS, 15m pour SEC-BAES).</li>
+              <li><strong>per-extinguisher</strong> : 1 panneau par extincteur, 1 extincteur tous les 200 m² selon arrêté ERP MS39.</li>
+              <li><strong>per-area-sqm</strong> (plans Vous-êtes-ici, écrans dynamiques) : 1 par 2000 ou 3000 m².</li>
+              <li><strong>per-floor-zone</strong> (plan évac, RIA) : 1 par niveau × zones de N m².</li>
+              <li><strong>per-local / per-elevator / per-wc-block</strong> : compté depuis les types d'espaces du plan.</li>
+              <li><strong>per-entrance / per-parking-entrance</strong> : compté depuis les POIs labellisés.</li>
+            </ul>
+            <p className="mt-2 text-slate-400">Les emplacements proposés utilisent les centroïdes des espaces concernés ou un échantillonnage uniforme dans les circulations. Tu peux ajuster manuellement chaque panneau après placement (drag-and-drop).</p>
+          </section>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Kpi({ label, value, unit, color }: { label: string; value: number | string; unit: string; color: 'cyan' | 'emerald' | 'amber' | 'slate' | 'rose' }) {
+  const colorMap = {
+    cyan: 'text-cyan-300 border-cyan-500/30 bg-cyan-950/20',
+    emerald: 'text-emerald-300 border-emerald-500/30 bg-emerald-950/20',
+    amber: 'text-amber-300 border-amber-500/30 bg-amber-950/20',
+    slate: 'text-slate-300 border-slate-500/30 bg-surface-0',
+    rose: 'text-rose-300 border-rose-500/30 bg-rose-950/20',
+  }
+  return (
+    <div className={`rounded-lg border ${colorMap[color]} p-3`}>
+      <div className="text-[9px] uppercase text-slate-500 tracking-widest">{label}</div>
+      <div className="mt-1 text-2xl font-bold tabular-nums">
+        {value}<span className="text-xs text-slate-500 ml-1">{unit}</span>
       </div>
     </div>
   )
