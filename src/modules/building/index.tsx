@@ -47,6 +47,21 @@ export default function CosmosAngre() {
   // Debounce 8 s, no-op hors-ligne, pas de blocage UI.
   useEditableSpacesCloudSync({ projectId: projectId ?? '', enabled: !!projectId })
 
+  // ═══ PROPH3T bootstrap au montage du module ═══
+  // Avant : bootstrap appelé uniquement à l'import d'un plan, donc après
+  // un refresh, les skills étaient absents du registry → "skill unknown"
+  // sur les boutons Évaluer / Suggérer / Auditer.
+  React.useEffect(() => {
+    let cancelled = false
+    void import('./shared/proph3t/bootstrap').then(({ bootstrapProph3t }) => {
+      if (!cancelled) void bootstrapProph3t().catch(err => {
+        // eslint-disable-next-line no-console
+        console.error('[PROPH3T bootstrap] échec', err)
+      })
+    })
+    return () => { cancelled = true }
+  }, [])
+
   const onboardingCompleted = useOnboardingStore((s) => s.completed)
   const markComplete = useOnboardingStore((s) => s.markComplete)
 

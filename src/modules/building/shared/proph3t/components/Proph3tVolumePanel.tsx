@@ -90,6 +90,7 @@ export function Proph3tVolumePanel({
 
   const [result, setResult] = useState<Proph3tResult<unknown> | null>(null)
   const [running, setRunning] = useState<'eval' | 'suggest' | 'audit' | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const lastExecAt = React.useRef<number>(0)
 
   const execute = useCallback(async (mode: 'eval' | 'suggest' | 'audit') => {
@@ -102,13 +103,24 @@ export function Proph3tVolumePanel({
     }
     lastExecAt.current = now
     const input = buildInput()
-    if (!input) return
+    if (!input) {
+      setError('Plan non disponible — importe un plan avant de lancer Proph3t.')
+      return
+    }
     setRunning(mode)
+    setError(null)
     try {
+      // Defensive : si bootstrap pas encore tourné, force-le.
+      const { listSkills } = await import('../orchestrator')
+      if (!listSkills().includes(cfg.skill)) {
+        const { bootstrapProph3t } = await import('../bootstrap')
+        await bootstrapProph3t()
+      }
       const r = await runSkill(cfg.skill, input)
       setResult(r)
     } catch (err) {
       console.error(`[Proph3tVolumePanel] ${volume} ${mode} failed`, err)
+      setError(`Erreur Proph3t : ${(err as Error).message ?? String(err)}`)
     } finally {
       setRunning(null)
     }
@@ -210,7 +222,15 @@ export function Proph3tVolumePanel({
 
       {/* Body */}
       <div className="flex-1 min-h-0 overflow-y-auto p-2.5">
-        {!result ? (
+        {error ? (
+          <div className="rounded-lg border border-rose-500/40 bg-rose-950/30 p-3 text-[11px] text-rose-200">
+            <div className="font-bold mb-1">⚠️ Échec Proph3t</div>
+            <div className="font-mono text-[10px] whitespace-pre-wrap break-words">{error}</div>
+            <button onClick={() => setError(null)} className="mt-2 text-[10px] underline text-rose-300 hover:text-rose-100">
+              Fermer
+            </button>
+          </div>
+        ) : !result ? (
           <div className="text-center py-10 text-slate-500">
             <Sparkles size={24} className="mx-auto mb-2 opacity-40" />
             <p className="text-[11px]">Cliquez sur une action pour lancer PROPH3T</p>
