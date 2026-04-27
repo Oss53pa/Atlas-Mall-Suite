@@ -90,14 +90,19 @@ export interface RecommendSignagePlanPayload {
 
 // ─── Helpers ───────────────────────────────────────
 
-const COMMERCE_RE = /commerce|mode|restau|food|magasin|boutique|shop/i
-const CIRC_RE = /circul|hall|mall|mail|couloir|passage|piet|piéton|voie|parvis|entr|access|porte/i
-// Regexes strictes — match uniquement les types canoniques pour éviter les
-// faux positifs (ex : "lift" dans "lift truck" pour parking).
-const ELEVATOR_RE = /\b(ascenseur|elevator)\b/i
-const ESCALATOR_RE = /\b(escalator|escalier[\s_-]?méca|escalier[\s_-]?roulant)\b/i
-const STAIRS_RE = /\b(escalier|staircase|stairwell)\b/i
-const WC_RE = /\b(sanitaire|sanitaires|wc|toilette|toilettes|restroom|lavabo)\b/i
+// Commerces : mode, restauration, food court, magasin, boutique, retail, etc.
+const COMMERCE_RE = /\b(commerce|commerces|mode|restau|restaurant|food[\s_-]?court|food|magasin|boutique|shop|retail|kiosque|stand)\b/i
+// Circulations : circulation, hall, mall, mail, couloir, passage piéton,
+// voie, parvis, entrée, access, porte
+const CIRC_RE = /\b(circulation|circul|hall|mall|mail|couloir|couloirs|passage|piét|piet|piéton|voie|parvis|entrée|entree|access|accès|porte|portes)\b/i
+// Regexes — Prophet lit type ET label. Word boundaries pour éviter le pire,
+// mais on inclut variantes FR/EN/abréviations utilisateur courantes.
+const ELEVATOR_RE = /\b(ascenseur|ascenseurs|asc\.?|elevator|elevators|lift)\b/i
+const ESCALATOR_RE = /\b(escalator|escalators|escalier[\s_-]?(méca|méc|roulant))\b/i
+const STAIRS_RE = /\b(escalier|escaliers|staircase|stairwell|stair[\s_-]?well|stair[\s_-]?case)\b/i
+// Sanitaires : WC, toilettes (FR), restroom (EN), bathroom, sanit., san.,
+// avec ou sans qualificatif (hommes/femmes/PMR/dames/messieurs)
+const WC_RE = /\b(sanitaire|sanitaires|sanit\.?|wc|toilette|toilettes|toilet|restroom|bathroom|lavabo)\b/i
 const PARKING_RE = /parking|stationnement/i
 const EXIT_RE = /sortie|exit|évac/i
 const ENTRANCE_RE = /entrée|entrance/i
@@ -135,13 +140,13 @@ const ZONE_LABELS: Record<PlanZone, string> = {
   unknown: 'Autre',
 }
 
-/** Match strict : prefère le type canonique, fallback sur label uniquement
- *  si le type est vide. Évite les faux positifs (ex : "WC" dans des
- *  labels auto-générés sans rapport avec un sanitaire réel). */
+/** Match large : Prophet lit type ET label (OR). La défense contre les
+ *  faux positifs est dans les garde-fous : regex avec word boundaries
+ *  + isReasonableServiceSize + filtre zone (parking/extérieur exclus).
+ *  Permet de capturer des espaces dont le type auto-détecté est imprécis
+ *  mais dont le label utilisateur précise le rôle (ex: type='room' label='WC RDC'). */
 function matchesType(s: PlanSpace, re: RegExp): boolean {
-  const type = String(s.type ?? '').trim()
-  if (type.length > 0) return re.test(type)
-  return re.test(String(s.label ?? ''))
+  return re.test(String(s.type ?? '')) || re.test(String(s.label ?? ''))
 }
 
 /** Sanity check d'aire : un sanitaire fait 2-100m², un ascenseur 2-15m², etc. */

@@ -151,6 +151,22 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
       )
       setPlanResult(r)
       setPlanOpen(true)
+      // Push pins de proposition sur le plan (preview avant placement)
+      const { useSignagePlanPinsStore } = await import('../../stores/signagePlanPinsStore')
+      const allPins: Array<{ id: string; code: string; x: number; y: number; reason: string; zoneLabel?: string; targetPoiId?: string }> = []
+      for (const rec of r.payload.recommendations) {
+        rec.suggestedLocations.forEach((loc, i) => {
+          allPins.push({
+            id: `pin-${rec.code}-${i}`,
+            code: rec.code,
+            x: loc.x, y: loc.y,
+            reason: loc.reason,
+            zoneLabel: loc.zoneLabel,
+            targetPoiId: loc.targetPoiId,
+          })
+        })
+      }
+      useSignagePlanPinsStore.getState().setPins(allPins)
     } catch (err) {
       console.error('[SignageImplementer] plan failed', err)
       setFeedback(`⚠️ Plan échoué : ${(err as Error).message}`)
@@ -161,7 +177,7 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
   }
 
   /** Place tous les manquants d'une recommandation aux locations suggérées. */
-  const handlePlaceRecommendation = (rec: RecommendSignagePlanPayload['recommendations'][number]) => {
+  const handlePlaceRecommendation = async (rec: RecommendSignagePlanPayload['recommendations'][number]) => {
     if (rec.suggestedLocations.length === 0) return
     addMany(projectId, rec.suggestedLocations.map(loc => ({
       x: loc.x, y: loc.y,
@@ -177,6 +193,9 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
     })))
     setFeedback(`✅ ${rec.suggestedLocations.length} × ${rec.code} placés`)
     setTimeout(() => setFeedback(null), 2500)
+    // Retire les pins de propositions pour ce code (déjà placés)
+    const { useSignagePlanPinsStore } = await import('../../stores/signagePlanPinsStore')
+    useSignagePlanPinsStore.getState().removeByCode(rec.code)
     // Refresh planResult pour mettre à jour les compteurs
     handleRecommendPlan()
   }
@@ -1061,6 +1080,13 @@ function SignagePlanModal({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <PinsVisibilityToggle />
+            <button
+              onClick={() => downloadHtmlReport(result)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded bg-cyan-700 hover:bg-cyan-600 text-white text-[11px] font-semibold"
+            >
+              <Download size={12} /> Rapport HTML
+            </button>
             {p.totalMissing > 0 && (
               <button
                 onClick={onPlaceAll}
@@ -1264,6 +1290,149 @@ function SignagePlanModal({
       </div>
     </div>
   )
+}
+
+function PinsVisibilityToggle() {
+  // Charge dynamiquement pour éviter cycle d'import
+  const [visible, setVisibleLocal] = useState(true)
+  const handleToggle = async () => {
+    const { useSignagePlanPinsStore } = await import('../../stores/signagePlanPinsStore')
+    const next = !useSignagePlanPinsStore.getState().visible
+    useSignagePlanPinsStore.getState().setVisible(next)
+    setVisibleLocal(next)
+  }
+  return (
+    <button
+      onClick={handleToggle}
+      className={`flex items-center gap-1.5 px-2 py-2 rounded text-[10px] font-semibold border ${
+        visible
+          ? 'bg-emerald-700 text-white border-emerald-400'
+          : 'bg-surface-0 text-slate-400 border-white/10 hover:text-white'
+      }`}
+      title="Afficher / masquer les pins de propositions sur le plan"
+    >
+      📍 {visible ? 'Pins visibles' : 'Pins masqués'}
+    </button>
+  )
+}
+
+function downloadHtmlReport(result: Proph3tResult<RecommendSignagePlanPayload>) {
+  const p = result.payload
+  const now = new Date().toLocaleString('fr-FR')
+  const css = `
+    body { font-family: system-ui, sans-serif; max-width: 1200px; margin: 24px auto; padding: 0 16px; color: #0f172a; }
+    h1 { color: #0e7490; border-bottom: 3px solid #0e7490; padding-bottom: 8px; }
+    h2 { color: #1e40af; margin-top: 28px; }
+    h3 { color: #475569; }
+    .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 16px 0; }
+    .kpi { border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; background: #f8fafc; }
+    .kpi-label { font-size: 10px; text-transform: uppercase; color: #64748b; letter-spacing: 1.5px; }
+    .kpi-value { font-size: 22px; font-weight: bold; color: #0e7490; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 11px; }
+    th { background: #1e40af; color: #fff; text-align: left; padding: 6px 8px; }
+    td { border-bottom: 1px solid #e2e8f0; padding: 5px 8px; }
+    tr.erp { border-left: 3px solid #dc2626; }
+    .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; }
+    .badge-erp { background: #fee2e2; color: #991b1b; }
+    .badge-p1 { background: #fee2e2; color: #991b1b; }
+    .badge-p2 { background: #fef3c7; color: #92400e; }
+    .badge-p3 { background: #dbeafe; color: #1e40af; }
+    .zone { display: inline-block; background: #ecfdf5; color: #065f46; padding: 1px 5px; border-radius: 3px; font-size: 9px; }
+    .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 10px; color: #64748b; }
+  `
+  const erpStatus = p.erpCompliancePct >= 100 ? 'Conforme' : p.erpCompliancePct >= 80 ? 'Partiellement conforme' : 'Non conforme'
+  const pinRows = p.recommendations.flatMap(rec =>
+    rec.suggestedLocations.map((loc, i) => ({
+      code: rec.code, label: rec.meta.label, erp: rec.meta.erpRequired, prio: rec.meta.priority,
+      i: i + 1, x: loc.x.toFixed(1), y: loc.y.toFixed(1),
+      zone: loc.zoneLabel ?? '—', reason: loc.reason,
+      cost: rec.meta.priceFcfa,
+    })),
+  )
+  const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><title>Plan signalétique — Rapport Prophet</title><style>${css}</style></head>
+<body>
+  <h1>📋 Plan signalétique — Rapport Prophet</h1>
+  <p>Généré le ${now} · Conformité ERP : <strong>${erpStatus}</strong> (${p.erpCompliancePct.toFixed(0)}%)</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-label">Total requis</div><div class="kpi-value">${p.totalRequired}</div></div>
+    <div class="kpi"><div class="kpi-label">Déjà placés</div><div class="kpi-value" style="color:#059669">${p.totalCurrent}</div></div>
+    <div class="kpi"><div class="kpi-label">Manquants</div><div class="kpi-value" style="color:#d97706">${p.totalMissing}</div></div>
+    <div class="kpi"><div class="kpi-label">Budget total</div><div class="kpi-value">${(p.totalCostFcfa / 1_000_000).toFixed(1)} M FCFA</div></div>
+    <div class="kpi"><div class="kpi-label">Budget restant</div><div class="kpi-value" style="color:#d97706">${(p.costMissingFcfa / 1_000_000).toFixed(1)} M FCFA</div></div>
+  </div>
+
+  <h2>🗺️ Zones du plan détectées</h2>
+  <table><thead><tr><th>Zone</th><th>Espaces</th><th>Aire (m²)</th><th>Panneaux planifiés</th><th>Top types</th></tr></thead><tbody>
+    ${p.zoneSummary.map(z => `<tr><td>${z.label}</td><td>${z.spaceCount}</td><td>${z.areaSqm.toFixed(0)}</td><td>${z.plannedSignsCount}</td>
+      <td>${z.topTypes.map(t => `${t.code} ×${t.qty}`).join(' · ')}</td></tr>`).join('')}
+  </tbody></table>
+
+  <h2>🔍 Inventaire détection Prophet</h2>
+  <h3>Sanitaires (${p.detectionInventory.wcs.length})</h3>
+  <p>${p.detectionInventory.wcs.length === 0 ? '<em>Aucun sanitaire détecté.</em>' : p.detectionInventory.wcs.map(s => `${s.label || s.id} (${s.areaSqm.toFixed(0)}m²)`).join(' · ')}</p>
+  <h3>Ascenseurs (${p.detectionInventory.elevators.length})</h3>
+  <p>${p.detectionInventory.elevators.length === 0 ? '<em>Aucun ascenseur détecté.</em>' : p.detectionInventory.elevators.map(s => `${s.label || s.id} (${s.areaSqm.toFixed(0)}m²)`).join(' · ')}</p>
+  <h3>Escalators (${p.detectionInventory.escalators.length})</h3>
+  <p>${p.detectionInventory.escalators.length === 0 ? '<em>Aucun escalator détecté.</em>' : p.detectionInventory.escalators.map(s => `${s.label || s.id} (${s.areaSqm.toFixed(0)}m²)`).join(' · ')}</p>
+  <h3>Entrées (${p.detectionInventory.entrances.length})</h3>
+  <p>${p.detectionInventory.entrances.length === 0 ? '<em>Aucune entrée — placements par défaut au centre.</em>' : p.detectionInventory.entrances.map(e => e.label).join(' · ')}</p>
+  <h3>POIs ancres (${p.detectionInventory.anchors.length})</h3>
+  <p>${p.detectionInventory.anchors.length === 0 ? '<em>Aucune ancre P1 — placements directionnels sans cible.</em>' : p.detectionInventory.anchors.map(a => a.label).join(' · ')}</p>
+
+  <h2>📊 Recommandations par type</h2>
+  <table><thead><tr>
+    <th>Code</th><th>Type</th><th>Priorité</th><th>ERP</th><th>Requis</th><th>Placés</th><th>Manque</th><th>Coût FCFA</th><th>Justification</th>
+  </tr></thead><tbody>
+    ${p.recommendations.map(r => `<tr class="${r.meta.erpRequired ? 'erp' : ''}">
+      <td><strong>${r.code}</strong></td>
+      <td>${r.meta.label}</td>
+      <td><span class="badge badge-${r.meta.priority.toLowerCase()}">${r.meta.priority}</span></td>
+      <td>${r.meta.erpRequired ? '<span class="badge badge-erp">ERP</span>' : '—'}</td>
+      <td>${r.requiredQty}</td>
+      <td>${r.currentQty}</td>
+      <td>${r.missingQty > 0 ? `<strong style="color:#d97706">${r.missingQty}</strong>` : '✓ 0'}</td>
+      <td>${r.costMissingFcfa.toLocaleString('fr-FR')}</td>
+      <td>${r.rationale}</td>
+    </tr>`).join('')}
+  </tbody></table>
+
+  <h2>📍 Détail des emplacements proposés (${pinRows.length} pins)</h2>
+  <p>Chaque ligne correspond à un panneau à placer. Les coordonnées sont en mètres dans le repère du plan.</p>
+  <table><thead><tr>
+    <th>#</th><th>Code</th><th>Type</th><th>P</th><th>ERP</th><th>X (m)</th><th>Y (m)</th><th>Zone</th><th>Raison / cible</th><th>Coût FCFA</th>
+  </tr></thead><tbody>
+    ${pinRows.slice(0, 1000).map((pin, idx) => `<tr class="${pin.erp ? 'erp' : ''}">
+      <td>${idx + 1}</td>
+      <td><strong>${pin.code}</strong></td>
+      <td>${pin.label}</td>
+      <td><span class="badge badge-${pin.prio.toLowerCase()}">${pin.prio}</span></td>
+      <td>${pin.erp ? '<span class="badge badge-erp">ERP</span>' : '—'}</td>
+      <td>${pin.x}</td>
+      <td>${pin.y}</td>
+      <td><span class="zone">${pin.zone}</span></td>
+      <td style="font-size:10px">${pin.reason}</td>
+      <td>${pin.cost.toLocaleString('fr-FR')}</td>
+    </tr>`).join('')}
+  </tbody></table>
+  ${pinRows.length > 1000 ? `<p><em>... et ${pinRows.length - 1000} autres pins (limite affichage).</em></p>` : ''}
+
+  <div class="footer">
+    Rapport généré par Prophet (Atlas BIM) · Skill : recommendSignagePlan ·
+    Source : SIGNAGE_CATALOG (25 types ERP) · Confiance : ${(result.confidence.score * 100).toFixed(0)}%
+  </div>
+</body></html>`
+
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `plan-signaletique-prophet-${new Date().toISOString().slice(0, 10)}.html`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
 function DetectionGroup({

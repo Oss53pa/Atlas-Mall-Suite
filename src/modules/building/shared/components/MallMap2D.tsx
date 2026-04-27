@@ -18,6 +18,7 @@ import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
 import { useProph3tOverlaysStore } from '../stores/proph3tOverlaysStore'
 import { useSignagePlacementStore } from '../stores/signagePlacementStore'
 import { useSignageEditUiStore } from '../stores/signageEditUiStore'
+import { useSignagePlanPinsStore } from '../stores/signagePlanPinsStore'
 import { resolveSignageKind } from '../proph3t/libraries/signageCatalog'
 import { useActiveProjectId } from '../../../../hooks/useActiveProject'
 
@@ -872,6 +873,7 @@ export function MallMap2D({
           toX={toX} toY={toY} scale={viewport.scale}
           ox={viewport.ox} oy={viewport.oy}
         />
+        <SignageProposalPinsLayer toX={toX} toY={toY} scale={viewport.scale} />
       </svg>
 
       {/* Stats + contrôles */}
@@ -1153,6 +1155,52 @@ function SignagePlacementsLayer({
           )
         })}
       </g>
+    </g>
+  )
+}
+
+// ─── Couche pins de propositions (avant placement) ──────
+
+function SignageProposalPinsLayer({
+  toX, toY, scale,
+}: {
+  toX: (x: number) => number
+  toY: (y: number) => number
+  scale: number
+}) {
+  const pins = useSignagePlanPinsStore(s => s.pins)
+  const visible = useSignagePlanPinsStore(s => s.visible)
+  if (!visible || pins.length === 0) return null
+  // Adaptive size : plus de pins = plus petits
+  const r = Math.max(7, 11 * Math.min(1.3, scale) * (pins.length > 100 ? 0.7 : 1))
+  return (
+    <g style={{ pointerEvents: 'none' }}>
+      {pins.map(pin => {
+        const def = resolveSignageKind(pin.code)
+        const cx = toX(pin.x)
+        const cy = toY(pin.y)
+        return (
+          <g key={pin.id}>
+            {/* Pin tige (pointe vers le bas) */}
+            <path
+              d={`M ${cx} ${cy + r * 1.6} L ${cx - r * 0.5} ${cy + r * 0.4} L ${cx + r * 0.5} ${cy + r * 0.4} Z`}
+              fill={def.color}
+              opacity={0.5}
+            />
+            {/* Cercle creux */}
+            <circle cx={cx} cy={cy} r={r}
+              fill={def.color} fillOpacity={0.3}
+              stroke={def.color} strokeWidth={1.5} strokeDasharray="2 1.5" />
+            {/* Code */}
+            <text x={cx} y={cy + r * 0.3} textAnchor="middle"
+              fontSize={Math.max(6, r * 0.55)} fill={def.color}
+              fontWeight="bold" style={{ pointerEvents: 'none' }}>
+              {pin.code}
+            </text>
+            <title>{`PROPOSITION : ${def.label} (${pin.code})\n${pin.reason}\n\nClic "+N" dans le modal pour valider et placer.`}</title>
+          </g>
+        )
+      })}
     </g>
   )
 }
