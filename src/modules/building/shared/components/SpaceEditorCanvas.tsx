@@ -1632,10 +1632,12 @@ export function SpaceEditorCanvas({
                   />
                 )}
 
-                {/* ── Badge icône — masqué pour les portes (trait seul suffit) ── */}
-                {!isDoorType(s.type) && (
+                {/* ── Badge icône — visible aussi pour les portes (sinon
+                    impossible d'ouvrir l'éditeur autrement que par double-clic).
+                    Pour les portes très fines, on décale le badge à 16px au-dessus. ── */}
+                {(
                   <g
-                    transform={`translate(${cx}, ${cy})`}
+                    transform={`translate(${cx}, ${isDoorType(s.type) ? cy - 18 : cy})`}
                     onMouseEnter={() => { if (mode === 'select') setIconHoverSpaceId(s.id) }}
                     onMouseLeave={() => setIconHoverSpaceId(null)}
                     style={{ cursor: mode === 'select' ? 'help' : 'default' }}
