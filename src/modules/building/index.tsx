@@ -7,26 +7,24 @@ import { usePlanHydration } from './shared/hooks/usePlanHydration'
 import { useEditableSpacesCloudSync } from './shared/hooks/useEditableSpacesCloudSync'
 import { usePlanEngineStore } from './shared/stores/planEngineStore'
 import { Lock, AlertCircle } from 'lucide-react'
+import { lazyWithReload } from '@/lib/lazyWithReload'
 
-const OnboardingWizard = React.lazy(() => import('./shared/components/OnboardingWizard'))
-const Vol1Module = React.lazy(() => import('./vol1-commercial'))
-const Vol2Module = React.lazy(() => import('./vol2-securitaire'))
-const Vol3Module = React.lazy(() => import('./vol3-parcours'))
-const Vol4Module = React.lazy(() => import('./vol4-wayfinder'))
-const Proph3tGlobalMount = React.lazy(() =>
+const OnboardingWizard = lazyWithReload(() => import('./shared/components/OnboardingWizard'))
+const Vol1Module = lazyWithReload(() => import('./vol1-commercial'))
+const Vol2Module = lazyWithReload(() => import('./vol2-securitaire'))
+const Vol3Module = lazyWithReload(() => import('./vol3-parcours'))
+const Vol4Module = lazyWithReload(() => import('./vol4-wayfinder'))
+const Proph3tGlobalMount = lazyWithReload(() =>
   import('./shared/proph3t/components/Proph3tGlobalMount').then(m => ({ default: m.Proph3tGlobalMount }))
 )
 // Vol3D is now embedded inside Vol2/Vol3 as a view mode, not a standalone route
-const Vol3DModule = React.lazy(() => import('./vol-3d'))
-const SceneEditor = React.lazy(() => import('./scene-editor'))
-// RemodelingStage est remplacé par AtlasStudioModule — import retiré pour éviter
-// l'import inutile. Si quelqu'un a encore besoin de cette page, elle existe
-// toujours dans shared/components/RemodelingStage.tsx.
-const EditPlanFloatingButton = React.lazy(() =>
+const Vol3DModule = lazyWithReload(() => import('./vol-3d'))
+const SceneEditor = lazyWithReload(() => import('./scene-editor'))
+const EditPlanFloatingButton = lazyWithReload(() =>
   import('./shared/components/EditPlanFloatingButton').then(m => ({ default: m.EditPlanFloatingButton }))
 )
-const AtlasStudioModule = React.lazy(() => import('./shared/components/AtlasStudioModule'))
-const GeometryQualityDashboard = React.lazy(() =>
+const AtlasStudioModule = lazyWithReload(() => import('./shared/components/AtlasStudioModule'))
+const GeometryQualityDashboard = lazyWithReload(() =>
   import('./shared/components/GeometryQualityDashboard').then(m => ({ default: m.GeometryQualityDashboard }))
 )
 
