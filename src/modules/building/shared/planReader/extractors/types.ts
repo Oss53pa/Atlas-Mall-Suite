@@ -44,6 +44,14 @@ export interface NormalizedFloorPlan {
   needs_manual_placement?: number  // count of rooms needing manual placement
   validation_required?: boolean
   validation_message?: string
+  /**
+   * Sprint 10 — Entités brutes DXF (lines, polylines, arcs, hatches, textes,
+   * blocks expansés). Source pour MallMap2D underlay et fidélité visuelle.
+   * Chaque PlanEntity a `id`, `type`, `layer`, `geometry`, `bounds`, `color`.
+   * Type marqué `unknown` ici pour éviter import cyclique types.ts ↔ planEngineTypes.ts.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  rawEntities?: any[]
 }
 
 export type ZoneType =

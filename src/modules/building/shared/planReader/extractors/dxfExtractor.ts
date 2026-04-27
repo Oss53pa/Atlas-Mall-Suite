@@ -5,6 +5,7 @@ import type {
   NormalizedOpening, Point, Edge,
 } from './types'
 import { computePolygonArea, pointDistance, generateId, normalizeZoneType } from './types'
+import { parseDxfRich } from '../dxfRichParser'
 
 // ── Layer patterns ───────────────────────────────────────────
 
@@ -42,6 +43,20 @@ export class DXFFloorPlanExtractor implements FloorPlanExtractor {
     if (!dxf) throw new Error('Impossible de parser le fichier DXF')
 
     const entities = dxf.entities ?? []
+
+    // ═══ Sprint 10 — Rich extraction parallèle (toutes entités, blocks expansés) ═══
+    // Lance en parallèle un parsing complet via dxfRichParser. Pas bloquant
+    // pour rooms/walls/openings : si rich échoue, on garde l'extraction normale.
+    let rawEntities: unknown[] = []
+    try {
+      const rich = await parseDxfRich(text)
+      rawEntities = rich.entities
+      // eslint-disable-next-line no-console
+      console.info(`[dxfExtractor] Rich extraction : ${rich.entities.length} entités`, rich.stats)
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[dxfExtractor] parseDxfRich a échoué, on continue sans :', err)
+    }
 
     // Step 1: Detect scale
     const scale = this.extractScale(dxf, entities)
@@ -89,6 +104,7 @@ export class DXFFloorPlanExtractor implements FloorPlanExtractor {
       scale: 1.0, // already converted to metres
       confidence: rooms.length > 0 ? 0.95 : 0.5,
       floor_level,
+      rawEntities, // Sprint 10 : entités brutes pour MallMap2D underlay
     }
   }
 

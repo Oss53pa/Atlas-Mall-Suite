@@ -1117,6 +1117,24 @@ export async function importPlan(
             && e.type !== 'INSERT' && e.type !== 'VIEWPORT'
         )
 
+        // ═══ Sprint 10 — Expansion récursive des INSERT/BLOCK ═══
+        // Sans ça on perd ~80% du contenu visuel (équipements, voitures,
+        // lignes parking, escaliers, mobilier urbain). dxfRichParser
+        // résout les BLOCKS et retourne les entités primitives expansées
+        // avec transformations (insertion, rotation, scale).
+        let expandedFromBlocks: PlanEntity[] = []
+        try {
+          const { parseDxfRich } = await import('./dxfRichParser')
+          const rich = await parseDxfRich(text)
+          // On ne garde que les entités produites par expansion d'INSERT
+          // (les autres LINE/POLYLINE sont déjà capturées par modelEntities).
+          // Heuristique : layer commençant par <BlockName>/ est issu d'un INSERT.
+          expandedFromBlocks = rich.entities.filter(e => e.layer.includes('/'))
+          console.log(`[DXF] Sprint 10 : ${expandedFromBlocks.length} entités issues d'expansion INSERT (sur ${rich.entities.length} totales)`)
+        } catch (err) {
+          console.warn('[DXF] Sprint 10 expansion INSERT échouée :', err)
+        }
+
         state.currentOperation = 'Calcul des limites du plan...'
         state.progress = 25
         emit()
@@ -1807,6 +1825,13 @@ export async function importPlan(
         // Use planImageUrl (SVG preview) as background — it renders the full plan correctly.
         // Entities are normalized to full bounds so the SVG image aligns with zone overlays.
         try {
+          // Sprint 10 — Concatène les entités issues d'expansion INSERT/BLOCK
+          // (équipements, voitures, parking lines, escaliers stylisés, etc.)
+          // calculées plus haut via parseDxfRich.
+          if (expandedFromBlocks.length > 0) {
+            planEntities.push(...expandedFromBlocks)
+            console.log(`[DXF] +${expandedFromBlocks.length} entités d'expansion BLOCK ajoutées (total ${planEntities.length})`)
+          }
           const normalizedEntities = normalizeAllEntities(planEntities, dxfBoundsRaw, unitScale)
           const normalizedBounds: Bounds = {
             minX: 0, minY: 0,
