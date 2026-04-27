@@ -19,6 +19,7 @@ import * as THREE from 'three'
 import type { ParsedPlan } from '../planReader/planEngineTypes'
 import { detectedSpacesToSpatialEntities } from '../engines/geometry/editableSpaceAdapter'
 import { SceneRenderer } from '../../../../../packages/spatial-core/src/rendering/components/SceneRenderer'
+import { autoPopulate } from '../../../../../packages/spatial-core/src/rendering/autoPopulate'
 
 interface Props {
   readonly plan: ParsedPlan
@@ -49,10 +50,12 @@ function FitCamera({ width, depth }: { width: number; depth: number }) {
 }
 
 export function SpatialCoreScene({ plan, projectId, className }: Props) {
-  const entities = useMemo(
-    () => detectedSpacesToSpatialEntities(plan.spaces, projectId),
-    [plan.spaces, projectId],
-  )
+  const entities = useMemo(() => {
+    const base = detectedSpacesToSpatialEntities(plan.spaces, projectId)
+    // Photo-realistic : ajoute voitures sur places parking + arbres dans green areas
+    const autos = autoPopulate(base, { parkingFillRate: 0.55, treeSpacingM: 8 })
+    return [...base, ...autos]
+  }, [plan.spaces, projectId])
 
   const w = plan.bounds.width || 200
   const d = plan.bounds.height || 140

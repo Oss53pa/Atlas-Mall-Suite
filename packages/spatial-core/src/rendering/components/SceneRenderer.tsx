@@ -15,6 +15,8 @@ import { WallExtrusion } from './WallExtrusion'
 import { FlatSurface } from './FlatSurface'
 import { LowVolumeExtrusion } from './LowVolumeExtrusion'
 import { TreeInstance } from './TreeInstance'
+import { PalmInstance } from './PalmInstance'
+import { CarInstance } from './CarInstance'
 import { PointInstance } from './PointInstance'
 import { WayfinderInstance } from './WayfinderInstance'
 import { SafetyMarkerInstance } from './SafetyMarkerInstance'
@@ -38,6 +40,10 @@ export function SceneRenderer({ entities }: Props) {
             return <LowVolumeExtrusion key={e.id} entity={e} height={d.extrusionHeight} baseElevation={d.baseElevation} />
           case 'tree_instance':
             return <TreeInstance key={e.id} entity={e} height={d.extrusionHeight} />
+          case 'palm_instance':
+            return <PalmInstance key={e.id} entity={e} height={d.extrusionHeight} />
+          case 'car_instance':
+            return <CarInstance key={e.id} entity={e} />
           case 'point_instance':
             return <PointInstance key={e.id} entity={e} height={d.extrusionHeight} baseElevation={d.baseElevation} />
           case 'wayfinder_instance':

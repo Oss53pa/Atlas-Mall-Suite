@@ -10,6 +10,7 @@
 
 import { useMemo } from 'react'
 import * as THREE from 'three'
+import { useTexture } from '@react-three/drei'
 import type { SpatialEntity, Polyline, Polygon } from '../../domain/SpatialEntity'
 import { isPolygon, isPolyline } from '../../domain/SpatialEntity'
 import { getMaterial } from '../../domain/MaterialRegistry'
@@ -22,6 +23,14 @@ interface Props {
 
 export function WallExtrusion({ entity, height, baseElevation }: Props) {
   const mat = getMaterial(entity.material)
+  // PBR : charge la diffuse map si fournie (asset Supabase Storage)
+  const texturePath = mat.textureUrl ?? ''
+  const tex = useTexture(texturePath || '/textures/blank-1px.png')
+  if (mat.textureUrl) {
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping
+    tex.repeat.set(mat.repeat.x, mat.repeat.y)
+    tex.anisotropy = 4
+  }
 
   const geometry = useMemo(() => {
     // 2 cas : polyline (ligne brisée → mur en ruban) ou polygon (cloison fermée)
@@ -63,6 +72,7 @@ export function WallExtrusion({ entity, height, baseElevation }: Props) {
     <mesh geometry={geometry} castShadow receiveShadow>
       <meshStandardMaterial
         color={mat.baseColor}
+        map={mat.textureUrl ? tex : null}
         metalness={mat.metalness}
         roughness={mat.roughness}
         opacity={mat.opacity}

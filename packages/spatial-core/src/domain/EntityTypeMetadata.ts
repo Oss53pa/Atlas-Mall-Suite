@@ -185,6 +185,74 @@ export const ENTITY_TYPE_METADATA: Record<string, EntityTypeMetadata> = {
     iconRender2D: 'flag', colorOverlay2D: '#6366f1',
     visibleInVolumes: ['vol1'],
   },
+  [CoreEntityType.LAMP_POST_PARKING]: {
+    productScope: ['core'], category: 'furniture',
+    defaultExtrusion: { enabled: true, height: 8.0, baseElevation: 0 },
+    defaultMaterial: 'lamp_metal', snapBehavior: 'none', mergeWithSameType: false,
+    renderInIsometric3D: true, contributesToGLA: false,
+    iconRender2D: 'lightbulb', colorOverlay2D: '#fbbf24',
+    visibleInVolumes: ['vol1'],
+  },
+  [CoreEntityType.BOLLARD]: {
+    productScope: ['core'], category: 'furniture',
+    defaultExtrusion: { enabled: true, height: 0.8, baseElevation: 0 },
+    defaultMaterial: 'curb_concrete', snapBehavior: 'none', mergeWithSameType: false,
+    renderInIsometric3D: true, contributesToGLA: false,
+    iconRender2D: 'circle-dot', colorOverlay2D: '#475569',
+    visibleInVolumes: ['vol1'],
+  },
+
+  // ─── Instances décoratives ───────────────────────────────
+  [CoreEntityType.CAR_INSTANCE]: {
+    productScope: ['core'], category: 'furniture',
+    defaultExtrusion: { enabled: true, height: 1.5, baseElevation: 0 },
+    defaultMaterial: 'car_paint', snapBehavior: 'none', mergeWithSameType: false,
+    renderInIsometric3D: true, contributesToGLA: false,
+    iconRender2D: 'car', colorOverlay2D: '#475569',
+    visibleInVolumes: ['vol1', 'vol2'],
+  },
+  [CoreEntityType.TREE_PALM]: {
+    productScope: ['core'], category: 'vegetation',
+    defaultExtrusion: { enabled: true, height: 6.0, baseElevation: 0 },
+    defaultMaterial: 'tree_palm', snapBehavior: 'none', mergeWithSameType: false,
+    renderInIsometric3D: true, contributesToGLA: false,
+    iconRender2D: 'tree-palm', colorOverlay2D: '#3a6b1f',
+    visibleInVolumes: ['vol1'],
+  },
+  [CoreEntityType.TREE_DECIDUOUS]: {
+    productScope: ['core'], category: 'vegetation',
+    defaultExtrusion: { enabled: true, height: 7.0, baseElevation: 0 },
+    defaultMaterial: 'tree_oak', snapBehavior: 'none', mergeWithSameType: false,
+    renderInIsometric3D: true, contributesToGLA: false,
+    iconRender2D: 'tree-pine', colorOverlay2D: '#2d5016',
+    visibleInVolumes: ['vol1'],
+  },
+  [CoreEntityType.SHRUB]: {
+    productScope: ['core'], category: 'vegetation',
+    defaultExtrusion: { enabled: true, height: 1.0, baseElevation: 0 },
+    defaultMaterial: 'shrub_green', snapBehavior: 'none', mergeWithSameType: false,
+    renderInIsometric3D: true, contributesToGLA: false,
+    iconRender2D: 'leaf', colorOverlay2D: '#5c8a45',
+    visibleInVolumes: ['vol1'],
+  },
+
+  // ─── Marquages sol additionnels ─────────────────────────
+  [CoreEntityType.ROAD_ARROW]: {
+    productScope: ['core'], category: 'floor',
+    defaultExtrusion: { enabled: false, height: 0.005, baseElevation: 0.001 },
+    defaultMaterial: 'paint_white', snapBehavior: 'weak', mergeWithSameType: false,
+    renderInIsometric3D: true, contributesToGLA: false,
+    iconRender2D: 'arrow-up', colorOverlay2D: '#f8f8f8',
+    visibleInVolumes: ['vol1', 'vol2'],
+  },
+  [CoreEntityType.PARKING_LINE]: {
+    productScope: ['core'], category: 'floor',
+    defaultExtrusion: { enabled: false, height: 0.003, baseElevation: 0.001 },
+    defaultMaterial: 'paint_white', snapBehavior: 'weak', mergeWithSameType: false,
+    renderInIsometric3D: true, contributesToGLA: false,
+    iconRender2D: 'minus', colorOverlay2D: '#f8f8f8',
+    visibleInVolumes: ['vol1'],
+  },
 
   // ─── VOL.1 — Operations & Business ──────────────────────
   [MallVol1EntityType.BOUTIQUE_BOUNDARY]: {

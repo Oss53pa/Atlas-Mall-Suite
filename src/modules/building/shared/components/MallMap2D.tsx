@@ -677,6 +677,28 @@ export function MallMap2D({
               {meta.vacant && wPx > 30 && hPx > 30 && (
                 <path d={d} fill="url(#vacantHatch)" opacity={0.35} style={{ pointerEvents: 'none' }} />
               )}
+              {/* Voitures stylisées sur les places parking standard */}
+              {/^parking_place_(standard|pmr|ve|famille|moto|livraison)$/.test(typeStr) &&
+                wPx > 14 && hPx > 14 && (() => {
+                  // Une voiture occupe ~70% de la place, picto centré
+                  // Hash sur ID pour pseudo-random stable (effet remplissage)
+                  let h = 0
+                  for (let i = 0; i < s.id.length; i++) h = ((h << 5) - h + s.id.charCodeAt(i)) | 0
+                  const rand = ((h >>> 0) % 1000) / 1000
+                  if (rand > 0.55) return null // 55% de remplissage
+                  const carW = Math.min(wPx, hPx) * 0.75
+                  const carH = carW * 0.55
+                  // Détermine orientation depuis le ratio bbox
+                  const horizontal = wPx > hPx
+                  const w = horizontal ? carW : carH
+                  const ho = horizontal ? carH : carW
+                  return (
+                    <g style={{ pointerEvents: 'none', opacity: 0.85 }}>
+                      <use href="#car" x={cx - w / 2} y={cy - ho / 2} width={w} height={ho}
+                        transform={horizontal ? '' : `rotate(90 ${cx} ${cy})`} />
+                    </g>
+                  )
+                })()}
               {/* Pas de pastille ni d'icône permanente sur les aplats —
                   plan propre façon planimetria. Le détail s'ouvre en popup au survol. */}
             </g>

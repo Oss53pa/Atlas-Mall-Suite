@@ -9,6 +9,7 @@
 
 import { useMemo } from 'react'
 import * as THREE from 'three'
+import { useTexture } from '@react-three/drei'
 import type { SpatialEntity, Polygon } from '../../domain/SpatialEntity'
 import { isPolygon } from '../../domain/SpatialEntity'
 import { getMaterial } from '../../domain/MaterialRegistry'
@@ -43,6 +44,12 @@ function triangulateFan(outer: ReadonlyArray<{ x: number; y: number }>, baseElev
 
 export function FlatSurface({ entity, baseElevation }: Props) {
   const mat = getMaterial(entity.material)
+  const tex = useTexture(mat.textureUrl ?? '/textures/blank-1px.png')
+  if (mat.textureUrl) {
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping
+    tex.repeat.set(mat.repeat.x, mat.repeat.y)
+    tex.anisotropy = 8
+  }
 
   const geometry = useMemo(() => {
     if (!isPolygon(entity.geometry)) return new THREE.BufferGeometry()
@@ -55,6 +62,7 @@ export function FlatSurface({ entity, baseElevation }: Props) {
     <mesh geometry={geometry} receiveShadow>
       <meshStandardMaterial
         color={mat.baseColor}
+        map={mat.textureUrl ? tex : null}
         metalness={mat.metalness}
         roughness={mat.roughness}
         opacity={mat.opacity}

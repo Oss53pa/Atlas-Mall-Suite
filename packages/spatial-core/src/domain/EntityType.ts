@@ -46,7 +46,19 @@ export enum CoreEntityType {
   // ─── Mobilier urbain ──────────────────────────────────────
   TRASH_BIN = 'TRASH_BIN',
   LAMP_POST = 'LAMP_POST',
+  LAMP_POST_PARKING = 'LAMP_POST_PARKING', // mât parking 8m
+  BOLLARD = 'BOLLARD',                     // borne basse 0.8m
   GENERIC_SIGNAGE = 'GENERIC_SIGNAGE',     // panneau générique non-wayfinder
+
+  // ─── Instances décoratives (auto-population photoréaliste) ──
+  CAR_INSTANCE = 'CAR_INSTANCE',           // voiture en place de parking
+  TREE_PALM = 'TREE_PALM',                 // palmier (variante TREE)
+  TREE_DECIDUOUS = 'TREE_DECIDUOUS',       // arbre feuillu (variante TREE)
+  SHRUB = 'SHRUB',                         // arbuste / buisson bas (h~1m)
+
+  // ─── Marquages au sol additionnels ────────────────────────
+  ROAD_ARROW = 'ROAD_ARROW',               // flèche directionnelle peinte
+  PARKING_LINE = 'PARKING_LINE',           // ligne blanche entre places
 }
 
 /** Union de toutes les chaînes EntityType valides (core + extensions). */

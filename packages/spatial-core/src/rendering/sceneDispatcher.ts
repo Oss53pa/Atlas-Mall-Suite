@@ -27,6 +27,8 @@ export type RenderStrategy =
   | 'flat_surface'
   | 'low_volume_extrusion'
   | 'tree_instance'
+  | 'palm_instance'
+  | 'car_instance'
   | 'point_instance'
   | 'wayfinder_instance'
   | 'safety_marker_instance'
@@ -76,10 +78,22 @@ export function getRenderDirective(entity: SpatialEntity): RenderDirective {
       return { ...baseDirective, strategy: 'low_volume_extrusion', castShadow: true, receiveShadow: true }
 
     case 'vegetation':
-      if (entity.type === CoreEntityType.TREE) {
+      if (entity.type === CoreEntityType.TREE_PALM) {
+        return { ...baseDirective, strategy: 'palm_instance', castShadow: true, receiveShadow: false }
+      }
+      if (entity.type === CoreEntityType.TREE || entity.type === CoreEntityType.TREE_DECIDUOUS) {
         return { ...baseDirective, strategy: 'tree_instance', castShadow: true, receiveShadow: false }
       }
+      if (entity.type === CoreEntityType.SHRUB) {
+        return { ...baseDirective, strategy: 'low_volume_extrusion', castShadow: true, receiveShadow: true }
+      }
       return { ...baseDirective, strategy: 'flat_surface', castShadow: false, receiveShadow: true }
+
+    case 'furniture':
+      if (entity.type === CoreEntityType.CAR_INSTANCE) {
+        return { ...baseDirective, strategy: 'car_instance', castShadow: true, receiveShadow: false }
+      }
+      return { ...baseDirective, strategy: 'point_instance', castShadow: true, receiveShadow: true }
 
     case 'safety_marker':
       return { ...baseDirective, strategy: 'safety_marker_instance', castShadow: true, receiveShadow: true }
@@ -89,9 +103,6 @@ export function getRenderDirective(entity: SpatialEntity): RenderDirective {
 
     case 'equipment':
       return { ...baseDirective, strategy: 'equipment_instance', castShadow: true, receiveShadow: true }
-
-    case 'furniture':
-      return { ...baseDirective, strategy: 'point_instance', castShadow: true, receiveShadow: true }
 
     default:
       return { ...baseDirective, strategy: 'skip', castShadow: false, receiveShadow: false }

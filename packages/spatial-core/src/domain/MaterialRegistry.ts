@@ -274,6 +274,20 @@ export const MATERIAL_REGISTRY: Record<MaterialId, MaterialDef> = {
   valve_metal: { id: 'valve_metal', displayName: 'Vanne', baseColor: '#dc2626', metalness: 0.8, roughness: 0.3, opacity: 1, transparent: false, repeat: DEFAULT_REPEAT },
   meter_plastic: { id: 'meter_plastic', displayName: 'Compteur', baseColor: '#0284c7', metalness: 0.2, roughness: 0.4, opacity: 1, transparent: false, repeat: DEFAULT_REPEAT },
 
+  // ─── Instances décoratives photoréalistes ──────────────
+  car_paint: {
+    id: 'car_paint', displayName: 'Carrosserie voiture', baseColor: '#475569',
+    metalness: 0.7, roughness: 0.25, opacity: 1, transparent: false, repeat: DEFAULT_REPEAT,
+  },
+  tree_palm: {
+    id: 'tree_palm', displayName: 'Palmier', baseColor: '#3a6b1f',
+    metalness: 0.0, roughness: 0.85, opacity: 1, transparent: false, repeat: DEFAULT_REPEAT,
+  },
+  shrub_green: {
+    id: 'shrub_green', displayName: 'Arbuste', baseColor: '#5c8a45',
+    metalness: 0.0, roughness: 0.95, opacity: 1, transparent: false, repeat: DEFAULT_REPEAT,
+  },
+
   // ─── Mobilier Vol.1 ────────────────────────────────────
   atm_metal: { id: 'atm_metal', displayName: 'DAB', baseColor: '#16a34a', metalness: 0.6, roughness: 0.3, opacity: 1, transparent: false, repeat: DEFAULT_REPEAT },
   desk_wood: { id: 'desk_wood', displayName: 'Caisse / comptoir bois', baseColor: '#8b6914', metalness: 0.0, roughness: 0.6, opacity: 1, transparent: false, repeat: DEFAULT_REPEAT },
