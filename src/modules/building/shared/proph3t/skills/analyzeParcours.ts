@@ -105,8 +105,10 @@ export async function analyzeParcours(input: ParcoursAnalysisInput): Promise<Pro
   })
 
   // ─── 3. Signage auto ───
+  // Filtre élargi : circulations + voies piétonnes + parvis + entrées + halls
+  const CIRC_RE = /circul|hall|mall|mail|couloir|passage|piet|piéton|voie|parvis|entr|access|porte/i
   const circulationSpaces = input.spaces
-    .filter(s => /circul|hall|mail|couloir/i.test(String(s.type ?? '')))
+    .filter(s => CIRC_RE.test(String(s.type ?? '')) || CIRC_RE.test(String(s.label ?? '')))
     .map(s => ({ id: s.id, polygon: s.polygon, type: String(s.type ?? ''), areaSqm: s.areaSqm }))
   const signageRes = circulationSpaces.length > 0 ? optimizeSignage({
     circulations: circulationSpaces,

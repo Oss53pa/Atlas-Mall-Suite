@@ -71,23 +71,51 @@ function pointInPolygon(px: number, py: number, poly: [number, number][]): boole
 
 // ─── Node detection ───────────────────────────────────────
 
-/** Détecte les "nœuds de décision" : centres des circulations + entrées (côtés adjacents à d'autres polygones). */
-function detectDecisionNodes(circs: CirculationSpace[]): Array<{ x: number; y: number; fromCircId: string }> {
+/** Détecte les nœuds de décision + échantillonne densément les longues circulations. */
+function detectDecisionNodes(
+  circs: CirculationSpace[],
+  sampleEveryM: number,
+): Array<{ x: number; y: number; fromCircId: string }> {
   const nodes: Array<{ x: number; y: number; fromCircId: string }> = []
   for (const c of circs) {
-    // Centroïde = nœud principal
     const [cx, cy] = polygonCentroid(c.polygon)
     nodes.push({ x: cx, y: cy, fromCircId: c.id })
-    // Nœuds secondaires : points médians des 2 côtés les plus longs (approx. entrées)
-    const edges: Array<{ mx: number; my: number; len: number }> = []
+
+    // Tous les points médians des côtés (pas seulement les 2 plus longs)
     for (let i = 0; i < c.polygon.length; i++) {
       const [x1, y1] = c.polygon[i]
       const [x2, y2] = c.polygon[(i + 1) % c.polygon.length]
-      edges.push({ mx: (x1 + x2) / 2, my: (y1 + y2) / 2, len: Math.hypot(x2 - x1, y2 - y1) })
+      const len = Math.hypot(x2 - x1, y2 - y1)
+      if (len < 4) continue // côtés très courts ignorés
+      nodes.push({ x: (x1 + x2) / 2, y: (y1 + y2) / 2, fromCircId: c.id })
+
+      // Échantillonnage le long des côtés longs (couloirs longitudinaux)
+      if (len > sampleEveryM * 1.5) {
+        const steps = Math.floor(len / sampleEveryM)
+        for (let k = 1; k < steps; k++) {
+          const t = k / steps
+          nodes.push({
+            x: x1 + (x2 - x1) * t,
+            y: y1 + (y2 - y1) * t,
+            fromCircId: c.id,
+          })
+        }
+      }
     }
-    edges.sort((a, b) => b.len - a.len)
-    for (const e of edges.slice(0, 2)) {
-      nodes.push({ x: e.mx, y: e.my, fromCircId: c.id })
+
+    // Échantillonnage grille interne pour grandes zones (mails, parvis)
+    if (c.areaSqm > 200) {
+      const xs = c.polygon.map(p => p[0])
+      const ys = c.polygon.map(p => p[1])
+      const minX = Math.min(...xs), maxX = Math.max(...xs)
+      const minY = Math.min(...ys), maxY = Math.max(...ys)
+      for (let x = minX + sampleEveryM / 2; x < maxX; x += sampleEveryM) {
+        for (let y = minY + sampleEveryM / 2; y < maxY; y += sampleEveryM) {
+          if (pointInPolygon(x, y, c.polygon)) {
+            nodes.push({ x, y, fromCircId: c.id })
+          }
+        }
+      }
     }
   }
   return nodes
@@ -98,74 +126,112 @@ function detectDecisionNodes(circs: CirculationSpace[]): Array<{ x: number; y: n
 export function optimizeSignage(input: SignageOptimizerInput): SignageOptimizerResult {
   const t0 = performance.now()
   const visRadius = input.visibilityRadiusM ?? 15
-  const density = input.targetDensityPer100Sqm ?? 1
 
-  const circs = input.circulations.filter(c => /circul|couloir|hall|mail|passage/i.test(c.type))
+  // Filtre élargi : circulations + voiries piétonnes + entrées + parvis + halls.
+  // Inclut aussi les espaces explicitement "passage piéton" (voies piétonnes).
+  const TYPE_RE = /circul|couloir|hall|mall|mail|passage|piet|piéton|voie|parvis|entr|access|porte/i
+  const circs = input.circulations.filter(c => TYPE_RE.test(c.type))
   const totalCirculationSqm = circs.reduce((s, c) => s + c.areaSqm, 0)
-  const targetCount = Math.max(1, Math.round((totalCirculationSqm / 100) * density))
 
-  // 1. Candidats : nœuds de décision
-  const candidates = detectDecisionNodes(circs)
-
-  // 2. Filtre : retire les doublons proches (< visRadius/2)
-  const filtered: typeof candidates = []
-  for (const c of candidates) {
-    const tooClose = filtered.some(f => Math.hypot(c.x - f.x, c.y - f.y) < visRadius / 2)
-    if (!tooClose) filtered.push(c)
+  if (circs.length === 0 || totalCirculationSqm === 0) {
+    return { proposed: [], totalCirculationSqm: 0, coveragePct: 0, elapsedMs: performance.now() - t0 }
   }
 
-  // 3. Score chaque candidat par nombre de POIs proches pondéré par priorité
-  const scored = filtered.map(node => {
-    const nearby = input.pois
-      .map(p => ({ p, d: distance([node.x, node.y], [p.x, p.y]) }))
-      .filter(x => x.d <= visRadius * 4) // POI visible depuis ce nœud (ligne de vue approx.)
-      .sort((a, b) => a.d - b.d)
-      .slice(0, 3)
-    const weight = nearby.reduce((sum, x) => sum + (4 - (x.p.priority ?? 2)), 0)
-    return { node, nearby, weight }
-  }).sort((a, b) => b.weight - a.weight)
+  // 1. Candidats denses (échantillonnage tous les visRadius mètres = aucun trou)
+  const sampleEvery = visRadius // 1 candidat / 15m → couvrira tout en greedy
+  const candidates = detectDecisionNodes(circs, sampleEvery)
 
-  // 4. Prend les top N (limité par budget cible)
-  const topN = scored.slice(0, targetCount)
-
-  // 5. Déduit le type et la raison
-  const proposed: ProposedSign[] = topN.map((s, i) => {
-    let kind: ProposedSign['kind'] = 'direction'
-    let reason = `${s.nearby.length} POI accessible(s) depuis ce nœud`
-    if (s.nearby.length === 0) {
-      kind = 'you-are-here'
-      reason = "Nœud central — plan 'Vous êtes ici'"
-    } else if (s.nearby.some(x => (x.p.priority ?? 2) === 1)) {
-      kind = 'zone-entrance'
-      reason = `Accès ancre : ${s.nearby.find(x => (x.p.priority ?? 2) === 1)!.p.label}`
-    }
-    return {
-      id: `sign-auto-${i + 1}`,
-      x: s.node.x,
-      y: s.node.y,
-      kind,
-      targets: s.nearby.map(n => n.p.id),
-      reason,
-    }
-  })
-
-  // 6. Couverture : % de la circulation dans visRadius d'un panneau
-  let coveredSqm = 0
-  const step = 2
+  // 2. Construit la grille de couverture (cellules 2×2m sur les circulations)
+  const cellStep = 2
+  const cells: Array<{ x: number; y: number; covered: boolean }> = []
   for (const c of circs) {
     const xs = c.polygon.map(p => p[0])
     const ys = c.polygon.map(p => p[1])
     const minX = Math.min(...xs), maxX = Math.max(...xs)
     const minY = Math.min(...ys), maxY = Math.max(...ys)
-    for (let x = minX; x <= maxX; x += step) {
-      for (let y = minY; y <= maxY; y += step) {
-        if (!pointInPolygon(x, y, c.polygon)) continue
-        const covered = proposed.some(p => Math.hypot(p.x - x, p.y - y) <= visRadius)
-        if (covered) coveredSqm += step * step
+    for (let x = minX; x <= maxX; x += cellStep) {
+      for (let y = minY; y <= maxY; y += cellStep) {
+        if (pointInPolygon(x, y, c.polygon)) cells.push({ x, y, covered: false })
       }
     }
   }
-  const coveragePct = totalCirculationSqm > 0 ? (coveredSqm / totalCirculationSqm) * 100 : 0
+  const cellArea = cellStep * cellStep
+  const totalCells = cells.length
 
-  return { proposed, totalCirculationSqm, coveragePct, elapsedMs: performance.now() - t0 }
+  // 3. Score initial de chaque candidat = (POIs accessibles pondérés) + (cellules nouvellement couvertes / 5)
+  const scoreCandidate = (cx: number, cy: number) => {
+    const nearby = input.pois
+      .map(p => ({ p, d: distance([cx, cy], [p.x, p.y]) }))
+      .filter(x => x.d <= visRadius * 4)
+      .sort((a, b) => a.d - b.d)
+      .slice(0, 3)
+    const poiWeight = nearby.reduce((sum, x) => sum + (4 - (x.p.priority ?? 2)), 0)
+    let coverGain = 0
+    for (const cell of cells) {
+      if (!cell.covered && Math.hypot(cell.x - cx, cell.y - cy) <= visRadius) coverGain++
+    }
+    return { score: poiWeight * 5 + coverGain, nearby, coverGain }
+  }
+
+  // 4. Greedy : place panneaux jusqu'à ≥ 90% couverture OU plus de gain significatif
+  const proposed: ProposedSign[] = []
+  const targetCoverage = 0.9
+  const minCoverGain = Math.max(3, Math.floor((visRadius * visRadius * 0.25) / cellArea)) // ≥ 25% du disque
+  const maxSigns = 200 // hard cap pour mall géant
+
+  const remaining = candidates.slice() // copie mutable
+  while (proposed.length < maxSigns) {
+    const coveredCells = cells.filter(c => c.covered).length
+    if (coveredCells / Math.max(1, totalCells) >= targetCoverage) break
+    if (remaining.length === 0) break
+
+    // Cherche le meilleur candidat
+    let bestIdx = -1
+    let bestScored: ReturnType<typeof scoreCandidate> | null = null
+    for (let i = 0; i < remaining.length; i++) {
+      const cand = remaining[i]
+      const s = scoreCandidate(cand.x, cand.y)
+      if (!bestScored || s.score > bestScored.score) {
+        bestScored = s
+        bestIdx = i
+      }
+    }
+    if (!bestScored || bestScored.coverGain < minCoverGain) break
+
+    const winner = remaining.splice(bestIdx, 1)[0]
+    // Marque les cellules désormais couvertes
+    for (const cell of cells) {
+      if (!cell.covered && Math.hypot(cell.x - winner.x, cell.y - winner.y) <= visRadius) cell.covered = true
+    }
+
+    // Type + raison
+    let kind: ProposedSign['kind'] = 'direction'
+    let reason = `${bestScored.nearby.length} POI(s) accessible(s) · couvre ${bestScored.coverGain * cellArea} m²`
+    if (bestScored.nearby.length === 0) {
+      kind = 'you-are-here'
+      reason = `Nœud d'orientation — couverture +${bestScored.coverGain * cellArea} m²`
+    } else if (bestScored.nearby.some(x => (x.p.priority ?? 2) === 1)) {
+      kind = 'zone-entrance'
+      reason = `Accès ancre : ${bestScored.nearby.find(x => (x.p.priority ?? 2) === 1)!.p.label}`
+    }
+
+    proposed.push({
+      id: `sign-auto-${proposed.length + 1}`,
+      x: winner.x,
+      y: winner.y,
+      kind,
+      targets: bestScored.nearby.map(n => n.p.id),
+      reason,
+    })
+  }
+
+  const finalCovered = cells.filter(c => c.covered).length
+  const coveragePct = totalCells > 0 ? (finalCovered / totalCells) * 100 : 0
+
+  return {
+    proposed,
+    totalCirculationSqm,
+    coveragePct,
+    elapsedMs: performance.now() - t0,
+  }
 }
