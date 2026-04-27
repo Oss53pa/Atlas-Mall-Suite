@@ -20,6 +20,7 @@ import type { ParsedPlan } from '../planReader/planEngineTypes'
 import { detectedSpacesToSpatialEntities } from '../engines/geometry/editableSpaceAdapter'
 import { SceneRenderer } from '../../../../../packages/spatial-core/src/rendering/components/SceneRenderer'
 import { autoPopulate } from '../../../../../packages/spatial-core/src/rendering/autoPopulate'
+import { ExportGLBButton } from './ExportGLBButton'
 
 interface Props {
   readonly plan: ParsedPlan
@@ -119,6 +120,11 @@ export function SpatialCoreScene({ plan, projectId, className }: Props) {
         style={{ background: 'rgba(15,23,42,0.7)', color: '#cbd5e1' }}
       >
         spatial-core v2.0.0 · {entities.length} entités
+      </div>
+
+      {/* Bouton export GLB pour rendu Twinmotion/Blender/Lumion */}
+      <div className="absolute top-3 right-3 z-10">
+        <ExportGLBButton plan={plan} projectId={projectId} />
       </div>
     </div>
   )
