@@ -78,6 +78,15 @@ export type DrawMode =
   // Templates portes (clic = pose)
   | 'door-entree' | 'door-double' | 'door-automatique'
   | 'door-interieure' | 'door-secours' | 'door-service'
+  // Outils voies/circulation (mode poly avec type pré-assigné)
+  | 'voie-principale' | 'voie-secondaire' | 'voie-pompier' | 'voie-livraison'
+  | 'route-avenue' | 'route-boulevard' | 'route-rue-principale'
+  | 'passage-pieton' | 'rond-point' | 'parking-voie-circulation'
+  // Outils circulations intérieures
+  | 'mail-central' | 'mail-secondaire' | 'galerie' | 'atrium' | 'promenade'
+  | 'couloir' | 'couloir-secondaire' | 'hall-distribution'
+  // Espaces verts (poly avec type pré-assigné)
+  | 'jardin' | 'pelouse' | 'terre-plein' | 'massif-vegetal'
   // Flèche sens (2 clics)
   | 'arrow-flow'
   // Annotations texte libres (Phase 1 cartographie)
@@ -102,6 +111,37 @@ const DOOR_TEMPLATES: Record<string, { w: number; h: number; typeKey: SpaceTypeK
   'door-interieure':   { w: 0.9, h: 0.15, typeKey: 'porte_interieure', label: 'Porte int.',     color: '#64748b' },
   'door-secours':      { w: 1.2, h: 0.2, typeKey: 'porte_secours',     label: 'Porte secours',  color: '#ef4444' },
   'door-service':      { w: 1.0, h: 0.2, typeKey: 'porte_service',     label: 'Porte service',  color: '#0d9488' },
+}
+
+/** Modes polygonaux avec type pré-assigné (clic-clic-double-clic = polygone créé avec le bon type).
+ *  Utilisable pour voies, mall, couloirs, jardins — tout ce qui demande un tracé libre. */
+const POLY_MODE_TEMPLATES: Record<string, { typeKey: SpaceTypeKey; label: string; icon: string }> = {
+  // Voies / circulation véhicule
+  'voie-principale':           { typeKey: 'voie_principale',          label: 'Voie principale',  icon: '🛣️' },
+  'voie-secondaire':           { typeKey: 'voie_secondaire',          label: 'Voie secondaire',  icon: '═' },
+  'voie-pompier':              { typeKey: 'voie_pompier',             label: 'Voie pompiers',    icon: '🚒' },
+  'voie-livraison':            { typeKey: 'voie_livraison',           label: 'Voie livraison',   icon: '🚚' },
+  'parking-voie-circulation':  { typeKey: 'parking_voie_circulation', label: 'Allée parking',    icon: '═' },
+  'rond-point':                { typeKey: 'rond_point',               label: 'Rond-point',       icon: '🔄' },
+  'passage-pieton':            { typeKey: 'passage_pieton',           label: 'Passage piéton',   icon: '🚸' },
+  // Routes publiques hors-site
+  'route-avenue':              { typeKey: 'route_avenue',             label: 'Avenue',           icon: '🛣️' },
+  'route-boulevard':           { typeKey: 'route_boulevard',          label: 'Boulevard',        icon: '🛣️' },
+  'route-rue-principale':      { typeKey: 'route_rue_principale',     label: 'Rue principale',   icon: '═' },
+  // Circulations intérieures (mail / galerie / couloirs)
+  'mail-central':              { typeKey: 'mail_central',             label: 'Mail central',     icon: '▬' },
+  'mail-secondaire':           { typeKey: 'mail_secondaire',          label: 'Mail secondaire',  icon: '▬' },
+  'galerie':                   { typeKey: 'galerie',                  label: 'Galerie',          icon: '◫' },
+  'atrium':                    { typeKey: 'atrium',                   label: 'Atrium',           icon: '◈' },
+  'promenade':                 { typeKey: 'promenade',                label: 'Promenade',        icon: '↔' },
+  'couloir':                   { typeKey: 'circulation',              label: 'Couloir',          icon: '→' },
+  'couloir-secondaire':        { typeKey: 'couloir_secondaire',       label: 'Couloir secondaire', icon: '→' },
+  'hall-distribution':         { typeKey: 'hall_distribution',        label: 'Hall',             icon: '⌂' },
+  // Espaces verts
+  'jardin':                    { typeKey: 'jardin',                   label: 'Jardin',           icon: '🌳' },
+  'pelouse':                   { typeKey: 'pelouse',                  label: 'Pelouse',          icon: '🌱' },
+  'terre-plein':               { typeKey: 'terre_plein',              label: 'Terre-plein',      icon: '🟫' },
+  'massif-vegetal':            { typeKey: 'massif_vegetal',           label: 'Massif',           icon: '🌷' },
 }
 
 export interface EditableSpace {
@@ -700,7 +740,9 @@ export function SpaceEditorCanvas({
       return
     }
 
-    if (mode === 'poly' || mode === 'curve') {
+    // Modes polygonaux : poly natif + curve + tous les pré-typés voies/mail/jardins
+    const isPolyTplMode = mode in POLY_MODE_TEMPLATES
+    if (mode === 'poly' || mode === 'curve' || isPolyTplMode) {
       const prev = draftPoints.length > 0 ? draftPoints[draftPoints.length - 1] : null
       const prevM: [number, number] | null = prev ? [prev.x, prev.y] : null
       const corrected = applyDrawConstraints([world.x, world.y], prevM, e.shiftKey)
@@ -956,6 +998,12 @@ export function SpaceEditorCanvas({
     }
     if (mode === 'poly' && draftPoints.length >= 3) {
       createSpace(draftPoints)
+      setDraftPoints([])
+    }
+    // Modes pré-typés : voies, mall, couloirs, jardins (polygone libre + type imposé)
+    const polyTpl = POLY_MODE_TEMPLATES[mode as keyof typeof POLY_MODE_TEMPLATES]
+    if (polyTpl && draftPoints.length >= 3) {
+      createSpaceWithType(draftPoints, polyTpl.typeKey, polyTpl.label)
       setDraftPoints([])
     }
     if (mode === 'curve' && draftPoints.length >= 3) {
@@ -1275,6 +1323,78 @@ export function SpaceEditorCanvas({
               title={o.title}
             >
               <o.icon className="w-3.5 h-3.5" style={{ color: mode === o.m ? undefined : o.color }} />
+            </button>
+          ))}
+        </div>
+
+        <div className="h-5 w-px bg-white/10 mx-1" />
+
+        {/* ─── Voies & Circulations (polygone libre + type pré-assigné) ─── */}
+        <div className="flex items-center gap-0.5 p-0.5 bg-surface-0 rounded"
+          title="Voies, mall, couloirs, jardins (clic-clic-double-clic = polygone libre avec le bon type sémantique pré-assigné)">
+          {([
+            // Voies véhicule
+            { m: 'voie-principale',         icon: '🛣️', title: 'Voie principale (axe site)' },
+            { m: 'voie-secondaire',         icon: '═',  title: 'Voie secondaire' },
+            { m: 'voie-pompier',            icon: '🚒', title: 'Voie pompiers' },
+            { m: 'voie-livraison',          icon: '🚚', title: 'Voie livraison / quais' },
+            { m: 'parking-voie-circulation', icon: '↔',  title: 'Allée de roulage parking' },
+            { m: 'passage-pieton',          icon: '🚸', title: 'Passage piéton (zébras)' },
+          ] as Array<{ m: DrawMode; icon: string; title: string }>).map(o => (
+            <button key={o.m}
+              onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null); setIconHoverSpaceId(null) }}
+              className={`px-1.5 py-1 rounded text-[12px] ${
+                mode === o.m ? 'bg-atlas-500 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
+              title={o.title}
+            >
+              {o.icon}
+            </button>
+          ))}
+        </div>
+
+        {/* ─── Mall / Galerie / Couloirs ─── */}
+        <div className="flex items-center gap-0.5 p-0.5 bg-surface-0 rounded"
+          title="Circulations intérieures (mall, galerie, couloirs)">
+          {([
+            { m: 'mail-central',        icon: '▬', title: 'Mail central (allée marchande principale)' },
+            { m: 'mail-secondaire',     icon: '▭', title: 'Mail secondaire' },
+            { m: 'galerie',             icon: '◫', title: 'Galerie marchande' },
+            { m: 'atrium',              icon: '◈', title: 'Atrium / puits de lumière' },
+            { m: 'promenade',           icon: '↔', title: 'Promenade' },
+            { m: 'couloir',             icon: '→', title: 'Couloir / circulation' },
+            { m: 'couloir-secondaire',  icon: '⇒', title: 'Couloir secondaire' },
+            { m: 'hall-distribution',   icon: '⌂', title: 'Hall de distribution' },
+          ] as Array<{ m: DrawMode; icon: string; title: string }>).map(o => (
+            <button key={o.m}
+              onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null); setIconHoverSpaceId(null) }}
+              className={`px-1.5 py-1 rounded text-[12px] ${
+                mode === o.m ? 'bg-atlas-500 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
+              title={o.title}
+            >
+              {o.icon}
+            </button>
+          ))}
+        </div>
+
+        {/* ─── Espaces verts ─── */}
+        <div className="flex items-center gap-0.5 p-0.5 bg-surface-0 rounded"
+          title="Espaces verts et paysage">
+          {([
+            { m: 'jardin',          icon: '🌳', title: 'Jardin' },
+            { m: 'pelouse',         icon: '🌱', title: 'Pelouse' },
+            { m: 'terre-plein',     icon: '🟫', title: 'Terre-plein' },
+            { m: 'massif-vegetal',  icon: '🌷', title: 'Massif végétal' },
+          ] as Array<{ m: DrawMode; icon: string; title: string }>).map(o => (
+            <button key={o.m}
+              onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null); setIconHoverSpaceId(null) }}
+              className={`px-1.5 py-1 rounded text-[12px] ${
+                mode === o.m ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-800'
+              }`}
+              title={o.title}
+            >
+              {o.icon}
             </button>
           ))}
         </div>
