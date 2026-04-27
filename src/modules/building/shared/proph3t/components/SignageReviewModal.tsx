@@ -11,14 +11,15 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { Check, X, Trash2, Move, ArrowLeft, ArrowRight, ShieldCheck, AlertTriangle } from 'lucide-react'
-import { useSignagePlacementStore, type SignKind, type PlacedSign } from '../../stores/signagePlacementStore'
+import { useSignagePlacementStore, type PlacedSign } from '../../stores/signagePlacementStore'
 import { useActiveProjectId } from '../../../../../hooks/useActiveProject'
-
-const KIND_META: Record<SignKind, { label: string; color: string; icon: string }> = {
-  'direction':     { label: 'Directionnel',   color: '#0891b2', icon: '➜' },
-  'you-are-here':  { label: 'Vous êtes ici',  color: '#7c3aed', icon: '◉' },
-  'zone-entrance': { label: 'Entrée de zone', color: '#ea580c', icon: '★' },
-}
+import {
+  resolveSignageKind,
+  SIGNAGE_CATALOG,
+  SIGNAGE_CODES_BY_CATEGORY,
+  SIGNAGE_CATEGORY_META,
+  type SignageCategoryKey,
+} from '../libraries/signageCatalog'
 
 interface Props {
   open: boolean
@@ -126,23 +127,31 @@ export function SignageReviewModal({ open, onClose, onStartCorrection }: Props) 
         ) : current ? (
           <div className="p-6 space-y-5">
             {/* Aperçu sign */}
-            <div className="rounded-lg border border-white/10 bg-surface-0 p-4 flex items-center gap-4">
-              <div
-                className="w-16 h-16 rounded-full flex items-center justify-center text-3xl text-white font-bold shrink-0 border-4 border-white/20"
-                style={{ background: KIND_META[current.kind].color }}
-              >
-                {KIND_META[current.kind].icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-base font-bold text-white">{KIND_META[current.kind].label}</div>
-                <div className="text-[11px] text-slate-400 mt-0.5">
-                  Position : <span className="font-mono">({current.x.toFixed(1)}, {current.y.toFixed(1)}) m</span>
+            {(() => {
+              const def = resolveSignageKind(current.kind)
+              return (
+                <div className="rounded-lg border border-white/10 bg-surface-0 p-4 flex items-center gap-4">
+                  <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center text-3xl text-white font-bold shrink-0 border-4 border-white/20"
+                    style={{ background: def.color }}
+                  >
+                    {def.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-base font-bold text-white">
+                      {def.label} <span className="text-[10px] text-slate-500 font-mono">({def.code})</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-0.5">
+                      Position : <span className="font-mono">({current.x.toFixed(1)}, {current.y.toFixed(1)}) m</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400">
+                      Confiance Proph3t : <span className="text-amber-300 font-bold">{((current.confidence ?? 0.5) * 100).toFixed(0)}%</span>
+                      {def.erpRequired && <span className="ml-2 px-1.5 py-0.5 rounded bg-rose-900/40 text-rose-300 text-[9px] font-bold">ERP obligatoire</span>}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-[11px] text-slate-400">
-                  Confiance Proph3t : <span className="text-amber-300 font-bold">{((current.confidence ?? 0.5) * 100).toFixed(0)}%</span>
-                </div>
-              </div>
-            </div>
+              )
+            })()}
 
             {/* Raison + doute */}
             <div className="space-y-2">
@@ -174,31 +183,11 @@ export function SignageReviewModal({ open, onClose, onStartCorrection }: Props) 
               </button>
             </div>
 
-            {/* Changer type */}
-            <div className="rounded-lg border border-white/10 bg-surface-0 p-3">
-              <div className="text-[10px] uppercase text-slate-500 tracking-widest mb-2">Changer le type</div>
-              <div className="grid grid-cols-3 gap-2">
-                {(Object.keys(KIND_META) as SignKind[]).map(k => {
-                  const meta = KIND_META[k]
-                  const active = current.kind === k
-                  return (
-                    <button
-                      key={k}
-                      onClick={() => handleChangeKind(k)}
-                      disabled={active}
-                      className={`flex flex-col items-center px-2 py-2 rounded text-[10px] font-medium border transition ${
-                        active
-                          ? 'bg-white/10 text-white border-white/30 cursor-default'
-                          : 'bg-surface-1 text-slate-300 hover:text-white border-white/10 hover:border-white/30'
-                      }`}
-                    >
-                      <span style={{ color: meta.color }} className="text-xl leading-none">{meta.icon}</span>
-                      <span className="mt-1">{meta.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+            {/* Changer type — catalogue complet par catégorie */}
+            <ChangeTypeCategoryPicker
+              currentKind={current.kind}
+              onPick={handleChangeKind}
+            />
 
             {/* Supprimer */}
             <button
@@ -227,6 +216,68 @@ export function SignageReviewModal({ open, onClose, onStartCorrection }: Props) 
             </div>
           </div>
         ) : null}
+      </div>
+    </div>
+  )
+}
+
+function ChangeTypeCategoryPicker({
+  currentKind, onPick,
+}: {
+  currentKind: string
+  onPick: (kind: string) => void
+}) {
+  const currentDef = resolveSignageKind(currentKind)
+  const [activeCat, setActiveCat] = useState<SignageCategoryKey>(currentDef.category)
+  const codes = SIGNAGE_CODES_BY_CATEGORY[activeCat]
+  return (
+    <div className="rounded-lg border border-white/10 bg-surface-0 p-3">
+      <div className="text-[10px] uppercase text-slate-500 tracking-widest mb-2">Changer le type</div>
+      {/* Tabs catégorie */}
+      <div className="flex gap-1 overflow-x-auto pb-2 mb-2">
+        {(Object.keys(SIGNAGE_CATEGORY_META) as SignageCategoryKey[]).map(cat => {
+          const meta = SIGNAGE_CATEGORY_META[cat]
+          const active = activeCat === cat
+          return (
+            <button
+              key={cat}
+              onClick={() => setActiveCat(cat)}
+              className={`px-2 py-1 rounded text-[10px] font-semibold whitespace-nowrap transition ${
+                active ? 'bg-white/15 text-white' : 'bg-surface-1 text-slate-400 hover:text-white'
+              }`}
+              style={{ borderLeft: `2px solid ${meta.color}` }}
+            >
+              {meta.icon} {meta.label}
+            </button>
+          )
+        })}
+      </div>
+      {/* Grille types */}
+      <div className="grid grid-cols-4 gap-2 max-h-[180px] overflow-y-auto">
+        {codes.map(code => {
+          const def = SIGNAGE_CATALOG[code]
+          const active = currentKind === code
+          return (
+            <button
+              key={code}
+              onClick={() => onPick(code)}
+              disabled={active}
+              className={`flex flex-col items-center px-2 py-2 rounded text-[10px] font-medium border transition ${
+                active
+                  ? 'bg-white/10 text-white border-white/30 cursor-default'
+                  : 'bg-surface-1 text-slate-300 hover:text-white border-white/10'
+              }`}
+              style={{ borderColor: active ? def.color : undefined }}
+              title={`${def.label}\n${def.description}`}
+            >
+              <span style={{ color: def.color }} className="text-xl leading-none">{def.icon}</span>
+              <span className="mt-1 text-center leading-tight font-mono">{def.code}</span>
+              {def.erpRequired && (
+                <span className="text-[7px] text-rose-300 font-bold mt-0.5">ERP</span>
+              )}
+            </button>
+          )
+        })}
       </div>
     </div>
   )

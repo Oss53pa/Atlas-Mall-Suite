@@ -21,6 +21,7 @@ import { detectedSpacesToSpatialEntities } from '../engines/geometry/editableSpa
 import { SceneRenderer } from '../../../../../packages/spatial-core/src/rendering/components/SceneRenderer'
 import { autoPopulate } from '../../../../../packages/spatial-core/src/rendering/autoPopulate'
 import { ExportGLBButton } from './ExportGLBButton'
+import { SignagePosts3D } from './SignagePosts3D'
 
 interface Props {
   readonly plan: ParsedPlan
@@ -98,6 +99,12 @@ export function SpatialCoreScene({ plan, projectId, className }: Props) {
           <Suspense fallback={null}>
             <SceneRenderer entities={entities} />
           </Suspense>
+          {/* Signalétique placée — mâts + plaques 3D depuis le catalogue */}
+          <SignagePosts3D
+            projectId={projectId}
+            planMinX={plan.bounds.minX}
+            planMinY={plan.bounds.minY}
+          />
         </group>
 
         {/* Camera control */}

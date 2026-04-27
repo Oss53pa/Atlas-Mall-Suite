@@ -6,9 +6,9 @@
 // détaillé avec coverage, breakdown par type, table position/cibles/raison.
 
 import { useState, useMemo } from 'react'
-import { Signpost, CheckCircle2, FileText, X, Trash2, Sparkles, Plus, ShieldCheck, Loader2, MousePointerClick } from 'lucide-react'
+import { Signpost, CheckCircle2, FileText, X, Trash2, Sparkles, Plus, ShieldCheck, Loader2, MousePointerClick, Wallet, Download } from 'lucide-react'
 import { useSignageProposalsStore } from '../../stores/signageProposalsStore'
-import { useSignagePlacementStore, type SignKind } from '../../stores/signagePlacementStore'
+import { useSignagePlacementStore } from '../../stores/signagePlacementStore'
 import { useSignageEditUiStore } from '../../stores/signageEditUiStore'
 import { useActiveProjectId } from '../../../../../hooks/useActiveProject'
 import { runSkill } from '../orchestrator'
@@ -16,12 +16,21 @@ import type { Proph3tResult } from '../orchestrator.types'
 import type { AuditSignagePayload } from '../skills/auditSignage'
 import { Proph3tResultPanel } from './Proph3tResultPanel'
 import { SignageReviewModal } from './SignageReviewModal'
+import {
+  SIGNAGE_CATALOG,
+  SIGNAGE_CATEGORY_META,
+  SIGNAGE_CODES_BY_CATEGORY,
+  PRIORITY_META,
+  resolveSignageKind,
+  type SignageCategoryKey,
+} from '../libraries/signageCatalog'
 
-const KIND_META = {
-  'direction':     { label: 'Directionnel',   color: '#0891b2', icon: '➜', desc: 'Indique la direction d\'un POI proche' },
-  'you-are-here':  { label: 'Vous êtes ici',  color: '#7c3aed', icon: '◉', desc: 'Plan d\'orientation au nœud central' },
-  'zone-entrance': { label: 'Entrée de zone', color: '#ea580c', icon: '★', desc: 'Marque l\'accès à un commerce ancre' },
-} as const
+// Mapping legacy → catalog pour le picker (3 boutons rapides en bas du picker)
+const QUICK_LEGACY: Array<{ kind: string; label: string; icon: string; color: string }> = [
+  { kind: 'DIR-S', label: 'Direction', icon: '↗', color: '#f59e0b' },
+  { kind: 'PLAN-M', label: 'You-are-here', icon: '⊕', color: '#059669' },
+  { kind: 'ENS', label: 'Enseigne', icon: '🏷', color: '#2563eb' },
+]
 
 interface Props {
   /** Position du panneau flottant. */
@@ -58,6 +67,7 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
 
   const [reportOpen, setReportOpen] = useState(false)
   const [reviewOpen, setReviewOpen] = useState(false)
+  const [financialOpen, setFinancialOpen] = useState(false)
   const [auditOpen, setAuditOpen] = useState(false)
   const [auditing, setAuditing] = useState(false)
   const [auditResult, setAuditResult] = useState<Proph3tResult<AuditSignagePayload> | null>(null)
@@ -153,11 +163,15 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
     setTimeout(() => setFeedback(null), 2500)
   }
 
-  const breakdown = {
-    direction: proposals.filter(p => p.kind === 'direction').length,
-    'you-are-here': proposals.filter(p => p.kind === 'you-are-here').length,
-    'zone-entrance': proposals.filter(p => p.kind === 'zone-entrance').length,
-  }
+  // Répartition par catégorie catalogue (au lieu de 3 types fixes)
+  const breakdownByCategory = useMemo(() => {
+    const out: Record<string, number> = {}
+    for (const p of proposals) {
+      const def = resolveSignageKind(p.kind)
+      out[def.category] = (out[def.category] ?? 0) + 1
+    }
+    return out
+  }, [proposals])
   const coveredSqm = (circulationSqm * coveragePct) / 100
   const placedAuto = placedForProject.filter(s => s.source === 'proph3t-auto').length
   const uncertainCount = placedForProject.filter(s => s.needsReview && !s.reviewed).length
@@ -208,46 +222,13 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
             Rapport détaillé signalétique
           </button>
 
-          {/* ─── Mode édition manuelle ─── */}
-          <div className="rounded border border-white/10 bg-surface-1 p-2 mt-1">
-            <div className="text-[9px] uppercase tracking-widest text-slate-500 mb-1.5">Édition manuelle</div>
-            <button
-              onClick={() => setMode(editMode === 'add' ? 'idle' : 'add')}
-              className={`w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded text-[11px] font-semibold transition ${
-                editMode === 'add'
-                  ? 'bg-amber-500 hover:bg-amber-400 text-amber-950'
-                  : 'bg-surface-0 hover:bg-slate-800 text-slate-200 border border-white/10'
-              }`}
-            >
-              {editMode === 'add' ? <MousePointerClick size={12} /> : <Plus size={12} />}
-              {editMode === 'add' ? `Cliquer sur le plan pour ajouter (${addKind})` : 'Activer le mode ajout'}
-            </button>
-            {editMode === 'add' && (
-              <div className="mt-1.5 grid grid-cols-3 gap-1">
-                {(['direction', 'you-are-here', 'zone-entrance'] as SignKind[]).map(k => {
-                  const meta = KIND_META[k]
-                  const active = addKind === k
-                  return (
-                    <button
-                      key={k}
-                      onClick={() => setAddKind(k)}
-                      className={`flex flex-col items-center px-1 py-1 rounded text-[9px] font-medium border ${
-                        active ? 'bg-white/10 text-white' : 'bg-surface-0 text-slate-400 hover:text-white border-white/10'
-                      }`}
-                      style={{ borderColor: active ? meta.color : undefined }}
-                      title={meta.desc}
-                    >
-                      <span style={{ color: meta.color }} className="text-base leading-none">{meta.icon}</span>
-                      <span className="mt-0.5">{meta.label.split(' ')[0]}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-            <div className="mt-1.5 text-[9px] text-slate-500 italic">
-              Clic = ajouter · Glisser = déplacer · Clic-droit = supprimer
-            </div>
-          </div>
+          {/* ─── Mode édition manuelle (catalogue complet) ─── */}
+          <CatalogPicker
+            editMode={editMode}
+            addKind={addKind}
+            setMode={setMode}
+            setAddKind={setAddKind}
+          />
 
           {/* ─── Audit Proph3t ─── */}
           <button
@@ -257,6 +238,16 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
           >
             {auditing ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
             {auditing ? 'Audit en cours…' : 'Auditer ma signalétique'}
+          </button>
+
+          {/* Rapport financier */}
+          <button
+            onClick={() => setFinancialOpen(true)}
+            disabled={placedForProject.length === 0}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded bg-amber-700 hover:bg-amber-600 text-white text-[12px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Wallet size={14} />
+            Rapport financier (BoM + total FCFA)
           </button>
 
           {placedAuto > 0 && (
@@ -379,20 +370,20 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
                 <StatCard label="Placés sur le plan" value={placedAuto} unit="" color="violet" />
               </div>
 
-              {/* Breakdown par type */}
+              {/* Breakdown par catégorie catalogue */}
               <section>
-                <h3 className="text-[12px] font-bold text-white uppercase tracking-wider mb-3">Répartition par type</h3>
+                <h3 className="text-[12px] font-bold text-white uppercase tracking-wider mb-3">Répartition par catégorie</h3>
                 <div className="grid grid-cols-3 gap-3">
-                  {(Object.entries(breakdown) as Array<[keyof typeof KIND_META, number]>).map(([kind, count]) => {
-                    const meta = KIND_META[kind]
+                  {(Object.entries(breakdownByCategory) as Array<[SignageCategoryKey, number]>).map(([cat, count]) => {
+                    const meta = SIGNAGE_CATEGORY_META[cat]
+                    if (!meta) return null
                     return (
-                      <div key={kind} className="rounded-lg border border-white/10 bg-surface-0 p-3"
+                      <div key={cat} className="rounded-lg border border-white/10 bg-surface-0 p-3"
                         style={{ borderLeft: `3px solid ${meta.color}` }}>
                         <div className="flex items-baseline justify-between mb-1">
                           <span className="text-[11px] font-semibold text-white">{meta.label}</span>
                           <span className="text-2xl font-bold tabular-nums" style={{ color: meta.color }}>{count}</span>
                         </div>
-                        <p className="text-[10px] text-slate-400 leading-tight">{meta.desc}</p>
                       </div>
                     )
                   })}
@@ -417,7 +408,7 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
                     </thead>
                     <tbody>
                       {proposals.map((p, i) => {
-                        const meta = KIND_META[p.kind] ?? KIND_META['direction']
+                        const meta = resolveSignageKind(p.kind)
                         const targetLabels = p.targets.map(id => poiLabels[id] ?? id).slice(0, 3)
                         return (
                           <tr key={p.id} className={i % 2 === 0 ? 'bg-surface-0/30' : ''}>
@@ -468,7 +459,342 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
           </div>
         </div>
       )}
+
+      {/* ═══ MODAL RAPPORT FINANCIER ═══ */}
+      <FinancialReportModal
+        open={financialOpen}
+        onClose={() => setFinancialOpen(false)}
+        signs={placedForProject}
+      />
     </>
+  )
+}
+
+// ═══ SUB-COMPONENT : Catalog Picker (catégories + grille) ═══════════════
+
+function CatalogPicker({
+  editMode, addKind, setMode, setAddKind,
+}: {
+  editMode: 'idle' | 'add' | 'drag'
+  addKind: string
+  setMode: (m: 'idle' | 'add' | 'drag') => void
+  setAddKind: (k: string) => void
+}) {
+  const [activeCat, setActiveCat] = useState<SignageCategoryKey>('orientation-direction')
+  const codes = SIGNAGE_CODES_BY_CATEGORY[activeCat]
+  const currentDef = resolveSignageKind(addKind)
+
+  return (
+    <div className="rounded border border-white/10 bg-surface-1 p-2 mt-1">
+      <div className="text-[9px] uppercase tracking-widest text-slate-500 mb-1.5">Édition manuelle (catalogue ERP)</div>
+      <button
+        onClick={() => setMode(editMode === 'add' ? 'idle' : 'add')}
+        className={`w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded text-[11px] font-semibold transition ${
+          editMode === 'add'
+            ? 'bg-amber-500 hover:bg-amber-400 text-amber-950'
+            : 'bg-surface-0 hover:bg-slate-800 text-slate-200 border border-white/10'
+        }`}
+      >
+        {editMode === 'add' ? <MousePointerClick size={12} /> : <Plus size={12} />}
+        {editMode === 'add'
+          ? `Cliquer pour ajouter : ${currentDef.code}`
+          : 'Activer le mode ajout'}
+      </button>
+
+      {editMode === 'add' && (
+        <div className="mt-2 space-y-1.5">
+          {/* Tabs catégories */}
+          <div className="flex gap-1 overflow-x-auto pb-1">
+            {(Object.keys(SIGNAGE_CATEGORY_META) as SignageCategoryKey[]).map(cat => {
+              const meta = SIGNAGE_CATEGORY_META[cat]
+              const active = activeCat === cat
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCat(cat)}
+                  className={`px-2 py-1 rounded text-[9px] font-semibold whitespace-nowrap transition ${
+                    active ? 'bg-white/15 text-white' : 'bg-surface-0 text-slate-400 hover:text-white'
+                  }`}
+                  style={{ borderLeft: `2px solid ${meta.color}` }}
+                  title={meta.label}
+                >
+                  <span className="mr-1">{meta.icon}</span>{meta.label}
+                </button>
+              )
+            })}
+          </div>
+          {/* Grille types de la catégorie */}
+          <div className="grid grid-cols-3 gap-1 max-h-[180px] overflow-y-auto">
+            {codes.map(code => {
+              const def = SIGNAGE_CATALOG[code]
+              const active = addKind === code
+              return (
+                <button
+                  key={code}
+                  onClick={() => setAddKind(code)}
+                  className={`flex flex-col items-center px-1 py-1.5 rounded text-[9px] font-medium border transition ${
+                    active ? 'bg-white/15 text-white' : 'bg-surface-0 text-slate-400 hover:text-white border-white/10'
+                  }`}
+                  style={{ borderColor: active ? def.color : undefined }}
+                  title={`${def.label}\n${def.description}\nPrix : ${def.priceFcfa.toLocaleString('fr-FR')} FCFA${def.standards.length > 0 ? '\nNormes : ' + def.standards.join(', ') : ''}`}
+                >
+                  <span style={{ color: def.color }} className="text-base leading-none">{def.icon}</span>
+                  <span className="mt-0.5 text-center leading-tight">{def.code}</span>
+                  {def.erpRequired && (
+                    <span className="text-[7px] text-rose-300 font-bold">ERP</span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+          {/* Détail kind sélectionné */}
+          <div className="rounded bg-surface-0 border border-white/10 p-2 text-[9px]">
+            <div className="font-semibold text-white">{currentDef.label} <span className="text-slate-500">({currentDef.code})</span></div>
+            <div className="text-slate-400 mt-0.5">{currentDef.description}</div>
+            <div className="flex items-center gap-2 mt-1.5 text-slate-500">
+              <span>💰 {currentDef.priceFcfa.toLocaleString('fr-FR')} FCFA</span>
+              <span>·</span>
+              <span style={{ color: PRIORITY_META[currentDef.priority].color }}>
+                {currentDef.priority} {PRIORITY_META[currentDef.priority].label}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="mt-1.5 text-[9px] text-slate-500 italic">
+        Clic = ajouter · Glisser = déplacer · Clic-droit = supprimer
+      </div>
+    </div>
+  )
+}
+
+// ═══ SUB-COMPONENT : Financial Report Modal ═══════════════════════════════
+
+function FinancialReportModal({
+  open, onClose, signs,
+}: {
+  open: boolean
+  onClose: () => void
+  signs: Array<{ kind: string; source: string; needsReview?: boolean }>
+}) {
+  const bom = useMemo(() => {
+    const groups: Record<string, { code: string; def: typeof SIGNAGE_CATALOG[string]; qty: number; total: number }> = {}
+    for (const s of signs) {
+      const def = resolveSignageKind(s.kind)
+      const code = def.code
+      if (!groups[code]) groups[code] = { code, def, qty: 0, total: 0 }
+      groups[code].qty++
+      groups[code].total += def.priceFcfa
+    }
+    return Object.values(groups).sort((a, b) => b.total - a.total)
+  }, [signs])
+
+  const grandTotal = bom.reduce((s, g) => s + g.total, 0)
+  const erpTotal = bom.filter(g => g.def.erpRequired).reduce((s, g) => s + g.total, 0)
+  const byPriority = {
+    P1: bom.filter(g => g.def.priority === 'P1').reduce((s, g) => s + g.total, 0),
+    P2: bom.filter(g => g.def.priority === 'P2').reduce((s, g) => s + g.total, 0),
+    P3: bom.filter(g => g.def.priority === 'P3').reduce((s, g) => s + g.total, 0),
+  }
+  const byCategory = useMemo(() => {
+    const out: Record<string, number> = {}
+    for (const g of bom) out[g.def.category] = (out[g.def.category] ?? 0) + g.total
+    return out
+  }, [bom])
+
+  const handleExportCsv = () => {
+    const lines = [
+      'Code,Libellé,Catégorie,Quantité,Prix unitaire FCFA,Total FCFA,Priorité,ERP,Norme,Fournisseurs',
+      ...bom.map(g => [
+        g.code,
+        `"${g.def.label}"`,
+        g.def.category,
+        g.qty,
+        g.def.priceFcfa,
+        g.total,
+        g.def.priority,
+        g.def.erpRequired ? 'OUI' : 'NON',
+        `"${g.def.standards.join(' ; ')}"`,
+        `"${g.def.suppliersCI.join(' ; ')}"`,
+      ].join(',')),
+      '',
+      `TOTAL,,,${signs.length},,${grandTotal},,,,`,
+    ].join('\n')
+    const blob = new Blob([lines], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `signage-bom-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  if (!open) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-sm flex items-center justify-center p-6"
+      onClick={onClose}
+    >
+      <div
+        className="bg-surface-1 border border-amber-500/30 rounded-xl max-w-6xl w-full max-h-[92vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="sticky top-0 bg-surface-1 border-b border-white/10 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Wallet className="text-amber-300" size={20} />
+            <div>
+              <h2 className="text-lg font-bold text-white">Rapport financier — Signalétique</h2>
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                BoM (Bill of Materials) calculé depuis le SIGNAGE_CATALOG · Prix indicatifs CI 2026
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportCsv}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-emerald-700 hover:bg-emerald-600 text-white text-[11px] font-semibold"
+            >
+              <Download size={12} /> Export CSV
+            </button>
+            <button onClick={onClose} className="text-slate-400 hover:text-white">
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* TOTAUX */}
+          <div className="grid grid-cols-4 gap-3">
+            <div className="rounded-lg border-2 border-amber-500/40 bg-amber-950/30 p-4">
+              <div className="text-[9px] uppercase text-amber-300 tracking-widest font-bold">Total budget</div>
+              <div className="mt-1 text-3xl font-bold text-amber-200 tabular-nums">
+                {(grandTotal / 1_000_000).toFixed(1)}<span className="text-lg ml-1">M FCFA</span>
+              </div>
+              <div className="text-[10px] text-slate-400 mt-1">{signs.length} panneaux placés</div>
+            </div>
+            <div className="rounded-lg border border-rose-500/30 bg-rose-950/20 p-4">
+              <div className="text-[9px] uppercase text-rose-300 tracking-widest">Obligations ERP</div>
+              <div className="mt-1 text-2xl font-bold text-rose-200 tabular-nums">
+                {(erpTotal / 1_000_000).toFixed(2)}<span className="text-sm ml-1">M FCFA</span>
+              </div>
+              <div className="text-[10px] text-slate-400 mt-1">{erpTotal > 0 ? `${((erpTotal / grandTotal) * 100).toFixed(0)}% du budget` : 'Aucun ERP'}</div>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-surface-0 p-4">
+              <div className="text-[9px] uppercase text-slate-500 tracking-widest">Avant ouverture (P1)</div>
+              <div className="mt-1 text-2xl font-bold text-white tabular-nums">
+                {(byPriority.P1 / 1_000_000).toFixed(2)}<span className="text-sm text-slate-500 ml-1">M</span>
+              </div>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-surface-0 p-4">
+              <div className="text-[9px] uppercase text-slate-500 tracking-widest">Phases ultérieures</div>
+              <div className="mt-1 text-2xl font-bold text-white tabular-nums">
+                {((byPriority.P2 + byPriority.P3) / 1_000_000).toFixed(2)}<span className="text-sm text-slate-500 ml-1">M</span>
+              </div>
+              <div className="text-[10px] text-slate-400">P2 : {(byPriority.P2 / 1e6).toFixed(2)}M · P3 : {(byPriority.P3 / 1e6).toFixed(2)}M</div>
+            </div>
+          </div>
+
+          {/* RÉPARTITION PAR CATÉGORIE */}
+          <section>
+            <h3 className="text-[12px] font-bold text-white uppercase tracking-wider mb-3">Répartition budgétaire par catégorie</h3>
+            <div className="grid grid-cols-3 gap-3">
+              {(Object.entries(byCategory) as Array<[SignageCategoryKey, number]>).map(([cat, amt]) => {
+                const meta = SIGNAGE_CATEGORY_META[cat]
+                if (!meta) return null
+                const pct = (amt / grandTotal) * 100
+                return (
+                  <div key={cat} className="rounded-lg border border-white/10 bg-surface-0 p-3"
+                    style={{ borderLeft: `3px solid ${meta.color}` }}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-white">{meta.icon} {meta.label}</span>
+                      <span className="text-[10px] text-slate-500">{pct.toFixed(0)}%</span>
+                    </div>
+                    <div className="text-xl font-bold tabular-nums mt-1" style={{ color: meta.color }}>
+                      {(amt / 1_000_000).toFixed(2)}<span className="text-xs text-slate-500 ml-1">M FCFA</span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 bg-surface-1 rounded overflow-hidden">
+                      <div style={{ width: `${pct}%`, background: meta.color }} className="h-full" />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+
+          {/* TABLE BoM */}
+          <section>
+            <h3 className="text-[12px] font-bold text-white uppercase tracking-wider mb-3">
+              Bill of Materials ({bom.length} types · {signs.length} unités)
+            </h3>
+            <div className="rounded-lg border border-white/10 overflow-hidden">
+              <table className="w-full text-[11px]">
+                <thead className="bg-surface-0 border-b border-white/10">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-slate-400 font-semibold">Code</th>
+                    <th className="px-3 py-2 text-left text-slate-400 font-semibold">Libellé</th>
+                    <th className="px-3 py-2 text-right text-slate-400 font-semibold">Qté</th>
+                    <th className="px-3 py-2 text-right text-slate-400 font-semibold">PU FCFA</th>
+                    <th className="px-3 py-2 text-right text-slate-400 font-semibold">Total FCFA</th>
+                    <th className="px-3 py-2 text-center text-slate-400 font-semibold">Priorité</th>
+                    <th className="px-3 py-2 text-left text-slate-400 font-semibold">Norme</th>
+                    <th className="px-3 py-2 text-left text-slate-400 font-semibold">Fournisseurs CI</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bom.map((g, i) => (
+                    <tr key={g.code} className={i % 2 === 0 ? 'bg-surface-0/30' : ''}>
+                      <td className="px-3 py-2 font-mono text-cyan-300">{g.code}</td>
+                      <td className="px-3 py-2 text-slate-200">
+                        <div className="flex items-center gap-1.5">
+                          <span style={{ color: g.def.color }}>{g.def.icon}</span>
+                          {g.def.label}
+                          {g.def.erpRequired && <span className="px-1 rounded bg-rose-900/40 text-rose-300 text-[8px] font-bold">ERP</span>}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-right text-slate-300 font-mono">{g.qty}</td>
+                      <td className="px-3 py-2 text-right text-slate-400 font-mono text-[10px]">{g.def.priceFcfa.toLocaleString('fr-FR')}</td>
+                      <td className="px-3 py-2 text-right text-amber-200 font-mono font-bold">{g.total.toLocaleString('fr-FR')}</td>
+                      <td className="px-3 py-2 text-center">
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold"
+                          style={{ background: `${PRIORITY_META[g.def.priority].color}30`, color: PRIORITY_META[g.def.priority].color }}>
+                          {g.def.priority}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-slate-400 text-[9px]">{g.def.standards.join(', ') || '—'}</td>
+                      <td className="px-3 py-2 text-slate-400 text-[9px]">{g.def.suppliersCI.slice(0, 2).join(', ')}</td>
+                    </tr>
+                  ))}
+                  <tr className="border-t-2 border-amber-500/40 bg-amber-950/20">
+                    <td colSpan={2} className="px-3 py-3 text-amber-200 font-bold">TOTAL</td>
+                    <td className="px-3 py-3 text-right text-amber-200 font-mono font-bold">{signs.length}</td>
+                    <td></td>
+                    <td className="px-3 py-3 text-right text-amber-200 font-mono font-bold text-base">{grandTotal.toLocaleString('fr-FR')}</td>
+                    <td colSpan={3}></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {bom.length === 0 && (
+            <div className="text-center py-8 text-slate-500 italic">
+              Aucun panneau placé. Implémente la signalétique optimisée ou ajoute manuellement.
+            </div>
+          )}
+
+          {/* Footer méthodologie */}
+          <section className="rounded-lg border border-white/10 bg-surface-0 p-4 text-[10px] text-slate-400">
+            <strong className="text-white">Méthodologie BoM</strong> — Prix unitaires extraits du <code className="text-cyan-300">SIGNAGE_CATALOG</code>
+            (libraries/signageCatalog.ts) qui référence 25 types selon la charte The Mall + normes ISO 7010 / NF / EN.
+            Les fournisseurs CI listés sont indicatifs (Signalétique CI, ASG Industries, LM Signa, Pôle Graphique, Hager CI, Legrand CI, Schneider CI, etc.).
+            Le total inclut pose mais ne couvre pas la maintenance ni les consommables (piles beacons, films vitrophanie remplacés tous les 2 ans).
+          </section>
+        </div>
+      </div>
+    </div>
   )
 }
 

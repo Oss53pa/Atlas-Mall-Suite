@@ -9,7 +9,9 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
-export type SignKind = 'direction' | 'you-are-here' | 'zone-entrance'
+// SignKind = code du SIGNAGE_CATALOG (ex: 'DIR-S', 'SEC-IS', 'SRV-WC')
+// + compat legacy : 'direction' | 'you-are-here' | 'zone-entrance'
+export type SignKind = string
 
 export interface PlacedSign {
   id: string

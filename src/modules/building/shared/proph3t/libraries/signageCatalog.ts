@@ -659,3 +659,28 @@ export function estimateTotalFcfa(quantitiesByCode: Record<string, number>): num
   }
   return total
 }
+
+// ─── Migration legacy SignKind → catalog code ────────────
+//
+// Compatibilité : avant le catalogue complet, le store ne connaissait que
+// 3 types ('direction' | 'you-are-here' | 'zone-entrance'). Cette table
+// permet de migrer transparemment les PlacedSign existants en localStorage.
+const LEGACY_KIND_MAP: Record<string, string> = {
+  'direction':     'DIR-S',
+  'you-are-here':  'PLAN-M',
+  'zone-entrance': 'ENS',
+}
+
+/** Résout un kind (nouveau code catalogue OU legacy 3-types) vers une SignageTypeMeta. */
+export function resolveSignageKind(kind: string): SignageTypeMeta {
+  if (SIGNAGE_CATALOG[kind]) return SIGNAGE_CATALOG[kind]
+  const mapped = LEGACY_KIND_MAP[kind]
+  if (mapped && SIGNAGE_CATALOG[mapped]) return SIGNAGE_CATALOG[mapped]
+  // Fallback : DIR-S (directionnel suspendu)
+  return SIGNAGE_CATALOG['DIR-S']
+}
+
+/** Liste tous les codes du catalogue (pour pickers). */
+export function listAllSignageCodes(): string[] {
+  return Object.keys(SIGNAGE_CATALOG)
+}

@@ -16,8 +16,9 @@ import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import type { ParsedPlan, DetectedSpace } from '../planReader/planEngineTypes'
 import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
 import { useProph3tOverlaysStore } from '../stores/proph3tOverlaysStore'
-import { useSignagePlacementStore, type SignKind } from '../stores/signagePlacementStore'
+import { useSignagePlacementStore } from '../stores/signagePlacementStore'
 import { useSignageEditUiStore } from '../stores/signageEditUiStore'
+import { resolveSignageKind } from '../proph3t/libraries/signageCatalog'
 import { useActiveProjectId } from '../../../../hooks/useActiveProject'
 
 // ─── Palette type "planimetria" — tous types couverts ───
@@ -1007,12 +1008,9 @@ function Proph3tOverlaysLayer({
 }
 
 // ─── Couche signalétique implémentée (PlacedSign — persistée par projet) ──
-
-const SIGN_STYLE: Record<SignKind, { color: string; icon: string; ring: string; label: string }> = {
-  'direction':       { color: '#0891b2', ring: '#67e8f9', icon: '➜',  label: 'Directionnel' },
-  'you-are-here':    { color: '#7c3aed', ring: '#c4b5fd', icon: '◉',  label: 'Vous êtes ici' },
-  'zone-entrance':   { color: '#ea580c', ring: '#fdba74', icon: '★',  label: 'Entrée de zone' },
-}
+// Style résolu via SIGNAGE_CATALOG (libraries/signageCatalog.ts) qui contient
+// 25+ types organisés par catégorie. Compat legacy 3-types preservée par
+// resolveSignageKind().
 
 function SignagePlacementsLayer({
   toX, toY, scale, ox, oy,
@@ -1098,7 +1096,7 @@ function SignagePlacementsLayer({
         {signs.map((s) => {
           const cx = toX(s.x)
           const cy = toY(s.y)
-          const style = SIGN_STYLE[s.kind] ?? SIGN_STYLE['direction']
+          const def = resolveSignageKind(s.kind)
           const isDragging = draggingId === s.id
           const isUncertain = s.needsReview && !s.reviewed
           return (
@@ -1113,25 +1111,32 @@ function SignagePlacementsLayer({
               }}
               onContextMenu={(e) => {
                 e.preventDefault()
-                if (confirm(`Supprimer ce panneau ${style.label} ?`)) removeSign(s.id)
+                if (confirm(`Supprimer ce panneau ${def.label} ?`)) removeSign(s.id)
               }}
             >
-              {/* Halo de visibilité 15m */}
-              <circle cx={cx} cy={cy} r={15 * scale} fill={style.color} fillOpacity={isDragging ? 0.15 : 0.06} />
+              {/* Halo de visibilité ~ portée du panneau (lié à priority) */}
+              <circle cx={cx} cy={cy} r={15 * scale} fill={def.color} fillOpacity={isDragging ? 0.15 : 0.06} />
               {/* Anneau extérieur — orange pulsant si à valider */}
               <circle cx={cx} cy={cy} r={r + 3}
                 fill="none"
-                stroke={isUncertain ? '#f59e0b' : style.ring}
+                stroke={isUncertain ? '#f59e0b' : def.color}
                 strokeWidth={isDragging ? 2.5 : isUncertain ? 2.2 : 1.5}
-                strokeOpacity={isUncertain ? 1 : 0.85}
+                strokeOpacity={isUncertain ? 1 : 0.6}
                 strokeDasharray={isUncertain ? '4 2' : undefined}
               />
               {/* Pastille */}
-              <circle cx={cx} cy={cy} r={r} fill={style.color} stroke={isDragging ? '#fbbf24' : '#fff'} strokeWidth={isDragging ? 2.5 : 1.8} />
+              <circle cx={cx} cy={cy} r={r} fill={def.color} stroke={isDragging ? '#fbbf24' : '#fff'} strokeWidth={isDragging ? 2.5 : 1.8} />
               {/* Pictogramme */}
-              <text x={cx} y={cy + r * 0.32} textAnchor="middle" fontSize={r * 0.95} fill="#fff" fontWeight="bold" style={{ pointerEvents: 'none' }}>
-                {style.icon}
+              <text x={cx} y={cy + r * 0.32} textAnchor="middle" fontSize={r * 0.85} fill="#fff" fontWeight="bold" style={{ pointerEvents: 'none' }}>
+                {def.icon}
               </text>
+              {/* Badge ERP si obligatoire */}
+              {def.erpRequired && !isUncertain && (
+                <g style={{ pointerEvents: 'none' }}>
+                  <circle cx={cx + r * 0.85} cy={cy - r * 0.85} r={r * 0.5} fill="#dc2626" stroke="#fff" strokeWidth={1} />
+                  <text x={cx + r * 0.85} y={cy - r * 0.6} textAnchor="middle" fontSize={r * 0.55} fill="#fff" fontWeight="bold">!</text>
+                </g>
+              )}
               {/* Badge "?" si à valider */}
               {isUncertain && (
                 <g style={{ pointerEvents: 'none' }}>
@@ -1139,7 +1144,7 @@ function SignagePlacementsLayer({
                   <text x={cx + r * 0.85} y={cy - r * 0.55} textAnchor="middle" fontSize={r * 0.7} fill="#fff" fontWeight="bold">?</text>
                 </g>
               )}
-              <title>{`${style.label}${s.label ? ' — ' + s.label : ''}\n${s.reason}${isUncertain ? `\n\n⚠️ ${s.reviewReason ?? 'À valider par humain'}` : ''}\n\nGlisser pour déplacer · Clic-droit pour supprimer`}</title>
+              <title>{`${def.label} (${def.code})${s.label ? '\n' + s.label : ''}\n${s.reason}${def.erpRequired ? '\n\n⚠️ Obligation ERP' : ''}${def.standards.length > 0 ? `\nNormes : ${def.standards.join(', ')}` : ''}${isUncertain ? `\n\n⚠️ ${s.reviewReason ?? 'À valider par humain'}` : ''}\n\nGlisser pour déplacer · Clic-droit pour supprimer`}</title>
             </g>
           )
         })}
