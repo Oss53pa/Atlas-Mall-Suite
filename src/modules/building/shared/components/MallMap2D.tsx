@@ -16,6 +16,8 @@ import { useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import type { ParsedPlan, DetectedSpace } from '../planReader/planEngineTypes'
 import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
 import { useProph3tOverlaysStore } from '../stores/proph3tOverlaysStore'
+import { useSignagePlacementStore, type SignKind } from '../stores/signagePlacementStore'
+import { useActiveProjectId } from '../../../../hooks/useActiveProject'
 
 // ─── Palette type "planimetria" — tous types couverts ───
 
@@ -859,6 +861,7 @@ export function MallMap2D({
             (bottlenecks ABM), badges signalétique, flèches sens circulation
             calculées par le skill analyzeParcours / analyzeWayfinder. */}
         <Proph3tOverlaysLayer toX={toX} toY={toY} scale={viewport.scale} />
+        <SignagePlacementsLayer toX={toX} toY={toY} scale={viewport.scale} />
       </svg>
 
       {/* Stats + contrôles */}
@@ -989,6 +992,52 @@ function Proph3tOverlaysLayer({
           )
         }
         return null
+      })}
+    </g>
+  )
+}
+
+// ─── Couche signalétique implémentée (PlacedSign — persistée par projet) ──
+
+const SIGN_STYLE: Record<SignKind, { color: string; icon: string; ring: string; label: string }> = {
+  'direction':       { color: '#0891b2', ring: '#67e8f9', icon: '➜',  label: 'Directionnel' },
+  'you-are-here':    { color: '#7c3aed', ring: '#c4b5fd', icon: '◉',  label: 'Vous êtes ici' },
+  'zone-entrance':   { color: '#ea580c', ring: '#fdba74', icon: '★',  label: 'Entrée de zone' },
+}
+
+function SignagePlacementsLayer({
+  toX, toY, scale,
+}: {
+  toX: (x: number) => number
+  toY: (y: number) => number
+  scale: number
+}) {
+  const projectId = useActiveProjectId()
+  const allSigns = useSignagePlacementStore(s => s.signs)
+  const signs = allSigns.filter(s => s.projectId === projectId)
+  if (signs.length === 0) return null
+  const r = Math.max(10, 14 * Math.min(1.5, scale))
+  return (
+    <g style={{ pointerEvents: 'none' }}>
+      {signs.map((s) => {
+        const cx = toX(s.x)
+        const cy = toY(s.y)
+        const style = SIGN_STYLE[s.kind] ?? SIGN_STYLE['direction']
+        return (
+          <g key={s.id}>
+            {/* Halo de visibilité 15m (rayon estimé) */}
+            <circle cx={cx} cy={cy} r={15 * scale} fill={style.color} fillOpacity={0.06} />
+            {/* Anneau extérieur */}
+            <circle cx={cx} cy={cy} r={r + 3} fill="none" stroke={style.ring} strokeWidth={1.5} strokeOpacity={0.7} />
+            {/* Pastille */}
+            <circle cx={cx} cy={cy} r={r} fill={style.color} stroke="#fff" strokeWidth={1.8} />
+            {/* Pictogramme */}
+            <text x={cx} y={cy + r * 0.32} textAnchor="middle" fontSize={r * 0.95} fill="#fff" fontWeight="bold">
+              {style.icon}
+            </text>
+            <title>{`${style.label}${s.label ? ' — ' + s.label : ''}\n${s.reason}`}</title>
+          </g>
+        )
       })}
     </g>
   )

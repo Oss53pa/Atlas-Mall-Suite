@@ -8,6 +8,9 @@ import { SpaceInfoOverlay } from '../../shared/components/SpaceInfoOverlay'
 import { FlowPathsOverlay } from '../../shared/components/FlowPathsOverlay'
 import { AbmHeatmapOverlay } from '../../shared/components/AbmHeatmapOverlay'
 import { Proph3tVolumePanel } from '../../shared/proph3t/components/Proph3tVolumePanel'
+import { SignageImplementer } from '../../shared/proph3t/components/SignageImplementer'
+import { useEditableSpaceStore } from '../../shared/stores/editableSpaceStore'
+import { polyArea } from '../../shared/engines/plan-analysis/spaceGeometryEngine'
 import type { DetailedJourney } from '../../shared/engines/plan-analysis/detailedJourneyEngine'
 import type { FlowAnalysisResult } from '../../shared/engines/plan-analysis/flowPathEngine'
 
@@ -138,20 +141,44 @@ interface FloorPoi { id: string; label: string; x: number; y: number; floorId?: 
 export const Vol3Proph3tPanel = React.memo(function Vol3Proph3tPanel({
   parsedPlan, floorPois,
 }: { parsedPlan: ParsedPlanLike; floorPois: FloorPoi[] }) {
+  // Lit aussi les espaces éditables (plan modélisé par l'utilisateur).
+  // Ils remplacent / complètent les espaces auto-détectés du DXF.
+  const editableSpaces = useEditableSpaceStore(s => s.spaces)
+
   const buildInput = React.useCallback(() => {
     const pw = parsedPlan.bounds.width || 200
     const ph = parsedPlan.bounds.height || 140
+    // 1. Espaces DXF (auto-détectés)
+    const dxfSpaces = (parsedPlan.spaces ?? []).map((s) => ({
+      id: s.id as string,
+      label: s.label as string | undefined ?? '',
+      type: s.type as string | undefined,
+      areaSqm: s.areaSqm as number,
+      polygon: s.polygon as [number, number][],
+      floorId: s.floorId as string | undefined,
+    }))
+    // 2. Espaces éditables (plan modélisé) — convertir Point[] → [number,number][]
+    const editableMapped = editableSpaces.map((es) => {
+      const poly: [number, number][] = es.polygon.map(p => [p.x, p.y])
+      return {
+        id: es.id,
+        label: es.name || es.tenant || es.localNumber || es.type,
+        type: String(es.type),
+        areaSqm: polyArea(es.polygon),
+        polygon: poly,
+        floorId: es.floorLevel,
+      }
+    })
+    // 3. Fusion : éditable prioritaire (par id). On garde DXF que si pas d'override.
+    const editableIds = new Set(editableMapped.map(e => e.id))
+    const merged = [
+      ...editableMapped,
+      ...dxfSpaces.filter(d => !editableIds.has(d.id)),
+    ]
     return {
       planWidth: pw,
       planHeight: ph,
-      spaces: (parsedPlan.spaces ?? []).map((s) => ({
-        id: s.id as string,
-        label: s.label as string | undefined,
-        type: s.type as string | undefined,
-        areaSqm: s.areaSqm as number,
-        polygon: s.polygon as [number, number][],
-        floorId: s.floorId as string | undefined,
-      })),
+      spaces: merged,
       pois: floorPois.map((p) => ({
         id: p.id, label: p.label,
         x: p.x > 1 ? p.x : p.x * pw,
@@ -159,8 +186,13 @@ export const Vol3Proph3tPanel = React.memo(function Vol3Proph3tPanel({
         floorId: p.floorId, priority: p.priority,
       })),
     }
-  }, [parsedPlan, floorPois])
-  return <Proph3tVolumePanel volume="parcours" buildInput={buildInput} />
+  }, [parsedPlan, floorPois, editableSpaces])
+  return (
+    <>
+      <Proph3tVolumePanel volume="parcours" buildInput={buildInput} />
+      <SignageImplementer position="bottom-left" />
+    </>
+  )
 })
 
 // ─── Helper : telechargement blob ──────────────────────────────────────

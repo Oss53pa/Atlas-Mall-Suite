@@ -125,6 +125,26 @@ export function Proph3tVolumePanel({
         const { useProph3tOverlaysStore } = await import('../../stores/proph3tOverlaysStore')
         useProph3tOverlaysStore.getState().setOverlays(r.overlays, cfg.skill)
       }
+      // Pont signalétique : si analyzeParcours, expose proposals au SignageImplementer
+      if (cfg.skill === 'analyzeParcours' && r.payload && typeof r.payload === 'object') {
+        const p = r.payload as {
+          signageProposals?: unknown
+          signageCoveragePct?: number
+          signageCirculationSqm?: number
+        }
+        if (Array.isArray(p.signageProposals)) {
+          const { useSignageProposalsStore } = await import('../../stores/signageProposalsStore')
+          const inp = input as { pois?: Array<{ id: string; label: string }> }
+          const poiLabels: Record<string, string> = {}
+          for (const poi of inp.pois ?? []) poiLabels[poi.id] = poi.label
+          useSignageProposalsStore.getState().setProposals({
+            proposals: p.signageProposals as import('../../engines/signageOptimizer').ProposedSign[],
+            coveragePct: p.signageCoveragePct ?? 0,
+            circulationSqm: p.signageCirculationSqm ?? 0,
+            poiLabels,
+          })
+        }
+      }
     } catch (err) {
       console.error(`[Proph3tVolumePanel] ${volume} ${mode} failed`, err)
       setError(`Erreur Proph3t : ${(err as Error).message ?? String(err)}`)

@@ -7,7 +7,7 @@ import { enrichWithNarrative } from '../narrativeEnricher'
 import { kmeans } from '../algorithms/kmeans'
 import { simulateABM } from '../algorithms/socialForceABM'
 import { compareAB, randomNormal } from '../algorithms/monteCarlo'
-import { optimizeSignage } from '../../engines/signageOptimizer'
+import { optimizeSignage, type ProposedSign } from '../../engines/signageOptimizer'
 import { computeDetailedJourneys, type DetailedJourney } from '../../engines/plan-analysis/detailedJourneyEngine'
 
 export interface ParcoursAnalysisInput {
@@ -41,6 +41,9 @@ export interface ParcoursPayload {
   }
   signageRecommendations: number
   signageCoveragePct: number
+  /** Détail de toutes les propositions signalétique — pour bouton « Implémenter ». */
+  signageProposals: ProposedSign[]
+  signageCirculationSqm: number
   variants: {
     a: { description: string; avgVisitMin: number; penetrationPct: number }
     b: { description: string; avgVisitMin: number; penetrationPct: number }
@@ -241,6 +244,8 @@ export async function analyzeParcours(input: ParcoursAnalysisInput): Promise<Pro
     },
     signageRecommendations: signageRes.proposed.length,
     signageCoveragePct: signageRes.coveragePct,
+    signageProposals: signageRes.proposed,
+    signageCirculationSqm: signageRes.totalCirculationSqm,
     variants: {
       a: { description: 'Parcours actuel (POIs en place)', avgVisitMin: ab.a.mean, penetrationPct: 60 },
       b: { description: 'Parcours optimisé (signalétique + ordonnancement POIs)', avgVisitMin: ab.b.mean, penetrationPct: 75 },
