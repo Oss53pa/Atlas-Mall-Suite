@@ -12,6 +12,7 @@ import { analyzeMaintenance, type MaintenanceInput } from './skills/analyzeMaint
 import { analyzeTenantScore, type TenantScoreInput } from './skills/analyzeTenantScore'
 import { analyzeCrowding, type CrowdingInput } from './skills/analyzeCrowding'
 import { analyzeSentimentSkill, type SentimentInput } from './skills/analyzeSentiment'
+import { auditSignage, type AuditSignageInput } from './skills/auditSignage'
 
 let bootstrapped = false
 
@@ -49,6 +50,9 @@ export async function bootstrapProph3t(): Promise<void> {
   )
   registerSkill<SentimentInput, ReturnType<typeof analyzeSentimentSkill>>(
     'analyzeSentiment', analyzeSentimentSkill,
+  )
+  registerSkill<AuditSignageInput, ReturnType<typeof auditSignage>>(
+    'auditSignage', auditSignage,
   )
 
   // Branche le bus d'événements de domaine (logging uniquement, pas d'auto-run)

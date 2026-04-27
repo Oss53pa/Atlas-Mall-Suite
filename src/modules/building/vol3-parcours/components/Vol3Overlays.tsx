@@ -187,10 +187,42 @@ export const Vol3Proph3tPanel = React.memo(function Vol3Proph3tPanel({
       })),
     }
   }, [parsedPlan, floorPois, editableSpaces])
+  // Audit utilise le même input mais filtré pour garder la même structure
+  const buildAuditInput = React.useCallback(() => {
+    const inp = buildInput()
+    if (!inp) return null
+    // Map priority string → 1|2|3 (best-effort)
+    const pois = inp.pois.map(p => {
+      const prRaw = (p as { priority?: unknown }).priority
+      let pr: 1 | 2 | 3 | undefined
+      if (typeof prRaw === 'number' && (prRaw === 1 || prRaw === 2 || prRaw === 3)) pr = prRaw
+      else if (typeof prRaw === 'string') {
+        const m = /(\d)/.exec(prRaw)
+        if (m) {
+          const n = Number(m[1])
+          if (n === 1 || n === 2 || n === 3) pr = n
+        }
+      }
+      return { id: p.id, label: p.label, x: p.x, y: p.y, priority: pr }
+    })
+    return {
+      planWidth: inp.planWidth,
+      planHeight: inp.planHeight,
+      spaces: inp.spaces.map(s => ({
+        id: s.id,
+        label: s.label ?? '',
+        type: s.type,
+        areaSqm: s.areaSqm,
+        polygon: s.polygon,
+      })),
+      pois,
+    }
+  }, [buildInput])
+
   return (
     <>
       <Proph3tVolumePanel volume="parcours" buildInput={buildInput} />
-      <SignageImplementer position="bottom-left" />
+      <SignageImplementer position="bottom-left" buildAuditInput={buildAuditInput} />
     </>
   )
 })

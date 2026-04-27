@@ -34,6 +34,9 @@ export interface PlacedSign {
 interface PlacementState {
   signs: PlacedSign[]
   addMany: (projectId: string, signs: Array<Omit<PlacedSign, 'id' | 'projectId' | 'createdAt'>>) => string[]
+  addOne: (projectId: string, sign: Omit<PlacedSign, 'id' | 'projectId' | 'createdAt'>) => string
+  updatePosition: (id: string, x: number, y: number) => void
+  updateKind: (id: string, kind: SignKind) => void
   remove: (id: string) => void
   clearForProject: (projectId: string) => void
   byProject: (projectId: string) => PlacedSign[]
@@ -54,6 +57,23 @@ export const useSignagePlacementStore = create<PlacementState>()(
         set(state => ({ signs: [...state.signs, ...created] }))
         return created.map(c => c.id)
       },
+      addOne: (projectId, sign) => {
+        const id = `sign-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+        const created: PlacedSign = {
+          ...sign,
+          id,
+          projectId,
+          createdAt: new Date().toISOString(),
+        }
+        set(state => ({ signs: [...state.signs, created] }))
+        return id
+      },
+      updatePosition: (id, x, y) => set(s => ({
+        signs: s.signs.map(sign => sign.id === id ? { ...sign, x, y } : sign),
+      })),
+      updateKind: (id, kind) => set(s => ({
+        signs: s.signs.map(sign => sign.id === id ? { ...sign, kind } : sign),
+      })),
       remove: (id) => set(s => ({ signs: s.signs.filter(x => x.id !== id) })),
       clearForProject: (projectId) => set(s => ({
         signs: s.signs.filter(x => x.projectId !== projectId),

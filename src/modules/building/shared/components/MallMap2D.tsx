@@ -17,6 +17,7 @@ import type { ParsedPlan, DetectedSpace } from '../planReader/planEngineTypes'
 import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
 import { useProph3tOverlaysStore } from '../stores/proph3tOverlaysStore'
 import { useSignagePlacementStore, type SignKind } from '../stores/signagePlacementStore'
+import { useSignageEditUiStore } from '../stores/signageEditUiStore'
 import { useActiveProjectId } from '../../../../hooks/useActiveProject'
 
 // ─── Palette type "planimetria" — tous types couverts ───
@@ -495,6 +496,7 @@ export function MallMap2D({
     <div className={`relative h-full w-full overflow-hidden ${className}`} style={{ background: bg }}>
       <svg
         ref={svgRef}
+        data-mallmap2d="true"
         width="100%" height="100%"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -861,7 +863,10 @@ export function MallMap2D({
             (bottlenecks ABM), badges signalétique, flèches sens circulation
             calculées par le skill analyzeParcours / analyzeWayfinder. */}
         <Proph3tOverlaysLayer toX={toX} toY={toY} scale={viewport.scale} />
-        <SignagePlacementsLayer toX={toX} toY={toY} scale={viewport.scale} />
+        <SignagePlacementsLayer
+          toX={toX} toY={toY} scale={viewport.scale}
+          ox={viewport.ox} oy={viewport.oy}
+        />
       </svg>
 
       {/* Stats + contrôles */}
@@ -1006,39 +1011,117 @@ const SIGN_STYLE: Record<SignKind, { color: string; icon: string; ring: string; 
 }
 
 function SignagePlacementsLayer({
-  toX, toY, scale,
+  toX, toY, scale, ox, oy,
 }: {
   toX: (x: number) => number
   toY: (y: number) => number
   scale: number
+  ox: number
+  oy: number
 }) {
   const projectId = useActiveProjectId()
   const allSigns = useSignagePlacementStore(s => s.signs)
-  const signs = allSigns.filter(s => s.projectId === projectId)
-  if (signs.length === 0) return null
+  const updatePosition = useSignagePlacementStore(s => s.updatePosition)
+  const removeSign = useSignagePlacementStore(s => s.remove)
+  const addOne = useSignagePlacementStore(s => s.addOne)
+  const editMode = useSignageEditUiStore(s => s.mode)
+  const addKind = useSignageEditUiStore(s => s.addKind)
+  const draggingId = useSignageEditUiStore(s => s.draggingId)
+  const startDrag = useSignageEditUiStore(s => s.startDrag)
+  const endDrag = useSignageEditUiStore(s => s.endDrag)
+
+  const signs = React.useMemo(
+    () => allSigns.filter(s => s.projectId === projectId),
+    [allSigns, projectId],
+  )
+
+  // Inverse de toX/toY : screen → world
+  const fromX = React.useCallback((sx: number) => (sx - ox) / scale, [ox, scale])
+  const fromY = React.useCallback((sy: number) => (sy - oy) / scale, [oy, scale])
+
+  // Drag global : pointermove + pointerup window listeners
+  React.useEffect(() => {
+    if (!draggingId) return
+    const onMove = (e: PointerEvent) => {
+      const svg = document.querySelector<SVGSVGElement>('svg[data-mallmap2d]')
+      if (!svg) return
+      const rect = svg.getBoundingClientRect()
+      const wx = fromX(e.clientX - rect.left)
+      const wy = fromY(e.clientY - rect.top)
+      updatePosition(draggingId, wx, wy)
+    }
+    const onUp = () => endDrag()
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
+  }, [draggingId, fromX, fromY, updatePosition, endDrag])
+
+  const handleAddClick = React.useCallback((e: React.MouseEvent<SVGRectElement>) => {
+    if (editMode !== 'add') return
+    e.stopPropagation()
+    const rect = (e.currentTarget.ownerSVGElement as SVGSVGElement).getBoundingClientRect()
+    const wx = fromX(e.clientX - rect.left)
+    const wy = fromY(e.clientY - rect.top)
+    addOne(projectId, {
+      x: wx, y: wy, kind: addKind, targets: [],
+      label: 'Manuel', reason: `Placé manuellement par l'utilisateur (${addKind})`,
+      source: 'manual',
+    })
+  }, [editMode, addKind, addOne, projectId, fromX, fromY])
+
   const r = Math.max(10, 14 * Math.min(1.5, scale))
+
   return (
-    <g style={{ pointerEvents: 'none' }}>
-      {signs.map((s) => {
-        const cx = toX(s.x)
-        const cy = toY(s.y)
-        const style = SIGN_STYLE[s.kind] ?? SIGN_STYLE['direction']
-        return (
-          <g key={s.id}>
-            {/* Halo de visibilité 15m (rayon estimé) */}
-            <circle cx={cx} cy={cy} r={15 * scale} fill={style.color} fillOpacity={0.06} />
-            {/* Anneau extérieur */}
-            <circle cx={cx} cy={cy} r={r + 3} fill="none" stroke={style.ring} strokeWidth={1.5} strokeOpacity={0.7} />
-            {/* Pastille */}
-            <circle cx={cx} cy={cy} r={r} fill={style.color} stroke="#fff" strokeWidth={1.8} />
-            {/* Pictogramme */}
-            <text x={cx} y={cy + r * 0.32} textAnchor="middle" fontSize={r * 0.95} fill="#fff" fontWeight="bold">
-              {style.icon}
-            </text>
-            <title>{`${style.label}${s.label ? ' — ' + s.label : ''}\n${s.reason}`}</title>
-          </g>
-        )
-      })}
+    <g>
+      {/* Capture-clic plein écran quand mode 'add' actif */}
+      {editMode === 'add' && (
+        <rect
+          x={-1e6} y={-1e6} width={2e6} height={2e6}
+          fill="rgba(8, 145, 178, 0.05)"
+          style={{ cursor: 'crosshair' }}
+          onClick={handleAddClick}
+        />
+      )}
+      {/* Signs */}
+      <g style={{ pointerEvents: editMode === 'add' ? 'none' : 'auto' }}>
+        {signs.map((s) => {
+          const cx = toX(s.x)
+          const cy = toY(s.y)
+          const style = SIGN_STYLE[s.kind] ?? SIGN_STYLE['direction']
+          const isDragging = draggingId === s.id
+          return (
+            <g
+              key={s.id}
+              style={{ cursor: 'grab' }}
+              onPointerDown={(e) => {
+                e.stopPropagation()
+                e.preventDefault()
+                ;(e.currentTarget as Element).setPointerCapture?.(e.pointerId)
+                startDrag(s.id)
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault()
+                if (confirm(`Supprimer ce panneau ${style.label} ?`)) removeSign(s.id)
+              }}
+            >
+              {/* Halo de visibilité 15m */}
+              <circle cx={cx} cy={cy} r={15 * scale} fill={style.color} fillOpacity={isDragging ? 0.15 : 0.06} />
+              {/* Anneau extérieur */}
+              <circle cx={cx} cy={cy} r={r + 3} fill="none" stroke={style.ring} strokeWidth={isDragging ? 2.5 : 1.5} strokeOpacity={0.85} />
+              {/* Pastille */}
+              <circle cx={cx} cy={cy} r={r} fill={style.color} stroke={isDragging ? '#fbbf24' : '#fff'} strokeWidth={isDragging ? 2.5 : 1.8} />
+              {/* Pictogramme */}
+              <text x={cx} y={cy + r * 0.32} textAnchor="middle" fontSize={r * 0.95} fill="#fff" fontWeight="bold" style={{ pointerEvents: 'none' }}>
+                {style.icon}
+              </text>
+              <title>{`${style.label}${s.label ? ' — ' + s.label : ''}\n${s.reason}\n\nGlisser pour déplacer · Clic-droit pour supprimer`}</title>
+            </g>
+          )
+        })}
+      </g>
     </g>
   )
 }

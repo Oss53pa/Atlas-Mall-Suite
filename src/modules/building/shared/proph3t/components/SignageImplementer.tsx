@@ -6,10 +6,15 @@
 // détaillé avec coverage, breakdown par type, table position/cibles/raison.
 
 import { useState, useMemo } from 'react'
-import { Signpost, CheckCircle2, FileText, X, Trash2, Sparkles } from 'lucide-react'
+import { Signpost, CheckCircle2, FileText, X, Trash2, Sparkles, Plus, ShieldCheck, Loader2, MousePointerClick } from 'lucide-react'
 import { useSignageProposalsStore } from '../../stores/signageProposalsStore'
-import { useSignagePlacementStore } from '../../stores/signagePlacementStore'
+import { useSignagePlacementStore, type SignKind } from '../../stores/signagePlacementStore'
+import { useSignageEditUiStore } from '../../stores/signageEditUiStore'
 import { useActiveProjectId } from '../../../../../hooks/useActiveProject'
+import { runSkill } from '../orchestrator'
+import type { Proph3tResult } from '../orchestrator.types'
+import type { AuditSignagePayload } from '../skills/auditSignage'
+import { Proph3tResultPanel } from './Proph3tResultPanel'
 
 const KIND_META = {
   'direction':     { label: 'Directionnel',   color: '#0891b2', icon: '➜', desc: 'Indique la direction d\'un POI proche' },
@@ -20,9 +25,16 @@ const KIND_META = {
 interface Props {
   /** Position du panneau flottant. */
   position?: 'bottom-left' | 'bottom-right'
+  /** Builder de l'input d'audit (plan + spaces + POIs). Fourni par Vol3. */
+  buildAuditInput?: () => {
+    planWidth: number
+    planHeight: number
+    spaces: Array<{ id: string; label: string; type?: string; areaSqm: number; polygon: [number, number][] }>
+    pois: Array<{ id: string; label: string; x: number; y: number; priority?: 1 | 2 | 3 }>
+  } | null
 }
 
-export function SignageImplementer({ position = 'bottom-left' }: Props) {
+export function SignageImplementer({ position = 'bottom-left', buildAuditInput }: Props) {
   const projectId = useActiveProjectId()
   const proposals = useSignageProposalsStore(s => s.proposals)
   const coveragePct = useSignageProposalsStore(s => s.coveragePct)
@@ -38,10 +50,64 @@ export function SignageImplementer({ position = 'bottom-left' }: Props) {
   const addMany = useSignagePlacementStore(s => s.addMany)
   const clearForProject = useSignagePlacementStore(s => s.clearForProject)
 
+  const editMode = useSignageEditUiStore(s => s.mode)
+  const addKind = useSignageEditUiStore(s => s.addKind)
+  const setMode = useSignageEditUiStore(s => s.setMode)
+  const setAddKind = useSignageEditUiStore(s => s.setAddKind)
+
   const [reportOpen, setReportOpen] = useState(false)
+  const [auditOpen, setAuditOpen] = useState(false)
+  const [auditing, setAuditing] = useState(false)
+  const [auditResult, setAuditResult] = useState<Proph3tResult<AuditSignagePayload> | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
 
-  if (proposals.length === 0 && placedForProject.length === 0) return null
+  // On affiche TOUJOURS le panneau (même sans proposal) pour permettre l'ajout
+  // manuel et l'audit. Plus restrictif que la version précédente.
+
+  const handleAudit = async () => {
+    if (!buildAuditInput) {
+      setFeedback('⚠️ Audit non disponible (pas de plan)')
+      setTimeout(() => setFeedback(null), 2500)
+      return
+    }
+    const inp = buildAuditInput()
+    if (!inp) {
+      setFeedback('⚠️ Plan indisponible')
+      setTimeout(() => setFeedback(null), 2500)
+      return
+    }
+    setAuditing(true)
+    try {
+      // Defensive bootstrap
+      const { listSkills } = await import('../orchestrator')
+      if (!listSkills().includes('auditSignage')) {
+        const { bootstrapProph3t } = await import('../bootstrap')
+        await bootstrapProph3t()
+      }
+      const r = await runSkill<typeof inp & { placedSigns: typeof placedForProject }, AuditSignagePayload>(
+        'auditSignage',
+        {
+          ...inp,
+          placedSigns: placedForProject.map(s => ({
+            id: s.id, x: s.x, y: s.y, kind: s.kind, source: s.source,
+          })),
+        },
+      )
+      setAuditResult(r)
+      setAuditOpen(true)
+      // Push overlays sur le plan (zones mortes, signs problématiques)
+      if (r.overlays && r.overlays.length > 0) {
+        const { useProph3tOverlaysStore } = await import('../../stores/proph3tOverlaysStore')
+        useProph3tOverlaysStore.getState().setOverlays(r.overlays, 'auditSignage')
+      }
+    } catch (err) {
+      console.error('[SignageImplementer] audit failed', err)
+      setFeedback(`⚠️ Audit échoué : ${(err as Error).message}`)
+      setTimeout(() => setFeedback(null), 4000)
+    } finally {
+      setAuditing(false)
+    }
+  }
 
   const handleImplement = () => {
     if (proposals.length === 0) return
@@ -119,6 +185,57 @@ export function SignageImplementer({ position = 'bottom-left' }: Props) {
             Rapport détaillé signalétique
           </button>
 
+          {/* ─── Mode édition manuelle ─── */}
+          <div className="rounded border border-white/10 bg-surface-1 p-2 mt-1">
+            <div className="text-[9px] uppercase tracking-widest text-slate-500 mb-1.5">Édition manuelle</div>
+            <button
+              onClick={() => setMode(editMode === 'add' ? 'idle' : 'add')}
+              className={`w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded text-[11px] font-semibold transition ${
+                editMode === 'add'
+                  ? 'bg-amber-500 hover:bg-amber-400 text-amber-950'
+                  : 'bg-surface-0 hover:bg-slate-800 text-slate-200 border border-white/10'
+              }`}
+            >
+              {editMode === 'add' ? <MousePointerClick size={12} /> : <Plus size={12} />}
+              {editMode === 'add' ? `Cliquer sur le plan pour ajouter (${addKind})` : 'Activer le mode ajout'}
+            </button>
+            {editMode === 'add' && (
+              <div className="mt-1.5 grid grid-cols-3 gap-1">
+                {(['direction', 'you-are-here', 'zone-entrance'] as SignKind[]).map(k => {
+                  const meta = KIND_META[k]
+                  const active = addKind === k
+                  return (
+                    <button
+                      key={k}
+                      onClick={() => setAddKind(k)}
+                      className={`flex flex-col items-center px-1 py-1 rounded text-[9px] font-medium border ${
+                        active ? 'bg-white/10 text-white' : 'bg-surface-0 text-slate-400 hover:text-white border-white/10'
+                      }`}
+                      style={{ borderColor: active ? meta.color : undefined }}
+                      title={meta.desc}
+                    >
+                      <span style={{ color: meta.color }} className="text-base leading-none">{meta.icon}</span>
+                      <span className="mt-0.5">{meta.label.split(' ')[0]}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+            <div className="mt-1.5 text-[9px] text-slate-500 italic">
+              Clic = ajouter · Glisser = déplacer · Clic-droit = supprimer
+            </div>
+          </div>
+
+          {/* ─── Audit Proph3t ─── */}
+          <button
+            onClick={handleAudit}
+            disabled={auditing || placedForProject.length === 0}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded bg-purple-700 hover:bg-purple-600 text-white text-[12px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed mt-1"
+          >
+            {auditing ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
+            {auditing ? 'Audit en cours…' : 'Auditer ma signalétique'}
+          </button>
+
           {placedAuto > 0 && (
             <button
               onClick={handleClearAuto}
@@ -140,8 +257,54 @@ export function SignageImplementer({ position = 'bottom-left' }: Props) {
               Lance « Suggérer signalétique » dans Proph3t pour de nouvelles propositions
             </div>
           )}
+          {placedForProject.length === 0 && proposals.length === 0 && (
+            <div className="text-[10px] text-slate-500 italic text-center px-2 py-2">
+              Active le mode ajout pour placer manuellement, ou lance « Suggérer signalétique » dans Proph3t.
+            </div>
+          )}
         </div>
       </div>
+
+      {/* ═══ MODAL RAPPORT D'AUDIT ═══ */}
+      {auditOpen && auditResult && (
+        <div
+          className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6"
+          onClick={() => setAuditOpen(false)}
+        >
+          <div
+            className="bg-surface-1 border border-purple-500/30 rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-surface-1 border-b border-white/10 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="text-purple-300" size={20} />
+                <div>
+                  <h2 className="text-lg font-bold text-white">Audit signalétique — Proph3t</h2>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    Skill : <span className="font-mono text-purple-300">auditSignage</span> ·
+                    Score : <span className="text-amber-300 font-bold">{auditResult.qualityScore}/100</span> ·
+                    Confiance : <span className="text-amber-300">{(auditResult.confidence.score * 100).toFixed(0)}%</span>
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setAuditOpen(false)} className="text-slate-400 hover:text-white">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              {/* Score breakdown */}
+              <div className="grid grid-cols-4 gap-3">
+                <ScoreCard label="Couverture" value={auditResult.payload.scoreBreakdown.coverage} max={40} extra={`${auditResult.payload.coveragePct.toFixed(0)}%`} />
+                <ScoreCard label="Densité" value={auditResult.payload.scoreBreakdown.density} max={20} extra={`${auditResult.payload.densityPer100Sqm.toFixed(2)}/100m² (${auditResult.payload.benchmarkDensity.status})`} />
+                <ScoreCard label="Placement" value={auditResult.payload.scoreBreakdown.placement} max={20} extra={`${auditResult.payload.signsInNonCirculation.length} hors zone`} />
+                <ScoreCard label="Pertinence POI" value={auditResult.payload.scoreBreakdown.orphans} max={20} extra={`${auditResult.payload.orphanSigns.length} orphelins`} />
+              </div>
+
+              <Proph3tResultPanel result={auditResult} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ═══ MODAL RAPPORT DÉTAILLÉ ═══ */}
       {reportOpen && (
@@ -270,6 +433,22 @@ export function SignageImplementer({ position = 'bottom-left' }: Props) {
         </div>
       )}
     </>
+  )
+}
+
+function ScoreCard({ label, value, max, extra }: { label: string; value: number; max: number; extra?: string }) {
+  const pct = (value / max) * 100
+  const color = pct >= 75 ? 'text-emerald-300 border-emerald-500/30 bg-emerald-950/20'
+    : pct >= 50 ? 'text-amber-300 border-amber-500/30 bg-amber-950/20'
+    : 'text-rose-300 border-rose-500/30 bg-rose-950/20'
+  return (
+    <div className={`rounded-lg border ${color} p-3`}>
+      <div className="text-[9px] uppercase text-slate-500 tracking-widest">{label}</div>
+      <div className="mt-1 text-2xl font-bold tabular-nums">
+        {value}<span className="text-sm text-slate-500 ml-1">/{max}</span>
+      </div>
+      {extra && <div className="text-[10px] text-slate-400 mt-0.5">{extra}</div>}
+    </div>
   )
 }
 
