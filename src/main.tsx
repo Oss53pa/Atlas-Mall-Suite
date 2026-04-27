@@ -7,6 +7,28 @@ import './index.css';
 // Initialize Sentry monitoring before rendering (production only)
 initMonitoring();
 
+// ─── Auto-reload sur stale chunk apres deploy Vercel ───
+// Vite emet 'vite:preloadError' quand un import dynamique pointe sur un chunk
+// dont le hash a change (deploy entre l'ouverture de l'onglet et la navigation).
+// On force un reload unique (flag anti-boucle) pour recharger l'index.html avec
+// les bons hashs. Catche aussi les SW qui servent un vieux HTML.
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault()
+  const FLAG = 'atlas-preload-reload-attempted'
+  if (sessionStorage.getItem(FLAG)) {
+    sessionStorage.removeItem(FLAG)
+    return
+  }
+  sessionStorage.setItem(FLAG, '1')
+  // Vide les caches du SW au passage (vieux index.html possible)
+  if ('caches' in window) {
+    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
+      .finally(() => window.location.reload())
+  } else {
+    window.location.reload()
+  }
+})
+
 // ─── IMMÉDIAT : ferme toutes les modales + panneaux lourds au démarrage ───
 // Ceinture + bretelles : force les flags à false dans localStorage AVANT le render React
 try {
