@@ -1,12 +1,13 @@
 // ═══ ATLAS MALL SUITE — Root Router ═══
 
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
 import AppLayout from './components/AppLayout'
 import { HelpFloatingBall } from './components/HelpFloatingBall'
 import ConsentBanner from './modules/building/shared/components/ConsentBanner'
+import { lazyWithReload as lazy } from './lib/lazyWithReload'
 
 // Landing (public, no layout) + HomeRoute intelligent
 const LandingPage = lazy(() => import('./modules/landing/LandingPage'))

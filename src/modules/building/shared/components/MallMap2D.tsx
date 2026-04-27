@@ -564,6 +564,42 @@ export function MallMap2D({
               fill="#94a3b8" stroke="#475569" strokeWidth={0.3} />
             <rect x="-2.5" y="-1.2" width="5" height="2.4" rx="0.4" fill="#e2e8f0" opacity="0.6" />
           </symbol>
+
+          {/* ─── Sprint 12.1 — Patterns enrichis ─── */}
+
+          {/* Carrelage clair (pour commerces) — petits carrés bordurés */}
+          <pattern id="carrelage" width={6} height={6} patternUnits="userSpaceOnUse">
+            <rect width="6" height="6" fill="#e8b4bd" />
+            <path d="M 6 0 L 0 0 0 6" fill="none" stroke="#fff" strokeWidth={0.4} strokeOpacity={0.6} />
+          </pattern>
+
+          {/* Parquet (pour boutiques mode/luxe) — bandes horizontales */}
+          <pattern id="parquet" width={20} height={6} patternUnits="userSpaceOnUse">
+            <rect width="20" height="6" fill="#d9a87c" />
+            <line x1="0" y1="0" x2="20" y2="0" stroke="#a07050" strokeWidth={0.3} strokeOpacity={0.5} />
+            <line x1="6" y1="0" x2="6" y2="6" stroke="#a07050" strokeWidth={0.2} strokeOpacity={0.4} />
+            <line x1="14" y1="0" x2="14" y2="6" stroke="#a07050" strokeWidth={0.2} strokeOpacity={0.4} />
+          </pattern>
+
+          {/* Pavés (pour places, parvis) — quasi-randoms briques */}
+          <pattern id="paves" width={10} height={6} patternUnits="userSpaceOnUse">
+            <rect width="10" height="6" fill="#bcb4a6" />
+            <path d="M 0 3 L 10 3 M 5 0 L 5 3 M 2 3 L 2 6 M 7 3 L 7 6"
+                  fill="none" stroke="#888073" strokeWidth={0.4} />
+          </pattern>
+
+          {/* Symbole flèche peinte (sens circulation sur voirie) */}
+          <symbol id="roadArrow" viewBox="-5 -3 10 6">
+            <polygon points="-4,-1 2,-1 2,-2.5 4,0 2,2.5 2,1 -4,1"
+                     fill="#ffffff" fillOpacity={0.92}
+                     stroke="#1a1a1a" strokeWidth={0.15} strokeOpacity={0.4} />
+          </symbol>
+
+          {/* Symbole zébras passage piéton */}
+          <pattern id="zebraStripes" width={6} height={3} patternUnits="userSpaceOnUse">
+            <rect width="6" height="3" fill="#fbbf24" />
+            <rect x="0" y="0" width="3" height="3" fill="#ffffff" />
+          </pattern>
         </defs>
         <rect width="100%" height="100%" fill="url(#mallgrid)" />
 
@@ -615,10 +651,18 @@ export function MallMap2D({
           const isAsphalt = /parking|voie_circulation|voie_principale|voie_secondaire|voie_pompier|voie_livraison|rond_point|carrefour|voirie|asphalte|exterieur_voie_vehicule|route_/.test(typeStr)
           const isGreen = /espace_vert|pelouse|jardin|plantation|terre_plein/.test(typeStr)
           const isBuilding = /commerce|restau|cinema|grande_surface|big_box|loisirs|fitness|beaute|bijou|mode|tech|epicerie|pharma|sante|banque|service|admin|reception|atelier|exposition|culturel|amphi|auditorium|bibliotheque|stockage|reserve|depot|livraison|technique/.test(typeStr)
-          const fillStyle = isMall     ? 'url(#tilingMall)'
-                          : isCorridor ? 'url(#tilingCorridor)'
-                          : isParking  ? 'url(#parkingSpots)'
-                          : isAsphalt  ? 'url(#asphalt)'
+          // Sprint 12.1 : différenciation visuelle commerces (parquet/carrelage)
+          const isCommerceLuxe = /commerce_mode|commerce_accessoires|commerce_beaute|hotel|cinema/.test(typeStr)
+          const isPaves = /parvis|exterieur_parvis|exterieur_place_forum|trottoir|exterieur_voie_pieton/.test(typeStr)
+          const isZebra = /passage_pieton/.test(typeStr)
+          const fillStyle = isMall            ? 'url(#tilingMall)'
+                          : isCorridor        ? 'url(#tilingCorridor)'
+                          : isZebra           ? 'url(#zebraStripes)'
+                          : isPaves           ? 'url(#paves)'
+                          : isCommerceLuxe    ? 'url(#parquet)'
+                          : isBuilding        ? 'url(#carrelage)'
+                          : isParking         ? 'url(#parkingSpots)'
+                          : isAsphalt         ? 'url(#asphalt)'
                           : color
           const meta = (s.metadata ?? {}) as { tenant?: string; localNumber?: string; vacant?: boolean }
           const cx = toX(s.bounds.centerX)
@@ -680,15 +724,13 @@ export function MallMap2D({
               {/* Voitures stylisées sur les places parking standard */}
               {/^parking_place_(standard|pmr|ve|famille|moto|livraison)$/.test(typeStr) &&
                 wPx > 14 && hPx > 14 && (() => {
-                  // Une voiture occupe ~70% de la place, picto centré
-                  // Hash sur ID pour pseudo-random stable (effet remplissage)
+                  // Sprint 12.1 : 80% de remplissage (vs 55% précédemment).
                   let h = 0
                   for (let i = 0; i < s.id.length; i++) h = ((h << 5) - h + s.id.charCodeAt(i)) | 0
                   const rand = ((h >>> 0) % 1000) / 1000
-                  if (rand > 0.55) return null // 55% de remplissage
+                  if (rand > 0.80) return null
                   const carW = Math.min(wPx, hPx) * 0.75
                   const carH = carW * 0.55
-                  // Détermine orientation depuis le ratio bbox
                   const horizontal = wPx > hPx
                   const w = horizontal ? carW : carH
                   const ho = horizontal ? carH : carW
@@ -696,6 +738,33 @@ export function MallMap2D({
                     <g style={{ pointerEvents: 'none', opacity: 0.85 }}>
                       <use href="#car" x={cx - w / 2} y={cy - ho / 2} width={w} height={ho}
                         transform={horizontal ? '' : `rotate(90 ${cx} ${cy})`} />
+                    </g>
+                  )
+                })()}
+              {/* Sprint 12.1 — Flèches peintes sur voirie (sens circulation) */}
+              {/^(voie_principale|voie_secondaire|voirie|route_avenue|route_boulevard|route_rue_principale|parking_voie_circulation)/.test(typeStr) &&
+                wPx > 80 && hPx > 30 && (() => {
+                  // Place 1 flèche tous les 12m le long de l'axe principal du polygone.
+                  // Heuristique : axe = longueur > largeur du bbox.
+                  const arrowSize = Math.min(wPx, hPx) * 0.5
+                  const horizontal = wPx > hPx
+                  const arrowSpacing = horizontal ? wPx / Math.max(1, Math.floor(wPx / 80)) : hPx / Math.max(1, Math.floor(hPx / 80))
+                  const startPx = horizontal ? toX(s.bounds.minX) + arrowSpacing / 2 : toX(s.bounds.centerX)
+                  const startPy = horizontal ? toY(s.bounds.centerY) : toY(s.bounds.minY) + arrowSpacing / 2
+                  const arrowsCount = horizontal ? Math.floor(wPx / arrowSpacing) : Math.floor(hPx / arrowSpacing)
+                  return (
+                    <g style={{ pointerEvents: 'none', opacity: 0.7 }}>
+                      {Array.from({ length: arrowsCount }).map((_, i) => {
+                        const ax = horizontal ? startPx + i * arrowSpacing : startPx
+                        const ay = horizontal ? startPy : startPy + i * arrowSpacing
+                        const w = horizontal ? arrowSize : arrowSize * 0.5
+                        const h = horizontal ? arrowSize * 0.5 : arrowSize
+                        return (
+                          <use key={`arr-${i}`} href="#roadArrow"
+                               x={ax - w / 2} y={ay - h / 2} width={w} height={h}
+                               transform={horizontal ? '' : `rotate(90 ${ax} ${ay})`} />
+                        )
+                      })}
                     </g>
                   )
                 })()}
