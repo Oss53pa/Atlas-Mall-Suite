@@ -1149,18 +1149,21 @@ export function spaceTypeToCategory(type: SpaceTypeKey): string {
   }
 }
 
-/** Vérifie si une surface est aberrante pour un type donné. */
+/** Vérifie si une surface est aberrante pour un type donné.
+ *  Defensive : si le type n'existe pas dans SPACE_TYPE_META (ex: type
+ *  legacy supprimé, type inventé), retourne aberrant=false sans crash. */
 export function checkSurfaceAnomaly(type: SpaceTypeKey, areaSqm: number): {
   aberrant: boolean
   reason?: string
 } {
-  const meta = SPACE_TYPE_META[type]
-  if (!meta.expectedSqm) return { aberrant: false }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const meta = SPACE_TYPE_META[type] as any
+  if (!meta || !meta.expectedSqm) return { aberrant: false }
   if (areaSqm < meta.expectedSqm.min) {
-    return { aberrant: true, reason: `Surface ${areaSqm.toFixed(0)} m² trop petite pour ${meta.label} (min ${meta.expectedSqm.min} m²).` }
+    return { aberrant: true, reason: `Surface ${areaSqm.toFixed(0)} m² trop petite pour ${meta.label ?? type} (min ${meta.expectedSqm.min} m²).` }
   }
   if (areaSqm > meta.expectedSqm.max) {
-    return { aberrant: true, reason: `Surface ${areaSqm.toFixed(0)} m² trop grande pour ${meta.label} (max ${meta.expectedSqm.max} m²).` }
+    return { aberrant: true, reason: `Surface ${areaSqm.toFixed(0)} m² trop grande pour ${meta.label ?? type} (max ${meta.expectedSqm.max} m²).` }
   }
   return { aberrant: false }
 }
