@@ -65,6 +65,7 @@ import type { FullProjectContext } from '../shared/proph3t/chatEngine'
 
 import FloorPlanCanvas from '../shared/components/FloorPlanCanvas'
 import { PlanCanvasV2 } from '../shared/components/PlanCanvasV2'
+import { SpaceContextMenu, type SpaceContextMenuState } from '../shared/components/SpaceContextMenu'
 import { useModeledPlan } from '../shared/hooks/useModeledPlan'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
 import { buildParsedPlanFromImport } from '../shared/planReader/planBridge'
@@ -440,6 +441,8 @@ export default function Vol2Module() {
     showHelper: true,
   })
   const [navMode, setNavMode] = useState<NavMode>('orbit')
+  // Menu contextuel clic-droit espace
+  const [spaceMenu, setSpaceMenu] = useState<SpaceContextMenuState | null>(null)
 
   // ── Sidebar accordion state ─────────────────────────────
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
@@ -1188,6 +1191,7 @@ export default function Vol2Module() {
               plan={displayPlan ?? parsedPlan}
               planImageUrl={activeFloor ? (planImageUrls[activeFloor.id] || usePlanImportStore.getState().getActivePlanUrl(activeFloor.id)) : undefined}
               overlayFloorId={activeFloor?.id}
+              onSpaceContextMenu={(space, x, y) => setSpaceMenu({ space, x, y })}
               viewMode={viewMode === '3d-advanced' ? '3d-advanced' : viewMode === '3d' ? '3d' : '2d'}
               cameras={cameras.filter(c => !c.autoPlaced || false).map(c => {
                 const pw = parsedPlan.bounds.width || 200
@@ -1274,6 +1278,7 @@ export default function Vol2Module() {
               plan={displayPlan ?? parsedPlan}
               planImageUrl={activeFloor ? (planImageUrls[activeFloor.id] || usePlanImportStore.getState().getActivePlanUrl(activeFloor.id)) : undefined}
               overlayFloorId={activeFloor?.id}
+              onSpaceContextMenu={(space, x, y) => setSpaceMenu({ space, x, y })}
             />
             ) : (
             <FloorPlanCanvas
@@ -1592,6 +1597,9 @@ export default function Vol2Module() {
           </main>
         )}
       </div>
+
+      {/* Menu contextuel clic-droit sur un espace du plan */}
+      <SpaceContextMenu state={spaceMenu} onClose={() => setSpaceMenu(null)} />
 
       {/* ── Bottom status bar ───────────────────────────────── */}
       <footer className="flex-none h-10 border-t border-gray-800 bg-surface-1/60 flex items-center px-4 gap-6 text-xs text-gray-400">

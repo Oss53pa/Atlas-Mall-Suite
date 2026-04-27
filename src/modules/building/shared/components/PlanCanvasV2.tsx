@@ -235,6 +235,8 @@ interface PlanCanvasV2Props {
   children?: React.ReactNode
   className?: string
   onSpaceClick?: (space: DetectedSpace) => void
+  /** Clic-droit sur un espace : ouvre menu contextuel (Renommer / Type / Studio / Supprimer). */
+  onSpaceContextMenu?: (space: DetectedSpace, screenX: number, screenY: number) => void
   onCanvasClick?: (x: number, y: number) => void
   viewMode?: '2d' | '3d' | '3d-advanced'
   /** Vol.2 Securitaire entities for 3D rendering */
@@ -269,7 +271,7 @@ interface PlanCanvasV2Props {
 
 export function PlanCanvasV2({
   plan, planImageUrl, children, className = '',
-  onSpaceClick, onCanvasClick, viewMode = '2d',
+  onSpaceClick, onSpaceContextMenu, onCanvasClick, viewMode = '2d',
   cameras, doors, blindSpots,
   pois, signage, moments, journeys,
   placeMode, onPlace, onEntityUpdate, onEntityDelete, compliance,
@@ -720,6 +722,31 @@ export function PlanCanvasV2({
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           onClick={handleSvgClick}
+          onContextMenu={(e) => {
+            // Hit-test global : trouve le polygone le PLUS PETIT contenant le clic-droit
+            if (!onSpaceContextMenu) return
+            const rect = svgRef.current?.getBoundingClientRect()
+            if (!rect) return
+            const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top, viewport)
+            const hits = plan.spaces.filter(s => {
+              // Polygone-point test
+              let inside = false
+              for (let i = 0, j = s.polygon.length - 1; i < s.polygon.length; j = i++) {
+                const xi = s.polygon[i][0], yi = s.polygon[i][1]
+                const xj = s.polygon[j][0], yj = s.polygon[j][1]
+                if (((yi > world.y) !== (yj > world.y)) &&
+                    (world.x < ((xj - xi) * (world.y - yi)) / (yj - yi) + xi)) {
+                  inside = !inside
+                }
+              }
+              return inside
+            })
+            if (hits.length === 0) return
+            hits.sort((a, b) => a.areaSqm - b.areaSqm)
+            e.preventDefault()
+            e.stopPropagation()
+            onSpaceContextMenu(hits[0], e.clientX, e.clientY)
+          }}
         >
           {/* Background */}
           <rect width="100%" height="100%" fill="#0a0a0f" />

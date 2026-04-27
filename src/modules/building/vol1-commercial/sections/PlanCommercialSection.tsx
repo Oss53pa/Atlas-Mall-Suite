@@ -27,6 +27,7 @@ import { formatFcfa } from '../../shared/utils/formatting'
 import { PlanLayerSelector } from '../../shared/components/PlanLayerSelector'
 import { usePlanEngineStore } from '../../shared/stores/planEngineStore'
 import { PlanCanvasV2 } from '../../shared/components/PlanCanvasV2'
+import { SpaceContextMenu, type SpaceContextMenuState } from '../../shared/components/SpaceContextMenu'
 import { useModeledPlan } from '../../shared/hooks/useModeledPlan'
 import type { ParsedPlan, DetectedSpace } from '../../shared/planReader/planEngineTypes'
 import { runCommercialAnalysis } from '../../shared/engines/commercialEngine'
@@ -167,6 +168,8 @@ export default function PlanCommercialSection() {
   const is3d = viewMode === '3d' || viewMode === 'isometric' || viewMode === 'tour'
 
   const [showWayfinder, setShowWayfinder] = useState(false)
+  // Menu contextuel clic-droit espace
+  const [spaceMenu, setSpaceMenu] = useState<SpaceContextMenuState | null>(null)
   const [showOverlayPanel, setShowOverlayPanel] = useState(false)
 
   // Construit l'input wayfinder en fusionnant DetectedSpace + tenants
@@ -640,6 +643,7 @@ export default function PlanCommercialSection() {
             plan={plan}
             planImageUrl={planImageUrl}
             onSpaceClick={handleEngineSpaceClick}
+            onSpaceContextMenu={(space, x, y) => setSpaceMenu({ space, x, y })}
             overlayFloorId={floorId}
           >
             {/* Only show vol1Store mock overlay when NO real plan has been imported */}
@@ -688,6 +692,9 @@ export default function PlanCommercialSection() {
           </PlanCanvasV2>
         )}
       </div>
+
+      {/* Menu contextuel clic-droit sur un espace */}
+      <SpaceContextMenu state={spaceMenu} onClose={() => setSpaceMenu(null)} />
 
       {/* Right panel — selected space detail (Vol1-specific) */}
       {selectedSpace && (

@@ -1165,6 +1165,7 @@ export default function Vol3Module() {
                 <PlanCanvasV2
                   plan={plan}
                   onCanvasClick={placeTool ? (x, y) => handleCanvasClick(x, y) : undefined}
+                  onSpaceContextMenu={(space, x, y) => setSpaceMenu({ space, x, y })}
                   viewMode={viewMode === '2d' ? '2d' : viewMode === '3d' ? '3d' : '3d-advanced'}
                   eraseMode={eraseMode}
                   overlayFloorId={activeFloorId}
