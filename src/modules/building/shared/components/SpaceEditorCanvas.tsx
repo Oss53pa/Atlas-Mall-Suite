@@ -1658,7 +1658,12 @@ export function SpaceEditorCanvas({
           {/* Espaces — tri par aire décroissante : grands dessous, petits
               dessus. Permet de cliquer un espace imbriqué dans un plus grand. */}
           {[...visibleSpaces].sort((a, b) => Geo.polyArea(b.polygon) - Geo.polyArea(a.polygon)).map(s => {
-            const meta = SPACE_TYPE_META[s.type]
+            // Fallback defensif : si le type n'existe pas dans la lib (legacy
+            // ou re-typé vers une clé non listée), on utilise un meta neutre.
+            const meta = SPACE_TYPE_META[s.type] ?? {
+              label: String(s.type), color: '#94a3b8', icon: '◯',
+              category: 'autres', description: '',
+            }
             const isSelected = selectedIds.has(s.id)
             const screenPts = s.polygon.map(p => worldToScreen(p.x, p.y))
             const d = screenPts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z'
@@ -2316,7 +2321,7 @@ function SpaceMetadataPanel({
               )
             })}
           </div>
-          <p className="text-[10px] text-slate-600 mt-1">{SPACE_TYPE_META[type].description}</p>
+          <p className="text-[10px] text-slate-600 mt-1">{SPACE_TYPE_META[type]?.description ?? ''}</p>
         </div>
 
         {/* ── Dimensions porte — visible uniquement pour les portes / ouvertures ── */}
@@ -2329,11 +2334,11 @@ function SpaceMetadataPanel({
           <div className="rounded-lg border border-white/10 bg-surface-0 overflow-hidden">
             {/* En-tête segment avec couleur */}
             <div className="flex items-center gap-2 px-3 py-2 border-b border-white/10"
-                 style={{ background: `${SPACE_TYPE_META[type].color}18` }}>
-              <span className="text-base leading-none">{SPACE_TYPE_META[type].icon}</span>
+                 style={{ background: `${SPACE_TYPE_META[type]?.color ?? '#94a3b8'}18` }}>
+              <span className="text-base leading-none">{SPACE_TYPE_META[type]?.icon ?? '◯'}</span>
               <div className="flex-1">
-                <div className="text-[10px] font-bold" style={{ color: SPACE_TYPE_META[type].color }}>
-                  Local commercial · {SPACE_TYPE_META[type].label}
+                <div className="text-[10px] font-bold" style={{ color: SPACE_TYPE_META[type]?.color ?? '#94a3b8' }}>
+                  Local commercial · {SPACE_TYPE_META[type]?.label ?? String(type)}
                 </div>
               </div>
               {/* Badge occupé / vacant */}
