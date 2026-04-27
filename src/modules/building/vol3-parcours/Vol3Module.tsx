@@ -55,6 +55,7 @@ import {
 } from './components/Vol3Overlays'
 import { PlanCanvasV2 } from '../shared/components/PlanCanvasV2'
 import { MallMap2D } from '../shared/components/MallMap2D'
+import { SpaceContextMenu, type SpaceContextMenuState } from '../shared/components/SpaceContextMenu'
 import { SpatialCoreScene } from '../shared/components/SpatialCoreScene'
 import { PlanLayerSelector } from '../shared/components/PlanLayerSelector'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
@@ -295,6 +296,9 @@ export default function Vol3Module() {
   const parsedPlan = usePlanEngineStore(s => s.parsedPlan)
   // Espaces modélisés par l'utilisateur dans Atlas Studio
   const editableSpaces = useEditableSpaceStore(s => s.spaces)
+
+  // Menu contextuel clic-droit sur un espace
+  const [spaceMenu, setSpaceMenu] = React.useState<SpaceContextMenuState | null>(null)
 
   /** Plan affiché au rendu 2D : uniquement les EditableSpace de l'utilisateur,
    *  avec corrections de cohérence Proph3t :
@@ -1094,7 +1098,12 @@ export default function Vol3Module() {
                 // Plan à afficher selon la source choisie
                 const planToShow = planSource === 'raw' ? parsedPlan : modeledPlan
                 if (planToShow) {
-                  return <MallMap2D plan={planToShow} theme="light" smoothEdges={false} />
+                  return <MallMap2D
+                    plan={planToShow}
+                    theme="light"
+                    smoothEdges={false}
+                    onSpaceContextMenu={(space, x, y) => setSpaceMenu({ space, x, y })}
+                  />
                 }
                 // Pas de plan modélisé et source = modélisé → placeholder explicatif
                 return (
@@ -1669,6 +1678,9 @@ export default function Vol3Module() {
 
       {/* Panneau PROPH3T Vol.3 — suggestions parcours / signalétique / audit */}
       {parsedPlan && <Vol3Proph3tPanel parsedPlan={parsedPlan} floorPois={floorPois} />}
+
+      {/* Menu contextuel clic-droit sur un espace (Renommer / Type / Studio / Supprimer) */}
+      <SpaceContextMenu state={spaceMenu} onClose={() => setSpaceMenu(null)} />
 
       {/* Planche QR à imprimer (un QR par panneau) */}
       {qrExportOpen && flowResult?.placement && projectId && (

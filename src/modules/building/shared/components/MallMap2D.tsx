@@ -332,6 +332,9 @@ export interface MallMap2DProps {
   /** Affiche le contour des espaces non-filtrés en grisé (pour debug). */
   showFiltered?: boolean
   onSpaceClick?: (space: DetectedSpace) => void
+  /** Callback clic-droit sur un espace — fournit l'espace + position écran
+   *  (clientX/clientY) pour ouvrir un menu contextuel ou éditer l'espace. */
+  onSpaceContextMenu?: (space: DetectedSpace, screenX: number, screenY: number) => void
   className?: string
   /** Theme clair (défaut) ou sombre. */
   theme?: 'light' | 'dark'
@@ -344,6 +347,7 @@ export function MallMap2D({
   plan,
   showFiltered = false,
   onSpaceClick,
+  onSpaceContextMenu,
   className = '',
   theme = 'light',
   smoothEdges = false,
@@ -702,7 +706,13 @@ export function MallMap2D({
                 if (panDraggedRef.current) return
                 onSpaceClick?.(s)
               }}
-              style={{ cursor: onSpaceClick ? 'pointer' : 'inherit' }}
+              onContextMenu={(e) => {
+                if (!onSpaceContextMenu) return
+                e.preventDefault()
+                e.stopPropagation()
+                onSpaceContextMenu(s, e.clientX, e.clientY)
+              }}
+              style={{ cursor: (onSpaceClick || onSpaceContextMenu) ? 'pointer' : 'inherit' }}
             >
               <path
                 d={d}
