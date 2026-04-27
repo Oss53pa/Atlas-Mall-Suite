@@ -1275,21 +1275,22 @@ export function SpaceEditorCanvas({
         {/* ─── Templates parking (clic = pose) ─── */}
         <div className="flex items-center gap-0.5 p-0.5 bg-surface-0 rounded" title="Places de parking (clic = pose un rectangle aux dimensions)">
           {([
-            { m: 'parking-standard',  icon: Car,           title: 'Place standard 2.5×5 m',    color: '#60a5fa' },
-            { m: 'parking-pmr',       icon: Accessibility, title: 'Place PMR 3.3×5 m',         color: '#3b82f6' },
-            { m: 'parking-ve',        icon: Zap,           title: 'Borne VE 2.5×5 m',          color: '#22c55e' },
-            { m: 'parking-moto',      icon: Bike,          title: 'Place moto 1×2 m',          color: '#7dd3fc' },
-            { m: 'parking-livraison', icon: Package,       title: 'Livraison 3×7 m',           color: '#f59e0b' },
-            { m: 'parking-famille',   icon: Users2,        title: 'Famille 3×5 m',             color: '#f472b6' },
-          ] as Array<{ m: DrawMode; icon: any; title: string; color: string }>).map(o => (
+            { m: 'parking-standard',  icon: Car,           label: 'Std',    title: 'Place standard 2.5×5 m',    color: '#60a5fa' },
+            { m: 'parking-pmr',       icon: Accessibility, label: 'PMR',    title: 'Place PMR 3.3×5 m',         color: '#3b82f6' },
+            { m: 'parking-ve',        icon: Zap,           label: 'VE',     title: 'Borne VE 2.5×5 m',          color: '#22c55e' },
+            { m: 'parking-moto',      icon: Bike,          label: 'Moto',   title: 'Place moto 1×2 m',          color: '#7dd3fc' },
+            { m: 'parking-livraison', icon: Package,       label: 'Livr',   title: 'Livraison 3×7 m',           color: '#f59e0b' },
+            { m: 'parking-famille',   icon: Users2,        label: 'Famille', title: 'Famille 3×5 m',            color: '#f472b6' },
+          ] as Array<{ m: DrawMode; icon: any; label: string; title: string; color: string }>).map(o => (
             <button key={o.m}
               onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null); setIconHoverSpaceId(null) }}
-              className={`p-1.5 rounded text-[11px] flex items-center gap-1.5 ${
+              className={`px-1.5 py-1 rounded text-[9px] flex items-center gap-1 ${
                 mode === o.m ? 'bg-atlas-500 text-white' : 'text-slate-400 hover:text-white'
               }`}
               title={o.title}
             >
               <o.icon className="w-3.5 h-3.5" style={{ color: mode === o.m ? undefined : o.color }} />
+              <span>{o.label}</span>
             </button>
           ))}
         </div>
@@ -1321,21 +1322,22 @@ export function SpaceEditorCanvas({
         {/* ─── Templates portes (clic = pose) ─── */}
         <div className="flex items-center gap-0.5 p-0.5 bg-surface-0 rounded" title="Portes & ouvertures (clic = pose rectangle)">
           {([
-            { m: 'door-entree',      icon: DoorOpen,          title: 'Porte d\'entrée 1m × 20cm',       color: '#10b981' },
-            { m: 'door-double',      icon: DoorOpen,          title: 'Porte double 1.8m × 20cm',        color: '#059669' },
-            { m: 'door-automatique', icon: RectangleVertical, title: 'Porte automatique 1.5m × 20cm',   color: '#14b8a6' },
-            { m: 'door-interieure',  icon: DoorClosed,        title: 'Porte intérieure 0.9m × 15cm',    color: '#64748b' },
-            { m: 'door-secours',     icon: AlertOctagon,      title: 'Porte secours 1.2m × 20cm (anti-panique)', color: '#ef4444' },
-            { m: 'door-service',     icon: DoorClosed,        title: 'Porte service 1m × 20cm',         color: '#0d9488' },
-          ] as Array<{ m: DrawMode; icon: any; title: string; color: string }>).map(o => (
+            { m: 'door-entree',      icon: DoorOpen,          label: 'Entrée',  title: 'Porte d\'entrée 1m × 20cm',       color: '#10b981' },
+            { m: 'door-double',      icon: DoorOpen,          label: 'Double',  title: 'Porte double 1.8m × 20cm',        color: '#059669' },
+            { m: 'door-automatique', icon: RectangleVertical, label: 'Auto',    title: 'Porte automatique 1.5m × 20cm',   color: '#14b8a6' },
+            { m: 'door-interieure',  icon: DoorClosed,        label: 'Inter',   title: 'Porte intérieure 0.9m × 15cm',    color: '#64748b' },
+            { m: 'door-secours',     icon: AlertOctagon,      label: 'Secours', title: 'Porte secours 1.2m × 20cm (anti-panique)', color: '#ef4444' },
+            { m: 'door-service',     icon: DoorClosed,        label: 'Service', title: 'Porte service 1m × 20cm',         color: '#0d9488' },
+          ] as Array<{ m: DrawMode; icon: any; label: string; title: string; color: string }>).map(o => (
             <button key={o.m}
               onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null); setIconHoverSpaceId(null) }}
-              className={`p-1.5 rounded text-[11px] flex items-center gap-1.5 ${
+              className={`px-1.5 py-1 rounded text-[9px] flex items-center gap-1 ${
                 mode === o.m ? 'bg-atlas-500 text-white' : 'text-slate-400 hover:text-white'
               }`}
               title={o.title}
             >
               <o.icon className="w-3.5 h-3.5" style={{ color: mode === o.m ? undefined : o.color }} />
+              <span>{o.label}</span>
             </button>
           ))}
         </div>
@@ -1346,21 +1348,22 @@ export function SpaceEditorCanvas({
         <div className="flex items-center gap-0.5 p-0.5 bg-surface-0 rounded"
           title="Voies (clic-clic-double-clic = polygone libre avec type sémantique pré-assigné)">
           {([
-            { m: 'voie-principale',          Icon: Route,          title: 'Voie principale (axe site)',  color: '#4b5563' },
-            { m: 'voie-secondaire',          Icon: ArrowLeftRight, title: 'Voie secondaire',             color: '#64748b' },
-            { m: 'voie-pompier',             Icon: TrafficCone,    title: 'Voie pompiers',                color: '#ef4444' },
-            { m: 'voie-livraison',           Icon: Truck,          title: 'Voie livraison / quais',       color: '#f59e0b' },
-            { m: 'parking-voie-circulation', Icon: ArrowLeftRight, title: 'Allée de roulage parking',     color: '#94a3b8' },
-            { m: 'passage-pieton',           Icon: Footprints,     title: 'Passage piéton (zébras)',      color: '#fbbf24' },
-          ] as Array<{ m: DrawMode; Icon: typeof Car; title: string; color: string }>).map(o => (
+            { m: 'voie-principale',          Icon: Route,          label: 'V.princ',  title: 'Voie principale (axe site)',  color: '#4b5563' },
+            { m: 'voie-secondaire',          Icon: ArrowLeftRight, label: 'V.sec',    title: 'Voie secondaire',             color: '#64748b' },
+            { m: 'voie-pompier',             Icon: TrafficCone,    label: 'Pomp',     title: 'Voie pompiers',                color: '#ef4444' },
+            { m: 'voie-livraison',           Icon: Truck,          label: 'Livr',     title: 'Voie livraison / quais',       color: '#f59e0b' },
+            { m: 'parking-voie-circulation', Icon: ArrowLeftRight, label: 'Allée P',  title: 'Allée de roulage parking',     color: '#94a3b8' },
+            { m: 'passage-pieton',           Icon: Footprints,     label: 'P.piét',   title: 'Passage piéton (zébras)',      color: '#fbbf24' },
+          ] as Array<{ m: DrawMode; Icon: typeof Car; label: string; title: string; color: string }>).map(o => (
             <button key={o.m}
               onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null); setIconHoverSpaceId(null) }}
-              className={`p-1.5 rounded ${
+              className={`px-1.5 py-1 rounded text-[9px] flex items-center gap-1 ${
                 mode === o.m ? 'bg-atlas-500 text-white' : 'text-slate-400 hover:text-white'
               }`}
               title={o.title}
             >
               <o.Icon className="w-3.5 h-3.5" style={{ color: mode === o.m ? undefined : o.color }} />
+              <span>{o.label}</span>
             </button>
           ))}
         </div>
@@ -1369,23 +1372,24 @@ export function SpaceEditorCanvas({
         <div className="flex items-center gap-0.5 p-0.5 bg-surface-0 rounded"
           title="Circulations intérieures (mall, galerie, couloirs)">
           {([
-            { m: 'mail-central',        Icon: Building2,    title: 'Mail central (allée marchande principale)', color: '#e8d9b8' },
-            { m: 'mail-secondaire',     Icon: Building2,    title: 'Mail secondaire',                            color: '#ece0c4' },
-            { m: 'galerie',             Icon: Home,         title: 'Galerie marchande',                          color: '#efe5cd' },
-            { m: 'atrium',              Icon: Home,         title: 'Atrium / puits de lumière',                  color: '#a78bfa' },
-            { m: 'promenade',           Icon: ArrowLeftRight, title: 'Promenade',                                color: '#c19a6b' },
-            { m: 'couloir',             Icon: CornerUpRight, title: 'Couloir / circulation',                    color: '#a8a29e' },
-            { m: 'couloir-secondaire',  Icon: CornerUpRight, title: 'Couloir secondaire',                       color: '#a78bfa' },
-            { m: 'hall-distribution',   Icon: Home,         title: 'Hall de distribution',                       color: '#c084fc' },
-          ] as Array<{ m: DrawMode; Icon: typeof Car; title: string; color: string }>).map(o => (
+            { m: 'mail-central',        Icon: Building2,     label: 'Mail',      title: 'Mail central (allée marchande principale)', color: '#e8d9b8' },
+            { m: 'mail-secondaire',     Icon: Building2,     label: 'Mail 2',    title: 'Mail secondaire',                            color: '#ece0c4' },
+            { m: 'galerie',             Icon: Home,          label: 'Galerie',   title: 'Galerie marchande',                          color: '#efe5cd' },
+            { m: 'atrium',              Icon: Home,          label: 'Atrium',    title: 'Atrium / puits de lumière',                  color: '#a78bfa' },
+            { m: 'promenade',           Icon: ArrowLeftRight, label: 'Promen.',  title: 'Promenade',                                  color: '#c19a6b' },
+            { m: 'couloir',             Icon: CornerUpRight, label: 'Couloir',   title: 'Couloir / circulation',                      color: '#a8a29e' },
+            { m: 'couloir-secondaire',  Icon: CornerUpRight, label: 'Coul.2',    title: 'Couloir secondaire',                         color: '#a78bfa' },
+            { m: 'hall-distribution',   Icon: Home,          label: 'Hall',      title: 'Hall de distribution',                       color: '#c084fc' },
+          ] as Array<{ m: DrawMode; Icon: typeof Car; label: string; title: string; color: string }>).map(o => (
             <button key={o.m}
               onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null); setIconHoverSpaceId(null) }}
-              className={`p-1.5 rounded ${
+              className={`px-1.5 py-1 rounded text-[9px] flex items-center gap-1 ${
                 mode === o.m ? 'bg-atlas-500 text-white' : 'text-slate-400 hover:text-white'
               }`}
               title={o.title}
             >
               <o.Icon className="w-3.5 h-3.5" style={{ color: mode === o.m ? undefined : o.color }} />
+              <span>{o.label}</span>
             </button>
           ))}
         </div>
@@ -1394,19 +1398,20 @@ export function SpaceEditorCanvas({
         <div className="flex items-center gap-0.5 p-0.5 bg-surface-0 rounded"
           title="Espaces verts et paysage">
           {([
-            { m: 'jardin',          Icon: TreePine, title: 'Jardin',         color: '#7fa874' },
-            { m: 'pelouse',         Icon: Sprout,   title: 'Pelouse',        color: '#a8c29a' },
-            { m: 'terre-plein',     Icon: Mountain, title: 'Terre-plein',    color: '#bcd5b0' },
-            { m: 'massif-vegetal',  Icon: Flower2,  title: 'Massif végétal', color: '#5c8a45' },
-          ] as Array<{ m: DrawMode; Icon: typeof Car; title: string; color: string }>).map(o => (
+            { m: 'jardin',          Icon: TreePine, label: 'Jardin',  title: 'Jardin',         color: '#7fa874' },
+            { m: 'pelouse',         Icon: Sprout,   label: 'Pelouse', title: 'Pelouse',        color: '#a8c29a' },
+            { m: 'terre-plein',     Icon: Mountain, label: 'Terre-pl.', title: 'Terre-plein',  color: '#bcd5b0' },
+            { m: 'massif-vegetal',  Icon: Flower2,  label: 'Massif',  title: 'Massif végétal', color: '#5c8a45' },
+          ] as Array<{ m: DrawMode; Icon: typeof Car; label: string; title: string; color: string }>).map(o => (
             <button key={o.m}
               onClick={() => { setMode(o.m); setDraftPoints([]); setDragStart(null); setSplitLine(null); setIconHoverSpaceId(null) }}
-              className={`p-1.5 rounded ${
+              className={`px-1.5 py-1 rounded text-[9px] flex items-center gap-1 ${
                 mode === o.m ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
               title={o.title}
             >
               <o.Icon className="w-3.5 h-3.5" style={{ color: mode === o.m ? undefined : o.color }} />
+              <span>{o.label}</span>
             </button>
           ))}
         </div>
