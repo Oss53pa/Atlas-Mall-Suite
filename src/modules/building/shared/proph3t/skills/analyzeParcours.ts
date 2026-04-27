@@ -264,10 +264,12 @@ export async function analyzeParcours(input: ParcoursAnalysisInput): Promise<Pro
     findings: findingsWithRag,
     actions: actionsWithRag,
     overlays: [
-      ...abm.metrics.bottlenecks.slice(0, 5).map(b => ({
+      // Tous les bottlenecks ABM (heatmap rouge)
+      ...abm.metrics.bottlenecks.map(b => ({
         kind: 'heatmap' as const, coords: [b.x, b.y] as [number, number], color: '#ef4444', intensity: b.intensity, label: 'Bottleneck',
       })),
-      ...signageRes.proposed.slice(0, 5).map(s => ({
+      // Tous les panneaux signalétique proposés (badge cyan 🪧)
+      ...signageRes.proposed.map(s => ({
         kind: 'badge' as const, coords: [s.x, s.y] as [number, number], color: '#06b6d4', label: '🪧',
       })),
     ],

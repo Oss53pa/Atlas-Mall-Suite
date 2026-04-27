@@ -15,6 +15,7 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import type { ParsedPlan, DetectedSpace } from '../planReader/planEngineTypes'
 import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
+import { useProph3tOverlaysStore } from '../stores/proph3tOverlaysStore'
 
 // ─── Palette type "planimetria" — tous types couverts ───
 
@@ -852,6 +853,12 @@ export function MallMap2D({
             <path d="M 0 6 L 6 0" stroke={textColor} strokeWidth={0.6} strokeOpacity={0.4} />
           </pattern>
         </defs>
+
+        {/* ═══ Couche PROPH3T OVERLAYS ═══
+            Dessinée APRÈS les espaces, AVANT le </svg>. Affiche heatmaps
+            (bottlenecks ABM), badges signalétique, flèches sens circulation
+            calculées par le skill analyzeParcours / analyzeWayfinder. */}
+        <Proph3tOverlaysLayer toX={toX} toY={toY} scale={viewport.scale} />
       </svg>
 
       {/* Stats + contrôles */}
@@ -923,6 +930,67 @@ export function MallMap2D({
         </div>
       )}
     </div>
+  )
+}
+
+// ─── Couche PROPH3T overlays (heatmaps, badges signalétique, flèches) ──
+
+function Proph3tOverlaysLayer({
+  toX, toY, scale,
+}: {
+  toX: (x: number) => number
+  toY: (y: number) => number
+  scale: number
+}) {
+  const overlays = useProph3tOverlaysStore(s => s.overlays)
+  if (overlays.length === 0) return null
+  return (
+    <g style={{ pointerEvents: 'none' }}>
+      {overlays.map((o, i) => {
+        if (!o.coords) return null
+        const cx = toX(o.coords[0])
+        const cy = toY(o.coords[1])
+        // Heatmap (bottleneck ABM) : cercle rouge dégradé
+        if (o.kind === 'heatmap') {
+          const r = Math.max(8, (o.intensity ?? 50) * 0.4 * scale)
+          return (
+            <g key={i}>
+              <circle cx={cx} cy={cy} r={r} fill={o.color ?? '#ef4444'} fillOpacity={0.25} />
+              <circle cx={cx} cy={cy} r={r * 0.5} fill={o.color ?? '#ef4444'} fillOpacity={0.45} />
+              <circle cx={cx} cy={cy} r={4} fill={o.color ?? '#ef4444'} stroke="#fff" strokeWidth={1} />
+            </g>
+          )
+        }
+        // Badge signalétique : pictogramme cyan avec emoji
+        if (o.kind === 'badge') {
+          return (
+            <g key={i}>
+              <circle cx={cx} cy={cy} r={11} fill={o.color ?? '#06b6d4'} stroke="#fff" strokeWidth={1.5} />
+              <text x={cx} y={cy + 4} textAnchor="middle" fontSize={11} fill="#fff">
+                {o.label ?? '🪧'}
+              </text>
+            </g>
+          )
+        }
+        // Highlight : cercle outline
+        if (o.kind === 'highlight') {
+          return (
+            <circle key={i} cx={cx} cy={cy} r={14}
+              fill="none" stroke={o.color ?? '#fbbf24'} strokeWidth={2.5} strokeDasharray="4 2" />
+          )
+        }
+        // Arrow : flèche dirigée
+        if (o.kind === 'arrow') {
+          return (
+            <g key={i}>
+              <circle cx={cx} cy={cy} r={6} fill={o.color ?? '#10b981'} />
+              <text x={cx} y={cy + 3} textAnchor="middle" fontSize={9} fill="#fff">→</text>
+            </g>
+          )
+        }
+        return null
+      })}
+    </g>
   )
 }
 

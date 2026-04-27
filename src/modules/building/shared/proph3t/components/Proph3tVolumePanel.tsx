@@ -91,6 +91,7 @@ export function Proph3tVolumePanel({
   const [result, setResult] = useState<Proph3tResult<unknown> | null>(null)
   const [running, setRunning] = useState<'eval' | 'suggest' | 'audit' | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showFullReport, setShowFullReport] = useState(false)
   const lastExecAt = React.useRef<number>(0)
 
   const execute = useCallback(async (mode: 'eval' | 'suggest' | 'audit') => {
@@ -118,6 +119,12 @@ export function Proph3tVolumePanel({
       }
       const r = await runSkill(cfg.skill, input)
       setResult(r)
+      // Pousse les overlays (badges signalétique, heatmaps bottlenecks)
+      // dans le store partagé pour que MallMap2D les dessine sur le plan.
+      if (r.overlays && r.overlays.length > 0) {
+        const { useProph3tOverlaysStore } = await import('../../stores/proph3tOverlaysStore')
+        useProph3tOverlaysStore.getState().setOverlays(r.overlays, cfg.skill)
+      }
     } catch (err) {
       console.error(`[Proph3tVolumePanel] ${volume} ${mode} failed`, err)
       setError(`Erreur Proph3t : ${(err as Error).message ?? String(err)}`)
@@ -239,9 +246,43 @@ export function Proph3tVolumePanel({
             </p>
           </div>
         ) : (
-          <Proph3tResultPanel result={result} onApplyAction={onApplyAction} compact />
+          <>
+            <Proph3tResultPanel result={result} onApplyAction={onApplyAction} compact />
+            <button
+              onClick={() => setShowFullReport(true)}
+              className="mt-3 w-full px-3 py-2 rounded bg-emerald-700/40 hover:bg-emerald-700/60 text-emerald-100 text-[11px] font-semibold border border-emerald-500/40"
+            >
+              📊 Voir le rapport complet et détaillé →
+            </button>
+          </>
         )}
       </div>
+
+      {/* ─── Rapport plein écran modal ─── */}
+      {showFullReport && result && (
+        <div
+          className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6"
+          onClick={() => setShowFullReport(false)}
+        >
+          <div
+            className="bg-surface-1 border border-white/10 rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto p-6"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
+              <div>
+                <h2 className="text-lg font-bold text-white">Rapport Proph3t — {cfg.label}</h2>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  Skill : <span className="font-mono text-emerald-300">{result.skill}</span> ·
+                  Source : <span className="font-mono text-slate-300">{result.source}</span> ·
+                  Confiance : <span className="text-amber-300">{(result.confidence.score * 100).toFixed(0)}%</span>
+                </p>
+              </div>
+              <button onClick={() => setShowFullReport(false)} className="text-slate-400 hover:text-white text-2xl">×</button>
+            </div>
+            <Proph3tResultPanel result={result} onApplyAction={onApplyAction} />
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <div className="px-3 py-1.5 border-t border-white/[0.06] text-[9px] text-slate-500 flex items-center justify-between">
