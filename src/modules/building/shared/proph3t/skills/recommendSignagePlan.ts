@@ -48,7 +48,7 @@ export interface SignageRecommendation {
   currentQty: number
   missingQty: number
   /** Coordonnées proposées pour les panneaux manquants. */
-  suggestedLocations: Array<{ x: number; y: number; reason: string }>
+  suggestedLocations: Array<{ x: number; y: number; reason: string; targetPoiId?: string; zone?: PlanZone; zoneLabel?: string }>
   /** Justification du calcul de quantité. */
   rationale: string
   /** Coût total estimé pour les manquants (FCFA). */
@@ -66,6 +66,16 @@ export interface RecommendSignagePlanPayload {
   erpRequiredCount: number
   /** Couverture ERP : % d'obligations ERP satisfaites. */
   erpCompliancePct: number
+  /** Zones du plan détectées (galerie/promenade/parking/extérieur) avec aire et compteurs. */
+  zoneSummary: Array<{
+    zone: PlanZone
+    label: string
+    spaceCount: number
+    areaSqm: number
+    plannedSignsCount: number
+    /** Top types proposés dans cette zone. */
+    topTypes: Array<{ code: string; qty: number }>
+  }>
 }
 
 // ─── Helpers ───────────────────────────────────────
@@ -79,6 +89,39 @@ const WC_RE = /sanitaire|wc|toilette|restroom/i
 const PARKING_RE = /parking|stationnement/i
 const EXIT_RE = /sortie|exit|évac/i
 const ENTRANCE_RE = /entrée|entrance/i
+
+// ─── ZONES DU PLAN ─────────────────────────────────
+// Prophet doit connaître la galerie commerciale, la promenade, le parking
+// pour adapter le type de signalétique à chaque endroit.
+type PlanZone = 'galerie' | 'promenade' | 'parking' | 'exterior' | 'service' | 'unknown'
+
+const PROMENADE_RE = /mail|promenade|mall|hall|rotonde|atrium/i
+const EXTERIOR_RE = /parvis|exterieur|extérieur|jardin|outdoor|terrasse/i
+
+function classifyZone(s: PlanSpace): PlanZone {
+  const txt = `${s.type ?? ''} ${s.label ?? ''}`
+  if (PARKING_RE.test(txt)) return 'parking'
+  if (EXTERIOR_RE.test(txt)) return 'exterior'
+  if (PROMENADE_RE.test(txt)) return 'promenade'
+  if (COMMERCE_RE.test(txt)) return 'galerie' // les commerces font partie de la galerie
+  if (CIRC_RE.test(txt)) {
+    // Circulation : si grande surface (>200m²) → promenade, sinon galerie
+    return s.areaSqm > 200 ? 'promenade' : 'galerie'
+  }
+  if (ELEVATOR_RE.test(txt) || ESCALATOR_RE.test(txt) || STAIRS_RE.test(txt) || WC_RE.test(txt)) {
+    return 'service'
+  }
+  return 'unknown'
+}
+
+const ZONE_LABELS: Record<PlanZone, string> = {
+  galerie: 'Galerie commerciale',
+  promenade: 'Promenade / Mail',
+  parking: 'Parking',
+  exterior: 'Extérieur',
+  service: 'Espace de service',
+  unknown: 'Autre',
+}
 
 function matchesType(s: PlanSpace, re: RegExp): boolean {
   return re.test(String(s.type ?? '')) || re.test(String(s.label ?? ''))
@@ -279,19 +322,67 @@ function computeLocationsForType(
   meta: SignageTypeMeta,
   qty: number,
   ctx: Parameters<typeof computeQuantityForRule>[1],
-): Array<{ x: number; y: number; reason: string }> {
+): Array<{ x: number; y: number; reason: string; targetPoiId?: string }> {
   if (qty <= 0) return []
-  const out: Array<{ x: number; y: number; reason: string }> = []
+  const out: Array<{ x: number; y: number; reason: string; targetPoiId?: string }> = []
   const r = meta.quantityRule
 
-  // Cas 1 : par espace (commerce, ascenseur, etc.) — centroïde de chaque espace
-  let targetSpaces: PlanSpace[] | null = null
-  if (r.kind === 'per-local') targetSpaces = ctx.spaces.filter(s => COMMERCE_RE.test(s.type ?? '') || COMMERCE_RE.test(s.label ?? ''))
-  else if (r.kind === 'per-elevator') targetSpaces = ctx.spaces.filter(s => matchesType(s, ELEVATOR_RE))
-  else if (r.kind === 'per-escalator') targetSpaces = ctx.spaces.filter(s => matchesType(s, ESCALATOR_RE))
-  else if (r.kind === 'per-stair') targetSpaces = ctx.spaces.filter(s => matchesType(s, STAIRS_RE))
-  else if (r.kind === 'per-wc-block') targetSpaces = ctx.spaces.filter(s => matchesType(s, WC_RE))
-  if (targetSpaces && targetSpaces.length > 0) {
+  // ═══ PLACEMENT CONTEXTUEL (Prophet lit le plan + propose) ═══
+  // Pour les types directionnels : trace les routes entrée → ancres et place
+  // les panneaux aux nœuds de décision sur le chemin, avec target POI explicite.
+  const isDirectional = meta.code === 'DIR-S' || meta.code === 'DIR-M' || meta.code === 'DIR-SOL'
+  if (isDirectional) {
+    const contextual = contextualRoutePlacements(meta, qty, ctx)
+    if (contextual.length > 0) {
+      out.push(...contextual)
+      // Si pas assez via routing, complète avec décision nodes restants
+      if (out.length < qty) {
+        const remaining = qty - out.length
+        const fallback = computeDecisionNodes(ctx.circulationSpaces)
+          .filter(n => !out.some(o => Math.hypot(o.x - n.x, o.y - n.y) < 8))
+          .slice(0, remaining)
+        for (const n of fallback) {
+          out.push({ x: n.x, y: n.y, reason: `${meta.label} au nœud de décision` })
+        }
+      }
+      return out
+    }
+  }
+
+  // Pour PLAN-M : placer aux entrées principales + 1 au centre de la plus
+  // grande circulation (mail principal). Plus contextuel que distribué uniformément.
+  if (meta.code === 'PLAN-M') {
+    const entrances = ctx.pois.filter(p => ENTRANCE_RE.test(p.label) || p.priority === 1).slice(0, 3)
+    for (const e of entrances) {
+      if (out.length >= qty) break
+      out.push({ x: e.x, y: e.y, reason: `${meta.label} à "${e.label}"` })
+    }
+    // Mail principal = plus grande circulation
+    const sorted = [...ctx.circulationSpaces].sort((a, b) => b.areaSqm - a.areaSqm)
+    if (sorted.length > 0 && out.length < qty) {
+      const [cx, cy] = polygonCentroid(sorted[0].polygon)
+      out.push({ x: cx, y: cy, reason: `${meta.label} au centre du mail principal "${sorted[0].label || sorted[0].id}"` })
+    }
+    return out
+  }
+
+  // Cas 1 : par espace de service — utilise placement contextuel (centre + pré-service)
+  if (r.kind === 'per-elevator') {
+    return contextualServicePlacements(meta, qty, ctx, ELEVATOR_RE, 'Ascenseur')
+  }
+  if (r.kind === 'per-escalator') {
+    return contextualServicePlacements(meta, qty, ctx, ESCALATOR_RE, 'Escalator')
+  }
+  if (r.kind === 'per-stair') {
+    return contextualServicePlacements(meta, qty, ctx, STAIRS_RE, 'Escalier')
+  }
+  if (r.kind === 'per-wc-block') {
+    return contextualServicePlacements(meta, qty, ctx, WC_RE, 'Sanitaires')
+  }
+
+  // Cas 1bis : per-local (commerce) — centroïde du polygone
+  if (r.kind === 'per-local') {
+    const targetSpaces = ctx.spaces.filter(s => COMMERCE_RE.test(s.type ?? '') || COMMERCE_RE.test(s.label ?? ''))
     for (const s of targetSpaces.slice(0, qty)) {
       const [cx, cy] = polygonCentroid(s.polygon)
       out.push({ x: cx, y: cy, reason: `${meta.label} pour "${s.label}" (${s.id})` })
@@ -364,6 +455,169 @@ function computeLocationsForType(
     reason: `${meta.label} (placement par défaut au centre du plan)`,
   })
   return out
+}
+
+// ─── PLACEMENT CONTEXTUEL (routes entrée→ancres) ───────
+//
+// Distance d'un point à un segment (utilisé pour trouver les nœuds le long
+// d'un trajet entrée→ancrage).
+function distancePointToSegment(
+  px: number, py: number,
+  a: { x: number; y: number }, b: { x: number; y: number },
+): number {
+  const dx = b.x - a.x, dy = b.y - a.y
+  const len2 = dx * dx + dy * dy
+  if (len2 === 0) return Math.hypot(px - a.x, py - a.y)
+  let t = ((px - a.x) * dx + (py - a.y) * dy) / len2
+  t = Math.max(0, Math.min(1, t))
+  return Math.hypot(px - (a.x + t * dx), py - (a.y + t * dy))
+}
+
+/**
+ * Placement contextuel pour les directionnels (DIR-S, DIR-M) :
+ * pour chaque (entrée × POI ancre) trace une route directe et place 1-2
+ * panneaux aux nœuds de décision les plus proches de la route.
+ * Chaque sign a un target POI explicite et un reason "Vers X depuis Y".
+ */
+function contextualRoutePlacements(
+  meta: SignageTypeMeta,
+  qty: number,
+  ctx: Parameters<typeof computeQuantityForRule>[1],
+): Array<{ x: number; y: number; reason: string; targetPoiId?: string }> {
+  const out: Array<{ x: number; y: number; reason: string; targetPoiId?: string }> = []
+
+  // Entrées : POIs labellisés "entrée" ou priority 1 + vehicle accesses
+  const entrances = ctx.pois.filter(p =>
+    ENTRANCE_RE.test(p.label) || (p.priority === 1 && !EXIT_RE.test(p.label)),
+  )
+  // Ancres : POIs priority 1 (excluant entrées)
+  const anchors = ctx.pois.filter(p =>
+    p.priority === 1 && !ENTRANCE_RE.test(p.label) && !EXIT_RE.test(p.label),
+  ).slice(0, 8)
+
+  if (entrances.length === 0 || anchors.length === 0) return out
+  const nodes = computeDecisionNodes(ctx.circulationSpaces)
+  if (nodes.length === 0) return out
+
+  // Pour chaque paire (entrée × ancre), prend les 2 décision nodes les plus
+  // proches de la ligne reliant entrée→ancre, en commençant par celui le plus
+  // proche de l'ancre (sign le plus proche pointe vers le but).
+  const pairCount = Math.min(entrances.length * anchors.length, qty * 2)
+  const pairs: Array<{ ent: PlanPoi; anc: PlanPoi }> = []
+  for (const ent of entrances) {
+    for (const anc of anchors) {
+      pairs.push({ ent, anc })
+    }
+  }
+  // Tri : prioriser les paires avec longue distance (plus de signs nécessaires)
+  pairs.sort((a, b) => {
+    const da = Math.hypot(a.ent.x - a.anc.x, a.ent.y - a.anc.y)
+    const db = Math.hypot(b.ent.x - b.anc.x, b.ent.y - b.anc.y)
+    return db - da
+  })
+
+  for (const { ent, anc } of pairs) {
+    if (out.length >= qty) break
+    // Nœuds dans un corridor de 25m autour de la ligne entrée→ancre
+    const onPath = nodes
+      .map(n => ({
+        n,
+        dToLine: distancePointToSegment(n.x, n.y, ent, anc),
+        dToAnchor: Math.hypot(n.x - anc.x, n.y - anc.y),
+        dToEnt: Math.hypot(n.x - ent.x, n.y - ent.y),
+        totalRouteLen: Math.hypot(ent.x - anc.x, ent.y - anc.y),
+      }))
+      .filter(o => o.dToLine < 25 && o.dToAnchor > 8 && o.dToEnt > 8)
+      .filter(o => o.dToAnchor + o.dToEnt < o.totalRouteLen + 30) // sur ou très près du segment
+      .sort((a, b) => a.dToAnchor - b.dToAnchor)
+
+    if (onPath.length === 0) continue
+
+    // Prend 1 sign proche de l'ancre + 1 à mi-parcours si distance > 30m
+    const dist = Math.hypot(ent.x - anc.x, ent.y - anc.y)
+    const toPlace = dist > 50 ? onPath.slice(0, 2) : onPath.slice(0, 1)
+    for (const o of toPlace) {
+      // Évite duplicatas (déjà un sign vers cette ancre depuis ce nœud)
+      const dup = out.some(p => Math.hypot(p.x - o.n.x, p.y - o.n.y) < 6 && p.targetPoiId === anc.id)
+      if (dup) continue
+      out.push({
+        x: o.n.x,
+        y: o.n.y,
+        reason: `${meta.label} → "${anc.label}" depuis "${ent.label}" (${o.dToAnchor.toFixed(0)}m)`,
+        targetPoiId: anc.id,
+      })
+      pairCount
+      if (out.length >= qty) break
+    }
+  }
+
+  return out
+}
+
+/**
+ * Placement contextuel pour services (SRV-WC, SRV-ASC, SRV-ESC, etc.) :
+ * • 1 sign au centroïde de chaque espace de service (l'identification)
+ * • 1 sign "directionnel pré-service" placé à 12-15m en amont sur la
+ *   circulation la plus proche (le panneau qui guide vers le service).
+ */
+function contextualServicePlacements(
+  meta: SignageTypeMeta,
+  qty: number,
+  ctx: Parameters<typeof computeQuantityForRule>[1],
+  serviceMatcher: RegExp,
+  serviceTypeName: string,
+): Array<{ x: number; y: number; reason: string }> {
+  const out: Array<{ x: number; y: number; reason: string }> = []
+  const services = ctx.spaces.filter(s => matchesType(s, serviceMatcher))
+  if (services.length === 0) return out
+
+  for (const svc of services) {
+    if (out.length >= qty) break
+    const [scx, scy] = polygonCentroid(svc.polygon)
+    out.push({
+      x: scx,
+      y: scy,
+      reason: `${meta.label} pour "${svc.label || svc.id}" — ${serviceTypeName}`,
+    })
+
+    // Sign directionnel pré-service à ~13m dans la circulation la plus proche
+    if (out.length >= qty) break
+    let bestPoint: { x: number; y: number; circLabel: string } | null = null
+    let bestDist = Infinity
+    for (const c of ctx.circulationSpaces) {
+      const [ccx, ccy] = polygonCentroid(c.polygon)
+      // Direction du service vers le centre de circulation
+      const dx = ccx - scx, dy = ccy - scy
+      const d = Math.hypot(dx, dy)
+      if (d > 0 && d < bestDist) {
+        const t = Math.min(13, d - 5) / d // 13m vers le centre, sans dépasser
+        bestPoint = {
+          x: scx + dx * t,
+          y: scy + dy * t,
+          circLabel: c.label || c.id,
+        }
+        bestDist = d
+      }
+    }
+    if (bestPoint) {
+      out.push({
+        x: bestPoint.x,
+        y: bestPoint.y,
+        reason: `${meta.label} → "${svc.label || svc.id}" (pré-service, sur ${bestPoint.circLabel})`,
+      })
+    }
+  }
+  return out
+}
+
+/** Trouve dans quelle zone du plan se trouve un point. */
+function findZoneOfPoint(x: number, y: number, spaces: PlanSpace[]): { zone: PlanZone; spaceLabel: string } {
+  for (const s of spaces) {
+    if (pointInPolygon(x, y, s.polygon)) {
+      return { zone: classifyZone(s), spaceLabel: s.label || s.id }
+    }
+  }
+  return { zone: 'unknown', spaceLabel: '—' }
 }
 
 function computeDecisionNodes(circs: PlanSpace[]): Array<{ x: number; y: number; fromCircId: string }> {
@@ -466,6 +720,17 @@ export async function recommendSignagePlan(
       )
       if (!tooClose) suggestedLocations.push(loc)
     }
+    // ─── ENRICHISSEMENT ZONE : tag chaque placement avec sa zone du plan ───
+    for (let li = 0; li < suggestedLocations.length; li++) {
+      const loc = suggestedLocations[li]
+      const { zone, spaceLabel } = findZoneOfPoint(loc.x, loc.y, input.spaces)
+      suggestedLocations[li] = {
+        ...loc,
+        zone,
+        zoneLabel: ZONE_LABELS[zone],
+        reason: `[${ZONE_LABELS[zone]} · ${spaceLabel}] ${loc.reason}`,
+      }
+    }
     // Si l'espacement a réduit, on ajuste missingQty au nombre réel de positions valides
     const effectiveMissingQty = Math.min(missingQty, suggestedLocations.length || missingQty)
     recommendations.push({
@@ -557,6 +822,43 @@ export async function recommendSignagePlan(
     ? `Plan signalétique complet — ${totalCurrent} panneaux conformes catalogue (${(totalCostFcfa / 1_000_000).toFixed(1)} M FCFA déployés).`
     : `Plan recommandé : ${totalRequired} panneaux (${recommendations.length} types) · ${totalCurrent} placés · ${totalMissing} manquants · ${(costMissingFcfa / 1_000_000).toFixed(1)} M FCFA à investir · Conformité ERP ${erpCompliancePct.toFixed(0)}%.`
 
+  // ─── Zone summary : aggrégation par zone détectée ───
+  const zoneAggr = new Map<PlanZone, { spaceCount: number; areaSqm: number; signs: Array<{ code: string }> }>()
+  // Comptage des espaces par zone
+  for (const s of input.spaces) {
+    const z = classifyZone(s)
+    const cur = zoneAggr.get(z) ?? { spaceCount: 0, areaSqm: 0, signs: [] }
+    cur.spaceCount++
+    cur.areaSqm += s.areaSqm
+    zoneAggr.set(z, cur)
+  }
+  // Comptage des signs proposés par zone
+  for (const rec of recommendations) {
+    for (const loc of rec.suggestedLocations) {
+      const z = (loc.zone ?? 'unknown') as PlanZone
+      const cur = zoneAggr.get(z) ?? { spaceCount: 0, areaSqm: 0, signs: [] }
+      cur.signs.push({ code: rec.code })
+      zoneAggr.set(z, cur)
+    }
+  }
+  const zoneSummary = Array.from(zoneAggr.entries()).map(([zone, agg]) => {
+    // Top types par fréquence
+    const counts: Record<string, number> = {}
+    for (const sig of agg.signs) counts[sig.code] = (counts[sig.code] ?? 0) + 1
+    const topTypes = Object.entries(counts)
+      .map(([code, qty]) => ({ code, qty }))
+      .sort((a, b) => b.qty - a.qty)
+      .slice(0, 5)
+    return {
+      zone,
+      label: ZONE_LABELS[zone],
+      spaceCount: agg.spaceCount,
+      areaSqm: agg.areaSqm,
+      plannedSignsCount: agg.signs.length,
+      topTypes,
+    }
+  }).sort((a, b) => b.areaSqm - a.areaSqm)
+
   const payload: RecommendSignagePlanPayload = {
     recommendations,
     totalRequired,
@@ -567,6 +869,7 @@ export async function recommendSignagePlan(
     byPriority,
     erpRequiredCount,
     erpCompliancePct,
+    zoneSummary,
   }
 
   return {

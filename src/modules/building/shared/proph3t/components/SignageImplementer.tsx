@@ -166,7 +166,7 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
     addMany(projectId, rec.suggestedLocations.map(loc => ({
       x: loc.x, y: loc.y,
       kind: rec.code,
-      targets: [],
+      targets: loc.targetPoiId ? [loc.targetPoiId] : [],
       label: rec.meta.label,
       reason: loc.reason,
       source: 'proph3t-auto' as const,
@@ -1029,6 +1029,40 @@ function SignagePlanModal({
             <Kpi label="Budget restant" value={(p.costMissingFcfa / 1_000_000).toFixed(1)} unit="M FCFA" color="amber" />
             <Kpi label="Conformité ERP" value={p.erpCompliancePct.toFixed(0)} unit="%" color={p.erpCompliancePct === 100 ? 'emerald' : 'rose'} />
           </div>
+
+          {/* ═══ ZONES DU PLAN DÉTECTÉES PAR PROPHET ═══ */}
+          {p.zoneSummary && p.zoneSummary.length > 0 && (
+            <section className="rounded-lg border border-emerald-500/30 bg-emerald-950/15 p-4">
+              <h3 className="text-[12px] font-bold text-emerald-200 uppercase tracking-wider mb-2">
+                🗺️ Plan analysé — zones détectées
+              </h3>
+              <p className="text-[11px] text-emerald-100 mb-3">
+                Prophet a identifié les zones suivantes et adapte la signalétique à chacune (galerie commerciale, promenade/mail, parking, extérieur, services).
+              </p>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                {p.zoneSummary.filter(z => z.zone !== 'unknown').map(z => (
+                  <div key={z.zone} className="rounded border border-white/10 bg-surface-0 p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[12px] font-bold text-white">{z.label}</span>
+                      <span className="text-[10px] text-emerald-300 font-mono">{z.plannedSignsCount} panneaux</span>
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      {z.spaceCount} espace{z.spaceCount > 1 ? 's' : ''} · {z.areaSqm.toFixed(0)} m²
+                    </div>
+                    {z.topTypes.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {z.topTypes.map(t => (
+                          <span key={t.code} className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-900/30 text-cyan-200 font-mono">
+                            {t.code} ×{t.qty}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Filtres catégorie */}
           <div className="flex gap-1.5 flex-wrap items-center">
