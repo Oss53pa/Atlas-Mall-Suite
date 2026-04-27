@@ -82,10 +82,12 @@ export interface RecommendSignagePlanPayload {
 
 const COMMERCE_RE = /commerce|mode|restau|food|magasin|boutique|shop/i
 const CIRC_RE = /circul|hall|mall|mail|couloir|passage|piet|piéton|voie|parvis|entr|access|porte/i
-const ELEVATOR_RE = /ascenseur|elevator|lift/i
-const ESCALATOR_RE = /escalator|escalier méca|escalator/i
-const STAIRS_RE = /escalier|stair/i
-const WC_RE = /sanitaire|wc|toilette|restroom/i
+// Regexes strictes — match uniquement les types canoniques pour éviter les
+// faux positifs (ex : "lift" dans "lift truck" pour parking).
+const ELEVATOR_RE = /\b(ascenseur|elevator)\b/i
+const ESCALATOR_RE = /\b(escalator|escalier[\s_-]?méca|escalier[\s_-]?roulant)\b/i
+const STAIRS_RE = /\b(escalier|staircase|stairwell)\b/i
+const WC_RE = /\b(sanitaire|sanitaires|wc|toilette|toilettes|restroom|lavabo)\b/i
 const PARKING_RE = /parking|stationnement/i
 const EXIT_RE = /sortie|exit|évac/i
 const ENTRANCE_RE = /entrée|entrance/i
@@ -571,6 +573,10 @@ function contextualServicePlacements(
   const services = ctx.spaces.filter(s => matchesType(s, serviceMatcher))
   if (services.length === 0) return out
 
+  // Si beaucoup de services détectés, on se limite au centroïde (pas de
+  // pré-service en plus pour éviter de doubler le nombre de signs).
+  const skipPreService = services.length > 6
+
   for (const svc of services) {
     if (out.length >= qty) break
     const [scx, scy] = polygonCentroid(svc.polygon)
@@ -581,6 +587,7 @@ function contextualServicePlacements(
     })
 
     // Sign directionnel pré-service à ~13m dans la circulation la plus proche
+    if (skipPreService) continue
     if (out.length >= qty) break
     let bestPoint: { x: number; y: number; circLabel: string } | null = null
     let bestDist = Infinity

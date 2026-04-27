@@ -284,6 +284,32 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
   const placedAuto = placedForProject.filter(s => s.source === 'proph3t-auto').length
   const uncertainCount = placedForProject.filter(s => s.needsReview && !s.reviewed).length
 
+  // Breakdown placés par type (avec metadata catalogue)
+  const placedByType = useMemo(() => {
+    const groups = new Map<string, { code: string; count: number; def: ReturnType<typeof resolveSignageKind> }>()
+    for (const s of placedForProject) {
+      const def = resolveSignageKind(s.kind)
+      const key = def.code
+      const cur = groups.get(key) ?? { code: key, count: 0, def }
+      cur.count++
+      groups.set(key, cur)
+    }
+    return Array.from(groups.values()).sort((a, b) => b.count - a.count)
+  }, [placedForProject])
+
+  /** Retire tous les panneaux d'un type donné. */
+  const handleRemoveByCode = (code: string) => {
+    const matching = placedForProject.filter(s => resolveSignageKind(s.kind).code === code)
+    if (matching.length === 0) return
+    const ok = confirm(`Retirer les ${matching.length} panneaux de type "${resolveSignageKind(matching[0].kind).label}" (${code}) ?`)
+    if (!ok) return
+    for (const s of matching) {
+      useSignagePlacementStore.getState().remove(s.id)
+    }
+    setFeedback(`🗑️ ${matching.length} × ${code} retirés`)
+    setTimeout(() => setFeedback(null), 2500)
+  }
+
   const positionClass = position === 'bottom-left' ? 'bottom-4 left-4' : 'bottom-4 right-4'
 
   return (
@@ -377,6 +403,35 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
               Retirer la signalétique auto
             </button>
           )}
+          {/* Breakdown par type — identifie ce qui pollue le plan */}
+          {placedByType.length > 0 && (
+            <div className="rounded border border-white/10 bg-surface-1 p-2 mt-1">
+              <div className="text-[9px] uppercase tracking-widest text-slate-500 mb-1.5 flex items-center justify-between">
+                <span>Panneaux placés ({placedForProject.length})</span>
+                <span className="text-slate-400">par type — clic = retirer</span>
+              </div>
+              <div className="space-y-1 max-h-[160px] overflow-y-auto">
+                {placedByType.map(g => (
+                  <button
+                    key={g.code}
+                    onClick={() => handleRemoveByCode(g.code)}
+                    className="w-full flex items-center gap-2 px-2 py-1 rounded bg-surface-0 hover:bg-rose-950/40 hover:border-rose-500/40 border border-white/5 text-left transition group"
+                    title={`${g.def.label} — ${g.def.description}\nClic = retirer les ${g.count} panneaux`}
+                  >
+                    <span style={{ color: g.def.color }} className="text-base leading-none">{g.def.icon}</span>
+                    <span className="flex-1 text-[10px] text-slate-300">
+                      <span className="font-mono text-cyan-300 mr-1">{g.code}</span>
+                      <span>{g.def.label}</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400 group-hover:text-rose-300">
+                      {g.count}<Trash2 size={9} className="inline ml-1 opacity-0 group-hover:opacity-100" />
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {placedForProject.length > 0 && (
             <button
               onClick={handleRemoveAll}
