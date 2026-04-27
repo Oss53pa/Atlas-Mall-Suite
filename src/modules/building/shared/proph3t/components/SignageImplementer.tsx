@@ -913,18 +913,45 @@ function SignagePlanModal({
   onPlaceOne: (rec: RecommendSignagePlanPayload['recommendations'][number]) => void
   onPlaceAll: () => void
 }) {
+  // Filtre catégorie : 'all' | 'parcours' | category key
+  const [filter, setFilter] = useState<'all' | 'parcours' | SignageCategoryKey>('parcours')
+
   if (!open || !result) return null
   const p = result.payload
+
   // Tri ERP d'abord, puis par priorité, puis par missing desc
-  const sorted = useMemo(() => {
-    return [...p.recommendations].sort((a, b) => {
-      if (a.meta.erpRequired !== b.meta.erpRequired) return a.meta.erpRequired ? -1 : 1
-      const prio = { P1: 0, P2: 1, P3: 2 }
-      const pa = prio[a.meta.priority] - prio[b.meta.priority]
-      if (pa !== 0) return pa
-      return b.missingQty - a.missingQty
-    })
-  }, [p.recommendations])
+  const sortedAll = [...p.recommendations].sort((a, b) => {
+    if (a.meta.erpRequired !== b.meta.erpRequired) return a.meta.erpRequired ? -1 : 1
+    const prio = { P1: 0, P2: 1, P3: 2 }
+    const pa = prio[a.meta.priority] - prio[b.meta.priority]
+    if (pa !== 0) return pa
+    return b.missingQty - a.missingQty
+  })
+
+  // Catégories "Parcours client" = wayfinding pour le client (panneaux qui guident).
+  const PARCOURS_CATS: SignageCategoryKey[] = ['orientation-direction', 'wayfinding-numerique', 'information-services']
+
+  const sorted = filter === 'all'
+    ? sortedAll
+    : filter === 'parcours'
+      ? sortedAll.filter(r => PARCOURS_CATS.includes(r.meta.category))
+      : sortedAll.filter(r => r.meta.category === filter)
+
+  const filterStats = {
+    all: sortedAll,
+    parcours: sortedAll.filter(r => PARCOURS_CATS.includes(r.meta.category)),
+    'orientation-direction': sortedAll.filter(r => r.meta.category === 'orientation-direction'),
+    'identification-locaux': sortedAll.filter(r => r.meta.category === 'identification-locaux'),
+    'securite-erp': sortedAll.filter(r => r.meta.category === 'securite-erp'),
+    'information-services': sortedAll.filter(r => r.meta.category === 'information-services'),
+    'communication-promotion': sortedAll.filter(r => r.meta.category === 'communication-promotion'),
+    'wayfinding-numerique': sortedAll.filter(r => r.meta.category === 'wayfinding-numerique'),
+  } as const
+
+  const filterMissing = (key: keyof typeof filterStats) =>
+    filterStats[key].reduce((s, r) => s + r.missingQty, 0)
+  const filterRequired = (key: keyof typeof filterStats) =>
+    filterStats[key].reduce((s, r) => s + r.requiredQty, 0)
 
   return (
     <div
@@ -971,10 +998,38 @@ function SignagePlanModal({
             <Kpi label="Conformité ERP" value={p.erpCompliancePct.toFixed(0)} unit="%" color={p.erpCompliancePct === 100 ? 'emerald' : 'rose'} />
           </div>
 
+          {/* Filtres catégorie */}
+          <div className="flex gap-1.5 flex-wrap items-center">
+            <FilterTab active={filter === 'parcours'} onClick={() => setFilter('parcours')}
+              label="🚶 Parcours client" missing={filterMissing('parcours')} required={filterRequired('parcours')} highlight />
+            <FilterTab active={filter === 'securite-erp'} onClick={() => setFilter('securite-erp')}
+              label="🚨 Sécurité ERP" missing={filterMissing('securite-erp')} required={filterRequired('securite-erp')} />
+            <FilterTab active={filter === 'identification-locaux'} onClick={() => setFilter('identification-locaux')}
+              label="🏷 Identification locaux" missing={filterMissing('identification-locaux')} required={filterRequired('identification-locaux')} />
+            <FilterTab active={filter === 'communication-promotion'} onClick={() => setFilter('communication-promotion')}
+              label="📣 Communication" missing={filterMissing('communication-promotion')} required={filterRequired('communication-promotion')} />
+            <FilterTab active={filter === 'all'} onClick={() => setFilter('all')}
+              label="Tout afficher" missing={filterMissing('all')} required={filterRequired('all')} />
+          </div>
+
+          {/* Banner explicatif quand filtre = parcours */}
+          {filter === 'parcours' && (
+            <div className="rounded-lg border border-emerald-500/30 bg-emerald-950/20 p-3 text-[11px] text-emerald-100">
+              <strong className="text-emerald-300">Signalétique parcours client</strong> — panneaux qui guident le visiteur de l'entrée à sa destination :
+              <span className="mx-1 px-1.5 py-0.5 rounded bg-amber-900/30 text-amber-200 text-[10px] font-mono">DIR-S</span> directionnels suspendus aux nœuds,
+              <span className="mx-1 px-1.5 py-0.5 rounded bg-amber-900/30 text-amber-200 text-[10px] font-mono">DIR-M</span> applique murale couloirs secondaires,
+              <span className="mx-1 px-1.5 py-0.5 rounded bg-amber-900/30 text-amber-200 text-[10px] font-mono">DIR-SOL</span> marquage au sol,
+              <span className="mx-1 px-1.5 py-0.5 rounded bg-amber-900/30 text-amber-200 text-[10px] font-mono">PLAN-M</span> plans Vous-êtes-ici,
+              <span className="mx-1 px-1.5 py-0.5 rounded bg-amber-900/30 text-amber-200 text-[10px] font-mono">REP</span> répertoire d'enseignes aux entrées,
+              <span className="mx-1 px-1.5 py-0.5 rounded bg-amber-900/30 text-amber-200 text-[10px] font-mono">SRV-WC/ASC</span> services,
+              <span className="mx-1 px-1.5 py-0.5 rounded bg-amber-900/30 text-amber-200 text-[10px] font-mono">WAY-BOR</span> bornes wayfinder interactives.
+            </div>
+          )}
+
           {/* Table */}
           <section>
             <h3 className="text-[12px] font-bold text-white uppercase tracking-wider mb-3">
-              Recommandations par type ({sorted.length})
+              {filter === 'parcours' ? 'Signalétique parcours client' : filter === 'all' ? 'Toutes les recommandations' : 'Recommandations'} ({sorted.length} types)
             </h3>
             <div className="rounded-lg border border-white/10 overflow-hidden">
               <table className="w-full text-[11px]">
@@ -1066,6 +1121,40 @@ function SignagePlanModal({
         </div>
       </div>
     </div>
+  )
+}
+
+function FilterTab({
+  active, onClick, label, missing, required, highlight,
+}: {
+  active: boolean
+  onClick: () => void
+  label: string
+  missing: number
+  required: number
+  highlight?: boolean
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-2 px-3 py-2 rounded text-[11px] font-semibold transition border ${
+        active
+          ? highlight
+            ? 'bg-emerald-700 text-white border-emerald-400'
+            : 'bg-cyan-700 text-white border-cyan-400'
+          : highlight
+            ? 'bg-emerald-950/40 text-emerald-200 border-emerald-500/30 hover:bg-emerald-950/60'
+            : 'bg-surface-0 text-slate-300 border-white/10 hover:bg-slate-800'
+      }`}
+    >
+      <span>{label}</span>
+      {required > 0 && (
+        <span className="text-[9px] font-mono px-1 py-0.5 rounded bg-black/20">
+          {required - missing}/{required}
+          {missing > 0 && <span className="text-amber-300 ml-1">·{missing} manque</span>}
+        </span>
+      )}
+    </button>
   )
 }
 
