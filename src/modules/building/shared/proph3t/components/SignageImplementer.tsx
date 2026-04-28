@@ -150,13 +150,33 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
     }
   }
 
-  const handleRecommendPlan = async () => {
+  const handleRecommendPlan = async (autoMode = false) => {
     if (!buildAuditInput) {
       setFeedback('⚠️ Plan indisponible'); setTimeout(() => setFeedback(null), 2500); return
     }
     const inp = buildAuditInput()
     if (!inp) {
       setFeedback('⚠️ Plan indisponible'); setTimeout(() => setFeedback(null), 2500); return
+    }
+    // Si beaucoup de placements auto existent, propose de tout retirer d'abord
+    // (sauf en mode auto-refresh interne)
+    if (!autoMode && placedAuto > 50) {
+      const ok = confirm(
+        `Tu as déjà ${placedAuto} panneaux auto-placés. Le plan signalétique va être recalculé sur ce qui existe.\n\n` +
+        `Retirer les anciens placements auto avant de recalculer ?\n\n` +
+        `OK = Retirer les anciens puis recalculer (recommandé)\n` +
+        `Annuler = Recalculer en gardant les anciens`,
+      )
+      if (ok) {
+        const manuals = placedForProject.filter(s => s.source === 'manual')
+        clearForProject(projectId)
+        if (manuals.length > 0) {
+          addMany(projectId, manuals.map(m => ({
+            x: m.x, y: m.y, kind: m.kind, targets: m.targets,
+            label: m.label, reason: m.reason, source: 'manual', floorId: m.floorId,
+          })))
+        }
+      }
     }
     setPlanning(true)
     try {
@@ -222,7 +242,7 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
     const { useSignagePlanPinsStore } = await import('../../stores/signagePlanPinsStore')
     useSignagePlanPinsStore.getState().removeByCode(rec.code)
     // Refresh planResult pour mettre à jour les compteurs
-    handleRecommendPlan()
+    handleRecommendPlan(true)
   }
 
   /** Place TOUS les manquants en un clic (couvre tout le plan). */
@@ -257,7 +277,7 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
     }
     setFeedback(`✅ ${total} panneaux placés (plan complet)`)
     setTimeout(() => setFeedback(null), 3000)
-    handleRecommendPlan()
+    handleRecommendPlan(true)
   }
 
   /** EMERGENCY : retire TOUS les panneaux du projet (auto + manuel). */

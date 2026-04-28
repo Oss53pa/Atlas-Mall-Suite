@@ -790,16 +790,45 @@ export async function recommendSignagePlan(
       )
       if (!tooClose) suggestedLocations.push(loc)
     }
-    // ─── ENRICHISSEMENT ZONE + REJET DES PLACEMENTS PARKING/EXTÉRIEUR ───
-    // Sauf pour les types qui DOIVENT être en parking/extérieur (TOT-EXT, SRV-PKG)
-    const allowedInParking = code === 'TOT-EXT' || code === 'SRV-PKG'
-    const allowedInExterior = code === 'TOT-EXT' || code === 'SRV-PKG' || code === 'COM-LED'
+    // ─── WHITELIST STRICTE : un pin doit être DANS une circulation valide ───
+    // Plus de blacklist qui laisse passer les zones "inconnues". On exige
+    // que le point soit explicitement à l'intérieur d'au moins UN polygone
+    // de circulationSpaces (qui sont déjà filtrées : indoor uniquement).
+    //
+    // Exceptions par TYPE :
+    //   • TOT-EXT, SRV-PKG  : doivent être DANS un polygone parking/extérieur
+    //   • COM-LED           : doit être dans un polygone extérieur (façade)
+    //   • LOT-N, ENS, COM-VIT : doit être dans un polygone commerce (centroïde)
+    //   • SRV-WC, SRV-ASC, SRV-ESC, etc. : centroïde de leur espace de service
+    //
+    // Tous les autres types (DIR-S, DIR-M, PLAN-M, SEC-IS, SEC-EXT, etc.)
+    // doivent être dans une CIRCULATION INTÉRIEURE.
+    const SERVICE_TYPES = new Set(['SRV-WC', 'SRV-ASC', 'SRV-PKG'])
+    const COMMERCE_TYPES = new Set(['LOT-N', 'ENS', 'COM-VIT'])
+    const OUTDOOR_TYPES = new Set(['TOT-EXT', 'COM-LED'])
+
     const filteredByZone: typeof suggestedLocations = []
     for (const loc of suggestedLocations) {
       const { zone, spaceLabel } = findZoneOfPoint(loc.x, loc.y, input.spaces)
-      // Rejette les placements en parking/extérieur sauf si le type le requiert
-      if (zone === 'parking' && !allowedInParking) continue
-      if (zone === 'exterior' && !allowedInExterior) continue
+
+      let accepted = false
+      if (OUTDOOR_TYPES.has(code)) {
+        // Doit être en extérieur (parvis/jardin) ou parking
+        accepted = (zone === 'exterior' || zone === 'parking')
+      } else if (code === 'SRV-PKG') {
+        accepted = zone === 'parking'
+      } else if (SERVICE_TYPES.has(code)) {
+        // Service indoor : zone === 'service' OU pin dans une circulation
+        accepted = zone === 'service' || circulationSpaces.some(c => pointInPolygon(loc.x, loc.y, c.polygon))
+      } else if (COMMERCE_TYPES.has(code)) {
+        // Commerce : zone === 'galerie' (un commerce ou circulation de la galerie)
+        accepted = zone === 'galerie'
+      } else {
+        // Tous les autres : doit être DANS UNE CIRCULATION VALIDÉE
+        accepted = circulationSpaces.some(c => pointInPolygon(loc.x, loc.y, c.polygon))
+      }
+
+      if (!accepted) continue
       filteredByZone.push({
         ...loc,
         zone,

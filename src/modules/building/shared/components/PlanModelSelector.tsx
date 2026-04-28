@@ -119,7 +119,7 @@ export function PlanModelSelector({ projectId, accentColor = '#b38a5a', compact 
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 mt-1 w-80 rounded-lg bg-surface-1 border border-white/10 shadow-2xl z-[100] overflow-hidden">
+        <div className="absolute top-full right-0 mt-1 w-80 rounded-lg bg-surface-1 border border-white/10 shadow-2xl z-[300] overflow-hidden">
           {/* Header */}
           <div className="px-3 py-2 border-b border-white/5 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
