@@ -90,18 +90,32 @@ export interface RecommendSignagePlanPayload {
 
 // ─── Helpers ───────────────────────────────────────
 
-// Commerces : mode, restauration, food court, magasin, boutique, retail, etc.
-const COMMERCE_RE = /\b(commerce|commerces|mode|restau|restaurant|food[\s_-]?court|food|magasin|boutique|shop|retail|kiosque|stand)\b/i
-// Circulations : circulation, hall, mall, mail, couloir, passage piéton,
-// voie, parvis, entrée, access, porte
-const CIRC_RE = /\b(circulation|circul|hall|mall|mail|couloir|couloirs|passage|piét|piet|piéton|voie|parvis|entrée|entree|access|accès|porte|portes)\b/i
-// Regexes — Prophet lit type ET label. Word boundaries pour éviter le pire,
-// mais on inclut variantes FR/EN/abréviations utilisateur courantes.
+// Commerces : matche les SpaceTypeKey canoniques (commerce_*, local_commerce,
+// restauration, food_court, loisirs, services, grande_surface, kiosque) +
+// variantes labels manuels.
+const COMMERCE_RE = /\b(commerce|commerces|local_commerce|restauration|restau|restaurant|food[\s_-]?court|food|loisirs|services|grande_surface|magasin|boutique|shop|retail|kiosque|stand|hotel|cinema|cinema_multiplex|salle_spectacle|big_box|market|bureau)\b/i
+
+// POIs ancres : grands équipements qui structurent le parcours client
+// (cinéma, hyper, hôtel, food court, big box, salle de spectacle).
+const ANCHOR_RE = /\b(big_box|grande_surface|commerce_supermarche|cinema_multiplex|salle_spectacle|hotel|market|food_court|zone_exposition)\b/i
+// Circulations INDOOR matche les SpaceTypeKey canoniques :
+//   mail_central, atrium, promenade, couloir_secondaire, hall_distribution,
+//   passage_pieton_couvert, couloir_service, hall, halle, galerie
+// Exclut volontairement parking_voie_*, voie_*, exterieur_voie_* qui sont
+// classifiés comme parking/extérieur (non-indoor).
+const CIRC_RE = /\b(mail_central|mail|atrium|promenade|couloir_secondaire|couloir_service|couloir|couloirs|hall_distribution|hall|halle|passage_pieton_couvert|passage_couvert|passage|galerie|circulation|circul)\b/i
+// Regexes — match strict sur les SpaceTypeKey canoniques d'Atlas Studio
+// (libraries/spaceTypeLibrary.ts) + variantes FR/EN courantes pour les
+// labels manuels. Word boundaries pour éviter les faux positifs.
+//
+// Types canoniques attendus :
+//   ascenseur                    → ELEVATOR_RE
+//   escalator                    → ESCALATOR_RE
+//   escalier_fixe                → STAIRS_RE
+//   sanitaires                   → WC_RE
 const ELEVATOR_RE = /\b(ascenseur|ascenseurs|asc\.?|elevator|elevators|lift)\b/i
 const ESCALATOR_RE = /\b(escalator|escalators|escalier[\s_-]?(méca|méc|roulant))\b/i
-const STAIRS_RE = /\b(escalier|escaliers|staircase|stairwell|stair[\s_-]?well|stair[\s_-]?case)\b/i
-// Sanitaires : WC, toilettes (FR), restroom (EN), bathroom, sanit., san.,
-// avec ou sans qualificatif (hommes/femmes/PMR/dames/messieurs)
+const STAIRS_RE = /\b(escalier|escalier_fixe|escaliers|staircase|stairwell|stair[\s_-]?well|stair[\s_-]?case)\b/i
 const WC_RE = /\b(sanitaire|sanitaires|sanit\.?|wc|toilette|toilettes|toilet|restroom|bathroom|lavabo)\b/i
 const PARKING_RE = /parking|stationnement/i
 const EXIT_RE = /sortie|exit|évac/i
@@ -521,14 +535,36 @@ function contextualRoutePlacements(
 ): Array<{ x: number; y: number; reason: string; targetPoiId?: string }> {
   const out: Array<{ x: number; y: number; reason: string; targetPoiId?: string }> = []
 
-  // Entrées : POIs labellisés "entrée" ou priority 1 + vehicle accesses
-  const entrances = ctx.pois.filter(p =>
+  // Entrées : depuis POIs (labellisés "entrée" ou priority 1) ET aussi
+  // depuis les espaces dont le type canonique est entree_*
+  const entrancesPois = ctx.pois.filter(p =>
     ENTRANCE_RE.test(p.label) || (p.priority === 1 && !EXIT_RE.test(p.label)),
   )
-  // Ancres : POIs priority 1 (excluant entrées)
-  const anchors = ctx.pois.filter(p =>
+  const entrancesFromSpaces = ctx.spaces
+    .filter(s => /^(entree_principale|entree_secondaire|porte_entree|acces_site_pieton_principal|acces_site_pieton_secondaire)$/.test(String(s.type ?? '')))
+    .map(s => {
+      const [cx, cy] = polygonCentroid(s.polygon)
+      return { id: `entrance-from-space-${s.id}`, label: s.label || 'Entrée', x: cx, y: cy }
+    })
+  const entrances = [
+    ...entrancesPois,
+    ...entrancesFromSpaces,
+  ]
+
+  // Ancres : POIs priority 1 + ESPACES canoniques big_box, cinema_multiplex, etc.
+  const anchorsFromPois = ctx.pois.filter(p =>
     p.priority === 1 && !ENTRANCE_RE.test(p.label) && !EXIT_RE.test(p.label),
-  ).slice(0, 8)
+  )
+  const anchorsFromSpaces = ctx.spaces
+    .filter(s => ANCHOR_RE.test(String(s.type ?? '')) || ANCHOR_RE.test(String(s.label ?? '')))
+    .map(s => {
+      const [cx, cy] = polygonCentroid(s.polygon)
+      return { id: `anchor-from-space-${s.id}`, label: s.label || s.type || 'Ancre', x: cx, y: cy }
+    })
+  const anchors = [
+    ...anchorsFromPois,
+    ...anchorsFromSpaces,
+  ].slice(0, 12)
 
   if (entrances.length === 0 || anchors.length === 0) return out
   const nodes = computeDecisionNodes(ctx.circulationSpaces)
@@ -984,8 +1020,18 @@ export async function recommendSignagePlan(
       escalators: filterValidService(ESCALATOR_RE, 'escalator').map(s => ({ id: s.id, label: s.label, type: s.type, areaSqm: s.areaSqm })),
       stairs: filterValidService(STAIRS_RE, 'stair').map(s => ({ id: s.id, label: s.label, type: s.type, areaSqm: s.areaSqm })),
       wcs: filterValidService(WC_RE, 'wc').map(s => ({ id: s.id, label: s.label, type: s.type, areaSqm: s.areaSqm })),
-      entrances: input.pois.filter(p => ENTRANCE_RE.test(p.label) || p.priority === 1).map(p => ({ id: p.id, label: p.label })),
-      anchors: input.pois.filter(p => p.priority === 1 && !ENTRANCE_RE.test(p.label) && !EXIT_RE.test(p.label)).map(p => ({ id: p.id, label: p.label })),
+      entrances: [
+        ...input.pois.filter(p => ENTRANCE_RE.test(p.label) || p.priority === 1).map(p => ({ id: p.id, label: p.label })),
+        ...input.spaces
+          .filter(s => /^(entree_principale|entree_secondaire|porte_entree|acces_site_pieton_principal|acces_site_pieton_secondaire)$/.test(String(s.type ?? '')))
+          .map(s => ({ id: `space-${s.id}`, label: s.label || 'Entrée (espace)' })),
+      ],
+      anchors: [
+        ...input.pois.filter(p => p.priority === 1 && !ENTRANCE_RE.test(p.label) && !EXIT_RE.test(p.label)).map(p => ({ id: p.id, label: p.label })),
+        ...input.spaces
+          .filter(s => ANCHOR_RE.test(String(s.type ?? '')) || ANCHOR_RE.test(String(s.label ?? '')))
+          .map(s => ({ id: `space-${s.id}`, label: s.label || String(s.type ?? 'Ancre') })),
+      ],
     },
   }
 
