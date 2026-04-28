@@ -6,7 +6,7 @@
 // détaillé avec coverage, breakdown par type, table position/cibles/raison.
 
 import { useState, useMemo } from 'react'
-import { Signpost, CheckCircle2, FileText, X, Trash2, Sparkles, Plus, ShieldCheck, Loader2, MousePointerClick, Wallet, Download } from 'lucide-react'
+import { Signpost, CheckCircle2, FileText, X, Trash2, Sparkles, Plus, ShieldCheck, Loader2, MousePointerClick, Wallet, Download, ChevronDown, ChevronUp, Minimize2 } from 'lucide-react'
 import { useSignageProposalsStore } from '../../stores/signageProposalsStore'
 import { useSignagePlacementStore } from '../../stores/signagePlacementStore'
 import { useSignageEditUiStore } from '../../stores/signageEditUiStore'
@@ -69,6 +69,31 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
   const [reportOpen, setReportOpen] = useState(false)
   const [reviewOpen, setReviewOpen] = useState(false)
   const [financialOpen, setFinancialOpen] = useState(false)
+  /** Replié = juste le header visible. Persisté en sessionStorage pour
+   *  rester replié même après changement de page. */
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try { return sessionStorage.getItem('signage-implementer-collapsed') === 'true' }
+    catch { return false }
+  })
+  const toggleCollapsed = () => {
+    setCollapsed(prev => {
+      const next = !prev
+      try { sessionStorage.setItem('signage-implementer-collapsed', String(next)) } catch {}
+      return next
+    })
+  }
+  /** Minimisé = juste un bouton-pill en bas à gauche. Plus radical que collapsed. */
+  const [minimized, setMinimized] = useState<boolean>(() => {
+    try { return sessionStorage.getItem('signage-implementer-minimized') === 'true' }
+    catch { return false }
+  })
+  const toggleMinimized = () => {
+    setMinimized(prev => {
+      const next = !prev
+      try { sessionStorage.setItem('signage-implementer-minimized', String(next)) } catch {}
+      return next
+    })
+  }
   const [auditOpen, setAuditOpen] = useState(false)
   const [auditing, setAuditing] = useState(false)
   const [auditResult, setAuditResult] = useState<Proph3tResult<AuditSignagePayload> | null>(null)
@@ -331,12 +356,31 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
 
   const positionClass = position === 'bottom-left' ? 'bottom-4 left-4' : 'bottom-4 right-4'
 
+  // ─── État minimisé : juste une pastille cliquable, libère tout l'espace ───
+  if (minimized) {
+    return (
+      <button
+        onClick={toggleMinimized}
+        className={`fixed ${positionClass} z-30 flex items-center gap-2 px-3 py-2 rounded-full bg-cyan-700/95 hover:bg-cyan-600 border border-cyan-400/50 text-white text-[11px] font-bold shadow-2xl backdrop-blur-md transition`}
+        title="Rouvrir Signalétique optimisée"
+      >
+        <Signpost size={13} />
+        <span>Signalétique</span>
+        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/25">{placedForProject.length}</span>
+      </button>
+    )
+  }
+
   return (
     <>
       <div className={`fixed ${positionClass} z-30 bg-surface-0/95 border border-cyan-500/40 rounded-xl shadow-2xl backdrop-blur-md`}>
         <div className="px-3 py-2.5 border-b border-white/10 flex items-center gap-2">
-          <Signpost size={14} className="text-cyan-300" />
-          <div className="flex-1">
+          <Signpost size={14} className="text-cyan-300 shrink-0" />
+          <button
+            onClick={toggleCollapsed}
+            className="flex-1 text-left hover:opacity-80 transition cursor-pointer"
+            title={collapsed ? 'Déplier le panneau' : 'Replier le panneau'}
+          >
             <div className="text-[12px] font-bold text-white">Signalétique optimisée</div>
             <div className="text-[9px] text-slate-500">
               {proposals.length} proposés · {placedAuto} placés · couverture {coveragePct.toFixed(0)}%
@@ -344,9 +388,24 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
                 <span className="text-amber-300 font-bold"> · {uncertainCount} à valider</span>
               )}
             </div>
-          </div>
+          </button>
+          <button
+            onClick={toggleCollapsed}
+            className="p-1 text-slate-400 hover:text-white rounded hover:bg-white/5"
+            title={collapsed ? 'Déplier' : 'Replier'}
+          >
+            {collapsed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+          <button
+            onClick={toggleMinimized}
+            className="p-1 text-slate-400 hover:text-white rounded hover:bg-white/5"
+            title="Minimiser en pastille"
+          >
+            <Minimize2 size={12} />
+          </button>
         </div>
 
+        {!collapsed && (
         <div className="p-3 flex flex-col gap-2 min-w-[280px]">
           <button
             onClick={handleImplement}
@@ -478,6 +537,7 @@ export function SignageImplementer({ position = 'bottom-left', buildAuditInput }
             </div>
           )}
         </div>
+        )}
       </div>
 
       {/* ═══ MODAL VALIDATION HUMAINE (placements à valider) ═══ */}
