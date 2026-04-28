@@ -697,7 +697,19 @@ export async function recommendSignagePlan(
 
   // ─── Analyse géométrique du plan ───
   const totalAreaSqm = input.spaces.reduce((s, sp) => s + sp.areaSqm, 0)
-  const circulationSpaces = input.spaces.filter(s => matchesType(s, CIRC_RE))
+  // Circulations INTÉRIEURES UNIQUEMENT pour placement signalétique :
+  // exclut parking, extérieur, et tout polygone qui ressemble à un parking
+  // (très grande aire avec voirie). Évite les BAES qui courent le long du
+  // périmètre du parking.
+  const circulationSpaces = input.spaces.filter(s => {
+    if (!matchesType(s, CIRC_RE)) return false
+    const z = classifyZone(s)
+    if (z === 'parking' || z === 'exterior') return false
+    // Garde-fou : exclut polygones absurdement grands (> 5000m² = probablement
+    // une voirie extérieure mal typée comme circulation)
+    if (s.areaSqm > 5000) return false
+    return true
+  })
   const circulationSqm = circulationSpaces.reduce((s, sp) => s + sp.areaSqm, 0)
 
   const commerceCount = input.spaces.filter(s => COMMERCE_RE.test(s.type ?? '') || COMMERCE_RE.test(s.label ?? '')).length
@@ -778,17 +790,25 @@ export async function recommendSignagePlan(
       )
       if (!tooClose) suggestedLocations.push(loc)
     }
-    // ─── ENRICHISSEMENT ZONE : tag chaque placement avec sa zone du plan ───
-    for (let li = 0; li < suggestedLocations.length; li++) {
-      const loc = suggestedLocations[li]
+    // ─── ENRICHISSEMENT ZONE + REJET DES PLACEMENTS PARKING/EXTÉRIEUR ───
+    // Sauf pour les types qui DOIVENT être en parking/extérieur (TOT-EXT, SRV-PKG)
+    const allowedInParking = code === 'TOT-EXT' || code === 'SRV-PKG'
+    const allowedInExterior = code === 'TOT-EXT' || code === 'SRV-PKG' || code === 'COM-LED'
+    const filteredByZone: typeof suggestedLocations = []
+    for (const loc of suggestedLocations) {
       const { zone, spaceLabel } = findZoneOfPoint(loc.x, loc.y, input.spaces)
-      suggestedLocations[li] = {
+      // Rejette les placements en parking/extérieur sauf si le type le requiert
+      if (zone === 'parking' && !allowedInParking) continue
+      if (zone === 'exterior' && !allowedInExterior) continue
+      filteredByZone.push({
         ...loc,
         zone,
         zoneLabel: ZONE_LABELS[zone],
         reason: `[${ZONE_LABELS[zone]} · ${spaceLabel}] ${loc.reason}`,
-      }
+      })
     }
+    suggestedLocations.length = 0
+    suggestedLocations.push(...filteredByZone)
     // Si l'espacement a réduit, on ajuste missingQty au nombre réel de positions valides
     const effectiveMissingQty = Math.min(missingQty, suggestedLocations.length || missingQty)
     recommendations.push({

@@ -56,6 +56,7 @@ import {
 import { PlanCanvasV2 } from '../shared/components/PlanCanvasV2'
 import { MallMap2D } from '../shared/components/MallMap2D'
 import { SpaceContextMenu, type SpaceContextMenuState } from '../shared/components/SpaceContextMenu'
+import { PlanModelSelector } from '../shared/components/PlanModelSelector'
 import { SpatialCoreScene } from '../shared/components/SpatialCoreScene'
 import { PlanLayerSelector } from '../shared/components/PlanLayerSelector'
 import { usePlanEngineStore } from '../shared/stores/planEngineStore'
@@ -1065,32 +1066,46 @@ export default function Vol3Module() {
 
           {parsedPlan && viewMode === '2d' ? (
             <div className="relative h-full w-full">
-              {/* Toggle source du plan 2D — visible uniquement si on a le choix */}
-              {modeledPlan && (
-                <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-0 rounded-lg overflow-hidden shadow-lg border border-white/20"
+              {/* Sélecteur de plan modélisé + toggle source */}
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
+                {/* Dropdown : choisir parmi les modèles enregistrés */}
+                <div className="rounded-lg overflow-hidden shadow-lg border border-white/20"
                   style={{ background: 'rgba(15,23,42,0.78)', backdropFilter: 'blur(8px)' }}>
-                  <button
-                    onClick={() => setPlanSource('modeled')}
-                    className={`px-3 py-1.5 text-[11px] font-medium transition-colors ${
-                      planSource === 'modeled'
-                        ? 'bg-atlas-500 text-white'
-                        : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
-                    }`}
-                    title={`Plan modélisé — ${modeledPlan.spaces.length} espaces dessinés`}
-                  >
-                    Modélisé ({modeledPlan.spaces.length})
-                  </button>
-                  <button
-                    onClick={() => setPlanSource('raw')}
-                    className={`px-3 py-1.5 text-[11px] font-medium transition-colors ${
-                      planSource === 'raw'
-                        ? 'bg-atlas-500 text-white'
-                        : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
-                    }`}
-                    title={`DXF brut — ${parsedPlan.spaces.length} polygones importés`}
-                  >
-                    DXF brut ({parsedPlan.spaces.length})
-                  </button>
+                  <PlanModelSelector projectId="cosmos-angre" accentColor="#34d399" />
+                </div>
+                {/* Toggle Modélisé/DXF brut */}
+                {modeledPlan && (
+                  <div className="flex items-center gap-0 rounded-lg overflow-hidden shadow-lg border border-white/20"
+                    style={{ background: 'rgba(15,23,42,0.78)', backdropFilter: 'blur(8px)' }}>
+                    <button
+                      onClick={() => setPlanSource('modeled')}
+                      className={`px-3 py-1.5 text-[11px] font-medium transition-colors ${
+                        planSource === 'modeled'
+                          ? 'bg-atlas-500 text-white'
+                          : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                      }`}
+                      title={`Plan modélisé — ${modeledPlan.spaces.length} espaces dessinés`}
+                    >
+                      Modélisé ({modeledPlan.spaces.length})
+                    </button>
+                    <button
+                      onClick={() => setPlanSource('raw')}
+                      className={`px-3 py-1.5 text-[11px] font-medium transition-colors ${
+                        planSource === 'raw'
+                          ? 'bg-atlas-500 text-white'
+                          : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                      }`}
+                      title={`DXF brut — ${parsedPlan.spaces.length} polygones importés`}
+                    >
+                      DXF brut ({parsedPlan.spaces.length})
+                    </button>
+                  </div>
+                )}
+              </div>
+              {modeledPlan && false /* anciennes conditions remplacées au-dessus */ && (
+                <div className="hidden">
+                  <button onClick={() => setPlanSource('modeled')}>{modeledPlan.spaces.length}</button>
+                  <button onClick={() => setPlanSource('raw')}>{parsedPlan.spaces.length}</button>
                 </div>
               )}
 
